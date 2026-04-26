@@ -1683,6 +1683,13 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
             </div>
             <div id="pw-strength-label" style="font-size:11px;color:var(--t3);margin-top:2px;"></div>
           </div>
+          <div class="auth-input-group">
+            <label>Confirm password</label>
+            <div style="position:relative;">
+              <input class="auth-input" id="s-pw-confirm" type="password" placeholder="Re-enter your password" style="padding-right:42px;">
+              <button onclick="togglePw('s-pw-confirm',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:13px;padding:0;">👁</button>
+            </div>
+          </div>
           <button class="auth-btn" onclick="nextSignupStep(1)">
             Continue
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
@@ -1965,10 +1972,8 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M2 8l4 4 8-8"/></svg>
             </div>
           </div>
-          <div class="stat-val" style="color:var(--g)" id="stat-val-paid">P84,500</div>
+          <div class="stat-val" style="color:var(--g)" id="stat-val-paid">—</div>
           <div class="stat-sub stat-up" id="stat-sub-paid">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8V2M2 5l3-3 3 3"/></svg>
-            12% vs last month
           </div>
           <div class="stat-spark"><canvas id="spark-paid" aria-hidden="true"></canvas></div>
         </div>
@@ -1986,10 +1991,8 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#F59E0B" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
             </div>
           </div>
-          <div class="stat-val" style="color:var(--warn)" id="stat-val-outstanding">P31,200</div>
+          <div class="stat-val" style="color:var(--warn)" id="stat-val-outstanding">—</div>
           <div class="stat-sub stat-warn" id="stat-sub-outstanding">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5" stroke-linecap="round"/></svg>
-            3 invoices awaiting payment
           </div>
           <div class="stat-spark"><canvas id="spark-outstanding" aria-hidden="true"></canvas></div>
         </div>
@@ -2007,10 +2010,8 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#EF4444" stroke-width="1.8"><path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 12v.5" stroke-linecap="round"/></svg>
             </div>
           </div>
-          <div class="stat-val" style="color:var(--danger)" id="stat-val-overdue">P11,400</div>
+          <div class="stat-val" style="color:var(--danger)" id="stat-val-overdue">—</div>
           <div class="stat-sub stat-down" id="stat-sub-overdue">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 2v6M2 5l3 3 3-3"/></svg>
-            2 invoices — oldest 14 days
           </div>
           <div class="stat-spark"><canvas id="spark-overdue" aria-hidden="true"></canvas></div>
         </div>
@@ -2025,11 +2026,8 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#3B82F6" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5" stroke-linecap="round"/></svg>
             </div>
           </div>
-          <div class="stat-val">18<span style="font-size:16px;letter-spacing:0;font-family:'Archivo',sans-serif;font-weight:400;color:var(--t3);margin-left:3px;">days</span></div>
-          <div class="stat-sub stat-up">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8V2M2 5l3-3 3 3"/></svg>
-            3 days faster than last month
-          </div>
+          <div class="stat-val" id="stat-val-avgtime">—</div>
+          <div class="stat-sub stat-up" id="stat-sub-avgtime"></div>
           <div class="stat-spark"><canvas id="spark-avgtime" aria-hidden="true"></canvas></div>
         </div>
 
@@ -2042,7 +2040,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
         <div class="card">
           <div class="card-header">
             <span class="card-title">Cash collected — last 6 months</span>
-            <span style="font-size:11px;color:var(--t3);">P284,500 total</span>
+            <span style="font-size:11px;color:var(--t3);" id="sparkline-total"></span>
           </div>
           <div class="sparkline-wrap">
             <div class="chart-canvas-wrap" style="height:140px;">
@@ -2918,11 +2916,14 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
             <!-- Live template preview -->
             <div style="margin-top:4px;">
               <div style="font-size:11px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">Preview</div>
-              <div style="background:var(--bg3);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
-                <div style="transform:scale(0.52);transform-origin:top left;width:192.3%;pointer-events:none;" id="tpl-preview-scaler">
-                  <div id="tpl-preview-clone" style="padding:0;"></div>
+              <div style="position:relative;height:340px;overflow:hidden;border-radius:10px;border:1px solid var(--line);background:var(--bg3);">
+                <div style="position:absolute;top:0;left:0;transform:scale(0.52);transform-origin:top left;width:769px;pointer-events:none;" id="tpl-preview-scaler">
+                  <div id="tpl-preview-clone"></div>
                 </div>
-                <div id="tpl-preview-height-pad" style="height:240px;"></div>
+                <div id="tpl-preview-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--t3);">
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><path d="M5 4h14l4 4v16H5V4z"/><path d="M19 4v4h4"/><path d="M9 13h10M9 17h6"/></svg>
+                  <span style="font-size:12px;opacity:.6;">Select a template to preview</span>
+                </div>
               </div>
             </div>
           </div>
@@ -5661,17 +5662,17 @@ function switchSettingsPanel(name, el) {
   document.getElementById('spanel-' + name).classList.add('active');
   if (el) el.classList.add('active');
   if (name === 'security') _refreshTFAStatusUI();
-  if (name === 'brand') {
-    requestAnimationFrame(() => {
-      updatePreview();
-      const src = document.getElementById('invoice-preview');
-      const dest = document.getElementById('tpl-preview-clone');
-      if (src && dest) {
-        dest.innerHTML = src.outerHTML;
-        const pad = document.getElementById('tpl-preview-height-pad');
-        if (pad) pad.style.height = Math.round(src.offsetHeight * 0.52) + 'px';
-      }
-    });
+  if (name === 'brand') requestAnimationFrame(() => refreshTemplatePreview());
+}
+
+function refreshTemplatePreview() {
+  updatePreview();
+  const src = document.getElementById('invoice-preview');
+  const dest = document.getElementById('tpl-preview-clone');
+  const empty = document.getElementById('tpl-preview-empty');
+  if (src && dest) {
+    dest.innerHTML = src.outerHTML;
+    if (empty) empty.style.display = 'none';
   }
 }
 
@@ -5851,16 +5852,7 @@ function selectTemplate(name, el) {
   updateTemplateThumbs();
   updatePreview();
   // Refresh the in-settings live preview clone
-  requestAnimationFrame(() => {
-    const src = document.getElementById('invoice-preview');
-    const dest = document.getElementById('tpl-preview-clone');
-    if (src && dest) {
-      dest.innerHTML = src.outerHTML;
-      // Adjust the height pad to match scaled height
-      const pad = document.getElementById('tpl-preview-height-pad');
-      if (pad) pad.style.height = Math.round(src.offsetHeight * 0.52) + 'px';
-    }
-  });
+  requestAnimationFrame(() => refreshTemplatePreview());
   showToast('Template: ' + {
     modern:'Dark Modern', clean:'Clean Light',
     minimal:'Minimal Line', bold:'Bold Accent', executive:'Executive'
@@ -6259,6 +6251,8 @@ function doGoogleAuth() {
 
 /* ── SIGNUP STEPS ── */
 function resetSignupSteps() {
+  const confirmField = document.getElementById('s-pw-confirm');
+  if (confirmField) confirmField.value = '';
   [1,2,3].forEach(n => {
     document.getElementById('sstep-'+n).classList.toggle('active', n===1);
     const dot = document.getElementById('sdot-'+n);
@@ -6275,9 +6269,11 @@ function nextSignupStep(step) {
     const name  = document.getElementById('s-fullname').value.trim();
     const email = document.getElementById('s-email-auth').value.trim();
     const pw    = document.getElementById('s-pw').value;
+    const confirm = document.getElementById('s-pw-confirm').value;
     if (!name)  { showAuthError('Please enter your full name.'); return; }
     if (!email || !email.includes('@')) { showAuthError('Enter a valid email address.'); return; }
     if (pw.length < 8) { showAuthError('Password must be at least 8 characters.'); return; }
+    if (pw !== confirm) { showAuthError('Passwords do not match.'); return; }
   }
   if (step === 2) {
     const biz = document.getElementById('s-bizname').value.trim();
@@ -7373,6 +7369,34 @@ function updateDashStats() {
     dSub.innerHTML = overdue.length
       ? arrow_down + ` ${overdue.length} invoice${overdue.length!==1?'s':''} — oldest ${oldest} days`
       : arrow_up   + ` No overdue invoices`;
+  }
+
+  // Avg payment time
+  const avgEl = document.getElementById('stat-val-avgtime');
+  const avgSub = document.getElementById('stat-sub-avgtime');
+  if (paid.length > 0) {
+    const totalDays = paid.reduce((s, i) => {
+      if (!i.date || !i.due) return s;
+      const sent = new Date(i.date), due = new Date(i.due);
+      return s + Math.max(0, Math.round((due - sent) / 86400000));
+    }, 0);
+    const avg = Math.round(totalDays / paid.length);
+    if (avgEl) avgEl.innerHTML = `${avg}<span style="font-size:16px;letter-spacing:0;font-family:'Archivo',sans-serif;font-weight:400;color:var(--t3);margin-left:3px;">days</span>`;
+    if (avgSub) avgSub.textContent = `Based on ${paid.length} paid invoice${paid.length!==1?'s':''}`;
+  } else {
+    if (avgEl) avgEl.textContent = '—';
+    if (avgSub) avgSub.textContent = 'No paid invoices yet';
+  }
+
+  // Cash flow chart total label
+  const sparkTotal = document.getElementById('sparkline-total');
+  if (sparkTotal) {
+    const sixMonthPaid = (() => {
+      const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 6);
+      return invoices.filter(i => i.status === 'paid' && new Date(i.date) >= cutoff)
+                     .reduce((s, i) => s + (i.amount||0), 0);
+    })();
+    sparkTotal.textContent = sixMonthPaid > 0 ? fmt(sixMonthPaid) + ' total (6 mo)' : '';
   }
 
   // Card urgency states
