@@ -307,12 +307,26 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
   font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;
   letter-spacing:.02em;
 }
-.sidebar-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--line);}
+.sidebar-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--line);position:relative;}
 .user-pill{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s;}
 .user-pill:hover{background:var(--surface);}
 .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(16,185,129,.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--g);flex-shrink:0;}
 .user-name{font-size:13px;color:var(--t1);font-weight:500;}
 .user-plan{font-size:11px;color:var(--g);}
+.profile-popup{
+  position:absolute;bottom:calc(100% + 6px);left:12px;right:12px;
+  background:var(--bg2);border:1px solid var(--line2);border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;z-index:200;
+  animation:popupIn .15s ease both;
+}
+@keyframes popupIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.profile-popup.hidden{display:none;}
+.profile-popup-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);}
+.profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:'Archivo',sans-serif;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
+.profile-popup-item:hover{background:var(--surface);color:var(--t1);}
+.profile-popup-item.danger{color:var(--danger);}
+.profile-popup-item.danger:hover{background:rgba(224,85,64,.08);color:var(--danger);}
+.profile-popup-divider{height:1px;background:var(--line);margin:2px 0;}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
@@ -1879,17 +1893,37 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
       <kbd style="font-size:10px;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:2px 6px;color:var(--t3);">Esc</kbd>
       <span style="font-size:10px;color:var(--t3);">Close modal</span>
     </div>
-    <div class="user-pill" onclick="switchView('settings',document.querySelectorAll('.nav-item')[6])">
+    <!-- Profile popup -->
+    <div class="profile-popup hidden" id="profile-popup">
+      <div class="profile-popup-header">
+        <div class="user-av" id="pp-av" style="width:36px;height:36px;font-size:14px;flex-shrink:0;"></div>
+        <div style="min-width:0;">
+          <div id="pp-name" style="font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          <div id="pp-email" style="font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        </div>
+      </div>
+      <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[6]);switchSettingsPanel('firm',document.querySelectorAll('.settings-nav-item')[1])">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Edit profile
+      </button>
+      <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[6])">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+        Account settings
+      </button>
+      <div class="profile-popup-divider"></div>
+      <button class="profile-popup-item danger" onclick="closeProfilePopup();doLogout()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/></svg>
+        Log out
+      </button>
+    </div>
+    <div class="user-pill" id="profile-pill" onclick="toggleProfilePopup(event)">
       <div class="user-av" id="sidebar-av"></div>
-      <div>
+      <div style="flex:1;min-width:0;">
         <div class="user-name" id="sidebar-name">Your Business</div>
         <div class="user-plan" id="sidebar-plan">Starter</div>
       </div>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--t3);flex-shrink:0;"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg>
     </div>
-    <button onclick="doLogout()" style="width:100%;margin-top:6px;background:transparent;border:1px solid var(--line);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--t3);cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;font-family:'Archivo',sans-serif;" onmouseover="this.style.borderColor='rgba(224,85,64,.3)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--t3)'">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/></svg>
-      Log out
-    </button>
   </div>
 </div>
 
@@ -2792,7 +2826,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <span class="settings-section-badge" style="background:rgba(16,185,129,.1);color:var(--g);">PDF layout</span>
             </div>
             <div class="settings-section-desc">Choose the layout for your generated PDFs.</div>
-            <div class="template-grid" id="template-grid" style="grid-template-columns:repeat(5,1fr);gap:10px;">
+            <div class="template-grid" id="template-grid" style="grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;">
 
               <!-- 1. Dark Modern (current default) -->
               <div class="template-card active" onclick="selectTemplate('modern',this)" title="Dark Modern">
@@ -2880,6 +2914,16 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                 <div class="template-name">Executive</div>
               </div>
 
+            </div>
+            <!-- Live template preview -->
+            <div style="margin-top:4px;">
+              <div style="font-size:11px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">Preview</div>
+              <div style="background:var(--bg3);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+                <div style="transform:scale(0.52);transform-origin:top left;width:192.3%;pointer-events:none;" id="tpl-preview-scaler">
+                  <div id="tpl-preview-clone" style="padding:0;"></div>
+                </div>
+                <div id="tpl-preview-height-pad" style="height:240px;"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -5617,6 +5661,18 @@ function switchSettingsPanel(name, el) {
   document.getElementById('spanel-' + name).classList.add('active');
   if (el) el.classList.add('active');
   if (name === 'security') _refreshTFAStatusUI();
+  if (name === 'brand') {
+    requestAnimationFrame(() => {
+      updatePreview();
+      const src = document.getElementById('invoice-preview');
+      const dest = document.getElementById('tpl-preview-clone');
+      if (src && dest) {
+        dest.innerHTML = src.outerHTML;
+        const pad = document.getElementById('tpl-preview-height-pad');
+        if (pad) pad.style.height = Math.round(src.offsetHeight * 0.52) + 'px';
+      }
+    });
+  }
 }
 
 function handleLogoUpload(e) {
@@ -5793,6 +5849,18 @@ function selectTemplate(name, el) {
   document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
   updateTemplateThumbs();
+  updatePreview();
+  // Refresh the in-settings live preview clone
+  requestAnimationFrame(() => {
+    const src = document.getElementById('invoice-preview');
+    const dest = document.getElementById('tpl-preview-clone');
+    if (src && dest) {
+      dest.innerHTML = src.outerHTML;
+      // Adjust the height pad to match scaled height
+      const pad = document.getElementById('tpl-preview-height-pad');
+      if (pad) pad.style.height = Math.round(src.offsetHeight * 0.52) + 'px';
+    }
+  });
   showToast('Template: ' + {
     modern:'Dark Modern', clean:'Clean Light',
     minimal:'Minimal Line', bold:'Bold Accent', executive:'Executive'
@@ -6151,15 +6219,42 @@ function doLogin() {
   }, 900);
 }
 
+/* ── PROFILE POPUP ── */
+function toggleProfilePopup(e) {
+  e.stopPropagation();
+  const popup = document.getElementById('profile-popup');
+  if (popup.classList.contains('hidden')) {
+    // Populate with current user info
+    const av = document.getElementById('pp-av');
+    const nm = document.getElementById('pp-name');
+    const em = document.getElementById('pp-email');
+    if (av) av.textContent = document.getElementById('sidebar-av').textContent;
+    if (nm) nm.textContent = document.getElementById('sidebar-name').textContent;
+    if (em) em.textContent = currentUser?.email || '';
+    popup.classList.remove('hidden');
+    document.addEventListener('click', closeProfilePopupOutside);
+  } else {
+    closeProfilePopup();
+  }
+}
+function closeProfilePopup() {
+  document.getElementById('profile-popup').classList.add('hidden');
+  document.removeEventListener('click', closeProfilePopupOutside);
+}
+function closeProfilePopupOutside(e) {
+  if (!document.getElementById('profile-popup').contains(e.target)) closeProfilePopup();
+}
+
 /* ── GOOGLE MOCK ── */
 function doGoogleAuth() {
   const btn = document.querySelector('.auth-social-btn');
   btn.disabled = true;
-  btn.textContent = 'Connecting...';
+  btn.innerHTML = '<div class="spinner"></div> Connecting to Google...';
   setTimeout(() => {
-    currentUser = { email: 'demo@stagepay.co', name: 'Demo User', firm: 'Demo Business', plan: 'pro', initials: 'DB' };
-    enterApp(currentUser);
-  }, 1100);
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.566 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>Continue with Google`;
+    showToast('Google sign-in requires a Client ID — see Settings → coming soon', 'warn');
+  }, 1000);
 }
 
 /* ── SIGNUP STEPS ── */
