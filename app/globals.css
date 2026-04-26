@@ -1,0 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@1&family=Archivo:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* shadcn CSS variable tokens mapped to StagePay brand */
+    --background: 222 47% 5%;          /* #060A12 deep navy */
+    --foreground: 210 40% 95%;         /* #F0F4F8 */
+
+    --primary: 161 84% 39%;            /* #10B981 emerald */
+    --primary-foreground: 222 47% 5%;  /* #060A12 */
+
+    --secondary: 220 30% 14%;          /* #131B2E surface */
+    --secondary-foreground: 210 40% 95%;
+
+    --destructive: 0 84% 60%;          /* #EF4444 */
+    --destructive-foreground: 210 40% 98%;
+
+    --muted: 220 30% 14%;
+    --muted-foreground: 210 20% 55%;
+
+    --accent: 220 30% 14%;
+    --accent-foreground: 210 40% 95%;
+
+    --border: 220 20% 12%;
+    --input:  220 20% 12%;
+    --ring:   161 84% 39%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    @apply bg-deep-navy text-foreground;
+    font-family: 'Archivo', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
