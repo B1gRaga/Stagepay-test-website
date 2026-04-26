@@ -12,13 +12,27 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);overf
 ::selection{background:rgba(16,185,129,.3);color:#fff;}
 
 /* ── CURSOR ── */
-.cur{position:fixed;pointer-events:none;z-index:10000;border-radius:50%;transform:translate(-50%,-50%);}
-#c1{width:10px;height:10px;background:var(--g);box-shadow:0 0 8px 2px rgba(16,185,129,.8),0 0 24px 6px rgba(16,185,129,.3);transition:width .15s,height .15s;}
-#c2{width:40px;height:40px;border:1.5px solid rgba(16,185,129,.35);transition:width .2s,height .2s,border-color .2s;}
-body:has(a:hover) #c1,body:has(button:hover) #c1,body:has(input:hover) #c1,body:has(select:hover) #c1,body:has(textarea:hover) #c1,body:has(label:hover) #c1{width:20px;height:20px;}
-body:has(a:hover) #c2,body:has(button:hover) #c2,body:has(input:hover) #c2,body:has(select:hover) #c2,body:has(textarea:hover) #c2,body:has(label:hover) #c2{width:64px;height:64px;border-color:rgba(16,185,129,.15);}
-@media(hover:none){.cur{display:none;}body{cursor:auto;}}
-@media(hover:hover){body{cursor:none;}a,button,input,select,textarea,label,[role="button"]{cursor:none;}}
+#sp-cursor{
+  position:fixed;width:10px;height:10px;
+  background:var(--g);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 6px 1px rgba(16,185,129,.9),0 0 18px 4px rgba(16,185,129,.4);
+  transition:width .28s cubic-bezier(.34,1.56,.64,1),height .28s cubic-bezier(.34,1.56,.64,1),box-shadow .28s ease,opacity .2s;
+  will-change:left,top;
+}
+#sp-cursor2{
+  position:fixed;width:28px;height:28px;
+  border:1.5px solid rgba(16,185,129,.55);border-radius:50%;
+  pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:width .3s cubic-bezier(.34,1.56,.64,1),height .3s cubic-bezier(.34,1.56,.64,1),border-color .25s ease,background-color .25s ease,opacity .2s;
+  will-change:left,top;
+}
+#sp-cursor.sp-hovering{width:16px;height:16px;box-shadow:0 0 10px 2px rgba(16,185,129,1),0 0 28px 6px rgba(16,185,129,.55);}
+#sp-cursor2.sp-hovering{width:44px;height:44px;border-color:rgba(16,185,129,.28);background:rgba(16,185,129,.04);}
+@media(hover:none){#sp-cursor,#sp-cursor2{display:none;}body{cursor:auto;}}
+@media(hover:hover){body{cursor:none;}a,button,input,select,textarea,label,[role="button"]{cursor:none!important;}}
 
 /* ── NOISE OVERLAY ── */
 body::after{

@@ -3,22 +3,47 @@ import { useEffect } from 'react'
 
 export default function LandingPage() {
   useEffect(() => {
-    const c1 = document.getElementById('c1')
-    const c2 = document.getElementById('c2')
-    if (!c1 || !c2) return
+    const dot  = document.getElementById('sp-cursor')
+    const ring = document.getElementById('sp-cursor2')
+    if (!dot || !ring) return
 
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2, rx = mx, ry = my
-    const onMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY }
-    const onLeave = () => { c1.style.opacity = '0'; c2.style.opacity = '0' }
-    const onEnter = () => { c1.style.opacity = '1'; c2.style.opacity = '1' }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseleave', onLeave)
-    window.addEventListener('mouseenter', onEnter)
+    const DOT_SMOOTHNESS    = 0.22
+    const BORDER_SMOOTHNESS = 0.10
+    const mouse   = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    const dotPos  = { x: mouse.x, y: mouse.y }
+    const ringPos = { x: mouse.x, y: mouse.y }
+
+    const onMove = (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY }
+    const onLeave = () => { dot.style.opacity = '0'; ring.style.opacity = '0' }
+    const onEnter = () => { dot.style.opacity = '1'; ring.style.opacity = '1' }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseleave', onLeave)
+    document.addEventListener('mouseenter', onEnter)
+
+    const INTERACTIVE = 'a, button, input, textarea, select, [onclick], [role="button"]'
+    function attachHoverListeners() {
+      document.querySelectorAll(INTERACTIVE).forEach((el: Element) => {
+        const e = el as any
+        if (e._spHover) return
+        e._spHover = true
+        e.addEventListener('mouseenter', () => { dot.classList.add('sp-hovering'); ring.classList.add('sp-hovering') })
+        e.addEventListener('mouseleave', () => { dot.classList.remove('sp-hovering'); ring.classList.remove('sp-hovering') })
+      })
+    }
+    attachHoverListeners()
+    const mutObs = new MutationObserver(attachHoverListeners)
+    mutObs.observe(document.body, { childList: true, subtree: true })
+
     let raf: number
     const loop = () => {
-      rx += (mx - rx) * 0.1; ry += (my - ry) * 0.1
-      c1.style.left = mx + 'px'; c1.style.top = my + 'px'
-      c2.style.left = rx + 'px'; c2.style.top = ry + 'px'
+      dotPos.x  += (mouse.x - dotPos.x)  * DOT_SMOOTHNESS
+      dotPos.y  += (mouse.y - dotPos.y)  * DOT_SMOOTHNESS
+      ringPos.x += (mouse.x - ringPos.x) * BORDER_SMOOTHNESS
+      ringPos.y += (mouse.y - ringPos.y) * BORDER_SMOOTHNESS
+      dot.style.left  = dotPos.x  + 'px'
+      dot.style.top   = dotPos.y  + 'px'
+      ring.style.left = ringPos.x + 'px'
+      ring.style.top  = ringPos.y + 'px'
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -40,19 +65,20 @@ export default function LandingPage() {
     buildBackgroundPaths()
 
     return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseleave', onLeave)
-      window.removeEventListener('mouseenter', onEnter)
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseleave', onLeave)
+      document.removeEventListener('mouseenter', onEnter)
       window.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(raf)
       obs.disconnect()
+      mutObs.disconnect()
     }
   }, [])
 
   return (
     <>
-      <div className="cur" id="c1"></div>
-      <div className="cur" id="c2"></div>
+      <div id="sp-cursor"></div>
+      <div id="sp-cursor2"></div>
 
       <nav id="nav">
         <div className="nav-inner">
