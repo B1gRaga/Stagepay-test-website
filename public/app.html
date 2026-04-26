@@ -4379,9 +4379,9 @@ async function generateTC(){
   btn.textContent='Writing...';
   btn.style.opacity='.6';
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/api/ai',{
       method:'POST',
-      headers:getAnthropicHeaders(),
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-5',
         max_tokens:300,
@@ -4421,9 +4421,9 @@ Parse the user description and return ONLY valid JSON in this exact format with 
 {"client":"client name","project":"short project (max 8 words)","lineItems":[{"desc":"description","qty":1,"rate":950}],"vatRate":14,"depositPct":0,"notes":"payment notes"}
 Rules: extract client name; split into logical line items; numeric qty/rate only; default VAT 14%; set depositPct if deposit mentioned; keep professional.`;
 
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/api/ai',{
       method:'POST',
-      headers:getAnthropicHeaders(),
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-5',
         max_tokens:800,
@@ -4657,9 +4657,9 @@ async function composeEmail() {
   };
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: getAnthropicHeaders(),
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 600,
@@ -5572,9 +5572,9 @@ Write ONLY the email body. No subject line. No markdown. Start with "Dear [clien
 Keep it short — 2-3 paragraphs max. Sender: ${getFirmName()}, Gaborone.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: getAnthropicHeaders(),
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: isWA ? 200 : 400,
@@ -5657,9 +5657,9 @@ async function rewritePreview() {
   const sampleInv = invoices.find(i => i.status === 'overdue') || invoices[0];
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: getAnthropicHeaders(),
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 250,
@@ -7649,9 +7649,9 @@ async function testApiKey() {
   btn.textContent = 'Testing…'; btn.disabled = true;
   const status = document.getElementById('api-key-status');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: getAnthropicHeaders(),
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: 'ping' }] })
     });
     const d = await res.json();
