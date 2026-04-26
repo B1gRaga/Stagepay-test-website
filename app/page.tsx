@@ -13,12 +13,17 @@ export default function LandingPage() {
     const dotPos  = { x: mouse.x, y: mouse.y }
     const ringPos = { x: mouse.x, y: mouse.y }
 
-    const onMove = (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY }
-    const onLeave = () => { dot.style.opacity = '0'; ring.style.opacity = '0' }
-    const onEnter = () => { dot.style.opacity = '1'; ring.style.opacity = '1' }
+    let hasMovedOnce = false
+    const onMove = (e: MouseEvent) => {
+      mouse.x = e.clientX
+      mouse.y = e.clientY
+      if (!hasMovedOnce) {
+        hasMovedOnce = true
+        dot.style.opacity = '1'
+        ring.style.opacity = '1'
+      }
+    }
     document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseleave', onLeave)
-    document.addEventListener('mouseenter', onEnter)
 
     const INTERACTIVE = 'a, button, input, textarea, select, [onclick], [role="button"]'
     function attachHoverListeners() {
@@ -66,8 +71,6 @@ export default function LandingPage() {
 
     return () => {
       document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseleave', onLeave)
-      document.removeEventListener('mouseenter', onEnter)
       window.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(raf)
       obs.disconnect()
