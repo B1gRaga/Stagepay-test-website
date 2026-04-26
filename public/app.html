@@ -2702,10 +2702,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
             <span style="width:8px;height:8px;border-radius:2px;background:#10B981;flex-shrink:0;display:inline-block;transform:rotate(45deg);"></span>
             Plan &amp; billing
           </div>
-          <div class="settings-nav-item" onclick="switchSettingsPanel('ai',this)">
-            <span style="width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0;display:inline-block;"></span>
-            AI &amp; API
-          </div>
           <div class="settings-nav-item" onclick="switchSettingsPanel('security',this)">
             <span style="width:8px;height:8px;border-radius:50%;background:#EF4444;flex-shrink:0;display:inline-block;"></span>
             Security
@@ -3354,54 +3350,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                   <div style="font-size:11px;color:var(--t3);margin-top:2px;">Your account will downgrade to Starter at end of billing period</div>
                 </div>
                 <button class="topbar-btn btn-outline" style="color:var(--danger);border-color:rgba(239,68,68,.25);flex-shrink:0;" onclick="showToast('Contact support to cancel','warning')">Cancel</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AI & API PANEL -->
-        <div class="settings-panel" id="spanel-ai">
-          <div class="settings-panel-hero" style="background:linear-gradient(135deg,rgba(139,92,246,.07) 0%,transparent 60%);">
-            <div class="settings-panel-hero-icon" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-            </div>
-            <div>
-              <div class="settings-panel-hero-title">AI &amp; API</div>
-              <div class="settings-panel-hero-sub">Anthropic API key · Powers AI invoice generation, email drafting &amp; reminders</div>
-            </div>
-            <span class="settings-panel-hero-badge" style="background:rgba(139,92,246,.1);color:#8B5CF6;border:1px solid rgba(139,92,246,.2);">Claude</span>
-          </div>
-          <div class="settings-section">
-            <div class="settings-section-title">Anthropic API key</div>
-            <div class="settings-section-desc">Enter your Anthropic API key to enable AI-powered invoice generation, email drafting, T&amp;C writing, and reminder composition. Get a key at <strong style="color:#8B5CF6;">console.anthropic.com</strong>.</div>
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:8px;margin-bottom:16px;">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#8B5CF6" stroke-width="1.5" style="flex-shrink:0;"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
-              <span style="font-size:12px;color:var(--t2);">Your key is stored locally in your browser and never sent to StagePay servers — only to Anthropic directly.</span>
-            </div>
-            <div class="form-group" style="max-width:520px;">
-              <label class="form-label">API Key</label>
-              <div style="display:flex;gap:8px;">
-                <input class="form-input" id="s-api-key" type="password" placeholder="sk-ant-api03-..." style="flex:1;" autocomplete="off">
-                <button class="topbar-btn btn-outline" onclick="document.getElementById('s-api-key').type=document.getElementById('s-api-key').type==='password'?'text':'password'" style="white-space:nowrap;padding:8px 12px;font-size:12px;">Show</button>
-              </div>
-            </div>
-            <div id="api-key-status" style="margin-top:8px;font-size:12px;color:var(--t3);display:none;"></div>
-            <div style="margin-top:16px;display:flex;gap:10px;">
-              <button class="topbar-btn btn-primary" onclick="saveApiKey()">Save key</button>
-              <button class="topbar-btn btn-outline" onclick="testApiKey()" id="test-api-btn">Test connection</button>
-            </div>
-          </div>
-          <div class="settings-section">
-            <div class="settings-section-title">AI model</div>
-            <div class="settings-section-desc">StagePay uses <strong style="color:var(--t2);">claude-sonnet-4-5</strong> for all AI features — fast, accurate, cost-effective.</div>
-            <div style="display:flex;flex-direction:column;gap:8px;max-width:400px;margin-top:8px;">
-              <div style="background:var(--surface);border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;">
-                <div style="width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0;"></div>
-                <div style="flex:1;">
-                  <div style="font-size:13px;font-weight:500;color:var(--t1);">claude-sonnet-4-5</div>
-                  <div style="font-size:11px;color:var(--t3);margin-top:2px;">Invoice generation · Email drafting · Reminders</div>
-                </div>
-                <span class="pill" style="background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.25);">Active</span>
               </div>
             </div>
           </div>
@@ -7604,63 +7552,6 @@ function saveInvoiceDefaults() {
   updatePreview();
   showToast('Invoice defaults saved — VAT set to ' + vat + '%', 'success');
 }
-
-/* ── ANTHROPIC API HELPERS ── */
-function getApiKey() {
-  try { return localStorage.getItem('sp-api-key') || ''; } catch(e) { return ''; }
-}
-
-function getAnthropicHeaders() {
-  const key = getApiKey();
-  const headers = {
-    'Content-Type': 'application/json',
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true',
-  };
-  if (key) headers['x-api-key'] = key;
-  return headers;
-}
-
-function saveApiKey() {
-  const key = document.getElementById('s-api-key').value.trim();
-  if (!key) { showToast('Enter an API key first', 'error'); return; }
-  if (!key.startsWith('sk-ant-')) { showToast('Key should start with sk-ant-…', 'warning'); }
-  try { localStorage.setItem('sp-api-key', key); } catch(e) {}
-  const status = document.getElementById('api-key-status');
-  if (status) { status.style.display = 'block'; status.style.color = 'var(--g)'; status.textContent = '✓ Key saved — AI features are now active.'; }
-  showToast('API key saved', 'success');
-}
-
-async function testApiKey() {
-  const key = getApiKey();
-  if (!key) { showToast('Save an API key first', 'error'); return; }
-  const btn = document.getElementById('test-api-btn');
-  btn.textContent = 'Testing…'; btn.disabled = true;
-  const status = document.getElementById('api-key-status');
-  try {
-    const res = await fetch('/api/ai', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: 'ping' }] })
-    });
-    const d = await res.json();
-    if (d.error) throw new Error(d.error.message);
-    if (status) { status.style.display = 'block'; status.style.color = 'var(--g)'; status.textContent = '✓ Connection successful — AI is ready.'; }
-    showToast('API key is valid', 'success');
-  } catch(e) {
-    if (status) { status.style.display = 'block'; status.style.color = 'var(--danger)'; status.textContent = '✗ ' + (e.message || 'Connection failed — check your key.'); }
-    showToast('API test failed — check key', 'error');
-  } finally { btn.textContent = 'Test connection'; btn.disabled = false; }
-}
-
-// Restore saved API key into the field on load
-(function restoreApiKey() {
-  try {
-    const k = localStorage.getItem('sp-api-key');
-    const field = document.getElementById('s-api-key');
-    if (k && field) { field.value = k; }
-  } catch(e) {}
-})();
 
 init();
 initSettings();
