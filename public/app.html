@@ -53,58 +53,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
-body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);display:flex;font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;cursor:none;}
-a,button,[onclick],input,textarea,select,label{cursor:none!important;}
-
-/* ── CUSTOM CURSOR ── */
-#sp-cursor{
-  position:fixed;
-  width:10px;height:10px;
-  background:var(--g);border-radius:50%;
-  pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 6px 1px rgba(16,185,129,.9),0 0 18px 4px rgba(16,185,129,.4);
-  transition:width .28s cubic-bezier(.34,1.56,.64,1),
-             height .28s cubic-bezier(.34,1.56,.64,1),
-             box-shadow .28s ease,
-             opacity .2s;
-  will-change:left,top;
-}
-#sp-cursor2{
-  position:fixed;
-  width:28px;height:28px;
-  border:1.5px solid rgba(16,185,129,.55);border-radius:50%;
-  pointer-events:none;z-index:9998;
-  transform:translate(-50%,-50%);
-  transition:width .3s cubic-bezier(.34,1.56,.64,1),
-             height .3s cubic-bezier(.34,1.56,.64,1),
-             border-color .25s ease,
-             background-color .25s ease,
-             opacity .2s;
-  will-change:left,top;
-}
-/* JS-driven hover state */
-#sp-cursor.sp-hovering{
-  width:16px;height:16px;
-  box-shadow:0 0 10px 2px rgba(16,185,129,1),0 0 28px 6px rgba(16,185,129,.55);
-}
-#sp-cursor2.sp-hovering{
-  width:44px;height:44px;
-  border-color:rgba(16,185,129,.28);
-  background:rgba(16,185,129,.04);
-}
-/* Light mode adjustments */
-[data-theme="light"] #sp-cursor{
-  background:var(--g);
-  box-shadow:0 0 6px 1px rgba(16,185,129,.7),0 0 16px 4px rgba(16,185,129,.3);
-}
-[data-theme="light"] #sp-cursor.sp-hovering{
-  box-shadow:0 0 10px 2px rgba(16,185,129,.9),0 0 24px 5px rgba(16,185,129,.4);
-}
-[data-theme="light"] #sp-cursor2{border-color:rgba(16,185,129,.4);}
-[data-theme="light"] #sp-cursor2.sp-hovering{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.05);}
-/* Hide on touch */
-@media(hover:none){#sp-cursor,#sp-cursor2{display:none;}body{cursor:auto;}}
+body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);display:flex;font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 
 /* Sand accent utility */
 .sand-tag{background:rgba(232,216,195,.1);color:var(--sand);border:1px solid rgba(232,216,195,.2);border-radius:3px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;}
@@ -1593,8 +1542,6 @@ a,button,[onclick],input,textarea,select,label{cursor:none!important;}
 </head>
 <body>
 
-<div id="sp-cursor"></div>
-<div id="sp-cursor2"></div>
 
 <!-- ── AUTH LAYER ── -->
 <div id="auth-layer">
@@ -6440,7 +6387,7 @@ document.addEventListener('keydown', e => {
 (function() {
   const dot  = document.getElementById('sp-cursor');
   const ring = document.getElementById('sp-cursor2');
-  if (!dot || !ring) return;
+  if (!dot || !ring) return; // cursor removed — default cursor used
 
   /* Tuning — mirrors the React component's smoothness values */
   const DOT_SMOOTHNESS    = 0.22;   // dot tracks cursor closely
