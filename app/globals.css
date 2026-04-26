@@ -11,29 +11,6 @@ html{scroll-behavior:smooth;overflow-x:hidden;}
 body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 ::selection{background:rgba(16,185,129,.3);color:#fff;}
 
-/* ── CURSOR ── */
-#sp-cursor{
-  position:fixed;width:10px;height:10px;
-  background:var(--g);border-radius:50%;
-  pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 6px 1px rgba(16,185,129,.9),0 0 18px 4px rgba(16,185,129,.4);
-  transition:width .28s cubic-bezier(.34,1.56,.64,1),height .28s cubic-bezier(.34,1.56,.64,1),box-shadow .28s ease;
-  will-change:left,top;
-  opacity:0;
-}
-#sp-cursor2{
-  position:fixed;width:28px;height:28px;
-  border:1.5px solid rgba(16,185,129,.55);border-radius:50%;
-  pointer-events:none;z-index:9998;
-  transform:translate(-50%,-50%);
-  transition:width .3s cubic-bezier(.34,1.56,.64,1),height .3s cubic-bezier(.34,1.56,.64,1),border-color .25s ease,background-color .25s ease;
-  will-change:left,top;
-  opacity:0;
-}
-#sp-cursor.sp-hovering{width:16px;height:16px;box-shadow:0 0 10px 2px rgba(16,185,129,1),0 0 28px 6px rgba(16,185,129,.55);}
-#sp-cursor2.sp-hovering{width:44px;height:44px;border-color:rgba(16,185,129,.28);background:rgba(16,185,129,.04);}
-@media(hover:none){#sp-cursor,#sp-cursor2{display:none;}}
 
 /* ── NOISE OVERLAY ── */
 body::after{

@@ -3,56 +3,6 @@ import { useEffect } from 'react'
 
 export default function LandingPage() {
   useEffect(() => {
-    const dot  = document.getElementById('sp-cursor')
-    const ring = document.getElementById('sp-cursor2')
-    if (!dot || !ring) return
-
-    const DOT_SMOOTHNESS    = 0.22
-    const BORDER_SMOOTHNESS = 0.10
-    const mouse   = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-    const dotPos  = { x: mouse.x, y: mouse.y }
-    const ringPos = { x: mouse.x, y: mouse.y }
-
-    let hasMovedOnce = false
-    const onMove = (e: MouseEvent) => {
-      mouse.x = e.clientX
-      mouse.y = e.clientY
-      if (!hasMovedOnce) {
-        hasMovedOnce = true
-        dot.style.opacity = '1'
-        ring.style.opacity = '1'
-      }
-    }
-    document.addEventListener('mousemove', onMove)
-
-    const INTERACTIVE = 'a, button, input, textarea, select, [onclick], [role="button"]'
-    function attachHoverListeners() {
-      document.querySelectorAll(INTERACTIVE).forEach((el: Element) => {
-        const e = el as any
-        if (e._spHover) return
-        e._spHover = true
-        e.addEventListener('mouseenter', () => { dot.classList.add('sp-hovering'); ring.classList.add('sp-hovering') })
-        e.addEventListener('mouseleave', () => { dot.classList.remove('sp-hovering'); ring.classList.remove('sp-hovering') })
-      })
-    }
-    attachHoverListeners()
-    const mutObs = new MutationObserver(attachHoverListeners)
-    mutObs.observe(document.body, { childList: true, subtree: true })
-
-    let raf: number
-    const loop = () => {
-      dotPos.x  += (mouse.x - dotPos.x)  * DOT_SMOOTHNESS
-      dotPos.y  += (mouse.y - dotPos.y)  * DOT_SMOOTHNESS
-      ringPos.x += (mouse.x - ringPos.x) * BORDER_SMOOTHNESS
-      ringPos.y += (mouse.y - ringPos.y) * BORDER_SMOOTHNESS
-      dot.style.left  = dotPos.x  + 'px'
-      dot.style.top   = dotPos.y  + 'px'
-      ring.style.left = ringPos.x + 'px'
-      ring.style.top  = ringPos.y + 'px'
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-
     let lastScroll = 0
     const nav = document.getElementById('nav')
     const onScroll = () => {
@@ -70,19 +20,13 @@ export default function LandingPage() {
     buildBackgroundPaths()
 
     return () => {
-      document.removeEventListener('mousemove', onMove)
       window.removeEventListener('scroll', onScroll)
-      cancelAnimationFrame(raf)
       obs.disconnect()
-      mutObs.disconnect()
     }
   }, [])
 
   return (
     <>
-      <div id="sp-cursor"></div>
-      <div id="sp-cursor2"></div>
-
       <nav id="nav">
         <div className="nav-inner">
           <a href="#" className="nav-logo">
