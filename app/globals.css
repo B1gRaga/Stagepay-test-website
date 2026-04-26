@@ -33,8 +33,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);overf
 }
 #sp-cursor.sp-hovering{width:16px;height:16px;box-shadow:0 0 10px 2px rgba(16,185,129,1),0 0 28px 6px rgba(16,185,129,.55);}
 #sp-cursor2.sp-hovering{width:44px;height:44px;border-color:rgba(16,185,129,.28);background:rgba(16,185,129,.04);}
-@media(hover:none){#sp-cursor,#sp-cursor2{display:none;}body{cursor:auto;}}
-@media(hover:hover){body{cursor:none;}a,button,input,select,textarea,label,[role="button"]{cursor:none!important;}}
+@media(hover:none){#sp-cursor,#sp-cursor2{display:none;}}
 
 /* ── NOISE OVERLAY ── */
 body::after{
