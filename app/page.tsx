@@ -45,7 +45,7 @@ export default function LandingPage() {
             <a href="#pricing">Pricing</a>
           </div>
           <div className="nav-right">
-            <a href="#" className="nav-btn nav-btn-ghost">Sign in</a>
+            <a href="/app" className="nav-btn nav-btn-ghost">Sign in</a>
             <a href="/app" className="nav-btn nav-btn-solid">Start free</a>
           </div>
         </div>

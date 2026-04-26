@@ -1652,7 +1652,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
           </div>
           <div class="auth-input-group">
             <label>Full name</label>
-            <input class="auth-input" id="s-fullname" type="text" placeholder="e.g. Kgosi Moitoi" autocomplete="name">
+            <input class="auth-input" id="s-fullname" type="text" placeholder="e.g. Jane Smith" autocomplete="name">
           </div>
           <div class="auth-input-group">
             <label>Email address</label>
@@ -1686,7 +1686,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
           </div>
           <div class="auth-input-group">
             <label>Business / Firm name</label>
-            <input class="auth-input" id="s-bizname" type="text" placeholder="e.g. Kgosi Engineering">
+            <input class="auth-input" id="s-bizname" type="text" placeholder="e.g. Acme Corp">
           </div>
           <div class="auth-input-group">
             <label>Industry</label>
@@ -1880,10 +1880,10 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
       <span style="font-size:10px;color:var(--t3);">Close modal</span>
     </div>
     <div class="user-pill" onclick="switchView('settings',document.querySelectorAll('.nav-item')[6])">
-      <div class="user-av" id="sidebar-av">KE</div>
+      <div class="user-av" id="sidebar-av"></div>
       <div>
-        <div class="user-name" id="sidebar-name">Kgosi Eng.</div>
-        <div class="user-plan" id="sidebar-plan">Pro Plan</div>
+        <div class="user-name" id="sidebar-name">Your Business</div>
+        <div class="user-plan" id="sidebar-plan">Starter</div>
       </div>
     </div>
     <button onclick="doLogout()" style="width:100%;margin-top:6px;background:transparent;border:1px solid var(--line);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--t3);cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;font-family:'Archivo',sans-serif;" onmouseover="this.style.borderColor='rgba(224,85,64,.3)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--t3)'">
@@ -2390,7 +2390,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                   <div>
                     <div class="prev-section-label">From</div>
                     <div class="prev-name" id="prev-firm-name">Your Firm</div>
-                    <div class="prev-detail" id="prev-firm-detail">Gaborone, Botswana<br>kgosi@engineering.co.bw</div>
+                    <div class="prev-detail" id="prev-firm-detail"></div>
                   </div>
                   <div>
                     <div class="prev-section-label">Bill to</div>
@@ -2906,7 +2906,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
             <div class="form-grid" style="max-width:520px;">
               <div class="form-group full">
                 <label class="form-label">Business / Firm name</label>
-                <input class="form-input" id="s-firm-name" value="Kgosi Engineering" oninput="updateLivePreview();updatePreview()">
+                <input class="form-input" id="s-firm-name" placeholder="Your business name" oninput="updateLivePreview();updatePreview()">
               </div>
               <div class="form-group full">
                 <label class="form-label">Trading name / Tagline (optional)</label>
@@ -2914,15 +2914,15 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               </div>
               <div class="form-group">
                 <label class="form-label">Email address</label>
-                <input class="form-input" id="s-email" type="email" value="kgosi@engineering.co.bw" oninput="updatePreview()">
+                <input class="form-input" id="s-email" type="email" placeholder="your@email.com" oninput="updatePreview()">
               </div>
               <div class="form-group">
                 <label class="form-label">Phone number</label>
-                <input class="form-input" id="s-phone" value="+267 71 234 567">
+                <input class="form-input" id="s-phone" placeholder="e.g. +1 555 123 4567">
               </div>
               <div class="form-group full">
                 <label class="form-label">Physical address</label>
-                <input class="form-input" id="s-address" value="Plot 1234, CBD, Gaborone, Botswana" oninput="updatePreview()">
+                <input class="form-input" id="s-address" placeholder="Your business address" oninput="updatePreview()">
               </div>
               <div class="form-group">
                 <label class="form-label">Company reg. number</label>
@@ -3177,7 +3177,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               </div>
               <div class="form-group">
                 <label class="form-label">Account name</label>
-                <input class="form-input" id="s-bank-acc-name" placeholder="e.g. Kgosi Engineering Pty Ltd">
+                <input class="form-input" id="s-bank-acc-name" placeholder="e.g. Acme Corp Pty Ltd">
               </div>
               <div class="form-group">
                 <label class="form-label">Account number</label>
@@ -4257,7 +4257,7 @@ function updatePreview(){
   const firmDetailEl = document.getElementById('prev-firm-detail');
   if(firmNameEl)   firmNameEl.textContent = document.getElementById('s-firm-name')?.value || 'Your Firm';
   if(firmDetailEl){
-    const addr  = document.getElementById('s-address')?.value || 'Gaborone, Botswana';
+    const addr  = document.getElementById('s-address')?.value || '';
     const email = document.getElementById('s-email')?.value   || '';
     firmDetailEl.innerHTML = addr + (email ? '<br>' + email : '');
   }
@@ -5898,7 +5898,7 @@ let selectedPlan = 'free';
 
 // Simple in-memory user store (in production: real backend / Supabase / Firebase)
 const userStore = {
-  'demo@stagepay.co.bw': { password: 'demo1234', name: 'Kgosi Moitoi', firm: 'Kgosi Engineering', plan: 'pro', initials: 'KM' },
+  'demo@stagepay.co': { password: 'demo1234', name: 'Demo User', firm: 'Demo Business', plan: 'pro', initials: 'DB' },
 };
 
 function showAuthTab(tab) {
@@ -6230,7 +6230,7 @@ function doGoogleAuth() {
   btn.disabled = true;
   btn.textContent = 'Connecting...';
   setTimeout(() => {
-    currentUser = { email: 'demo@stagepay.co.bw', name: 'Kgosi Moitoi', firm: 'Kgosi Engineering', plan: 'pro', initials: 'KM' };
+    currentUser = { email: 'demo@stagepay.co', name: 'Demo User', firm: 'Demo Business', plan: 'pro', initials: 'DB' };
     enterApp(currentUser);
   }, 1100);
 }
@@ -6343,9 +6343,11 @@ function enterApp(user) {
   document.getElementById('sidebar-name').textContent = user.firm || user.name;
   document.getElementById('sidebar-plan').textContent = user.plan === 'pro' ? 'Pro Plan' : 'Starter';
 
-  // Sync firm name to settings and preview
+  // Sync user info to settings fields
   const firmInput = document.getElementById('s-firm-name');
-  if(firmInput && user.firm) firmInput.value = user.firm;
+  if(firmInput) firmInput.value = user.firm || '';
+  const emailInput = document.getElementById('s-email');
+  if(emailInput && user.email) emailInput.value = user.email;
 
   // Slide out auth after 2.2s
   setTimeout(() => {
@@ -6356,6 +6358,10 @@ function enterApp(user) {
     setTimeout(() => {
       document.getElementById('auth-success').classList.remove('show');
       document.querySelectorAll('.auth-tabs').forEach(t => t.style.display='');
+      // Nudge user to complete their business profile if firm name is missing
+      if (!user.firm) {
+        setTimeout(() => showToast('Welcome! Head to Settings to add your business info.', 'info'), 800);
+      }
     }, 600);
   }, 2200);
 }
@@ -7170,7 +7176,7 @@ function _buildStatement(clientName, clientInvs) {
 
 /* ── DEMO FILL ── */
 function fillDemo() {
-  document.getElementById('l-email').value    = 'demo@stagepay.co.bw';
+  document.getElementById('l-email').value    = 'demo@stagepay.co';
   document.getElementById('l-password').value = 'demo1234';
   showToast('Demo credentials filled — click Sign in','info');
 }
@@ -7689,9 +7695,11 @@ initSettings();
     document.getElementById('sidebar-av').textContent   = user.initials || user.name.substring(0,2).toUpperCase();
     document.getElementById('sidebar-name').textContent = user.firm || user.name;
     document.getElementById('sidebar-plan').textContent = user.plan === 'pro' ? 'Pro Plan' : 'Starter';
-    // Sync firm name into settings + preview
+    // Sync user info into settings + preview
     const firmInput = document.getElementById('s-firm-name');
-    if (firmInput && user.firm) firmInput.value = user.firm;
+    if (firmInput) firmInput.value = user.firm || '';
+    const emailInput = document.getElementById('s-email');
+    if (emailInput && user.email) emailInput.value = user.email;
     // Hide auth layer immediately
     document.getElementById('auth-layer').classList.add('hidden');
     updatePreview();
