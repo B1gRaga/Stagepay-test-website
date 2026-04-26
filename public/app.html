@@ -3947,32 +3947,11 @@ function saveSessionTimeout() {
 );
 
 /* ── DATA ── */
-let invoices = [
-  {id:'INV-054',client:'Molapo Tower Ltd.',project:'Structural Review Ph.2',date:'2025-04-10',due:'2025-05-10',amount:46056,status:'paid',color:'#10B981'},
-  {id:'INV-053',client:'BW Renewable Energy',project:'Consulting Retainer — Aug',date:'2025-04-08',due:'2025-05-08',amount:37734,status:'pending',color:'#3B82F6'},
-  {id:'INV-052',client:'Greenway Consulting',project:'Workshop Facilitation',date:'2025-03-28',due:'2025-04-28',amount:24000,status:'pending',color:'#F59E0B',views:3,lastViewed:'14:32 today'},
-  {id:'INV-051',client:'Apex Design Co.',project:'Brand Strategy Sessions',date:'2025-03-15',due:'2025-04-01',amount:11400,status:'overdue',color:'#EF4444'},
-  {id:'INV-050',client:'Northside Properties',project:'Site Inspection Report',date:'2025-03-10',due:'2025-03-31',amount:8750,status:'overdue',color:'#EF4444'},
-  {id:'INV-049',client:'Francistown Municipality',project:'Urban Planning Study',date:'2025-03-01',due:'2025-04-01',amount:62000,status:'paid',color:'#10B981'},
-  {id:'INV-048',client:'Kalahari Solar Ltd.',project:'Feasibility Assessment',date:'2025-02-20',due:'2025-03-22',amount:18900,status:'paid',color:'#10B981'},
-  {id:'INV-047',client:'Apex Design Co.',project:'Identity System Design',date:'2025-02-10',due:'2025-03-10',amount:14500,status:'draft',color:'#64748B'},
-];
+let invoices = [];
 
-let clients = [
-  {name:'Molapo Tower Ltd.',type:'Engineering company',email:'projects@molap.co.bw',phone:'+26771234567',invoices:3,total:92056,color:'#10B981',initials:'MT'},
-  {name:'BW Renewable Energy',type:'Government / Parastatal',email:'finance@bwrenew.co.bw',phone:'+26772345678',invoices:2,total:67734,color:'#3B82F6',initials:'BR'},
-  {name:'Greenway Consulting',type:'Consulting firm',email:'admin@greenway.co.bw',phone:'+26773456789',invoices:4,total:108000,color:'#F59E0B',initials:'GC'},
-  {name:'Apex Design Co.',type:'Design agency',email:'billing@apexdesign.co.bw',phone:'+26774567890',invoices:3,total:25900,color:'#EF4444',initials:'AD'},
-  {name:'Northside Properties',type:'Contractor',email:'accounts@northside.co.bw',phone:'+26775678901',invoices:1,total:8750,color:'#E8D8C3',initials:'NP'},
-  {name:'Francistown Municipality',type:'Government / Parastatal',email:'projects@francistown.gov.bw',phone:'+26776789012',invoices:5,total:162000,color:'#10B981',initials:'FM'},
-];
+let clients = [];
 
-let expenses = [
-  {id:'EXP-001',date:'2025-04-15',desc:'Office rent — April',     category:'Overhead',      amount:3500},
-  {id:'EXP-002',date:'2025-04-10',desc:'Adobe Creative Cloud',     category:'Software',      amount:299},
-  {id:'EXP-003',date:'2025-03-28',desc:'Client lunch — Molapo',    category:'Entertainment', amount:380},
-  {id:'EXP-004',date:'2025-03-20',desc:'Replacement laptop charger',category:'Equipment',     amount:850},
-];
+let expenses = [];
 
 let lineItems = [];
 let currentFilter = 'all';
@@ -6374,6 +6353,10 @@ function doLogout() {
   document.getElementById('l-email').value    = '';
   document.getElementById('l-password').value = '';
   document.getElementById('auth-error').classList.remove('show');
+  // Reset the success state so the tick/You're in screen doesn't persist
+  document.getElementById('auth-success').classList.remove('show');
+  document.getElementById('success-bar').style.width = '0%';
+  document.querySelectorAll('.auth-tabs').forEach(t => t.style.display = '');
   document.getElementById('auth-layer').classList.remove('hidden');
   showAuthTab('login');
   switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
