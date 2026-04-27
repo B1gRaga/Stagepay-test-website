@@ -1256,9 +1256,9 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 .notif-left{}
 .notif-label{font-size:13px;font-weight:500;color:var(--t1);}
 .notif-desc{font-size:11px;color:var(--t3);margin-top:2px;}
-.plan-card{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.plan-card{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
 .plan-card.current{border-color:rgba(16,185,129,.3);background:var(--g-dim);}
-.plan-name{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--t1);}
+.plan-name{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--t1);}
 .plan-price-sm{font-size:12px;color:var(--t3);}
 .plan-features-sm{display:flex;flex-direction:column;gap:3px;margin-top:6px;}
 .plan-features-sm span{font-size:12px;color:var(--t2);}
@@ -3340,7 +3340,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
           <div class="settings-section">
             <div class="settings-section-title">Your plan</div>
             <div class="settings-section-desc" id="plan-desc-text">Loading plan info…</div>
-            <div style="display:flex;flex-direction:column;gap:10px;max-width:480px;margin-top:4px;" id="plan-cards"></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;" id="plan-cards"></div>
           </div>
           <div class="settings-section">
             <div class="settings-section-title">Usage this month
@@ -4009,15 +4009,15 @@ function refreshPlanPanel() {
     ];
     cardsEl.innerHTML = allPlans.map(p => `
       <div class="plan-card${p.id===plan?' current':''}">
-        <div style="flex:1;">
-          <div class="plan-name">${p.label}${p.id===plan?' <span style="font-size:12px;font-weight:400;font-family:\'Archivo\',sans-serif;color:var(--g);">· Current</span>':''}</div>
-          <div class="plan-price-sm">${p.price} <span style="font-size:10px;color:var(--g);">${p.yearly}</span></div>
-          <div class="plan-features-sm" style="margin-top:6px;"><span>${p.sub}</span></div>
+        <div class="plan-name">${p.label}</div>
+        <div class="plan-price-sm" style="line-height:1.4;">${p.price}${p.yearly?`<br><span style="font-size:10px;color:var(--g);">${p.yearly}</span>`:''}</div>
+        <div style="font-size:11px;color:var(--t3);flex:1;line-height:1.5;">${p.sub}</div>
+        <div style="margin-top:4px;">
+          ${p.id===plan
+            ? '<span class="pill pill-paid" style="font-size:10px;padding:2px 8px;">Active</span>'
+            : `<button class="topbar-btn ${p.id==='business'?'btn-outline':'btn-primary'}" style="font-size:11px;padding:5px 10px;width:100%;" onclick="showToast('Payments launching soon!','info')">Upgrade</button>`
+          }
         </div>
-        ${p.id===plan
-          ? '<span class="pill pill-paid">Active</span>'
-          : `<button class="topbar-btn ${p.id==='business'?'btn-outline':'btn-primary'}" style="font-size:12px;" onclick="showToast('Payments launching soon!','info')">Upgrade</button>`
-        }
       </div>`).join('');
   }
 
@@ -5981,6 +5981,17 @@ let selectedPlan = 'free';
 const userStore = {
   'demo@stagepay.co': { password: 'demo1234', name: 'Demo User', firm: 'Demo Business', plan: 'business', initials: 'DB' },
 };
+// Restore accounts created in previous sessions
+(function() {
+  try { Object.assign(userStore, JSON.parse(localStorage.getItem('sp-accounts') || '{}')); } catch(e) {}
+})();
+function _saveUserStore() {
+  try {
+    const out = {};
+    Object.keys(userStore).forEach(k => { if (k !== 'demo@stagepay.co') out[k] = userStore[k]; });
+    localStorage.setItem('sp-accounts', JSON.stringify(out));
+  } catch(e) {}
+}
 
 function showAuthTab(tab) {
   document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
@@ -6209,7 +6220,7 @@ async function confirmEnable2FA() {
   errEl.style.display = 'none';
   // Persist to userStore
   const storeUser = userStore[currentUser.email];
-  if (storeUser) { storeUser.totpSecret = _newTOTPSecret; storeUser.twoFAEnabled = true; }
+  if (storeUser) { storeUser.totpSecret = _newTOTPSecret; storeUser.twoFAEnabled = true; _saveUserStore(); }
   currentUser.twoFAEnabled = true;
   _newTOTPSecret = null;
   document.getElementById('tfa-setup-wrap').style.display = 'none';
@@ -6226,7 +6237,7 @@ function disable2FA() {
   if (!currentUser) return;
   if (!confirm('Disable two-factor authentication? This will make your account less secure.')) return;
   const storeUser = userStore[currentUser.email];
-  if (storeUser) { storeUser.twoFAEnabled = false; delete storeUser.totpSecret; }
+  if (storeUser) { storeUser.twoFAEnabled = false; delete storeUser.totpSecret; _saveUserStore(); }
   currentUser.twoFAEnabled = false;
   document.getElementById('tfa-recovery-wrap').style.display = 'none';
   _refreshTFAStatusUI();
@@ -6422,6 +6433,7 @@ function doSignup() {
     const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);
     const newUser = { password: pw, name, firm, plan: selectedPlan, initials };
     userStore[email] = newUser;
+    _saveUserStore();
     currentUser = { email, ...newUser };
     enterApp(currentUser);
   }, 1200);
