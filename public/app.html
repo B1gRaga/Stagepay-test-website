@@ -6339,6 +6339,13 @@ async function doLogin() {
   const { data, error } = await _supa.auth.signInWithPassword({ email, password: pw });
 
   if (error) {
+    const isConfirmErr = error.message?.toLowerCase().includes('confirm') || error.message?.toLowerCase().includes('not confirmed');
+    if (isConfirmErr) {
+      showAuthError('Please confirm your email first — check your inbox for a confirmation link.');
+      btn.disabled = false;
+      btn.innerHTML = 'Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+      return;
+    }
     loginAttempts++;
     if (loginAttempts >= LOGIN_MAX_ATTEMPTS) {
       loginLockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
@@ -6399,7 +6406,7 @@ async function doGoogleAuth() {
   btn.innerHTML = '<div class="spinner"></div> Connecting to Google...';
   const { error } = await _supa.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: window.location.origin + window.location.pathname }
   });
   if (error) {
     btn.disabled = false;
@@ -6504,7 +6511,7 @@ async function doSignup() {
 async function showForgotPw() {
   const email = document.getElementById('l-email').value.trim().toLowerCase();
   if (!email) { showAuthError('Enter your email above first.'); return; }
-  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
   const errEl = document.getElementById('auth-error');
   errEl.classList.add('show');
   if (error) {
@@ -7864,8 +7871,36 @@ function saveInvoiceDefaults() {
 init();
 initSettings();
 
+async function doPasswordReset() {
+  const pw      = document.getElementById('rp-pw').value;
+  const confirm = document.getElementById('rp-pw-confirm').value;
+  const errEl   = document.getElementById('rp-error');
+  errEl.style.display = 'none';
+  if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  if (pw !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+  const { error } = await _supa.auth.updateUser({ password: pw });
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  document.getElementById('reset-pw-modal').classList.add('hidden');
+  showToast('Password updated — please sign in.', 'success');
+  await _supa.auth.signOut();
+}
+
 // ── SESSION RESTORE ──
 (async function restoreSession() {
+  // Handle password reset / email confirmation token in URL hash
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  if (hash.get('type') === 'recovery') {
+    // Let Supabase pick up the recovery session from the hash
+    await _supa.auth.getSession();
+    history.replaceState(null, '', window.location.pathname);
+    document.getElementById('reset-pw-modal').classList.remove('hidden');
+    return;
+  }
+  // Clear hash tokens from URL after OAuth callback
+  if (hash.get('access_token')) {
+    history.replaceState(null, '', window.location.pathname);
+  }
+
   const { data: { session } } = await _supa.auth.getSession();
   if (!session) return;
 
@@ -7895,6 +7930,33 @@ initSettings();
   buildCharts(); refreshPlanPanel(); _resetSessionTimer();
 })();
 </script>
+<!-- ── PASSWORD RESET MODAL ── -->
+<div class="modal hidden" id="reset-pw-modal" style="z-index:9999;">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title">Set new password</div>
+    </div>
+    <div class="modal-body" style="padding:20px 24px 24px;display:flex;flex-direction:column;gap:14px;">
+      <div class="auth-input-group">
+        <label>New password</label>
+        <div style="position:relative;">
+          <input class="auth-input" id="rp-pw" type="password" placeholder="At least 8 characters" style="padding-right:42px;">
+          <button onclick="togglePw('rp-pw',this)" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);">👁</button>
+        </div>
+      </div>
+      <div class="auth-input-group">
+        <label>Confirm password</label>
+        <div style="position:relative;">
+          <input class="auth-input" id="rp-pw-confirm" type="password" placeholder="Re-enter your password" style="padding-right:42px;">
+          <button onclick="togglePw('rp-pw-confirm',this)" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);">👁</button>
+        </div>
+      </div>
+      <div id="rp-error" style="display:none;font-size:12px;color:var(--danger);padding:8px 12px;background:rgba(239,68,68,.08);border-radius:6px;border:1px solid rgba(239,68,68,.2);"></div>
+      <button class="topbar-btn btn-primary" style="width:100%;padding:12px;font-size:14px;" onclick="doPasswordReset()">Save new password</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MOBILE BOTTOM TAB BAR ── -->
 <nav class="mobile-tabbar" id="mobile-tabbar">
   <button class="mob-tab active" id="mobtab-dashboard" onclick="mobSwitch('dashboard',this)">
