@@ -3965,16 +3965,6 @@ function getMonthlyInvoiceCount() {
   return invoices.filter(i => i.date && i.date.startsWith(ym)).length;
 }
 
-function checkInvoiceLimit() {
-  const plan = currentUser?.plan || 'free';
-  const limit = PLAN_LIMITS[plan] ?? 2;
-  if (limit === Infinity) return true;
-  if (getMonthlyInvoiceCount() >= limit) {
-    document.getElementById('upgrade-modal').classList.remove('hidden');
-    return false;
-  }
-  return true;
-}
 
 /* ── PLAN PANEL REFRESH ── */
 function refreshPlanPanel() {
@@ -4771,7 +4761,6 @@ function doSendEmail() {
 
   if (!to) { showToast('Enter a recipient email address', 'error'); return; }
   if (!subject) { showToast('Add a subject line', 'error'); return; }
-  if (!checkInvoiceLimit()) return;
 
   const btn = document.getElementById('em-send-btn');
   btn.textContent = 'Sending...';
@@ -7816,45 +7805,6 @@ initSettings();
   } catch(e) { /* corrupt storage — ignore */ }
 })();
 </script>
-<!-- ── UPGRADE MODAL ── -->
-<div class="modal hidden" id="upgrade-modal">
-  <div class="modal-box" style="max-width:460px;">
-    <div class="modal-header">
-      <div class="modal-title">You've reached your free limit</div>
-      <button class="modal-close" onclick="document.getElementById('upgrade-modal').classList.add('hidden')">✕</button>
-    </div>
-    <div class="modal-body" style="padding:20px 24px 24px;">
-      <p style="font-size:13px;color:var(--t2);margin-bottom:20px;">The <strong>Starter</strong> plan allows <strong>2 invoices per month</strong>. Upgrade to create unlimited invoices and unlock all features.</p>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div style="background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div style="font-weight:600;font-size:13px;color:var(--t1);">Pro</div>
-            <div style="font-size:11px;color:var(--t3);margin-top:2px;">Unlimited invoices · AI · Reminders</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g);">P200</div>
-            <div style="font-size:10px;color:var(--t3);">/month</div>
-          </div>
-        </div>
-        <div style="background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div style="font-weight:600;font-size:13px;color:var(--t1);">Business</div>
-            <div style="font-size:11px;color:var(--t3);margin-top:2px;">Everything in Pro · 3 seats · Priority support</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--t1);">P500</div>
-            <div style="font-size:10px;color:var(--t3);">/month</div>
-          </div>
-        </div>
-      </div>
-      <button class="topbar-btn btn-primary" style="width:100%;margin-top:16px;padding:12px;" onclick="document.getElementById('upgrade-modal').classList.add('hidden');switchView('settings',document.querySelectorAll('.nav-item')[6]);switchSettingsPanel('plan',document.querySelectorAll('.settings-nav-item')[2])">
-        View plans &amp; upgrade
-      </button>
-      <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:10px;">Payments launching soon — check back shortly.</div>
-    </div>
-  </div>
-</div>
-
 <!-- ── MOBILE BOTTOM TAB BAR ── -->
 <nav class="mobile-tabbar" id="mobile-tabbar">
   <button class="mob-tab active" id="mobtab-dashboard" onclick="mobSwitch('dashboard',this)">
