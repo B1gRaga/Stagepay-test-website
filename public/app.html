@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StagePay — App</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   /* ── Brand greens (kept, slightly shifted to muted emerald) ── */
@@ -3876,6 +3877,73 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 </div>
 
 <script>
+/* ── SUPABASE ── */
+const _supa = supabase.createClient(
+  'https://tvpbshjrbtqreunxnpuv.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cGJzaGpyYnRxcmV1bnhucHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzU0MjQsImV4cCI6MjA5Mjg1MTQyNH0.VBf1Pv9rkLeDAuj2M4OEOYVt7w42k9ZhowyU-1eyLwY'
+);
+
+async function _loadUserData(userId) {
+  const [invRes, cliRes, expRes] = await Promise.all([
+    _supa.from('invoices').select('*').order('created_at', {ascending: false}),
+    _supa.from('clients').select('*').order('name'),
+    _supa.from('expenses').select('*').order('date', {ascending: false}),
+  ]);
+  invoices = (invRes.data || []).map(r => ({
+    _dbid: r.id, id: r.inv_number, client: r.client, project: r.project,
+    date: r.date, due: r.due, amount: r.amount, status: r.status,
+    color: r.color || '#64748B',
+    initials: r.initials || (r.client||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
+  }));
+  clients = (cliRes.data || []).map(r => ({
+    _dbid: r.id, name: r.name, email: r.email, phone: r.phone, city: r.city,
+    type: r.currency || 'BWP', invoices: 0, total: 0,
+    color: '#10B981',
+    initials: (r.initials || (r.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2))
+  }));
+  expenses = (expRes.data || []).map(r => ({
+    _dbid: r.id, id: r.exp_number || r.id, desc: r.description,
+    category: r.category, amount: r.amount, date: r.date, vendor: r.vendor || ''
+  }));
+}
+
+function _dbSaveInvoice(inv) {
+  if (!currentUser?.id) return;
+  _supa.from('invoices').upsert({
+    user_id: currentUser.id, inv_number: inv.id, client: inv.client,
+    project: inv.project, date: inv.date, due: inv.due, amount: inv.amount,
+    status: inv.status, color: inv.color, initials: inv.initials
+  }, { onConflict: 'user_id,inv_number' });
+}
+
+function _dbUpdateInvoiceStatus(invNumber, status, color) {
+  if (!currentUser?.id) return;
+  _supa.from('invoices').update({ status, color })
+    .eq('user_id', currentUser.id).eq('inv_number', invNumber);
+}
+
+function _dbSaveClient(cli) {
+  if (!currentUser?.id) return;
+  _supa.from('clients').insert({
+    user_id: currentUser.id, name: cli.name, email: cli.email,
+    phone: cli.phone, city: cli.city, currency: cli.type
+  });
+}
+
+function _dbSaveExpense(exp) {
+  if (!currentUser?.id) return;
+  _supa.from('expenses').insert({
+    user_id: currentUser.id, exp_number: exp.id,
+    description: exp.desc, category: exp.category,
+    amount: exp.amount, date: exp.date, vendor: exp.vendor || ''
+  }).then(({data}) => { if (data?.[0]) exp._dbid = data[0].id; });
+}
+
+function _dbDeleteExpense(exp) {
+  if (!currentUser?.id || !exp._dbid) return;
+  _supa.from('expenses').delete().eq('id', exp._dbid);
+}
+
 /* ── SECURITY UTILS ── */
 function esc(s) {
   return String(s == null ? '' : s)
@@ -4218,12 +4286,14 @@ function saveClient(){
   const colors=['#10B981','#3B82F6','#F59E0B','#E8D8C3','#EF4444','#059669'];
   const phone=document.getElementById('mc-phone').value.trim();
   const city=document.getElementById('mc-city').value.trim();
-  clients.push({
+  const newClient = {
     name, type:document.getElementById('mc-type').value,
     email:document.getElementById('mc-email').value,
     phone, city, invoices:0, total:0,
     color:colors[clients.length%colors.length], initials
-  });
+  };
+  clients.push(newClient);
+  _dbSaveClient(newClient);
   renderClients();
   renderClientPills();
   closeModal();
@@ -4773,7 +4843,7 @@ function doSendEmail() {
     if (!existing) {
       const cur   = document.getElementById('f-currency').value;
       const total = document.getElementById('prev-total').textContent;
-      invoices.unshift({
+      const newInv = {
         id: invnum, client,
         project: document.getElementById('f-project').value || 'Professional Services',
         date: document.getElementById('f-date').value,
@@ -4781,10 +4851,13 @@ function doSendEmail() {
         amount: parseFloat(total.replace(/[^0-9.]/g, '')),
         status: 'pending', color: '#3B82F6',
         initials: client.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
-      });
+      };
+      invoices.unshift(newInv);
+      _dbSaveInvoice(newInv);
     } else if (existing.status === 'draft') {
       existing.status = 'pending';
       existing.color  = '#3B82F6';
+      _dbUpdateInvoiceStatus(existing.id, 'pending', '#3B82F6');
     }
 
     // Bump invoice number in form AND settings
@@ -4843,13 +4916,15 @@ function _persistDraft() {
   const existingIdx = invoices.findIndex(i => i.id === invnum && i.status === 'draft');
   if (existingIdx > -1) invoices.splice(existingIdx, 1);
 
-  invoices.unshift({
+  const draftInv = {
     id: invnum, client, project,
     date: document.getElementById('f-date')?.value || new Date().toISOString().split('T')[0],
     due:  document.getElementById('f-due')?.value  || '',
     amount: total, status: 'draft', color: '#64748B',
     initials: client.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
-  });
+  };
+  invoices.unshift(draftInv);
+  _dbSaveInvoice(draftInv);
 
   renderDashInvoices(); updateDashStats(); renderActionRequired(); renderActivityFeed();
   renderInvoiceTable();
@@ -5691,7 +5766,7 @@ Tone: ${toneMap[tone]}`
 function markAsPaid() {
   if (!activeReminderInv) return;
   const inv = invoices.find(i => i.id === activeReminderInv.id);
-  if (inv) { inv.status = 'paid'; inv.color = '#10B981'; }
+  if (inv) { inv.status = 'paid'; inv.color = '#10B981'; _dbUpdateInvoiceStatus(inv.id, 'paid', '#10B981'); }
   const paidInv = activeReminderInv;
   closeReminderModal();
   renderRemindersTable();
@@ -5966,21 +6041,9 @@ function initSettings() {
 let currentUser = null;
 let selectedPlan = 'free';
 
-// Simple in-memory user store (in production: real backend / Supabase / Firebase)
-const userStore = {
-  'demo@stagepay.co': { password: 'demo1234', name: 'Demo User', firm: 'Demo Business', plan: 'business', initials: 'DB' },
-};
-// Restore accounts created in previous sessions
-(function() {
-  try { Object.assign(userStore, JSON.parse(localStorage.getItem('sp-accounts') || '{}')); } catch(e) {}
-})();
-function _saveUserStore() {
-  try {
-    const out = {};
-    Object.keys(userStore).forEach(k => { if (k !== 'demo@stagepay.co') out[k] = userStore[k]; });
-    localStorage.setItem('sp-accounts', JSON.stringify(out));
-  } catch(e) {}
-}
+// Demo account credentials (bypasses Supabase — no real account needed)
+const _DEMO_EMAIL = 'demo@stagepay.co';
+const _DEMO_PW    = 'demo1234';
 
 function showAuthTab(tab) {
   document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
@@ -6129,8 +6192,7 @@ let _newTOTPSecret = null;
 let _recoveryCodes = [];
 
 function _refreshTFAStatusUI() {
-  const user = currentUser ? userStore[currentUser.email] : null;
-  const on = !!(user?.twoFAEnabled && user?.totpSecret);
+  const on = !!(currentUser?.twoFAEnabled && currentUser?.totpSecret);
   const dot   = document.getElementById('tfa-status-dot');
   const label = document.getElementById('tfa-status-label');
   const sub   = document.getElementById('tfa-status-sub');
@@ -6207,10 +6269,11 @@ async function confirmEnable2FA() {
     return;
   }
   errEl.style.display = 'none';
-  // Persist to userStore
-  const storeUser = userStore[currentUser.email];
-  if (storeUser) { storeUser.totpSecret = _newTOTPSecret; storeUser.twoFAEnabled = true; _saveUserStore(); }
   currentUser.twoFAEnabled = true;
+  currentUser.totpSecret = _newTOTPSecret;
+  if (currentUser.id) {
+    _supa.from('profiles').update({ twoFAEnabled: true, totpSecret: _newTOTPSecret }).eq('id', currentUser.id);
+  }
   _newTOTPSecret = null;
   document.getElementById('tfa-setup-wrap').style.display = 'none';
   // Generate recovery codes
@@ -6225,9 +6288,11 @@ async function confirmEnable2FA() {
 function disable2FA() {
   if (!currentUser) return;
   if (!confirm('Disable two-factor authentication? This will make your account less secure.')) return;
-  const storeUser = userStore[currentUser.email];
-  if (storeUser) { storeUser.twoFAEnabled = false; delete storeUser.totpSecret; _saveUserStore(); }
   currentUser.twoFAEnabled = false;
+  delete currentUser.totpSecret;
+  if (currentUser.id) {
+    _supa.from('profiles').update({ twoFAEnabled: false, totpSecret: null }).eq('id', currentUser.id);
+  }
   document.getElementById('tfa-recovery-wrap').style.display = 'none';
   _refreshTFAStatusUI();
   showToast('2FA has been disabled', 'warn');
@@ -6244,10 +6309,9 @@ function copyRecoveryCodes() {
 }
 
 /* ── LOGIN ── */
-function doLogin() {
+async function doLogin() {
   clearAuthError();
 
-  // Rate limiting check
   if (Date.now() < loginLockedUntil) {
     const minsLeft = Math.ceil((loginLockedUntil - Date.now()) / 60000);
     showAuthError(`Too many failed attempts. Try again in ${minsLeft} minute${minsLeft > 1 ? 's' : ''}.`);
@@ -6256,7 +6320,6 @@ function doLogin() {
 
   const email = document.getElementById('l-email').value.trim().toLowerCase();
   const pw    = document.getElementById('l-password').value;
-
   if (!email) { showAuthError('Please enter your email address.'); return; }
   if (!pw)    { showAuthError('Please enter your password.'); return; }
 
@@ -6264,45 +6327,43 @@ function doLogin() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Signing in...';
 
-  setTimeout(() => {
-    const user = userStore[email];
-    if (!user || user.password !== pw) {
-      loginAttempts++;
-      if (loginAttempts >= LOGIN_MAX_ATTEMPTS) {
-        loginLockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
-        loginAttempts = 0;
-        showAuthError('Account locked for 10 minutes after too many failed attempts.');
-      } else {
-        const remaining = LOGIN_MAX_ATTEMPTS - loginAttempts;
-        showAuthError(`Incorrect email or password. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`);
-      }
-      btn.disabled = false;
-      btn.innerHTML = 'Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
-      return;
-    }
-    // Successful credential check — reset attempt counter
+  // Demo shortcut — no Supabase account needed
+  if (email === _DEMO_EMAIL && pw === _DEMO_PW) {
     loginAttempts = 0;
-    currentUser = { email, ...user };
+    currentUser = { email, name: 'Demo User', firm: 'Demo Business', plan: 'business', initials: 'DB' };
+    loadDemoData();
+    enterApp(currentUser);
+    return;
+  }
 
-    // Check if 2FA is enabled
-    if (user.twoFAEnabled && user.totpSecret) {
-      _pending2FAUser = currentUser;
-      currentUser = null; // don't finalize session until 2FA passes
-      btn.disabled = false;
-      btn.innerHTML = 'Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
-      // Show 2FA form
-      document.getElementById('form-login').classList.add('hidden');
-      document.getElementById('form-signup').classList.add('hidden');
-      document.getElementById('form-2fa').classList.remove('hidden');
-      document.getElementById('auth-error').classList.remove('show');
-      document.getElementById('tfa-code').value = '';
-      document.getElementById('tfa-code').focus();
-      _startTFACountdown();
-      return;
+  const { data, error } = await _supa.auth.signInWithPassword({ email, password: pw });
+
+  if (error) {
+    loginAttempts++;
+    if (loginAttempts >= LOGIN_MAX_ATTEMPTS) {
+      loginLockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
+      loginAttempts = 0;
+      showAuthError('Account locked for 10 minutes after too many failed attempts.');
+    } else {
+      const remaining = LOGIN_MAX_ATTEMPTS - loginAttempts;
+      showAuthError(`Incorrect email or password. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`);
     }
+    btn.disabled = false;
+    btn.innerHTML = 'Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+    return;
+  }
 
-    enterApp(user);
-  }, 900);
+  loginAttempts = 0;
+  const sbUser = data.user;
+  const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
+  const name     = profile?.name     || sbUser.user_metadata?.name     || email.split('@')[0];
+  const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
+  const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
+  const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+  currentUser = { id: sbUser.id, email, name, firm, plan, initials };
+
+  await _loadUserData(sbUser.id);
+  enterApp(currentUser);
 }
 
 /* ── PROFILE POPUP ── */
@@ -6331,16 +6392,20 @@ function closeProfilePopupOutside(e) {
   if (!document.getElementById('profile-popup').contains(e.target)) closeProfilePopup();
 }
 
-/* ── GOOGLE MOCK ── */
-function doGoogleAuth() {
+/* ── GOOGLE OAUTH ── */
+async function doGoogleAuth() {
   const btn = document.querySelector('.auth-social-btn');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Connecting to Google...';
-  setTimeout(() => {
+  const { error } = await _supa.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) {
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.566 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>Continue with Google`;
-    showToast('Google sign-in requires a Client ID — see Settings → coming soon', 'warn');
-  }, 1000);
+    showToast(error.message, 'error');
+  }
 }
 
 /* ── SIGNUP STEPS ── */
@@ -6407,7 +6472,7 @@ function selectPlan(plan, el) {
   el.style.background = 'var(--g-dim)';
 }
 
-function doSignup() {
+async function doSignup() {
   clearAuthError();
   const name  = document.getElementById('s-fullname').value.trim();
   const email = document.getElementById('s-email-auth').value.trim().toLowerCase();
@@ -6418,28 +6483,43 @@ function doSignup() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Creating account...';
 
-  setTimeout(() => {
-    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);
-    const newUser = { password: pw, name, firm, plan: selectedPlan, initials };
-    userStore[email] = newUser;
-    _saveUserStore();
-    currentUser = { email, ...newUser };
-    enterApp(currentUser);
-  }, 1200);
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);
+
+  const { data, error } = await _supa.auth.signUp({
+    email, password: pw,
+    options: { data: { name, firm, plan: selectedPlan, initials } }
+  });
+
+  if (error) {
+    btn.disabled = false;
+    btn.innerHTML = 'Create account';
+    showAuthError(error.message);
+    return;
+  }
+
+  currentUser = { id: data.user.id, email, name, firm, plan: selectedPlan, initials };
+  enterApp(currentUser);
 }
 
-function showForgotPw() {
-  showAuthError('Password reset link sent to your email. Check your inbox.');
-  document.getElementById('auth-error').style.background = 'rgba(16,185,129,.1)';
-  document.getElementById('auth-error').style.borderColor = 'rgba(16,185,129,.3)';
-  document.getElementById('auth-error').style.color = 'var(--g)';
+async function showForgotPw() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  if (!email) { showAuthError('Enter your email above first.'); return; }
+  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  const errEl = document.getElementById('auth-error');
+  errEl.classList.add('show');
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.background = ''; errEl.style.borderColor = ''; errEl.style.color = '';
+  } else {
+    errEl.textContent = 'Password reset link sent — check your inbox.';
+    errEl.style.background = 'rgba(16,185,129,.1)';
+    errEl.style.borderColor = 'rgba(16,185,129,.3)';
+    errEl.style.color = 'var(--g)';
+  }
 }
 
 /* ── ENTER APP ── */
 function enterApp(user) {
-  // Persist session
-  try { localStorage.setItem('sp-session', JSON.stringify({email:user.email,name:user.name,firm:user.firm,plan:user.plan,initials:user.initials})); } catch(e){}
-
   // Show success state
   document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
   document.querySelectorAll('.auth-tabs').forEach(t => t.style.display='none');
@@ -6489,11 +6569,11 @@ function enterApp(user) {
 }
 
 /* ── LOGOUT ── */
-function doLogout() {
+async function doLogout() {
   currentUser = null;
   clearTimeout(_sessionTimer);
-  try { localStorage.removeItem('sp-session'); } catch(e) {}
   invoices.length = 0; clients.length = 0; expenses.length = 0;
+  await _supa.auth.signOut();
   document.getElementById('l-email').value    = '';
   document.getElementById('l-password').value = '';
   document.getElementById('auth-error').classList.remove('show');
@@ -7038,7 +7118,7 @@ function idmExportPDF() {
 function idmMarkPaid() {
   if (!activeDetailInv) return;
   const inv = invoices.find(i => i.id === activeDetailInv.id);
-  if (inv) { inv.status = 'paid'; inv.color = '#10B981'; }
+  if (inv) { inv.status = 'paid'; inv.color = '#10B981'; _dbUpdateInvoiceStatus(inv.id, 'paid', '#10B981'); }
   const paidClient = activeDetailInv.client;
   const paidId     = activeDetailInv.id;
   const paidAmt    = activeDetailInv.amount;
@@ -7152,7 +7232,7 @@ function bulkMarkPaid() {
   let count = 0;
   bulkSelection.forEach(id => {
     const inv = invoices.find(i => i.id === id && i.status !== 'paid');
-    if (inv) { inv.status = 'paid'; inv.color = '#10B981'; count++; logActivity('paid', inv.client, `${inv.id} bulk paid`, 'var(--g)'); }
+    if (inv) { inv.status = 'paid'; inv.color = '#10B981'; _dbUpdateInvoiceStatus(inv.id, 'paid', '#10B981'); count++; logActivity('paid', inv.client, `${inv.id} bulk paid`, 'var(--g)'); }
   });
   showToast(`${count} invoice${count!==1?'s':''} marked as paid`, 'success');
   bulkClear();
@@ -7573,7 +7653,9 @@ function addExpense() {
   const cat  = document.getElementById('new-exp-cat')?.value;
   const amt  = parseFloat(document.getElementById('new-exp-amt')?.value);
   if (!date || !desc || !cat || !(amt > 0)) { showToast('Fill in all expense fields', 'error'); return; }
-  expenses.push({ id: 'EXP-' + Date.now(), date, desc, category: cat, amount: amt });
+  const newExp = { id: 'EXP-' + Date.now(), date, desc, category: cat, amount: amt };
+  expenses.push(newExp);
+  _dbSaveExpense(newExp);
   document.getElementById('new-exp-desc').value = '';
   document.getElementById('new-exp-amt').value  = '';
   renderExpenses();
@@ -7582,6 +7664,8 @@ function addExpense() {
 
 function deleteExpense(id) {
   if (!confirm('Delete this expense?')) return;
+  const exp = expenses.find(e => e.id === id);
+  if (exp) _dbDeleteExpense(exp);
   expenses = expenses.filter(e => e.id !== id);
   renderExpenses();
   showToast('Expense deleted', 'info');
@@ -7609,7 +7693,7 @@ function savePartialPayment() {
 
   const totalPaid = inv.payments.reduce((s, p) => s + p.amount, 0);
   if (totalPaid >= inv.amount) {
-    inv.status = 'paid'; inv.color = '#10B981';
+    inv.status = 'paid'; inv.color = '#10B981'; _dbUpdateInvoiceStatus(inv.id, 'paid', '#10B981');
     showToast(inv.id + ' fully paid!', 'success');
     closeDetailModal();
   } else {
@@ -7781,28 +7865,34 @@ init();
 initSettings();
 
 // ── SESSION RESTORE ──
-// If user was previously logged in, skip the auth screen
-(function restoreSession() {
-  try {
-    const saved = localStorage.getItem('sp-session');
-    if (!saved) return;
-    const user = JSON.parse(saved);
-    if (!user?.name) return;
-    currentUser = user;
-    // Update sidebar silently
-    document.getElementById('sidebar-av').textContent   = user.initials || user.name.substring(0,2).toUpperCase();
-    document.getElementById('sidebar-name').textContent = user.firm || user.name;
-    document.getElementById('sidebar-plan').textContent = user.plan === 'pro' ? 'Pro Plan' : 'Starter';
-    // Sync user info into settings + preview
-    const firmInput = document.getElementById('s-firm-name');
-    if (firmInput) firmInput.value = user.firm || '';
-    const emailInput = document.getElementById('s-email');
-    if (emailInput && user.email) emailInput.value = user.email;
-    // Hide auth layer immediately
-    document.getElementById('auth-layer').classList.add('hidden');
-    updatePreview();
-    updateDashStats();
-  } catch(e) { /* corrupt storage — ignore */ }
+(async function restoreSession() {
+  const { data: { session } } = await _supa.auth.getSession();
+  if (!session) return;
+
+  const sbUser = session.user;
+  const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
+  const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
+  const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
+  const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
+  const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+
+  currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
+
+  await _loadUserData(sbUser.id);
+
+  document.getElementById('sidebar-av').textContent   = initials;
+  document.getElementById('sidebar-name').textContent = firm || name;
+  document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
+  const firmInput = document.getElementById('s-firm-name');
+  if (firmInput) firmInput.value = firm || '';
+  const emailInput = document.getElementById('s-email');
+  if (emailInput) emailInput.value = sbUser.email;
+
+  document.getElementById('auth-layer').classList.add('hidden');
+  updatePreview(); updateDashStats();
+  renderDashInvoices(); renderActionRequired(); renderActivityFeed();
+  renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
+  buildCharts(); refreshPlanPanel(); _resetSessionTimer();
 })();
 </script>
 <!-- ── MOBILE BOTTOM TAB BAR ── -->
