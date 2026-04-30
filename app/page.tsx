@@ -99,7 +99,7 @@ export default function LandingPage() {
                       <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
                       <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
                     </svg>
-                    Kgosi Engineering
+                    Molapo Consulting
                   </div>
                   <div className="mock-meta">Gaborone, Botswana</div>
                 </div>
@@ -212,8 +212,8 @@ export default function LandingPage() {
               <div className="price-amt">Free</div>
               <div className="price-bill">Forever · no card</div>
               <div className="price-list">
-                <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>5 invoices/mo</div>
-                <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>AI generation (5/mo)</div>
+                <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>2 invoices/mo</div>
+                <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>AI generation</div>
                 <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>PDF export</div>
                 <div className="pf off"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13"/></svg>Auto-reminders</div>
                 <div className="pf off"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13"/></svg>WhatsApp</div>
@@ -223,7 +223,7 @@ export default function LandingPage() {
             <div className="price-card pop">
               <div className="pop-badge">Popular</div>
               <div className="price-tier">Pro</div>
-              <div className="price-amt">P199<span>/mo</span></div>
+              <div className="price-amt">P200<span>/mo</span></div>
               <div className="price-bill">Cancel anytime</div>
               <div className="price-list">
                 <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>Unlimited invoices</div>
@@ -237,11 +237,11 @@ export default function LandingPage() {
             </div>
             <div className="price-card">
               <div className="price-tier">Business</div>
-              <div className="price-amt">P499<span>/mo</span></div>
+              <div className="price-amt">P500<span>/mo</span></div>
               <div className="price-bill">Team access</div>
               <div className="price-list">
                 <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>Everything in Pro</div>
-                <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>5 team members</div>
+                <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>3 team seats</div>
                 <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>Priority support</div>
                 <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>Analytics</div>
                 <div className="pf"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>API access</div>

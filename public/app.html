@@ -7885,49 +7885,61 @@ async function doPasswordReset() {
   await _supa.auth.signOut();
 }
 
-// ── SESSION RESTORE ──
-(async function restoreSession() {
-  // Handle password reset / email confirmation token in URL hash
-  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  if (hash.get('type') === 'recovery') {
-    // Let Supabase pick up the recovery session from the hash
-    await _supa.auth.getSession();
+// ── AUTH STATE HANDLER ──
+// Handles PASSWORD_RECOVERY event (fired when user clicks reset link in email)
+// and SIGNED_IN after OAuth redirect — both fire before restoreSession completes
+_supa.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    // Supabase detected a recovery token — show reset form, don't enter app
     history.replaceState(null, '', window.location.pathname);
     document.getElementById('reset-pw-modal').classList.remove('hidden');
-    return;
-  }
-  // Clear hash tokens from URL after OAuth callback
-  if (hash.get('access_token')) {
+  } else if (event === 'SIGNED_IN' && session && !currentUser) {
+    // OAuth callback — session arrived after redirect, enter app
     history.replaceState(null, '', window.location.pathname);
+    const sbUser = session.user;
+    const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
+    const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
+    const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
+    const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
+    const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+    currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
+    await _loadUserData(sbUser.id);
+    enterApp(currentUser);
   }
+});
 
+// ── SESSION RESTORE ──
+(async function restoreSession() {
   const { data: { session } } = await _supa.auth.getSession();
   if (!session) return;
 
-  const sbUser = session.user;
-  const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
-  const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
-  const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
-  const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
-  const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+  // Recovery sessions are handled by onAuthStateChange above — don't enter app
+  if (session.user?.aud === 'authenticated' && !currentUser) {
+    const sbUser = session.user;
+    const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
+    const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
+    const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
+    const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
+    const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
 
-  currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
+    currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
 
-  await _loadUserData(sbUser.id);
+    await _loadUserData(sbUser.id);
 
-  document.getElementById('sidebar-av').textContent   = initials;
-  document.getElementById('sidebar-name').textContent = firm || name;
-  document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
-  const firmInput = document.getElementById('s-firm-name');
-  if (firmInput) firmInput.value = firm || '';
-  const emailInput = document.getElementById('s-email');
-  if (emailInput) emailInput.value = sbUser.email;
+    document.getElementById('sidebar-av').textContent   = initials;
+    document.getElementById('sidebar-name').textContent = firm || name;
+    document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
+    const firmInput = document.getElementById('s-firm-name');
+    if (firmInput) firmInput.value = firm || '';
+    const emailInput = document.getElementById('s-email');
+    if (emailInput) emailInput.value = sbUser.email;
 
-  document.getElementById('auth-layer').classList.add('hidden');
-  updatePreview(); updateDashStats();
-  renderDashInvoices(); renderActionRequired(); renderActivityFeed();
-  renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
-  buildCharts(); refreshPlanPanel(); _resetSessionTimer();
+    document.getElementById('auth-layer').classList.add('hidden');
+    updatePreview(); updateDashStats();
+    renderDashInvoices(); renderActionRequired(); renderActivityFeed();
+    renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
+    buildCharts(); refreshPlanPanel(); _resetSessionTimer();
+  }
 })();
 </script>
 <!-- ── PASSWORD RESET MODAL ── -->
