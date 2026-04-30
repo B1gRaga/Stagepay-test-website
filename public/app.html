@@ -1794,7 +1794,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                   <div style="font-size:11px;color:var(--t3);margin-top:3px;">Unlimited invoices · Reminders · Multi-currency</div>
                 </div>
                 <div style="text-align:right;">
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P200</div>
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P199</div>
                   <div style="font-size:10px;color:var(--t3);">/month</div>
                 </div>
               </div>
@@ -1803,10 +1803,10 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div>
                   <div style="font-weight:600;font-size:13px;color:var(--t1);">Business</div>
-                  <div style="font-size:11px;color:var(--t3);margin-top:3px;">Everything in Pro · 3 team seats · Priority support</div>
+                  <div style="font-size:11px;color:var(--t3);margin-top:3px;">Everything in Pro · 5 team members · Priority support</div>
                 </div>
                 <div style="text-align:right;">
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P500</div>
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P499</div>
                   <div style="font-size:10px;color:var(--t3);">/month</div>
                 </div>
               </div>
@@ -3885,9 +3885,9 @@ const _supa = supabase.createClient(
 
 async function _loadUserData(userId) {
   const [invRes, cliRes, expRes] = await Promise.all([
-    _supa.from('invoices').select('*').order('created_at', {ascending: false}),
-    _supa.from('clients').select('*').order('name'),
-    _supa.from('expenses').select('*').order('date', {ascending: false}),
+    _supa.from('invoices').select('*').eq('user_id', userId).order('created_at', {ascending: false}),
+    _supa.from('clients').select('*').eq('user_id', userId).order('name'),
+    _supa.from('expenses').select('*').eq('user_id', userId).order('date', {ascending: false}),
   ]);
   invoices = (invRes.data || []).map(r => ({
     _dbid: r.id, id: r.inv_number, client: r.client, project: r.project,
@@ -3913,13 +3913,23 @@ function _dbSaveInvoice(inv) {
     user_id: currentUser.id, inv_number: inv.id, client: inv.client,
     project: inv.project, date: inv.date, due: inv.due, amount: inv.amount,
     status: inv.status, color: inv.color, initials: inv.initials
-  }, { onConflict: 'user_id,inv_number' });
+  }, { onConflict: 'user_id,inv_number' })
+    .then(({ error }) => {
+      if (!error) return;
+      console.error('[DB] save invoice:', error.message);
+      if (error.message?.includes('row-level security')) {
+        showToast('Monthly invoice limit reached — upgrade to Pro for unlimited invoices.', 'warn');
+      }
+    })
+    .catch(err => console.error('[DB] save invoice:', err));
 }
 
 function _dbUpdateInvoiceStatus(invNumber, status, color) {
   if (!currentUser?.id) return;
   _supa.from('invoices').update({ status, color })
-    .eq('user_id', currentUser.id).eq('inv_number', invNumber);
+    .eq('user_id', currentUser.id).eq('inv_number', invNumber)
+    .then(({ error }) => { if (error) console.error('[DB] update status:', error.message); })
+    .catch(err => console.error('[DB] update status:', err));
 }
 
 function _dbSaveClient(cli) {
@@ -3927,7 +3937,9 @@ function _dbSaveClient(cli) {
   _supa.from('clients').insert({
     user_id: currentUser.id, name: cli.name, email: cli.email,
     phone: cli.phone, city: cli.city, currency: cli.type
-  });
+  })
+    .then(({ error }) => { if (error) console.error('[DB] save client:', error.message); })
+    .catch(err => console.error('[DB] save client:', err));
 }
 
 function _dbSaveExpense(exp) {
@@ -3936,12 +3948,19 @@ function _dbSaveExpense(exp) {
     user_id: currentUser.id, exp_number: exp.id,
     description: exp.desc, category: exp.category,
     amount: exp.amount, date: exp.date, vendor: exp.vendor || ''
-  }).then(({data}) => { if (data?.[0]) exp._dbid = data[0].id; });
+  })
+    .then(({ data, error }) => {
+      if (error) { console.error('[DB] save expense:', error.message); return; }
+      if (data?.[0]) exp._dbid = data[0].id;
+    })
+    .catch(err => console.error('[DB] save expense:', err));
 }
 
 function _dbDeleteExpense(exp) {
   if (!currentUser?.id || !exp._dbid) return;
-  _supa.from('expenses').delete().eq('id', exp._dbid);
+  _supa.from('expenses').delete().eq('id', exp._dbid)
+    .then(({ error }) => { if (error) console.error('[DB] delete expense:', error.message); })
+    .catch(err => console.error('[DB] delete expense:', err));
 }
 
 /* ── SECURITY UTILS ── */
@@ -4026,22 +4045,36 @@ function loadDemoData() {
 }
 
 /* ── PLAN ENFORCEMENT ── */
-const PLAN_LIMITS = { free: 2, pro: Infinity, business: Infinity };
+const PLAN_LIMITS = { free: 5, pro: Infinity, business: Infinity };
 
 function getMonthlyInvoiceCount() {
   const ym = new Date().toISOString().slice(0,7);
   return invoices.filter(i => i.date && i.date.startsWith(ym)).length;
 }
 
+function checkPlanLimit() {
+  const plan = currentUser?.plan || 'free';
+  if (plan !== 'free') return true;
+  const count = getMonthlyInvoiceCount();
+  if (count >= PLAN_LIMITS.free) {
+    showToast(
+      `Free plan: ${PLAN_LIMITS.free} invoice/month limit reached. Upgrade to Pro for unlimited.`,
+      'warn'
+    );
+    switchView('settings', document.querySelectorAll('.nav-item')[5]);
+    return false;
+  }
+  return true;
+}
 
 /* ── PLAN PANEL REFRESH ── */
 function refreshPlanPanel() {
   const plan = currentUser?.plan || 'free';
   const planNames = { free:'Starter', pro:'Pro', business:'Business' };
   const planSubs  = {
-    free:     'Starter · Free · 2 invoices/month',
-    pro:      'Pro · P200/month · Renews automatically',
-    business: 'Business · P500/month · Renews automatically',
+    free:     'Starter · Free · 5 invoices/month',
+    pro:      'Pro · P199/month · Renews automatically',
+    business: 'Business · P499/month · Renews automatically',
   };
   const planBadge = { free:'FREE', pro:'PRO', business:'BIZ' };
 
@@ -4054,16 +4087,16 @@ function refreshPlanPanel() {
 
   const planDescs = {
     free:     'You are on the <strong style="color:var(--g)">Starter</strong> plan — free forever.',
-    pro:      'You are on the <strong style="color:var(--g)">Pro</strong> plan — P200/month.',
-    business: 'You are on the <strong style="color:var(--g)">Business</strong> plan — P500/month.',
+    pro:      'You are on the <strong style="color:var(--g)">Pro</strong> plan — P199/month.',
+    business: 'You are on the <strong style="color:var(--g)">Business</strong> plan — P499/month.',
   };
   if (descEl) descEl.innerHTML = planDescs[plan] || planDescs.free;
 
   if (cardsEl) {
     const allPlans = [
-      { id:'free',     label:'Starter',  price:'Free forever',                sub:'2 invoices/month · AI · PDF export',                  yearly:'' },
-      { id:'pro',      label:'Pro',      price:'P200 / month',                sub:'Unlimited invoices · AI + reminders · Multi-currency', yearly:'· P1,800/year (save 25%)' },
-      { id:'business', label:'Business', price:'P500 / month',                sub:'Everything in Pro · 3 team seats · Priority support',  yearly:'· P4,500/year (save 25%)' },
+      { id:'free',     label:'Starter',  price:'Free forever',                sub:'5 invoices/month · AI · PDF export',                  yearly:'' },
+      { id:'pro',      label:'Pro',      price:'P199 / month',                sub:'Unlimited invoices · AI + reminders · Multi-currency', yearly:'· P1,791/year (save 25%)' },
+      { id:'business', label:'Business', price:'P499 / month',                sub:'Everything in Pro · 5 team members · Priority support', yearly:'· P4,491/year (save 25%)' },
     ];
     cardsEl.innerHTML = allPlans.map(p => `
       <div class="plan-card${p.id===plan?' current':''}">
@@ -4401,7 +4434,7 @@ function updatePreview(){
     const amt=parseFloat(li.qty||0)*parseFloat(li.rate||0);
     subtotal+=amt;
     updateLIAmt(li.id);
-    return `<tr><td>${li.desc||'—'}</td><td style="text-align:right">${li.qty||1}</td><td style="text-align:right">${cur}${parseFloat(li.rate||0).toLocaleString()}</td><td>${cur}${amt.toLocaleString()}</td></tr>`;
+    return `<tr><td>${esc(li.desc||'—')}</td><td style="text-align:right">${esc(li.qty||1)}</td><td style="text-align:right">${cur}${parseFloat(li.rate||0).toLocaleString()}</td><td>${cur}${amt.toLocaleString()}</td></tr>`;
   }).join('');
 
   const vatAmt=subtotal*vat;
@@ -4832,6 +4865,10 @@ function doSendEmail() {
   if (!to) { showToast('Enter a recipient email address', 'error'); return; }
   if (!subject) { showToast('Add a subject line', 'error'); return; }
 
+  // Only gate new invoices — updating a draft-to-pending doesn't count as a new insert
+  const _isNewInvoice = !invoices.find(i => i.id === invnum && i.status !== 'draft');
+  if (_isNewInvoice && !checkPlanLimit()) return;
+
   const btn = document.getElementById('em-send-btn');
   btn.textContent = 'Sending...';
   btn.disabled = true;
@@ -4899,6 +4936,10 @@ function _persistDraft() {
   const project = document.getElementById('f-project').value || 'Draft invoice';
   const total   = parseFloat(document.getElementById('prev-total')?.textContent?.replace(/[^0-9.]/g,'')) || 0;
   const cur     = document.getElementById('f-currency')?.value || 'P';
+
+  // Only count as a new invoice when no draft with this number already exists
+  const _isExistingDraft = !!invoices.find(i => i.id === invnum && i.status === 'draft');
+  if (!_isExistingDraft && !checkPlanLimit()) return;
 
   // Check for duplicate invoice number — warn and bump
   if (invoices.find(i => i.id === invnum && i.status !== 'draft')) {
@@ -6851,9 +6892,9 @@ function renderClientPills() {
   if (!row) return;
   const colors = ['#10B981','#3B82F6','#F59E0B','#EF4444','#E8D8C3'];
   row.innerHTML = clients.slice(0, 5).map((c, i) => `
-    <button class="client-pill" onclick="selectClientPill('${c.name}','${c.email}')">
-      <div class="client-pill-av" style="background:${colors[i%colors.length]}22;color:${colors[i%colors.length]}">${c.initials}</div>
-      ${c.name.split(' ')[0]}
+    <button class="client-pill" data-name="${esc(c.name)}" data-email="${esc(c.email)}" onclick="selectClientPill(this.dataset.name,this.dataset.email)">
+      <div class="client-pill-av" style="background:${colors[i%colors.length]}22;color:${colors[i%colors.length]}">${esc(c.initials)}</div>
+      ${esc(c.name.split(' ')[0])}
     </button>`).join('');
 }
 
@@ -7277,9 +7318,9 @@ function renderClientsWithSearch() {
         <div class="client-stat"><div class="client-stat-val">${c.invoices}</div><div class="client-stat-label">Invoices</div></div>
         <div class="client-stat"><div class="client-stat-val" style="font-size:14px">P${(c.total/1000).toFixed(0)}k</div><div class="client-stat-label">Total billed</div></div>
       </div>
-      ${c.phone ? `<div style="margin-top:8px;font-size:11px;color:var(--t3);display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.02 3.89L0 16l4.25-1.11A7.94 7.94 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>${c.phone}</div>` : ''}
+      ${c.phone ? `<div style="margin-top:8px;font-size:11px;color:var(--t3);display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.02 3.89L0 16l4.25-1.11A7.94 7.94 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>${esc(c.phone)}</div>` : ''}
       <div style="margin-top:10px;display:flex;gap:6px;">
-        <button onclick="event.stopPropagation();generateClientStatement('${c.name.replace(/'/g,"\\'")}')" style="flex:1;font-size:10px;padding:5px 8px;border-radius:5px;border:1px solid var(--line2);background:transparent;color:var(--t3);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;" onmouseover="this.style.borderColor='var(--g)';this.style.color='var(--g)'" onmouseout="this.style.borderColor='var(--line2)';this.style.color='var(--t3)'">
+        <button data-client="${esc(c.name)}" onclick="event.stopPropagation();generateClientStatement(this.dataset.client)" style="flex:1;font-size:10px;padding:5px 8px;border-radius:5px;border:1px solid var(--line2);background:transparent;color:var(--t3);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;" onmouseover="this.style.borderColor='var(--g)';this.style.color='var(--g)'" onmouseout="this.style.borderColor='var(--line2)';this.style.color='var(--t3)'">
           <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 1h6l4 4v10H4V1z"/><path d="M10 1v4h4"/></svg>
           Statement
         </button>
