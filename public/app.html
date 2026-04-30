@@ -3877,11 +3877,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 </div>
 
 <script>
-// Capture recovery flag BEFORE Supabase processes and removes the URL hash
-if (window.location.hash.includes('type=recovery')) {
-  sessionStorage.setItem('sp-recovery', '1');
-}
-
 /* ── SUPABASE ── */
 const _supa = supabase.createClient(
   'https://tvpbshjrbtqreunxnpuv.supabase.co',
@@ -6344,13 +6339,6 @@ async function doLogin() {
   const { data, error } = await _supa.auth.signInWithPassword({ email, password: pw });
 
   if (error) {
-    const isConfirmErr = error.message?.toLowerCase().includes('confirm') || error.message?.toLowerCase().includes('not confirmed');
-    if (isConfirmErr) {
-      showAuthError('Please confirm your email first — check your inbox for a confirmation link.');
-      btn.disabled = false;
-      btn.innerHTML = 'Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
-      return;
-    }
     loginAttempts++;
     if (loginAttempts >= LOGIN_MAX_ATTEMPTS) {
       loginLockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
@@ -6411,7 +6399,7 @@ async function doGoogleAuth() {
   btn.innerHTML = '<div class="spinner"></div> Connecting to Google...';
   const { error } = await _supa.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + window.location.pathname }
+    options: { redirectTo: window.location.href }
   });
   if (error) {
     btn.disabled = false;
@@ -6516,7 +6504,7 @@ async function doSignup() {
 async function showForgotPw() {
   const email = document.getElementById('l-email').value.trim().toLowerCase();
   if (!email) { showAuthError('Enter your email above first.'); return; }
-  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
   const errEl = document.getElementById('auth-error');
   errEl.classList.add('show');
   if (error) {
@@ -7876,111 +7864,37 @@ function saveInvoiceDefaults() {
 init();
 initSettings();
 
-async function doPasswordReset() {
-  const pw      = document.getElementById('rp-pw').value;
-  const confirm = document.getElementById('rp-pw-confirm').value;
-  const errEl   = document.getElementById('rp-error');
-  errEl.style.display = 'none';
-  if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  if (pw !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
-  const { error } = await _supa.auth.updateUser({ password: pw });
-  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
-  document.getElementById('reset-pw-modal').classList.add('hidden');
-  showToast('Password updated — please sign in.', 'success');
-  await _supa.auth.signOut();
-}
-
-// ── AUTH STATE HANDLER ──
-// Handles PASSWORD_RECOVERY event (fired when user clicks reset link in email)
-// and SIGNED_IN after OAuth redirect — both fire before restoreSession completes
-_supa.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'PASSWORD_RECOVERY') {
-    // Only show reset form if this page load actually came from a recovery link.
-    // Without this guard, Supabase re-fires PASSWORD_RECOVERY on every load
-    // while the stale recovery session sits in localStorage.
-    if (!sessionStorage.getItem('sp-recovery')) {
-      await _supa.auth.signOut(); // clear stale recovery session
-      return;
-    }
-    sessionStorage.removeItem('sp-recovery');
-    history.replaceState(null, '', window.location.pathname);
-    document.getElementById('reset-pw-modal').classList.remove('hidden');
-  } else if (event === 'SIGNED_IN' && session && !currentUser) {
-    // OAuth callback — session arrived after redirect, enter app
-    history.replaceState(null, '', window.location.pathname);
-    const sbUser = session.user;
-    const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
-    const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
-    const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
-    const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
-    const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
-    currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
-    await _loadUserData(sbUser.id);
-    enterApp(currentUser);
-  }
-});
-
 // ── SESSION RESTORE ──
 (async function restoreSession() {
   const { data: { session } } = await _supa.auth.getSession();
   if (!session) return;
 
-  // Recovery sessions are handled by onAuthStateChange above — don't enter app
-  if (session.user?.aud === 'authenticated' && !currentUser) {
-    const sbUser = session.user;
-    const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
-    const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
-    const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
-    const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
-    const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+  const sbUser = session.user;
+  const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
+  const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
+  const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
+  const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
+  const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
 
-    currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
+  currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
 
-    await _loadUserData(sbUser.id);
+  await _loadUserData(sbUser.id);
 
-    document.getElementById('sidebar-av').textContent   = initials;
-    document.getElementById('sidebar-name').textContent = firm || name;
-    document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
-    const firmInput = document.getElementById('s-firm-name');
-    if (firmInput) firmInput.value = firm || '';
-    const emailInput = document.getElementById('s-email');
-    if (emailInput) emailInput.value = sbUser.email;
+  document.getElementById('sidebar-av').textContent   = initials;
+  document.getElementById('sidebar-name').textContent = firm || name;
+  document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
+  const firmInput = document.getElementById('s-firm-name');
+  if (firmInput) firmInput.value = firm || '';
+  const emailInput = document.getElementById('s-email');
+  if (emailInput) emailInput.value = sbUser.email;
 
-    document.getElementById('auth-layer').classList.add('hidden');
-    updatePreview(); updateDashStats();
-    renderDashInvoices(); renderActionRequired(); renderActivityFeed();
-    renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
-    buildCharts(); refreshPlanPanel(); _resetSessionTimer();
-  }
+  document.getElementById('auth-layer').classList.add('hidden');
+  updatePreview(); updateDashStats();
+  renderDashInvoices(); renderActionRequired(); renderActivityFeed();
+  renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
+  buildCharts(); refreshPlanPanel(); _resetSessionTimer();
 })();
 </script>
-<!-- ── PASSWORD RESET MODAL ── -->
-<div class="modal hidden" id="reset-pw-modal" style="z-index:9999;">
-  <div class="modal-box" style="max-width:400px;">
-    <div class="modal-header">
-      <div class="modal-title">Set new password</div>
-    </div>
-    <div class="modal-body" style="padding:20px 24px 24px;display:flex;flex-direction:column;gap:14px;">
-      <div class="auth-input-group">
-        <label>New password</label>
-        <div style="position:relative;">
-          <input class="auth-input" id="rp-pw" type="password" placeholder="At least 8 characters" style="padding-right:42px;">
-          <button onclick="togglePw('rp-pw',this)" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);">👁</button>
-        </div>
-      </div>
-      <div class="auth-input-group">
-        <label>Confirm password</label>
-        <div style="position:relative;">
-          <input class="auth-input" id="rp-pw-confirm" type="password" placeholder="Re-enter your password" style="padding-right:42px;">
-          <button onclick="togglePw('rp-pw-confirm',this)" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);">👁</button>
-        </div>
-      </div>
-      <div id="rp-error" style="display:none;font-size:12px;color:var(--danger);padding:8px 12px;background:rgba(239,68,68,.08);border-radius:6px;border:1px solid rgba(239,68,68,.2);"></div>
-      <button class="topbar-btn btn-primary" style="width:100%;padding:12px;font-size:14px;" onclick="doPasswordReset()">Save new password</button>
-    </div>
-  </div>
-</div>
-
 <!-- ── MOBILE BOTTOM TAB BAR ── -->
 <nav class="mobile-tabbar" id="mobile-tabbar">
   <button class="mob-tab active" id="mobtab-dashboard" onclick="mobSwitch('dashboard',this)">
