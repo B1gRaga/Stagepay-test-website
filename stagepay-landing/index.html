@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StagePay — Turn your work into an invoice in 30 seconds</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ANNOUNCE BAR -->
+<div class="announce">
+  <span class="announce-dot"></span>
+  <strong>Early Access Open</strong> — Join 400+ professionals already on the waitlist
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+        <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+        <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
+        <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+        <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+      </svg>
+      <span class="nav-wordmark">Stage<em>Pay</em></span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#who">Who it's for</a>
+    </div>
+    <div class="nav-right">
+      <a href="stagepay-app_6.html" class="nav-cta">Start free →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-inner">
+
+    <!-- Left: copy + signup -->
+    <div class="hero-left">
+      <div class="hero-badge">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="#10B981"><circle cx="5" cy="5" r="5"/></svg>
+        AI-Powered Invoicing · Built for Africa
+      </div>
+      <h1 class="hero-h1">
+        Turn your work<br>into an invoice<br>in <em>30 seconds.</em>
+      </h1>
+      <p class="hero-sub">
+        Describe the job in plain English — AI builds the invoice, calculates VAT, and sends smart reminders until you get paid.
+      </p>
+
+      <div class="signup-box">
+        <div class="signup-box-label">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+          Join the early access waitlist
+        </div>
+        <div class="form-row">
+          <input type="email" id="heroEmail" class="form-input" placeholder="your@email.com">
+          <button class="btn-signup" onclick="handleSignup('heroEmail')">
+            Start free
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </button>
+        </div>
+        <div class="form-trust">
+          <span>✓ Free forever plan</span>
+          <span class="form-trust-div">·</span>
+          <span>✓ No credit card</span>
+          <span class="form-trust-div">·</span>
+          <span>✓ Cancel anytime</span>
+        </div>
+      </div>
+
+      <div class="social-count">
+        <div class="avatars">
+          <div class="av" style="background:rgba(16,185,129,.2);color:#10B981;">KM</div>
+          <div class="av" style="background:rgba(59,130,246,.2);color:#3B82F6;">TN</div>
+          <div class="av" style="background:rgba(245,158,11,.2);color:#F59E0B;">LK</div>
+          <div class="av" style="background:rgba(139,92,246,.2);color:#8B5CF6;">SO</div>
+        </div>
+        <span class="social-text"><strong>400+</strong> professionals already waiting</span>
+      </div>
+    </div>
+
+    <!-- Right: demo invoice -->
+    <div class="hero-right">
+      <div class="mock-wrap">
+        <div class="mock-bar">
+          <div class="mock-dot" style="background:#EF4444;"></div>
+          <div class="mock-dot" style="background:#F59E0B;"></div>
+          <div class="mock-dot" style="background:#10B981;"></div>
+          <span class="mock-url">stagepay.co.bw/invoice/INV-042</span>
+        </div>
+        <div class="mock-body">
+          <div class="mock-head">
+            <div>
+              <div class="mock-brand">
+                <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
+                Kgosi Engineering
+              </div>
+              <div class="mock-meta">Gaborone, Botswana · VAT Reg: BW123456</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="mock-inv-badge">INVOICE</div>
+              <div class="mock-meta" style="margin-top:6px;">INV-042 · 30 Apr 2026</div>
+            </div>
+          </div>
+          <div class="mock-parties">
+            <div>
+              <div class="mock-lbl">Bill to</div>
+              <div class="mock-nm">Molapo Tower Ltd.</div>
+              <div class="mock-detail">Gaborone CBD<br>VAT: BW789012</div>
+            </div>
+            <div>
+              <div class="mock-lbl">Project</div>
+              <div class="mock-nm">Phase 2 — Structural Review</div>
+              <div class="mock-detail">Due: 30 May 2026<br>Net 30 days</div>
+            </div>
+          </div>
+          <table class="mock-tbl">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th style="text-align:right;">Qty</th>
+                <th style="text-align:right;">Rate</th>
+                <th style="text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Structural engineering review</td>
+                <td style="text-align:right;">40h</td>
+                <td style="text-align:right;">P950</td>
+                <td style="text-align:right;">P38,000</td>
+              </tr>
+              <tr>
+                <td>Site inspection (3 visits)</td>
+                <td style="text-align:right;">3</td>
+                <td style="text-align:right;">P800</td>
+                <td style="text-align:right;">P2,400</td>
+              </tr>
+              <tr>
+                <td>Technical report &amp; drawings</td>
+                <td style="text-align:right;">1</td>
+                <td style="text-align:right;">P5,600</td>
+                <td style="text-align:right;">P5,600</td>
+              </tr>
+              <tr>
+                <td style="color:#F59E0B;">Deposit paid (50%)</td>
+                <td></td>
+                <td></td>
+                <td style="text-align:right;color:#F59E0B;">−P23,000</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="mock-subtotals">
+            <div class="mock-sub-row"><span>Subtotal</span><span>P46,000</span></div>
+            <div class="mock-sub-row vat"><span>VAT (14%)</span><span>P6,440</span></div>
+          </div>
+          <div class="mock-total-bar">
+            <span class="mock-total-lbl">Balance Due</span>
+            <span class="mock-total-val">P29,440</span>
+          </div>
+          <div class="mock-actions">
+            <div class="mock-btn">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Download PDF
+            </div>
+            <div class="mock-btn mock-btn-wa">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.07-1.35A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+              Send via WhatsApp
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI bubble -->
+      <div class="ai-bubble">
+        <div class="ai-bubble-label">AI Prompt Used</div>
+        <div class="ai-bubble-text">"Invoice Molapo Tower for 40h structural review at P950/h plus 3 site visits and a technical report. 50% deposit already paid."</div>
+        <div class="ai-bubble-tag">
+          <span class="ai-status"></span>
+          Generated in 4 seconds
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <div class="tick-item"><strong>Botswana</strong> · 14% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>South Africa</strong> · 15% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Kenya</strong> · 16% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Nigeria</strong> · 7.5% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>UAE</strong> · 5% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>United Kingdom</strong> · 20% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Germany</strong> · 19% MwSt <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Australia</strong> · 10% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>India</strong> · 18% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Singapore</strong> · 9% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Canada</strong> · 5% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Zambia</strong> · 16% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Namibia</strong> · 15% VAT <span class="tick-sep">|</span></div>
+    <!-- duplicate set for seamless loop -->
+    <div class="tick-item"><strong>Botswana</strong> · 14% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>South Africa</strong> · 15% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Kenya</strong> · 16% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Nigeria</strong> · 7.5% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>UAE</strong> · 5% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>United Kingdom</strong> · 20% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Germany</strong> · 19% MwSt <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Australia</strong> · 10% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>India</strong> · 18% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Singapore</strong> · 9% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Canada</strong> · 5% GST <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Zambia</strong> · 16% VAT <span class="tick-sep">|</span></div>
+    <div class="tick-item"><strong>Namibia</strong> · 15% VAT <span class="tick-sep">|</span></div>
+  </div>
+</div>
+
+<!-- PROOF STRIP -->
+<div class="proof reveal">
+  <div class="proof-inner">
+    <div class="proof-grid">
+      <div class="proof-cell">
+        <div class="proof-num">2,400+</div>
+        <div class="proof-label">AI-generated invoices</div>
+      </div>
+      <div class="proof-cell">
+        <div class="proof-num">40+</div>
+        <div class="proof-label">Countries &amp; tax rates</div>
+      </div>
+      <div class="proof-cell">
+        <div class="proof-num">18 days</div>
+        <div class="proof-label">Avg. payment time</div>
+      </div>
+      <div class="proof-cell">
+        <div class="proof-num">P4.2M+</div>
+        <div class="proof-label">Total invoiced</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCAL TRUST STRIP -->
+<div class="sec" style="padding-top:0;padding-bottom:32px;">
+  <div class="sec-inner text-center reveal">
+    <p style="font-size:13px;color:var(--t3);">Trusted by professionals in Botswana, South Africa, Kenya, Nigeria, and 36 more countries</p>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how-bg">
+  <div class="sec" id="how">
+    <div class="sec-inner">
+      <div class="sec-head reveal">
+        <div class="sec-tag">How it works</div>
+        <h2 class="sec-h2">Invoice in under <em>60 seconds.</em></h2>
+        <p class="sec-p">No training needed. If you can describe your work, you can invoice.</p>
+      </div>
+      <div class="how-grid reveal">
+        <div class="how-step">
+          <div class="how-num">01</div>
+          <div class="how-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M12 2l-2 7H3l6 4-2 7 5-4 5 4-2-7 6-4h-7z"/></svg>
+          </div>
+          <div class="how-title">Describe your work</div>
+          <div class="how-desc">Type who, what, how many hours, at what rate. Plain English — no forms, no templates.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">02</div>
+          <div class="how-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+          <div class="how-title">AI builds the invoice</div>
+          <div class="how-desc">Client, line items, VAT, deposit and due date extracted automatically. Edit anything before sending.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">03</div>
+          <div class="how-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+          </div>
+          <div class="how-title">Send &amp; get paid</div>
+          <div class="how-desc">Email with AI cover note, branded PDF, or WhatsApp. Smart reminders chase overdue invoices automatically.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AHA MOMENT — BEFORE / AFTER DEMO -->
+<div class="sec">
+  <div class="sec-inner">
+    <div class="sec-head reveal">
+      <div class="sec-tag">The difference</div>
+      <h2 class="sec-h2">Stop spending hours<br>on <em>admin.</em></h2>
+      <p class="sec-p">Professionals waste 3–5 hours a week on invoicing. StagePay cuts that to minutes.</p>
+    </div>
+    <div class="val-grid reveal">
+      <div>
+        <ul class="pain-list">
+          <li class="pain-item">
+            <span class="pain-before">BEFORE</span>
+            <span class="pain-text">Open Word, find last invoice, update every field manually, calculate VAT — 45 minutes per invoice.</span>
+          </li>
+          <li class="pain-item">
+            <span class="pain-before">BEFORE</span>
+            <span class="pain-text">Wrong VAT rate, missing bank details, wrong client name — send a corrected invoice, lose credibility.</span>
+          </li>
+          <li class="pain-item">
+            <span class="pain-before">BEFORE</span>
+            <span class="pain-text">Chase payments manually via email. Clients ignore it. You feel awkward. Money sits unpaid for months.</span>
+          </li>
+          <li class="pain-item">
+            <span class="pain-after">AFTER</span>
+            <span class="pain-text">Describe the job, hit Generate. Professional invoice in 30 seconds — correct VAT, branded, ready to send.</span>
+          </li>
+          <li class="pain-item">
+            <span class="pain-after">AFTER</span>
+            <span class="pain-text">Smart reminders go out automatically at 3, 7, 14 and 30 days. You never have to chase again.</span>
+          </li>
+        </ul>
+      </div>
+      <div class="val-cta-box">
+        <h3>Ready to stop chasing payments?</h3>
+        <p>Join 400+ professionals who already invoice smarter. Free plan — no card needed.</p>
+        <div class="flex-btns">
+          <a href="stagepay-app_6.html" class="btn-green">Start for free →</a>
+          <a href="#features" class="btn-outline">See all features</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="feat-bg" id="features">
+  <div class="sec">
+    <div class="sec-inner">
+      <div class="sec-head reveal">
+        <div class="sec-tag">Features</div>
+        <h2 class="sec-h2">Everything you need.<br>Nothing you <em>don't.</em></h2>
+        <p class="sec-p">Built for the way professionals in Africa actually work — mobile-first, multi-currency, AI-powered from day one.</p>
+      </div>
+      <div class="feat-grid reveal">
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M12 2l-2 7H3l6 4-2 7 5-4 5 4-2-7 6-4h-7z"/></svg>
+          </div>
+          <div class="feat-title">AI Invoice Generation</div>
+          <div class="feat-desc">Describe your work in plain language. AI extracts client, line items, rates and VAT automatically.</div>
+          <span class="feat-tag">Most used</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+          <div class="feat-title">Smart Reminders</div>
+          <div class="feat-desc">Auto-schedule at 3, 7, 14 and 30 days. AI writes each reminder. Send via email or WhatsApp.</div>
+          <span class="feat-tag">WhatsApp</span>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M3 12l9-9 9 9"/><path d="M9 21V9h6v12"/></svg>
+          </div>
+          <div class="feat-title">Global VAT Auto-detect</div>
+          <div class="feat-desc">Select your country. VAT rate, currency and tax label fill automatically. 40+ countries covered.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M2 9h6"/></svg>
+          </div>
+          <div class="feat-title">Deposit Billing</div>
+          <div class="feat-desc">Set 25%, 50% or custom deposit. Shows as a separate row on the invoice. Perfect for retainers.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+          </div>
+          <div class="feat-title">PDF Export</div>
+          <div class="feat-desc">One-click branded PDF with 5 template designs. Your firm name, bank details and T&amp;C included.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="feat-title">AI Terms &amp; Conditions</div>
+          <div class="feat-desc">Generate profession-specific T&amp;C for your country. Payment terms, IP, late fees — one click.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="sec">
+  <div class="sec-inner">
+    <div class="sec-head reveal text-center mx-auto">
+      <div class="sec-tag">Testimonials</div>
+      <h2 class="sec-h2">Professionals <em>love</em> it.</h2>
+    </div>
+    <div class="testi-grid reveal">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"I used to spend an hour per invoice. Now I describe the job, <em>hit Generate</em>, and it's done in seconds. I sent 12 invoices last week in under 20 minutes total."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(16,185,129,.12);color:#10B981;">KM</div>
+          <div>
+            <div class="testi-name">Kabo Motlhale</div>
+            <div class="testi-role">Structural Engineer, Gaborone</div>
+          </div>
+        </div>
+        <div class="testi-outcome">↑ Saved 4h/week on admin</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"The <em>WhatsApp reminders</em> changed everything. Clients respond 10× faster than email. Payments arrive within days, not months."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(59,130,246,.12);color:#3B82F6;">TN</div>
+          <div>
+            <div class="testi-name">Tshegofatso Nkwe</div>
+            <div class="testi-role">Architecture Firm, Francistown</div>
+          </div>
+        </div>
+        <div class="testi-outcome">↑ Payment time dropped from 45 to 12 days</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"<em>Deposit billing</em> alone paid for the subscription. Clients now pay 50% upfront — I've stopped chasing for months on end."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:rgba(245,158,11,.12);color:#F59E0B;">LK</div>
+          <div>
+            <div class="testi-name">Lerato Kgosi</div>
+            <div class="testi-role">Management Consultant, Johannesburg</div>
+          </div>
+        </div>
+        <div class="testi-outcome">↑ Cash flow improved in first month</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OBJECTION HANDLING -->
+<div class="how-bg">
+  <div class="sec">
+    <div class="sec-inner">
+      <div class="sec-head reveal">
+        <div class="sec-tag">Common questions</div>
+        <h2 class="sec-h2">We've heard <em>every</em> objection.</h2>
+      </div>
+      <div class="obj-grid reveal">
+        <div class="obj-card">
+          <div class="obj-q">"I already use Word / Excel for invoices."</div>
+          <div class="obj-a">That works — until you miss a VAT rate, send to the wrong client, or spend 40 minutes rebuilding last month's template. <strong>StagePay does it in 30 seconds.</strong></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-q">"Is my data safe?"</div>
+          <div class="obj-a">All data is encrypted at rest and in transit. We use Supabase (SOC 2 compliant) for storage. <strong>We never sell your data.</strong> You own everything.</div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-q">"What if I need to customise the invoice?"</div>
+          <div class="obj-a">Every field is editable after AI generation. Add your logo, custom T&amp;C, payment terms, and bank details. <strong>Full control, zero friction.</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHO IT'S FOR -->
+<div class="sec" id="who">
+  <div class="sec-inner">
+    <div class="sec-head reveal">
+      <div class="sec-tag">Who it's for</div>
+      <h2 class="sec-h2">Built for <em>billable</em> work.</h2>
+      <p class="sec-p">If you charge for your time, expertise or projects — StagePay is for you.</p>
+    </div>
+    <div class="who-grid reveal">
+      <div class="who-card">
+        <div class="who-emoji">🏗️</div>
+        <div class="who-title">Architects &amp; Engineers</div>
+        <div class="who-desc">Phase billing, site inspections, technical reports with VAT.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-emoji">⚖️</div>
+        <div class="who-title">Lawyers</div>
+        <div class="who-desc">Hourly billing, retainers, disbursements — time-tracked.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-emoji">📊</div>
+        <div class="who-title">Consultants</div>
+        <div class="who-desc">Monthly retainers, workshops, strategy deliverables.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-emoji">🎨</div>
+        <div class="who-title">Design Agencies</div>
+        <div class="who-desc">Project milestones, deposit invoices, revision rounds.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-emoji">🏢</div>
+        <div class="who-title">Contractors</div>
+        <div class="who-desc">Labour, materials, equipment — multi-line with VAT.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-emoji">💻</div>
+        <div class="who-title">Freelancers</div>
+        <div class="who-desc">Quick invoices in minutes. Reminders handle follow-up.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="how-bg" id="pricing">
+  <div class="sec">
+    <div class="sec-inner">
+      <div class="sec-head reveal text-center mx-auto">
+        <div class="sec-tag">Pricing</div>
+        <h2 class="sec-h2">Simple. <em>Transparent.</em></h2>
+        <p class="sec-p">Start free. Upgrade when you're ready. No surprises.</p>
+      </div>
+      <div class="price-grid reveal mx-auto">
+        <!-- Starter -->
+        <div class="price-card">
+          <div class="price-tier">Starter</div>
+          <div class="price-amt">Free</div>
+          <div class="price-bill">Forever · no card required</div>
+          <div class="price-divider"></div>
+          <div class="price-list">
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              5 invoices / month
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              AI generation (5/mo)
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              PDF export
+            </div>
+            <div class="pf off">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+              Auto-reminders
+            </div>
+            <div class="pf off">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+              WhatsApp sending
+            </div>
+          </div>
+          <button class="price-btn price-btn-out" onclick="window.location='stagepay-app_6.html'">Get started free</button>
+        </div>
+
+        <!-- Pro (popular) -->
+        <div class="price-card pop">
+          <div class="pop-badge">Most Popular</div>
+          <div class="price-tier">Pro</div>
+          <div class="price-amt">P199<span>/mo</span></div>
+          <div class="price-bill">Cancel anytime</div>
+          <div class="price-divider"></div>
+          <div class="price-list">
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Unlimited invoices
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Unlimited AI generation
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Auto-reminders
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              WhatsApp sending
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Deposit billing &amp; T&amp;C
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Custom branding
+            </div>
+          </div>
+          <button class="price-btn price-btn-main" onclick="window.location='stagepay-app_6.html'">Start Pro</button>
+        </div>
+
+        <!-- Business -->
+        <div class="price-card">
+          <div class="price-tier">Business</div>
+          <div class="price-amt">P499<span>/mo</span></div>
+          <div class="price-bill">Team access · billed monthly</div>
+          <div class="price-divider"></div>
+          <div class="price-list">
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Everything in Pro
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              5 team members
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Priority support
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              Analytics dashboard
+            </div>
+            <div class="pf">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 8l5 5 7-7"/></svg>
+              API access
+            </div>
+          </div>
+          <button class="price-btn price-btn-out" onclick="window.location='stagepay-app_6.html'">Contact sales</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRUST STRIP -->
+<div class="sec" style="padding-top:32px;padding-bottom:32px;">
+  <div class="sec-inner text-center reveal">
+    <p style="font-size:14px;color:var(--t3);">
+      Payments secured by Supabase &nbsp;·&nbsp; Data encrypted at rest &nbsp;·&nbsp; No lock-in &nbsp;·&nbsp; Export your data anytime
+    </p>
+  </div>
+</div>
+
+<!-- FINAL CTA -->
+<div class="final-cta">
+  <div class="final-cta-orb"></div>
+  <div class="final-cta-inner reveal">
+    <div class="final-cta-tag">
+      <span style="width:6px;height:6px;border-radius:50%;background:#10B981;display:inline-block;"></span>
+      Early Access Open
+    </div>
+    <h2 class="final-cta-h">Stop chasing.<br>Start <em>invoicing.</em></h2>
+    <p class="final-cta-p">Join 400+ professionals who already get paid faster. Free plan — no credit card needed.</p>
+    <div class="final-form">
+      <input type="email" id="finalEmail" class="final-form-input" placeholder="your@email.com">
+      <button class="btn-signup" onclick="handleSignup('finalEmail')">
+        Join waitlist →
+      </button>
+    </div>
+    <div class="final-trust">
+      <span>✓ Free forever plan</span>
+      <span>·</span>
+      <span>✓ No credit card</span>
+      <span>·</span>
+      <span>✓ Cancel anytime</span>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <a href="#" class="foot-logo">
+      <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+        <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+        <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
+        <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+        <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+      </svg>
+      <span class="foot-wordmark">Stage<em>Pay</em></span>
+    </a>
+    <div class="foot-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#who">Who it's for</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+    <div class="foot-copy">© 2026 StagePay · Built for African professionals</div>
+  </div>
+</footer>
+
+<!-- STICKY BAR -->
+<div class="sticky-bar" id="stickyBar">
+  <div class="sticky-bar-left">
+    <span class="sticky-bar-label">Ready to invoice smarter?</span>
+    <span class="sticky-bar-sub">Join 400+ professionals on the waitlist</span>
+  </div>
+  <div class="sticky-bar-right">
+    <input type="email" id="stickyEmail" class="sticky-input" placeholder="your@email.com">
+    <button class="sticky-btn" onclick="handleSignup('stickyEmail')">Start free →</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="
+  position:fixed;bottom:80px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:#131B2E;border:1px solid rgba(16,185,129,.3);
+  color:#F0F4F8;padding:14px 24px;border-radius:10px;
+  font-size:14px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  opacity:0;transition:opacity .3s,transform .3s;
+  z-index:400;white-space:nowrap;pointer-events:none;
+">
+  ✓ You're on the list! Redirecting to the app…
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
