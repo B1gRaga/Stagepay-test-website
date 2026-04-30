@@ -3877,6 +3877,11 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 </div>
 
 <script>
+// Capture recovery flag BEFORE Supabase processes and removes the URL hash
+if (window.location.hash.includes('type=recovery')) {
+  sessionStorage.setItem('sp-recovery', '1');
+}
+
 /* ── SUPABASE ── */
 const _supa = supabase.createClient(
   'https://tvpbshjrbtqreunxnpuv.supabase.co',
@@ -7890,7 +7895,14 @@ async function doPasswordReset() {
 // and SIGNED_IN after OAuth redirect — both fire before restoreSession completes
 _supa.auth.onAuthStateChange(async (event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    // Supabase detected a recovery token — show reset form, don't enter app
+    // Only show reset form if this page load actually came from a recovery link.
+    // Without this guard, Supabase re-fires PASSWORD_RECOVERY on every load
+    // while the stale recovery session sits in localStorage.
+    if (!sessionStorage.getItem('sp-recovery')) {
+      await _supa.auth.signOut(); // clear stale recovery session
+      return;
+    }
+    sessionStorage.removeItem('sp-recovery');
     history.replaceState(null, '', window.location.pathname);
     document.getElementById('reset-pw-modal').classList.remove('hidden');
   } else if (event === 'SIGNED_IN' && session && !currentUser) {
