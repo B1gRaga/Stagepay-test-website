@@ -549,6 +549,13 @@ footer{
 }
 .sticky-btn:hover{background:var(--g2);}
 
+/* ── PRE-CTA HOOK ── */
+.pre-cta-hook{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(30px,4.5vw,52px);letter-spacing:1px;
+  color:var(--t1);opacity:.75;
+}
+
 /* ── UTIL ── */
 .flex-btns{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .text-center{text-align:center;}
