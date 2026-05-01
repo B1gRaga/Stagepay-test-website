@@ -105,14 +105,14 @@ export default function Home() {
           <div className="hero-left">
             <div className="hero-badge">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="#10B981"><circle cx="5" cy="5" r="5"/></svg>
-              AI-Powered Invoicing · Built for Botswana
+              Just describe it · StagePay does the rest · Built for Botswana
             </div>
-            <p className="pain-hook">Stop wasting time with manual invoices and get paid faster.</p>
             <h1 className="hero-h1">
               Turn your work<br/>into a professional<br/>invoice in <em>30 seconds.</em>
             </h1>
+            <p className="pain-hook">Tired of typing invoices manually or wrestling with Excel?</p>
             <p className="hero-sub">
-              Describe the job in plain English — AI builds the invoice, calculates VAT, and sends smart reminders until you get paid.
+              Just describe your work — StagePay creates the invoice for you. VAT calculated, professionally formatted, sent via WhatsApp or email in seconds.
             </p>
             <div className="signup-box">
               <div className="signup-box-label">
@@ -122,19 +122,19 @@ export default function Home() {
               <div className="form-row">
                 <input type="email" id="heroEmail" className="form-input" placeholder="your@email.com"/>
                 <button className="btn-signup" onClick={() => handleSignup('heroEmail')}>
-                  Start free
+                  Try it free in 30 seconds
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
                 </button>
               </div>
               <div className="form-trust">
-                <span>✓ No setup required</span>
+                <span>✓ Your data stays private</span>
                 <span className="form-trust-div">·</span>
-                <span>✓ No credit card needed</span>
+                <span>✓ No setup needed</span>
                 <span className="form-trust-div">·</span>
-                <span>✓ Cancel anytime</span>
+                <span>✓ No credit card</span>
               </div>
             </div>
-            <p className="trust-note">Built for freelancers and small businesses in Botswana · No setup required · No credit card needed</p>
+            <p className="trust-note">Built for freelancers and small businesses in Botswana · Works with WhatsApp like your clients already do · No setup, no complexity</p>
             <div className="social-count">
               <div className="avatars">
                 <div className="av" style={{background:'rgba(16,185,129,.2)',color:'#10B981'}}>KM</div>
@@ -316,6 +316,43 @@ export default function Home() {
         </div>
       </div>
 
+      {/* TYPE → INVOICE DEMO */}
+      <div className="sec">
+        <div className="sec-inner">
+          <div className="sec-head reveal text-center mx-auto">
+            <div className="sec-tag">See it in action</div>
+            <h2 className="sec-h2">Just <em>describe it.</em><br/>We handle the rest.</h2>
+            <p className="sec-p">No forms. No templates. Type like you&apos;re messaging a colleague.</p>
+          </div>
+          <div className="aha-demo-grid reveal">
+            <div className="aha-input-box">
+              <div className="aha-box-label">You type</div>
+              <div className="aha-prompt">
+                &quot;Logo design for TelePower, P1,500. Due in 7 days. 50% deposit already paid.&quot;
+              </div>
+              <div className="aha-time">⚡ StagePay processes in under 5 seconds</div>
+            </div>
+            <div className="aha-arrow-wrap">
+              <div className="aha-arrow">→</div>
+              <div className="aha-arrow-label">Instant</div>
+            </div>
+            <div className="aha-result-box">
+              <div className="aha-box-label">You get</div>
+              <div className="aha-mini-invoice">
+                <div className="aha-inv-head">
+                  <span className="aha-inv-brand">Your Business</span>
+                  <span className="aha-inv-badge">INVOICE</span>
+                </div>
+                <div className="aha-inv-row"><span>Logo design — TelePower</span><span>P1,500</span></div>
+                <div className="aha-inv-row aha-muted"><span>Deposit paid (50%)</span><span>−P750</span></div>
+                <div className="aha-inv-total"><span>Balance Due</span><span>P750</span></div>
+                <div className="aha-inv-footer">VAT calculated · Due in 7 days · Ready to send via WhatsApp or email</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* AHA MOMENT */}
       <div className="sec">
         <div className="sec-inner">
@@ -338,7 +375,7 @@ export default function Home() {
               <h3>Ready to stop chasing payments?</h3>
               <p>Join 400+ professionals who already invoice smarter. Free plan — no card needed.</p>
               <div className="flex-btns">
-                <a href="/app" className="btn-green">Start for free →</a>
+                <a href="/app" className="btn-green">Create my first invoice →</a>
                 <a href="#features" className="btn-outline">See all features</a>
               </div>
             </div>
@@ -507,7 +544,7 @@ export default function Home() {
                   <div className="pf off">{xk}Auto-reminders</div>
                   <div className="pf off">{xk}WhatsApp sending</div>
                 </div>
-                <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Get started free</button>
+                <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Create my first invoice</button>
               </div>
               <div className="price-card pop">
                 <div className="pop-badge">Most Popular</div>
@@ -523,7 +560,7 @@ export default function Home() {
                   <div className="pf">{ck}Deposit billing &amp; T&amp;C</div>
                   <div className="pf">{ck}Custom branding</div>
                 </div>
-                <button className="price-btn price-btn-main" onClick={() => window.location.href='/app'}>Start Pro</button>
+                <button className="price-btn price-btn-main" onClick={() => window.location.href='/app'}>Start invoicing in seconds</button>
               </div>
               <div className="price-card">
                 <div className="price-tier">Business</div>
@@ -573,7 +610,7 @@ export default function Home() {
           <p className="final-cta-p">Join early users simplifying how they get paid. First 100 users get <strong>Pro free for 1 month</strong> — no credit card needed.</p>
           <div className="final-form">
             <input type="email" id="finalEmail" className="final-form-input" placeholder="your@email.com"/>
-            <button className="btn-signup" onClick={() => handleSignup('finalEmail')}>Join waitlist →</button>
+            <button className="btn-signup" onClick={() => handleSignup('finalEmail')}>Create my first invoice →</button>
           </div>
           <p className="early-users">Join early users simplifying their invoicing process</p>
           <div className="final-trust">
@@ -617,7 +654,7 @@ export default function Home() {
         </div>
         <div className="sticky-bar-right">
           <input type="email" id="stickyEmail" className="sticky-input" placeholder="your@email.com"/>
-          <button className="sticky-btn" onClick={() => handleSignup('stickyEmail')}>Start free →</button>
+          <button className="sticky-btn" onClick={() => handleSignup('stickyEmail')}>Start invoicing now →</button>
         </div>
       </div>
 
