@@ -12,15 +12,6 @@ export default function Home() {
     }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
     reveals.forEach(el => obs.observe(el))
 
-    const stickyBar = document.getElementById('stickyBar')
-    let shown = false
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y > 500 && !shown) { stickyBar?.classList.add('show'); shown = true }
-      else if (y < 200 && shown) { stickyBar?.classList.remove('show'); shown = false }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-
     const inputs = document.querySelectorAll<HTMLInputElement>('input[type=email]')
     const onKeydown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') handleSignup((e.target as HTMLInputElement).id)
@@ -29,7 +20,6 @@ export default function Home() {
 
     return () => {
       obs.disconnect()
-      window.removeEventListener('scroll', onScroll)
       inputs.forEach(inp => inp.removeEventListener('keydown', onKeydown))
     }
   }, [])
@@ -69,7 +59,7 @@ export default function Home() {
       {/* ANNOUNCE BAR */}
       <div className="announce">
         <span className="announce-dot"></span>
-        <strong>Limited Offer:</strong> First 100 users get <strong>1 month of Pro free</strong> — Early access is open now.
+        <strong>Early Access:</strong> First 100 users get <strong>1 month of Pro free</strong> — no credit card needed.
       </div>
 
       {/* NAV */}
@@ -91,7 +81,7 @@ export default function Home() {
             <a href="#who">Who it&apos;s for</a>
           </div>
           <div className="nav-right">
-            <a href="/app" className="nav-cta">Start free →</a>
+            <a href="/app" className="nav-cta">Try it free →</a>
           </div>
         </div>
       </nav>
@@ -105,14 +95,14 @@ export default function Home() {
           <div className="hero-left">
             <div className="hero-badge">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="#10B981"><circle cx="5" cy="5" r="5"/></svg>
-              Just describe it · StagePay does the rest · Built for Botswana
+              AI-powered · WhatsApp delivery · Built for Botswana
             </div>
             <h1 className="hero-h1">
-              Turn your work<br/>into a professional<br/>invoice in <em>30 seconds.</em>
+              Describe your work.<br/>We send the invoice<br/>on <em>WhatsApp</em> in 30 seconds.
             </h1>
-            <p className="pain-hook">Tired of typing invoices manually or wrestling with Excel?</p>
+            <p className="pain-hook">Stop manually building invoices in Word or Excel.</p>
             <p className="hero-sub">
-              Just describe your work — StagePay creates the invoice for you. VAT calculated, professionally formatted, sent via WhatsApp or email in seconds.
+              Just tell StagePay what you did — AI generates a professional invoice instantly. Send it directly to your client via WhatsApp. Smart reminders chase overdue payments so you don&apos;t have to.
             </p>
             <div className="signup-box">
               <div className="signup-box-label">
@@ -122,28 +112,19 @@ export default function Home() {
               <div className="form-row">
                 <input type="email" id="heroEmail" className="form-input" placeholder="your@email.com"/>
                 <button className="btn-signup" onClick={() => handleSignup('heroEmail')}>
-                  Try it free in 30 seconds
+                  Get started free
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
                 </button>
               </div>
               <div className="form-trust">
-                <span>✓ Your data stays private</span>
+                <span>✓ No credit card</span>
                 <span className="form-trust-div">·</span>
                 <span>✓ No setup needed</span>
                 <span className="form-trust-div">·</span>
-                <span>✓ No credit card</span>
+                <span>✓ Your data stays private</span>
               </div>
             </div>
-            <p className="trust-note">Built for freelancers and small businesses in Botswana · Works with WhatsApp like your clients already do · No setup, no complexity</p>
-            <div className="social-count">
-              <div className="avatars">
-                <div className="av" style={{background:'rgba(16,185,129,.2)',color:'#10B981'}}>KM</div>
-                <div className="av" style={{background:'rgba(59,130,246,.2)',color:'#3B82F6'}}>TN</div>
-                <div className="av" style={{background:'rgba(245,158,11,.2)',color:'#F59E0B'}}>LK</div>
-                <div className="av" style={{background:'rgba(139,92,246,.2)',color:'#8B5CF6'}}>SO</div>
-              </div>
-              <span className="social-text"><strong>400+</strong> early users already simplifying their invoicing</span>
-            </div>
+            <p className="trust-note">Built for freelancers and small businesses in Botswana · Sends via WhatsApp like your clients already use · No complexity</p>
           </div>
 
           <div className="hero-right">
@@ -247,50 +228,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TICKER */}
-      <div className="ticker">
-        <div className="ticker-track">
-          {[
-            'Botswana|14% VAT','South Africa|15% VAT','Kenya|16% VAT','Nigeria|7.5% VAT',
-            'UAE|5% VAT','United Kingdom|20% VAT','Germany|19% MwSt','Australia|10% GST',
-            'India|18% GST','Singapore|9% GST','Canada|5% GST','Zambia|16% VAT','Namibia|15% VAT',
-            'Botswana|14% VAT','South Africa|15% VAT','Kenya|16% VAT','Nigeria|7.5% VAT',
-            'UAE|5% VAT','United Kingdom|20% VAT','Germany|19% MwSt','Australia|10% GST',
-            'India|18% GST','Singapore|9% GST','Canada|5% GST','Zambia|16% VAT','Namibia|15% VAT',
-          ].map((t, i) => {
-            const [country, tax] = t.split('|')
-            return <div key={i} className="tick-item"><strong>{country}</strong> · {tax} <span className="tick-sep">|</span></div>
-          })}
-        </div>
-      </div>
-
-      {/* PROOF STRIP */}
-      <div className="proof reveal">
-        <div className="proof-inner">
-          <div className="proof-grid">
-            <div className="proof-cell"><div className="proof-num">2,400+</div><div className="proof-label">AI-generated invoices</div></div>
-            <div className="proof-cell"><div className="proof-num">40+</div><div className="proof-label">Countries &amp; tax rates</div></div>
-            <div className="proof-cell"><div className="proof-num">18 days</div><div className="proof-label">Avg. payment time</div></div>
-            <div className="proof-cell"><div className="proof-num">P4.2M+</div><div className="proof-label">Total invoiced</div></div>
-          </div>
-        </div>
-      </div>
-
-      {/* LOCAL TRUST */}
-      <div className="sec" style={{paddingTop:'0',paddingBottom:'32px'}}>
-        <div className="sec-inner text-center reveal">
-          <p style={{fontSize:'13px',color:'var(--t3)'}}>Designed for how businesses in Botswana actually invoice — BWP currency, 14% VAT built in, and WhatsApp delivery that clients actually respond to.</p>
-        </div>
-      </div>
-
       {/* HOW IT WORKS */}
       <div className="how-bg">
         <div className="sec" id="how">
           <div className="sec-inner">
             <div className="sec-head reveal">
               <div className="sec-tag">How it works</div>
-              <h2 className="sec-h2">Create invoices <em>instantly.</em></h2>
-              <p className="sec-p">Turn simple descriptions into professional invoices in seconds — no templates, no training needed.</p>
+              <h2 className="sec-h2">Three steps to <em>getting paid.</em></h2>
+              <p className="sec-p">No templates. No training. Just describe the work and we handle everything else.</p>
             </div>
             <div className="how-grid reveal">
               <div className="how-step">
@@ -303,13 +248,13 @@ export default function Home() {
                 <div className="how-num">02</div>
                 <div className="how-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
                 <div className="how-title">AI builds the invoice</div>
-                <div className="how-desc">Client, line items, VAT, deposit and due date extracted automatically. Edit anything before sending.</div>
+                <div className="how-desc">Client, line items, VAT, deposit and due date — extracted automatically. Edit anything before sending.</div>
               </div>
               <div className="how-step">
                 <div className="how-num">03</div>
                 <div className="how-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg></div>
-                <div className="how-title">Send &amp; get paid</div>
-                <div className="how-desc">Email with AI cover note, branded PDF, or WhatsApp. Smart reminders chase overdue invoices automatically.</div>
+                <div className="how-title">Send via WhatsApp &amp; get paid</div>
+                <div className="how-desc">Deliver your invoice straight to your client&apos;s WhatsApp. Smart reminders follow up automatically on overdue invoices.</div>
               </div>
             </div>
           </div>
@@ -418,7 +363,55 @@ export default function Home() {
         </div>
       </div>
 
-      {/* AHA MOMENT */}
+      {/* FEATURES */}
+      <div className="feat-bg" id="features">
+        <div className="sec">
+          <div className="sec-inner">
+            <div className="sec-head reveal">
+              <div className="sec-tag">Features</div>
+              <h2 className="sec-h2">Everything you need<br/>to <em>get paid faster.</em></h2>
+              <p className="sec-p">Built for the way professionals in Botswana actually work — mobile-first, WhatsApp-native, AI-powered from day one.</p>
+            </div>
+            <div className="feat-grid reveal">
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M12 2l-2 7H3l6 4-2 7 5-4 5 4-2-7 6-4h-7z"/></svg></div>
+                <div className="feat-title">AI Invoice Generation</div>
+                <div className="feat-desc">Describe your work in plain language. AI extracts the client, line items, rates and VAT automatically.</div>
+                <span className="feat-tag">Core feature</span>
+              </div>
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.07-1.35A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg></div>
+                <div className="feat-title">WhatsApp Delivery</div>
+                <div className="feat-desc">Send your invoice directly to your client&apos;s WhatsApp. Clients actually open and respond to WhatsApp messages.</div>
+                <span className="feat-tag">The differentiator</span>
+              </div>
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+                <div className="feat-title">Automatic Reminders</div>
+                <div className="feat-desc">Smart follow-ups go out at 3, 7, 14 and 30 days. You never have to chase a client awkwardly again.</div>
+                <span className="feat-tag">WhatsApp</span>
+              </div>
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
+                <div className="feat-title">Client Address Book</div>
+                <div className="feat-desc">Save client details once. Next time you invoice them, their name, contact and VAT number are pre-filled.</div>
+              </div>
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                <div className="feat-title">PDF Export</div>
+                <div className="feat-desc">One-click branded PDF with your firm name, bank details and payment terms included — ready to share anywhere.</div>
+              </div>
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M2 9h6"/></svg></div>
+                <div className="feat-title">Deposit Billing</div>
+                <div className="feat-desc">Set 25%, 50% or a custom deposit. Shows as a clear row on the invoice — perfect for projects and retainers.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BEFORE / AFTER */}
       <div className="sec">
         <div className="sec-inner">
           <div className="sec-head reveal">
@@ -431,14 +424,14 @@ export default function Home() {
               <ul className="pain-list">
                 <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Open Word, find last invoice, update every field manually, calculate VAT — 45 minutes per invoice.</span></li>
                 <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Wrong VAT rate, missing bank details, wrong client name — send a corrected invoice, lose credibility.</span></li>
-                <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Chase payments manually via email. Clients ignore it. You feel awkward. Money sits unpaid for months.</span></li>
-                <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Describe the job, hit Generate. Professional invoice in 30 seconds — correct VAT, branded, ready to send.</span></li>
+                <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Chase payments manually via WhatsApp. Clients ignore it. You feel awkward. Money sits unpaid for months.</span></li>
+                <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Describe the job, hit Generate. Professional invoice in 30 seconds — correct VAT, branded, sent via WhatsApp.</span></li>
                 <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Smart reminders go out automatically at 3, 7, 14 and 30 days. You never have to chase again.</span></li>
               </ul>
             </div>
             <div className="val-cta-box">
               <h3>Ready to stop chasing payments?</h3>
-              <p>Join 400+ professionals who already invoice smarter. Free plan — no card needed.</p>
+              <p>Start free — no credit card needed. Create your first invoice in under 2 minutes.</p>
               <div className="flex-btns">
                 <a href="/app" className="btn-green">Create my first invoice →</a>
                 <a href="#features" className="btn-outline">See all features</a>
@@ -448,185 +441,123 @@ export default function Home() {
         </div>
       </div>
 
-      {/* FEATURES */}
-      <div className="feat-bg" id="features">
-        <div className="sec">
-          <div className="sec-inner">
-            <div className="sec-head reveal">
-              <div className="sec-tag">Features</div>
-              <h2 className="sec-h2">Everything you need.<br/>Nothing you <em>don&apos;t.</em></h2>
-              <p className="sec-p">Built for the way professionals in Africa actually work — mobile-first, multi-currency, AI-powered from day one.</p>
-            </div>
-            <div className="feat-grid reveal">
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M12 2l-2 7H3l6 4-2 7 5-4 5 4-2-7 6-4h-7z"/></svg></div>
-                <div className="feat-title">AI Invoice Generation</div>
-                <div className="feat-desc">Describe your work in plain language. AI extracts client, line items, rates and VAT automatically.</div>
-                <span className="feat-tag">Most used</span>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
-                <div className="feat-title">Smart Reminders</div>
-                <div className="feat-desc">Auto-schedule at 3, 7, 14 and 30 days. AI writes each reminder. Send via email or WhatsApp.</div>
-                <span className="feat-tag">WhatsApp</span>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M3 12l9-9 9 9"/><path d="M9 21V9h6v12"/></svg></div>
-                <div className="feat-title">Global VAT Auto-detect</div>
-                <div className="feat-desc">Select your country. VAT rate, currency and tax label fill automatically. 40+ countries covered.</div>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M2 9h6"/></svg></div>
-                <div className="feat-title">Deposit Billing</div>
-                <div className="feat-desc">Set 25%, 50% or custom deposit. Shows as a separate row on the invoice. Perfect for retainers.</div>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
-                <div className="feat-title">PDF Export</div>
-                <div className="feat-desc">One-click branded PDF with 5 template designs. Your firm name, bank details and T&amp;C included.</div>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-                <div className="feat-title">AI Terms &amp; Conditions</div>
-                <div className="feat-desc">Generate profession-specific T&amp;C for your country. Payment terms, IP, late fees — one click.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-      {/* OBJECTION HANDLING */}
-      <div className="how-bg">
-        <div className="sec">
-          <div className="sec-inner">
-            <div className="sec-head reveal">
-              <div className="sec-tag">Common questions</div>
-              <h2 className="sec-h2">We&apos;ve heard <em>every</em> objection.</h2>
-            </div>
-            <div className="obj-grid reveal">
-              <div className="obj-card">
-                <div className="obj-q">&quot;I already use Word / Excel for invoices.&quot;</div>
-                <div className="obj-a">That works — until you miss a VAT rate, send to the wrong client, or spend 40 minutes rebuilding last month&apos;s template. <strong>StagePay does it in 30 seconds.</strong></div>
-              </div>
-              <div className="obj-card">
-                <div className="obj-q">&quot;Is my data safe?&quot;</div>
-                <div className="obj-a">Your business data is securely stored and encrypted — at rest and in transit. Only you control your information. We use Supabase (SOC 2 compliant) for storage, and <strong>we never sell your data, ever.</strong> Export everything anytime.</div>
-              </div>
-              <div className="obj-card">
-                <div className="obj-q">&quot;What if I need to customise the invoice?&quot;</div>
-                <div className="obj-a">Every field is editable after AI generation. Add your logo, custom T&amp;C, payment terms, and bank details. <strong>Full control, zero friction.</strong></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* WHO IT'S FOR */}
-      <div className="sec" id="who">
-        <div className="sec-inner">
-          <div className="sec-head reveal">
-            <div className="sec-tag">Who it&apos;s for</div>
-            <h2 className="sec-h2">Built for freelancers<br/>and <em>service businesses.</em></h2>
-            <p className="sec-p">Freelancers and contractors first. Anyone else who charges for their time or expertise — you&apos;re covered too.</p>
-          </div>
-          <div className="who-grid reveal">
-            {[
-              {emoji:'💻',title:'Freelancers',desc:'Quick invoices in minutes. Reminders handle follow-up automatically.'},
-              {emoji:'🏢',title:'Contractors',desc:'Labour, materials, equipment — multi-line with VAT.'},
-              {emoji:'🏗️',title:'Architects & Engineers',desc:'Phase billing, site inspections, technical reports with VAT.'},
-              {emoji:'⚖️',title:'Lawyers',desc:'Hourly billing, retainers, disbursements — time-tracked.'},
-              {emoji:'📊',title:'Consultants',desc:'Monthly retainers, workshops, strategy deliverables.'},
-              {emoji:'🎨',title:'Design Agencies',desc:'Project milestones, deposit invoices, revision rounds.'},
-            ].map((w,i) => (
-              <div key={i} className="who-card">
-                <div className="who-emoji">{w.emoji}</div>
-                <div className="who-title">{w.title}</div>
-                <div className="who-desc">{w.desc}</div>
-              </div>
-            ))}
+      <div className="how-bg" id="who">
+        <div className="sec">
+          <div className="sec-inner">
+            <div className="sec-head reveal">
+              <div className="sec-tag">Who it&apos;s for</div>
+              <h2 className="sec-h2">Built for people who<br/><em>charge for their work.</em></h2>
+              <p className="sec-p">If you send invoices to clients, StagePay makes the whole process faster and more professional.</p>
+            </div>
+            <div className="who-grid reveal">
+              {[
+                {emoji:'🏗️', title:'Architects & Engineers', desc:'Phase billing, site inspections, technical reports with VAT — all handled in seconds.'},
+                {emoji:'💻', title:'Freelancers', desc:'Quick invoices in minutes. Automatic WhatsApp reminders handle follow-up so you never feel awkward chasing.'},
+                {emoji:'🔧', title:'Contractors & Consultants', desc:'Labour, materials, milestones, retainers — multi-line invoices with deposit billing built in.'},
+                {emoji:'🏢', title:'Small Businesses', desc:'Professional invoices for every job. Save clients once, invoice them in seconds every time after that.'},
+              ].map((w, i) => (
+                <div key={i} className="who-card">
+                  <div className="who-emoji">{w.emoji}</div>
+                  <div className="who-title">{w.title}</div>
+                  <div className="who-desc">{w.desc}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* PRICING */}
-      <div className="how-bg" id="pricing">
-        <div className="sec">
-          <div className="sec-inner">
-            <div className="sec-head reveal text-center mx-auto">
-              <div className="sec-tag">Pricing</div>
-              <h2 className="sec-h2">Simple. <em>Transparent.</em></h2>
-              <p className="sec-p">Start free. Upgrade when you&apos;re ready. No surprises.</p>
+      <div className="sec" id="pricing">
+        <div className="sec-inner">
+          <div className="sec-head reveal text-center mx-auto">
+            <div className="sec-tag">Pricing</div>
+            <h2 className="sec-h2">Simple. <em>Transparent.</em></h2>
+            <p className="sec-p">Start free. Upgrade when you&apos;re ready. No surprises.</p>
+          </div>
+          <div className="price-grid reveal mx-auto">
+            <div className="price-card">
+              <div className="price-tier">Starter</div>
+              <div className="price-amt">Free</div>
+              <div className="price-bill">Forever · no card required</div>
+              <div className="price-divider"></div>
+              <div className="price-list">
+                <div className="pf">{ck}5 invoices / month</div>
+                <div className="pf">{ck}AI generation (5/mo)</div>
+                <div className="pf">{ck}PDF export</div>
+                <div className="pf">{ck}Client address book</div>
+                <div className="pf off">{xk}Auto-reminders</div>
+                <div className="pf off">{xk}WhatsApp delivery</div>
+              </div>
+              <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Create my first invoice</button>
             </div>
-            <div className="price-grid reveal mx-auto">
-              <div className="price-card">
-                <div className="price-tier">Starter</div>
-                <div className="price-amt">Free</div>
-                <div className="price-bill">Forever · no card required</div>
-                <div className="price-divider"></div>
-                <div className="price-list">
-                  <div className="pf">{ck}5 invoices / month</div>
-                  <div className="pf">{ck}AI generation (5/mo)</div>
-                  <div className="pf">{ck}PDF export</div>
-                  <div className="pf off">{xk}Auto-reminders</div>
-                  <div className="pf off">{xk}WhatsApp sending</div>
-                </div>
-                <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Create my first invoice</button>
+            <div className="price-card pop">
+              <div className="pop-badge">Most Popular</div>
+              <div className="price-tier">Pro</div>
+              <div className="price-amt">P199<span>/mo</span></div>
+              <div className="price-bill">Cancel anytime</div>
+              <div className="price-divider"></div>
+              <div className="price-list">
+                <div className="pf">{ck}Unlimited invoices</div>
+                <div className="pf">{ck}Unlimited AI generation</div>
+                <div className="pf">{ck}WhatsApp delivery</div>
+                <div className="pf">{ck}Auto-reminders</div>
+                <div className="pf">{ck}Client address book</div>
+                <div className="pf">{ck}Deposit billing</div>
+                <div className="pf">{ck}Custom branding</div>
               </div>
-              <div className="price-card pop">
-                <div className="pop-badge">Most Popular</div>
-                <div className="price-tier">Pro</div>
-                <div className="price-amt">P199<span>/mo</span></div>
-                <div className="price-bill">Cancel anytime</div>
-                <div className="price-divider"></div>
-                <div className="price-list">
-                  <div className="pf">{ck}Unlimited invoices</div>
-                  <div className="pf">{ck}Unlimited AI generation</div>
-                  <div className="pf">{ck}Auto-reminders</div>
-                  <div className="pf">{ck}WhatsApp sending</div>
-                  <div className="pf">{ck}Deposit billing &amp; T&amp;C</div>
-                  <div className="pf">{ck}Custom branding</div>
-                </div>
-                <button className="price-btn price-btn-main" onClick={() => window.location.href='/app'}>Start invoicing in seconds</button>
+              <button className="price-btn price-btn-main" onClick={() => window.location.href='/app'}>Start invoicing in seconds</button>
+            </div>
+            <div className="price-card" style={{opacity:0.7}}>
+              <div className="pop-badge" style={{background:'rgba(100,116,139,0.15)',color:'#94A3B8',border:'1px solid rgba(100,116,139,0.3)'}}>Coming Soon</div>
+              <div className="price-tier">Business</div>
+              <div className="price-amt">P499<span>/mo</span></div>
+              <div className="price-bill">Team access · billed monthly</div>
+              <div className="price-divider"></div>
+              <div className="price-list">
+                <div className="pf">{ck}Unlimited invoices</div>
+                <div className="pf">{ck}Unlimited AI generation</div>
+                <div className="pf">{ck}WhatsApp delivery</div>
+                <div className="pf">{ck}Auto-reminders</div>
+                <div className="pf">{ck}Client address book</div>
+                <div className="pf">{ck}Deposit billing</div>
+                <div className="pf">{ck}Custom branding</div>
+                <div className="pf">{ck}5 team members</div>
+                <div className="pf">{ck}Analytics dashboard</div>
+                <div className="pf">{ck}Priority support</div>
+                <div className="pf">{ck}API access</div>
               </div>
-              <div className="price-card">
-                <div className="price-tier">Business</div>
-                <div className="price-amt">P499<span>/mo</span></div>
-                <div className="price-bill">Team access · billed monthly</div>
-                <div className="price-divider"></div>
-                <div className="price-list">
-                  <div className="pf">{ck}Unlimited invoices</div>
-                  <div className="pf">{ck}Unlimited AI generation</div>
-                  <div className="pf">{ck}Auto-reminders &amp; WhatsApp</div>
-                  <div className="pf">{ck}Deposit billing &amp; T&amp;C</div>
-                  <div className="pf">{ck}Custom branding</div>
-                  <div className="pf">{ck}5 team members</div>
-                  <div className="pf">{ck}Analytics dashboard</div>
-                  <div className="pf">{ck}Priority support</div>
-                  <div className="pf">{ck}API access</div>
-                </div>
-                <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Contact sales</button>
-              </div>
+              <button className="price-btn price-btn-out" style={{opacity:0.5,cursor:'not-allowed'}} disabled>Coming soon</button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* TRUST SECTION */}
-      <section className="trust reveal">
-        <div className="trust-inner">
-          <h2 className="trust-h">Built for real business use</h2>
-          <ul className="trust-list">
-            <li>Your data is securely stored and private</li>
-            <li>Designed for reliability when sending invoices</li>
-            <li>You stay in full control of your information</li>
-          </ul>
+      {/* FAQ */}
+      <div className="how-bg">
+        <div className="sec">
+          <div className="sec-inner">
+            <div className="sec-head reveal">
+              <div className="sec-tag">Common questions</div>
+              <h2 className="sec-h2">A few things<br/>people <em>ask first.</em></h2>
+            </div>
+            <div className="obj-grid reveal">
+              <div className="obj-card">
+                <div className="obj-q">&quot;I already use Word or Excel for invoices.&quot;</div>
+                <div className="obj-a">That works — until you miss a VAT rate, send to the wrong client, or spend 40 minutes rebuilding last month&apos;s template. <strong>StagePay does it in 30 seconds.</strong></div>
+              </div>
+              <div className="obj-card">
+                <div className="obj-q">&quot;Is my data safe?&quot;</div>
+                <div className="obj-a">Your business data is securely stored and encrypted — at rest and in transit. We use Supabase (SOC 2 compliant) for storage. <strong>We never sell your data, ever.</strong> Export everything anytime.</div>
+              </div>
+              <div className="obj-card">
+                <div className="obj-q">&quot;Can I edit the invoice before sending?&quot;</div>
+                <div className="obj-a">Yes — every field is editable after AI generation. Add your logo, payment terms, bank details, or adjust any line item. <strong>Full control, zero friction.</strong></div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
-
-      {/* PRE-CTA HOOK */}
-      <div style={{textAlign:'center',padding:'56px clamp(16px,4vw,48px) 0'}}>
-        <p className="pre-cta-hook reveal">Your next invoice shouldn&apos;t take 30 minutes.</p>
       </div>
 
       {/* FINAL CTA */}
@@ -635,15 +566,14 @@ export default function Home() {
         <div className="final-cta-inner reveal">
           <div className="final-cta-tag">
             <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'#10B981',display:'inline-block'}}></span>
-            Limited Offer · First 100 Users
+            Early Access · First 100 Users
           </div>
-          <h2 className="final-cta-h">Stop delaying payments.<br/>Send your next invoice<br/>in <em>seconds.</em></h2>
-          <p className="final-cta-p">Join early users simplifying how they get paid. First 100 users get <strong>Pro free for 1 month</strong> — no credit card needed.</p>
+          <h2 className="final-cta-h">Send your next invoice<br/>on WhatsApp<br/>in <em>30 seconds.</em></h2>
+          <p className="final-cta-p">First 100 users get <strong>Pro free for 1 month</strong> — no credit card needed. Start invoicing smarter today.</p>
           <div className="final-form">
             <input type="email" id="finalEmail" className="final-form-input" placeholder="your@email.com"/>
-            <button className="btn-signup" onClick={() => handleSignup('finalEmail')}>Create my first invoice →</button>
+            <button className="btn-signup" onClick={() => handleSignup('finalEmail')}>Get started free →</button>
           </div>
-          <p className="early-users">Join early users simplifying their invoicing process</p>
           <div className="final-trust">
             <span>✓ First 100 get Pro free</span>
             <span>·</span>
@@ -667,6 +597,7 @@ export default function Home() {
             <span className="foot-wordmark">Stage<em>Pay</em></span>
           </a>
           <div className="foot-links">
+            <a href="#how">How it works</a>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
             <a href="#who">Who it&apos;s for</a>
@@ -676,18 +607,6 @@ export default function Home() {
           <div className="foot-copy">© 2026 StagePay · Built for African professionals</div>
         </div>
       </footer>
-
-      {/* STICKY BAR */}
-      <div className="sticky-bar" id="stickyBar">
-        <div className="sticky-bar-left">
-          <span className="sticky-bar-label">First 100 users get Pro free for 1 month</span>
-          <span className="sticky-bar-sub">Join early users simplifying their invoicing process</span>
-        </div>
-        <div className="sticky-bar-right">
-          <input type="email" id="stickyEmail" className="sticky-input" placeholder="your@email.com"/>
-          <button className="sticky-btn" onClick={() => handleSignup('stickyEmail')}>Start invoicing now →</button>
-        </div>
-      </div>
 
       {/* TOAST */}
       <div id="toast" style={{position:'fixed',bottom:'80px',left:'50%',transform:'translateX(-50%) translateY(20px)',background:'#131B2E',border:'1px solid rgba(16,185,129,.3)',color:'#F0F4F8',padding:'14px 24px',borderRadius:'10px',fontSize:'14px',fontWeight:600,boxShadow:'0 8px 32px rgba(0,0,0,.4)',opacity:0,transition:'opacity .3s,transform .3s',zIndex:400,whiteSpace:'nowrap',pointerEvents:'none'}}>
