@@ -324,7 +324,7 @@ export default function Home() {
             <h2 className="sec-h2">Just <em>describe it.</em><br/>We handle the rest.</h2>
             <p className="sec-p">No forms. No templates. Type like you&apos;re messaging a colleague.</p>
           </div>
-          <div className="aha-demo-grid reveal">
+          <div className="aha-demo-grid reveal" style={{alignItems:'start'}}>
             <div className="aha-input-box">
               <div className="aha-box-label">You type</div>
               <div className="aha-prompt">
@@ -336,17 +336,82 @@ export default function Home() {
               <div className="aha-arrow">→</div>
               <div className="aha-arrow-label">Instant</div>
             </div>
-            <div className="aha-result-box">
-              <div className="aha-box-label">You get</div>
-              <div className="aha-mini-invoice">
-                <div className="aha-inv-head">
-                  <span className="aha-inv-brand">Your Business</span>
-                  <span className="aha-inv-badge">INVOICE</span>
+            <div className="aha-result-box" style={{padding:0,overflow:'hidden'}}>
+              <div className="aha-box-label" style={{padding:'16px 20px 10px'}}>You get</div>
+              <div className="mock-wrap" style={{borderRadius:0,boxShadow:'none',border:'none',borderTop:'1px solid var(--line)'}}>
+                <div className="mock-bar">
+                  <div className="mock-dot" style={{background:'#EF4444'}}></div>
+                  <div className="mock-dot" style={{background:'#F59E0B'}}></div>
+                  <div className="mock-dot" style={{background:'#10B981'}}></div>
+                  <span className="mock-url">stagepay.co.bw/invoice/INV-043</span>
                 </div>
-                <div className="aha-inv-row"><span>Logo design — TelePower</span><span>P1,500</span></div>
-                <div className="aha-inv-row aha-muted"><span>Deposit paid (50%)</span><span>−P750</span></div>
-                <div className="aha-inv-total"><span>Balance Due</span><span>P750</span></div>
-                <div className="aha-inv-footer">VAT calculated · Due in 7 days · Ready to send via WhatsApp or email</div>
+                <div className="mock-body">
+                  <div className="mock-head">
+                    <div>
+                      <div className="mock-brand">
+                        <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
+                        Your Business
+                      </div>
+                      <div className="mock-meta">Your City · VAT Registered</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div className="mock-inv-badge">INVOICE</div>
+                      <div className="mock-meta" style={{marginTop:'6px'}}>INV-043 · 01 May 2026</div>
+                    </div>
+                  </div>
+                  <div className="mock-parties">
+                    <div>
+                      <div className="mock-lbl">Bill to</div>
+                      <div className="mock-nm">TelePower</div>
+                    </div>
+                    <div>
+                      <div className="mock-lbl">Due</div>
+                      <div className="mock-nm">08 May 2026</div>
+                      <div className="mock-detail">Net 7 days</div>
+                    </div>
+                  </div>
+                  <table className="mock-tbl">
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th style={{textAlign:'right'}}>Qty</th>
+                        <th style={{textAlign:'right'}}>Rate</th>
+                        <th style={{textAlign:'right'}}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Logo design</td>
+                        <td style={{textAlign:'right'}}>1</td>
+                        <td style={{textAlign:'right'}}>P1,500</td>
+                        <td style={{textAlign:'right'}}>P1,500</td>
+                      </tr>
+                      <tr>
+                        <td style={{color:'#F59E0B'}}>Deposit paid (50%)</td>
+                        <td></td><td></td>
+                        <td style={{textAlign:'right',color:'#F59E0B'}}>−P750</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div className="mock-subtotals">
+                    <div className="mock-sub-row"><span>Subtotal</span><span>P1,500</span></div>
+                    <div className="mock-sub-row vat"><span>VAT (14%)</span><span>P210</span></div>
+                  </div>
+                  <div className="mock-total-bar">
+                    <span className="mock-total-lbl">Balance Due</span>
+                    <span className="mock-total-val">P960</span>
+                  </div>
+                  <div className="mock-actions">
+                    <div className="mock-btn">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                      Download PDF
+                    </div>
+                    <div className="mock-btn mock-btn-wa">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.07-1.35A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                      Send via WhatsApp
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -430,44 +495,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* TESTIMONIALS */}
-      <div className="sec">
-        <div className="sec-inner">
-          <div className="sec-head reveal text-center mx-auto">
-            <div className="sec-tag">Testimonials</div>
-            <h2 className="sec-h2">Professionals <em>love</em> it.</h2>
-          </div>
-          <div className="testi-grid reveal">
-            <div className="testi-card">
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-quote">&quot;I used to spend an hour per invoice. Now I describe the job, <em>hit Generate</em>, and it&apos;s done in seconds. I sent 12 invoices last week in under 20 minutes total.&quot;</p>
-              <div className="testi-author">
-                <div className="testi-av" style={{background:'rgba(16,185,129,.12)',color:'#10B981'}}>KM</div>
-                <div><div className="testi-name">Kabo Motlhale</div><div className="testi-role">Structural Engineer, Gaborone</div></div>
-              </div>
-              <div className="testi-outcome">↑ Saved 4h/week on admin</div>
-            </div>
-            <div className="testi-card">
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-quote">&quot;The <em>WhatsApp reminders</em> changed everything. Clients respond 10× faster than email. Payments arrive within days, not months.&quot;</p>
-              <div className="testi-author">
-                <div className="testi-av" style={{background:'rgba(59,130,246,.12)',color:'#3B82F6'}}>TN</div>
-                <div><div className="testi-name">Tshegofatso Nkwe</div><div className="testi-role">Architecture Firm, Francistown</div></div>
-              </div>
-              <div className="testi-outcome">↑ Payment time dropped from 45 to 12 days</div>
-            </div>
-            <div className="testi-card">
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-quote">&quot;<em>Deposit billing</em> alone paid for the subscription. Clients now pay 50% upfront — I&apos;ve stopped chasing for months on end.&quot;</p>
-              <div className="testi-author">
-                <div className="testi-av" style={{background:'rgba(245,158,11,.12)',color:'#F59E0B'}}>LK</div>
-                <div><div className="testi-name">Lerato Kgosi</div><div className="testi-role">Management Consultant, Johannesburg</div></div>
-              </div>
-              <div className="testi-outcome">↑ Cash flow improved in first month</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* OBJECTION HANDLING */}
       <div className="how-bg">
@@ -568,10 +595,14 @@ export default function Home() {
                 <div className="price-bill">Team access · billed monthly</div>
                 <div className="price-divider"></div>
                 <div className="price-list">
-                  <div className="pf">{ck}Everything in Pro</div>
+                  <div className="pf">{ck}Unlimited invoices</div>
+                  <div className="pf">{ck}Unlimited AI generation</div>
+                  <div className="pf">{ck}Auto-reminders &amp; WhatsApp</div>
+                  <div className="pf">{ck}Deposit billing &amp; T&amp;C</div>
+                  <div className="pf">{ck}Custom branding</div>
                   <div className="pf">{ck}5 team members</div>
-                  <div className="pf">{ck}Priority support</div>
                   <div className="pf">{ck}Analytics dashboard</div>
+                  <div className="pf">{ck}Priority support</div>
                   <div className="pf">{ck}API access</div>
                 </div>
                 <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Contact sales</button>
