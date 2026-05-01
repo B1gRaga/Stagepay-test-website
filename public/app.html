@@ -1902,11 +1902,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
     <span class="nav-badge" id="rem-badge" style="background:var(--warn);color:var(--bg)">3</span>
   </div>
 
-  <div class="nav-item" onclick="switchView('expenses',this)">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="1"/><path d="M4 4V3a1 1 0 011-1h6a1 1 0 011 1v1M6 9h.01M10 9h.01M8 9h.01"/></svg>
-    Expenses
-  </div>
-
   <div class="nav-section">Account</div>
   <div class="nav-item" onclick="switchView('settings',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
@@ -1926,8 +1921,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
       <span style="font-size:10px;color:var(--t3);margin-right:6px;">Invoices</span>
       <kbd style="font-size:10px;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:2px 6px;color:var(--t3);">R</kbd>
       <span style="font-size:10px;color:var(--t3);margin-right:6px;">Reminders</span>
-      <kbd style="font-size:10px;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:2px 6px;color:var(--t3);">E</kbd>
-      <span style="font-size:10px;color:var(--t3);margin-right:6px;">Expenses</span>
       <kbd style="font-size:10px;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:2px 6px;color:var(--t3);">Esc</kbd>
       <span style="font-size:10px;color:var(--t3);">Close modal</span>
     </div>
@@ -1941,11 +1934,11 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
             <div id="pp-email" style="font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           </div>
         </div>
-        <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[6]);switchSettingsPanel('firm',document.querySelectorAll('.settings-nav-item')[1])">
+        <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[5]);switchSettingsPanel('firm',document.querySelectorAll('.settings-nav-item')[1])">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
           Edit profile
         </button>
-        <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[6])">
+        <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[5])">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
           Account settings
         </button>
@@ -2670,71 +2663,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
     </div>
 
     <!-- EXPENSES -->
-    <div class="view" id="view-expenses">
-
-      <!-- P&L summary -->
-      <div class="stats-row" style="margin-bottom:20px;">
-        <div class="stat-card">
-          <div class="card-kicker">Total income</div>
-          <div class="stat-val" id="exp-income" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--g);">—</div>
-          <div class="stat-sub">from paid invoices</div>
-        </div>
-        <div class="stat-card warn">
-          <div class="card-kicker">Total expenses</div>
-          <div class="stat-val" id="exp-expenses" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--warn);">—</div>
-          <div class="stat-sub">all recorded costs</div>
-        </div>
-        <div class="stat-card" id="exp-net-card">
-          <div class="card-kicker">Net profit</div>
-          <div class="stat-val" id="exp-net" style="font-family:'Bebas Neue',sans-serif;font-size:28px;">—</div>
-          <div class="stat-sub" id="exp-margin-sub">profit margin</div>
-        </div>
-      </div>
-
-      <!-- Add expense form -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;">Record expense</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Date</div>
-            <input class="form-input" type="date" id="new-exp-date" style="font-size:12px;padding:7px 10px;width:140px;">
-          </div>
-          <div style="flex:2;min-width:160px;display:flex;flex-direction:column;gap:5px;">
-            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Description</div>
-            <input class="form-input" type="text" id="new-exp-desc" placeholder="e.g. Office rent, Software licence…" style="font-size:12px;padding:7px 10px;">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Category</div>
-            <select class="form-select" id="new-exp-cat" style="font-size:12px;padding:7px 10px;width:150px;">
-              <option>Software</option><option>Equipment</option><option>Overhead</option>
-              <option>Entertainment</option><option>Marketing</option><option>Travel</option><option>Other</option>
-            </select>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Amount</div>
-            <input class="form-input" type="number" id="new-exp-amt" placeholder="0.00" min="0" step="0.01" style="font-size:12px;padding:7px 10px;width:110px;">
-          </div>
-          <button class="topbar-btn btn-primary" onclick="addExpense()" style="padding:8px 18px;font-size:12px;white-space:nowrap;">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3v10M3 8h10"/></svg>
-            Add
-          </button>
-        </div>
-      </div>
-
-      <!-- Expense table -->
-      <div class="inv-table-wrap">
-        <div style="display:grid;grid-template-columns:110px 1fr 130px 90px 36px;gap:12px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line);">
-          <div class="inv-th">Date</div>
-          <div class="inv-th">Description</div>
-          <div class="inv-th">Category</div>
-          <div class="inv-th" style="text-align:right;">Amount</div>
-          <div></div>
-        </div>
-        <div id="exp-table-body"></div>
-      </div>
-
-    </div><!-- /view-expenses -->
-
     <!-- SETTINGS -->
     <div class="view" id="view-settings">
       <div class="settings-layout">
@@ -7791,10 +7719,6 @@ document.addEventListener('keydown', e => {
     case 'r': case 'R':
       e.preventDefault();
       switchView('reminders', document.querySelectorAll('.nav-item')[4]);
-      break;
-    case 'e': case 'E':
-      e.preventDefault();
-      switchView('expenses', document.querySelectorAll('.nav-item')[5]);
       break;
     case 'Escape':
       // Close any open modal
