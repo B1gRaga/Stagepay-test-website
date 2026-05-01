@@ -1980,83 +1980,6 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
 
-      <!-- Stat cards -->
-      <div class="stats-row">
-
-        <!-- Paid — positive / success -->
-        <div class="stat-card" id="sc-paid">
-          <div class="stat-card-top">
-            <div>
-              <div class="stat-label">
-                Paid this month
-                <span class="stat-badge good">On track</span>
-              </div>
-            </div>
-            <div class="stat-icon" style="background:rgba(16,185,129,.1);">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M2 8l4 4 8-8"/></svg>
-            </div>
-          </div>
-          <div class="stat-val" style="color:var(--g)" id="stat-val-paid">—</div>
-          <div class="stat-sub stat-up" id="stat-sub-paid">
-          </div>
-          <div class="stat-spark"><canvas id="spark-paid" aria-hidden="true"></canvas></div>
-        </div>
-
-        <!-- Outstanding — warning -->
-        <div class="stat-card warn" id="sc-outstanding">
-          <div class="stat-card-top">
-            <div>
-              <div class="stat-label">
-                Outstanding
-                <span class="stat-badge warn">Pending</span>
-              </div>
-            </div>
-            <div class="stat-icon" style="background:rgba(245,158,11,.1);">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#F59E0B" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
-            </div>
-          </div>
-          <div class="stat-val" style="color:var(--warn)" id="stat-val-outstanding">—</div>
-          <div class="stat-sub stat-warn" id="stat-sub-outstanding">
-          </div>
-          <div class="stat-spark"><canvas id="spark-outstanding" aria-hidden="true"></canvas></div>
-        </div>
-
-        <!-- Overdue — danger / urgent -->
-        <div class="stat-card urgent" id="sc-overdue">
-          <div class="stat-card-top">
-            <div>
-              <div class="stat-label">
-                Overdue
-                <span class="stat-badge danger">Action needed</span>
-              </div>
-            </div>
-            <div class="stat-icon" style="background:rgba(239,68,68,.12);">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#EF4444" stroke-width="1.8"><path d="M8 2L1.5 13h13L8 2z"/><path d="M8 7v3M8 12v.5" stroke-linecap="round"/></svg>
-            </div>
-          </div>
-          <div class="stat-val" style="color:var(--danger)" id="stat-val-overdue">—</div>
-          <div class="stat-sub stat-down" id="stat-sub-overdue">
-          </div>
-          <div class="stat-spark"><canvas id="spark-overdue" aria-hidden="true"></canvas></div>
-        </div>
-
-        <!-- Avg payment time — neutral / good trend -->
-        <div class="stat-card" id="sc-avgtime">
-          <div class="stat-card-top">
-            <div>
-              <div class="stat-label">Avg. payment time</div>
-            </div>
-            <div class="stat-icon" style="background:rgba(59,130,246,.1);">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#3B82F6" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5" stroke-linecap="round"/></svg>
-            </div>
-          </div>
-          <div class="stat-val" id="stat-val-avgtime">—</div>
-          <div class="stat-sub stat-up" id="stat-sub-avgtime"></div>
-          <div class="stat-spark"><canvas id="spark-avgtime" aria-hidden="true"></canvas></div>
-        </div>
-
-      </div>
-
       <!-- Top row: sparkline + action required -->
       <div class="dash-top">
 
@@ -2104,45 +2027,10 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
           <div class="card-body" id="dash-invoice-list"></div>
         </div>
 
-        <!-- Right column: donut + activity -->
-        <div style="display:flex;flex-direction:column;gap:14px;">
-
-          <!-- Invoice status breakdown donut -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">Invoice breakdown</span></div>
-            <div class="donut-wrap">
-              <div class="chart-canvas-wrap" style="height:140px;width:140px;">
-                <canvas id="donut-chart" role="img" aria-label="Donut chart showing invoice status breakdown"></canvas>
-              </div>
-              <div class="donut-legend">
-                <div class="legend-row">
-                  <div class="legend-dot" style="background:#10B981;"></div>
-                  <span class="legend-label">Paid</span>
-                  <span class="legend-val">P0</span>
-                  <span class="legend-pct">0%</span>
-                </div>
-                <div class="legend-row">
-                  <div class="legend-dot" style="background:#F59E0B;"></div>
-                  <span class="legend-label">Pending</span>
-                  <span class="legend-val">P0</span>
-                  <span class="legend-pct">0%</span>
-                </div>
-                <div class="legend-row">
-                  <div class="legend-dot" style="background:#EF4444;"></div>
-                  <span class="legend-label">Overdue</span>
-                  <span class="legend-val">P0</span>
-                  <span class="legend-pct">0%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Activity feed -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">Recent activity</span></div>
-            <div class="card-body" id="activity-feed"></div>
-          </div>
-
+        <!-- Activity feed -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Recent activity</span></div>
+          <div class="card-body" id="activity-feed"></div>
         </div>
       </div>
     </div>
