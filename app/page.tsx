@@ -37,7 +37,7 @@ export default function Home() {
     }
     showToast()
     if (input) input.value = ''
-    setTimeout(() => { window.location.href = '/app' }, 1800)
+    setTimeout(() => { window.location.href = '/auth/signup' }, 1800)
   }
 
   function showToast() {
@@ -81,7 +81,7 @@ export default function Home() {
             <a href="#who">Who it&apos;s for</a>
           </div>
           <div className="nav-right">
-            <a href="/app" className="nav-cta">Try it free →</a>
+            <a href="/auth/signup" className="nav-cta">Try it free →</a>
           </div>
         </div>
       </nav>
@@ -427,13 +427,14 @@ export default function Home() {
                 <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Chase payments manually via WhatsApp. Clients ignore it. You feel awkward. Money sits unpaid for months.</span></li>
                 <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Describe the job, hit Generate. Professional invoice in 30 seconds — correct VAT, branded, sent via WhatsApp.</span></li>
                 <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Smart reminders go out automatically at 3, 7, 14 and 30 days. You never have to chase again.</span></li>
+                <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Every client saved once. Invoice them again in seconds — name, address, VAT number all pre-filled.</span></li>
               </ul>
             </div>
             <div className="val-cta-box">
               <h3>Ready to stop chasing payments?</h3>
               <p>Start free — no credit card needed. Create your first invoice in under 2 minutes.</p>
               <div className="flex-btns">
-                <a href="/app" className="btn-green">Create my first invoice →</a>
+                <a href="/auth/signup" className="btn-green">Create my first invoice →</a>
                 <a href="#features" className="btn-outline">See all features</a>
               </div>
             </div>
@@ -490,7 +491,7 @@ export default function Home() {
                 <div className="pf off">{xk}Auto-reminders</div>
                 <div className="pf off">{xk}WhatsApp delivery</div>
               </div>
-              <button className="price-btn price-btn-out" onClick={() => window.location.href='/app'}>Create my first invoice</button>
+              <button className="price-btn price-btn-out" onClick={() => window.location.href='/auth/signup'}>Create my first invoice</button>
             </div>
             <div className="price-card pop">
               <div className="pop-badge">Most Popular</div>
@@ -507,7 +508,7 @@ export default function Home() {
                 <div className="pf">{ck}Deposit billing</div>
                 <div className="pf">{ck}Custom branding</div>
               </div>
-              <button className="price-btn price-btn-main" onClick={() => window.location.href='/app'}>Start invoicing in seconds</button>
+              <button className="price-btn price-btn-main" onClick={() => window.location.href='/auth/signup'}>Start invoicing in seconds</button>
             </div>
             <div className="price-card" style={{opacity:0.7}}>
               <div className="pop-badge" style={{background:'rgba(100,116,139,0.15)',color:'#94A3B8',border:'1px solid rgba(100,116,139,0.3)'}}>Coming Soon</div>

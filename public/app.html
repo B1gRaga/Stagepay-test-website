@@ -3687,84 +3687,135 @@ const _supa = supabase.createClient(
 );
 
 async function _loadUserData(userId) {
-  const [invRes, cliRes, expRes] = await Promise.all([
+  const [invRes, cliRes] = await Promise.all([
     _supa.from('invoices').select('*').eq('user_id', userId).order('created_at', {ascending: false}),
     _supa.from('clients').select('*').eq('user_id', userId).order('name'),
-    _supa.from('expenses').select('*').eq('user_id', userId).order('date', {ascending: false}),
   ]);
+  const statusColor = s => s==='paid'?'#10B981':s==='overdue'?'#EF4444':s==='pending'?'#3B82F6':'#64748B';
   invoices = (invRes.data || []).map(r => ({
-    _dbid: r.id, id: r.inv_number, client: r.client, project: r.project,
-    date: r.date, due: r.due, amount: r.amount, status: r.status,
-    color: r.color || '#64748B',
-    initials: r.initials || (r.client||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
+    _dbid:    r.id,
+    id:       r.invoice_number,
+    client:   r.client_name   || '',
+    email:    r.client_email  || '',
+    phone:    r.client_phone  || '',
+    address:  r.client_address|| '',
+    project:  r.project       || '',
+    notes:    r.notes         || '',
+    date:     r.issue_date    || '',
+    due:      r.due_date      || '',
+    amount:   parseFloat(r.total)          || 0,
+    subtotal: parseFloat(r.subtotal)       || 0,
+    vatRate:  parseFloat(r.vat_rate)       || 14,
+    vatAmount:parseFloat(r.vat_amount)     || 0,
+    deposit:  parseFloat(r.deposit_amount) || 0,
+    currency: r.currency || 'P',
+    status:   r.status,
+    color:    statusColor(r.status),
+    initials: (r.client_name||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2),
   }));
   clients = (cliRes.data || []).map(r => ({
-    _dbid: r.id, name: r.name, email: r.email, phone: r.phone, city: r.city,
-    type: r.currency || 'BWP', invoices: 0, total: 0,
+    _dbid:    r.id,
+    name:     r.name     || '',
+    email:    r.email    || '',
+    phone:    r.phone    || '',
+    city:     r.city     || '',
+    address:  r.address  || '',
+    country:  r.country  || '',
+    vatNumber:r.vat_number|| '',
+    notes:    r.notes    || '',
+    type: 'BWP', invoices: 0, total: 0,
     color: '#10B981',
-    initials: (r.initials || (r.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2))
+    initials: (r.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2),
   }));
-  expenses = (expRes.data || []).map(r => ({
-    _dbid: r.id, id: r.exp_number || r.id, desc: r.description,
-    category: r.category, amount: r.amount, date: r.date, vendor: r.vendor || ''
-  }));
+  expenses = []; // Phase 2
 }
 
-function _dbSaveInvoice(inv) {
+async function _dbSaveInvoice(inv) {
   if (!currentUser?.id) return;
-  _supa.from('invoices').upsert({
-    user_id: currentUser.id, inv_number: inv.id, client: inv.client,
-    project: inv.project, date: inv.date, due: inv.due, amount: inv.amount,
-    status: inv.status, color: inv.color, initials: inv.initials
-  }, { onConflict: 'user_id,inv_number' })
-    .then(({ error }) => {
-      if (!error) return;
-      console.error('[DB] save invoice:', error.message);
-      if (error.message?.includes('row-level security')) {
-        showToast('Monthly invoice limit reached — upgrade to Pro for unlimited invoices.', 'warn');
-      }
-    })
-    .catch(err => console.error('[DB] save invoice:', err));
+  const payload = {
+    user_id:        currentUser.id,
+    invoice_number: inv.id,
+    status:         inv.status,
+    client_name:    inv.client   || '',
+    client_email:   inv.email    || '',
+    client_phone:   inv.phone    || '',
+    client_address: inv.address  || '',
+    project:        inv.project  || '',
+    notes:          inv.notes    || '',
+    issue_date:     inv.date     || new Date().toISOString().split('T')[0],
+    due_date:       inv.due      || null,
+    subtotal:       parseFloat(inv.subtotal) || parseFloat(inv.amount) || 0,
+    vat_rate:       parseFloat(inv.vatRate)  || 14,
+    vat_amount:     parseFloat(inv.vatAmount)|| 0,
+    deposit_amount: parseFloat(inv.deposit)  || 0,
+    total:          parseFloat(inv.amount)   || 0,
+    currency:       inv.currency || 'P',
+  };
+
+  let invoiceId = inv._dbid;
+  if (invoiceId) {
+    const { error } = await _supa.from('invoices').update(payload).eq('id', invoiceId);
+    if (error) {
+      console.error('[DB] update invoice:', error.message);
+      if (error.message?.includes('row-level security')) showToast('Plan limit reached — upgrade to Pro.', 'warn');
+      return;
+    }
+  } else {
+    const { data, error } = await _supa.from('invoices').insert(payload).select('id').single();
+    if (error) {
+      console.error('[DB] insert invoice:', error.message);
+      if (error.message?.includes('row-level security')) showToast('Plan limit reached — upgrade to Pro.', 'warn');
+      return;
+    }
+    invoiceId = data.id;
+    inv._dbid = invoiceId;
+    const local = invoices.find(i => i.id === inv.id);
+    if (local) local._dbid = invoiceId;
+  }
+
+  // Save line items
+  if (inv.items?.length && invoiceId) {
+    await _supa.from('invoice_items').delete().eq('invoice_id', invoiceId);
+    const rows = inv.items.map((item, i) => ({
+      invoice_id:  invoiceId,
+      user_id:     currentUser.id,
+      description: item.desc || '',
+      quantity:    parseFloat(item.qty)  || 1,
+      unit_price:  parseFloat(item.rate) || 0,
+      sort_order:  i,
+    }));
+    const { error: ie } = await _supa.from('invoice_items').insert(rows);
+    if (ie) console.error('[DB] save items:', ie.message);
+  }
 }
 
-function _dbUpdateInvoiceStatus(invNumber, status, color) {
+function _dbUpdateInvoiceStatus(invNumber, status) {
   if (!currentUser?.id) return;
-  _supa.from('invoices').update({ status, color })
-    .eq('user_id', currentUser.id).eq('inv_number', invNumber)
-    .then(({ error }) => { if (error) console.error('[DB] update status:', error.message); })
-    .catch(err => console.error('[DB] update status:', err));
+  const inv = invoices.find(i => i.id === invNumber);
+  if (!inv?._dbid) return;
+  _supa.from('invoices').update({ status }).eq('id', inv._dbid)
+    .then(({ error }) => { if (error) console.error('[DB] update status:', error.message); });
 }
 
-function _dbSaveClient(cli) {
+async function _dbSaveClient(cli) {
   if (!currentUser?.id) return;
-  _supa.from('clients').insert({
-    user_id: currentUser.id, name: cli.name, email: cli.email,
-    phone: cli.phone, city: cli.city, currency: cli.type
-  })
-    .then(({ error }) => { if (error) console.error('[DB] save client:', error.message); })
-    .catch(err => console.error('[DB] save client:', err));
+  const { data, error } = await _supa.from('clients').insert({
+    user_id:    currentUser.id,
+    name:       cli.name       || '',
+    email:      cli.email      || '',
+    phone:      cli.phone      || '',
+    city:       cli.city       || '',
+    address:    cli.address    || '',
+    country:    cli.country    || '',
+    vat_number: cli.vatNumber  || '',
+    notes:      cli.notes      || '',
+  }).select('id').single();
+  if (error) { console.error('[DB] save client:', error.message); return; }
+  if (data) cli._dbid = data.id;
 }
 
-function _dbSaveExpense(exp) {
-  if (!currentUser?.id) return;
-  _supa.from('expenses').insert({
-    user_id: currentUser.id, exp_number: exp.id,
-    description: exp.desc, category: exp.category,
-    amount: exp.amount, date: exp.date, vendor: exp.vendor || ''
-  })
-    .then(({ data, error }) => {
-      if (error) { console.error('[DB] save expense:', error.message); return; }
-      if (data?.[0]) exp._dbid = data[0].id;
-    })
-    .catch(err => console.error('[DB] save expense:', err));
-}
-
-function _dbDeleteExpense(exp) {
-  if (!currentUser?.id || !exp._dbid) return;
-  _supa.from('expenses').delete().eq('id', exp._dbid)
-    .then(({ error }) => { if (error) console.error('[DB] delete expense:', error.message); })
-    .catch(err => console.error('[DB] delete expense:', err));
-}
+function _dbSaveExpense() {}   // Phase 2
+function _dbDeleteExpense() {} // Phase 2
 
 /* ── SECURITY UTILS ── */
 function esc(s) {
@@ -4183,7 +4234,8 @@ function removeLI(id){
 }
 
 /* ── PREVIEW ── */
-function updatePreview(){
+function updatePreview(){ try {
+  if(!document.getElementById('prev-date')) return;
   const cur=document.getElementById('f-currency')?.value||'P';
   const vat=parseFloat(document.getElementById('f-vat')?.value||14)/100;
   const client=document.getElementById('f-client')?.value||'Client Name';
@@ -4280,7 +4332,7 @@ function updatePreview(){
       lateFeeDisplay.style.display = 'none';
     }
   }
-}
+} catch(e) {} }
 
 function applyAndPreview() {
   updatePreview();
@@ -4760,11 +4812,22 @@ function _persistDraft() {
   const existingIdx = invoices.findIndex(i => i.id === invnum && i.status === 'draft');
   if (existingIdx > -1) invoices.splice(existingIdx, 1);
 
+  const subtotal  = parseFloat(document.getElementById('prev-subtotal')?.textContent?.replace(/[^0-9.]/g,'')) || total;
+  const vatAmount = parseFloat(document.getElementById('prev-vat-total')?.textContent?.replace(/[^0-9.]/g,'')) || 0;
+  const vatRate   = parseFloat(document.getElementById('f-vat')?.value) || 14;
+  const deposit   = parseFloat(document.getElementById('f-deposit-pct')?.value) || 0;
   const draftInv = {
     id: invnum, client, project,
-    date: document.getElementById('f-date')?.value || new Date().toISOString().split('T')[0],
-    due:  document.getElementById('f-due')?.value  || '',
+    email:    document.getElementById('f-email')?.value?.trim()   || '',
+    phone:    document.getElementById('f-phone')?.value?.trim()   || '',
+    address:  document.getElementById('f-address')?.value?.trim() || '',
+    notes:    document.getElementById('f-notes')?.value?.trim()   || '',
+    date:     document.getElementById('f-date')?.value || new Date().toISOString().split('T')[0],
+    due:      document.getElementById('f-due')?.value  || '',
+    currency: cur,
+    subtotal, vatRate, vatAmount, deposit,
     amount: total, status: 'draft', color: '#64748B',
+    items: lineItems.map(l => ({ desc: l.desc, qty: l.qty, rate: l.rate })),
     initials: client.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
   };
   invoices.unshift(draftInv);
@@ -7378,6 +7441,10 @@ function updateDashStats() {
   const paid    = invoices.filter(i => i.status === 'paid');
   const pending = invoices.filter(i => i.status === 'pending' || i.status === 'sent');
   const overdue = invoices.filter(i => i.status === 'overdue');
+  const paidAmt    = paid.reduce((s,i)    => s + (i.amount||0), 0);
+  const pendingAmt = pending.reduce((s,i) => s + (i.amount||0), 0);
+  const overdueAmt = overdue.reduce((s,i) => s + (i.amount||0), 0);
+  const fmt = n => { const cur = getCurrencySymbol(); return cur + (n>=1000?(n/1000).toFixed(1).replace('.0','')+'k':Math.round(n).toLocaleString()); };
   const setEl = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
 
   // Simple counters
@@ -7712,38 +7779,44 @@ function saveInvoiceDefaults() {
   showToast('Invoice defaults saved — VAT set to ' + vat + '%', 'success');
 }
 
-init();
-initSettings();
+try { init(); } catch(e) { console.warn('[StagePay] init error:', e); }
+try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:', e); }
 
 // ── SESSION RESTORE ──
 (async function restoreSession() {
-  const { data: { session } } = await _supa.auth.getSession();
-  if (!session) return;
+  try {
+    const { data: { session } } = await _supa.auth.getSession();
+    if (!session) return;
 
-  const sbUser = session.user;
-  const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
-  const name     = profile?.name     || sbUser.user_metadata?.name     || sbUser.email.split('@')[0];
-  const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
-  const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
-  const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+    // Hide auth layer immediately once we have a valid session
+    document.getElementById('auth-layer').classList.add('hidden');
 
-  currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
+    const sbUser = session.user;
+    const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
+    const name     = profile?.name      || sbUser.user_metadata?.full_name || sbUser.email.split('@')[0];
+    const firm     = profile?.firm_name || sbUser.user_metadata?.firm      || '';
+    const plan     = profile?.plan      || 'free';
+    const initials = name.substring(0,2).toUpperCase();
 
-  await _loadUserData(sbUser.id);
+    currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
 
-  document.getElementById('sidebar-av').textContent   = initials;
-  document.getElementById('sidebar-name').textContent = firm || name;
-  document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
-  const firmInput = document.getElementById('s-firm-name');
-  if (firmInput) firmInput.value = firm || '';
-  const emailInput = document.getElementById('s-email');
-  if (emailInput) emailInput.value = sbUser.email;
+    await _loadUserData(sbUser.id);
 
-  document.getElementById('auth-layer').classList.add('hidden');
-  updatePreview(); updateDashStats();
-  renderDashInvoices(); renderActionRequired(); renderActivityFeed();
-  renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
-  buildCharts(); refreshPlanPanel(); _resetSessionTimer();
+    document.getElementById('sidebar-av').textContent   = initials;
+    document.getElementById('sidebar-name').textContent = firm || name;
+    document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
+    const firmInput = document.getElementById('s-firm-name');
+    if (firmInput) firmInput.value = firm || '';
+    const emailInput = document.getElementById('s-email');
+    if (emailInput) emailInput.value = sbUser.email;
+
+    updatePreview(); updateDashStats();
+    renderDashInvoices(); renderActionRequired(); renderActivityFeed();
+    renderInvoiceTable(); renderClients(); renderExpenses(); renderClientPills();
+    buildCharts(); refreshPlanPanel(); _resetSessionTimer();
+  } catch(e) {
+    console.error('[StagePay] restoreSession error:', e);
+  }
 })();
 </script>
 <!-- ── MOBILE BOTTOM TAB BAR ── -->

@@ -2,14 +2,32 @@
 -- Migration 002: Phase 1 full schema
 -- Tables: profiles, clients, invoices, invoice_items, reminders
 -- Run in Supabase SQL editor: Dashboard → SQL Editor → paste & run
+--
+-- SAFE TO RE-RUN: drops and recreates all Phase 1 tables.
+-- After running this, re-run 001_enforce_plan_invoice_limit.sql
+-- (it's idempotent — DROP POLICY IF EXISTS at the top).
 -- ================================================================
 
--- ── Enable UUID extension ──────────────────────────────────────────────
+-- ── Enable extensions ─────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ── Drop everything in reverse dependency order ───────────────────────
+-- DROP TABLE CASCADE removes triggers automatically; no need to drop them separately.
+DROP TABLE IF EXISTS public.reminders     CASCADE;
+DROP TABLE IF EXISTS public.invoice_items CASCADE;
+DROP TABLE IF EXISTS public.invoices      CASCADE;
+DROP TABLE IF EXISTS public.clients       CASCADE;
+DROP TABLE IF EXISTS public.profiles      CASCADE;
+
+-- Drop the auth trigger separately since auth.users is not dropped
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS public.set_updated_at()  CASCADE;
 
 -- ── PROFILES ──────────────────────────────────────────────────────────
--- One row per user. Created automatically on signup via trigger.
-CREATE TABLE IF NOT EXISTS public.profiles (
+CREATE TABLE public.profiles (
   id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email           TEXT,
   name            TEXT,
@@ -48,13 +66,12 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ── CLIENTS ───────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.clients (
+CREATE TABLE public.clients (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   name            TEXT NOT NULL,
@@ -77,7 +94,7 @@ CREATE POLICY "clients: owner full access" ON public.clients
   WITH CHECK (auth.uid() = user_id);
 
 -- ── INVOICES ──────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.invoices (
+CREATE TABLE public.invoices (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   client_id       UUID REFERENCES public.clients(id) ON DELETE SET NULL,
@@ -101,7 +118,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   issue_date      DATE NOT NULL DEFAULT CURRENT_DATE,
   due_date        DATE,
 
-  -- Amounts (stored in minor currency units to avoid float issues)
+  -- Amounts
   subtotal        NUMERIC(12,2) NOT NULL DEFAULT 0,
   vat_rate        NUMERIC(5,2)  NOT NULL DEFAULT 14,
   vat_amount      NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -131,7 +148,7 @@ CREATE POLICY "invoices: public read by token" ON public.invoices
   USING (public_token IS NOT NULL);
 
 -- ── INVOICE ITEMS ─────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.invoice_items (
+CREATE TABLE public.invoice_items (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   invoice_id      UUID NOT NULL REFERENCES public.invoices(id) ON DELETE CASCADE,
   user_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -161,21 +178,18 @@ CREATE POLICY "invoice_items: public read via invoice token" ON public.invoice_i
   );
 
 -- ── REMINDERS ─────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.reminders (
+CREATE TABLE public.reminders (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   invoice_id      UUID NOT NULL REFERENCES public.invoices(id) ON DELETE CASCADE,
 
-  -- When to send
   send_at         TIMESTAMPTZ NOT NULL,
-  days_after_due  INT,          -- e.g. 3, 7, 14, 30
+  days_after_due  INT,
 
-  -- Delivery channel
   channel         TEXT NOT NULL DEFAULT 'whatsapp' CHECK (channel IN ('whatsapp','email')),
   recipient_phone TEXT,
   recipient_email TEXT,
 
-  -- Status
   status          TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','sent','failed','cancelled')),
   sent_at         TIMESTAMPTZ,
   message_preview TEXT,
@@ -203,13 +217,13 @@ CREATE TRIGGER set_updated_at_invoices  BEFORE UPDATE ON public.invoices  FOR EA
 CREATE TRIGGER set_updated_at_reminders BEFORE UPDATE ON public.reminders FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- ── INDEXES ───────────────────────────────────────────────────────────
-CREATE INDEX IF NOT EXISTS idx_clients_user        ON public.clients(user_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_user       ON public.invoices(user_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_client     ON public.invoices(client_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_status     ON public.invoices(status);
-CREATE INDEX IF NOT EXISTS idx_invoices_token      ON public.invoices(public_token);
-CREATE INDEX IF NOT EXISTS idx_invoice_items_inv   ON public.invoice_items(invoice_id);
-CREATE INDEX IF NOT EXISTS idx_reminders_user      ON public.reminders(user_id);
-CREATE INDEX IF NOT EXISTS idx_reminders_invoice   ON public.reminders(invoice_id);
-CREATE INDEX IF NOT EXISTS idx_reminders_status    ON public.reminders(status);
-CREATE INDEX IF NOT EXISTS idx_reminders_send_at   ON public.reminders(send_at);
+CREATE INDEX idx_clients_user        ON public.clients(user_id);
+CREATE INDEX idx_invoices_user       ON public.invoices(user_id);
+CREATE INDEX idx_invoices_client     ON public.invoices(client_id);
+CREATE INDEX idx_invoices_status     ON public.invoices(status);
+CREATE INDEX idx_invoices_token      ON public.invoices(public_token);
+CREATE INDEX idx_invoice_items_inv   ON public.invoice_items(invoice_id);
+CREATE INDEX idx_reminders_user      ON public.reminders(user_id);
+CREATE INDEX idx_reminders_invoice   ON public.reminders(invoice_id);
+CREATE INDEX idx_reminders_status    ON public.reminders(status);
+CREATE INDEX idx_reminders_send_at   ON public.reminders(send_at);

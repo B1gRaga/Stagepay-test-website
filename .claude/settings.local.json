@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config *)",
+      "Read(//c/Users/nkweb/**)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(ssh -o BatchMode=yes -T git@github.com)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
+    ]
+  }
+}
