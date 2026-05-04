@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StagePay — App</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -80,10 +81,10 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 }
 /* Left decorative panel */
 .auth-left {
-  background:var(--bg2);
+  background:linear-gradient(155deg,#0d1f3c 0%,#0F172A 45%,#081e12 100%);
   padding:48px 44px;
   display:flex;flex-direction:column;justify-content:space-between;
-  border-right:1px solid var(--line);
+  border-right:1px solid rgba(16,185,129,.15);
   position:relative;overflow:hidden;
 }
 .auth-left::before {
@@ -91,8 +92,36 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
   position:absolute;bottom:-20px;left:-10px;
   font-family:'Bebas Neue',sans-serif;
   font-size:130px;letter-spacing:4px;
-  color:rgba(16,185,129,0.05);
+  color:rgba(16,185,129,0.06);
   pointer-events:none;user-select:none;line-height:1;
+}
+.auth-left::after {
+  content:'';
+  position:absolute;bottom:-90px;right:-90px;
+  width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(16,185,129,.22) 0%,transparent 65%);
+  pointer-events:none;
+}
+.auth-left-grid {
+  position:absolute;inset:0;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 44px),
+                   repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 44px);
+  pointer-events:none;
+}
+.auth-card-preview {
+  background:rgba(16,185,129,.07);
+  border:1px solid rgba(16,185,129,.2);
+  border-radius:12px;padding:18px 20px;
+  position:relative;z-index:1;
+}
+.auth-card-badge {
+  display:inline-block;background:rgba(16,185,129,.2);color:#10B981;
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  padding:3px 9px;border-radius:20px;text-transform:uppercase;
+}
+.auth-feat-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--g);flex-shrink:0;
 }
 .auth-logo {
   font-family:'Bebas Neue',sans-serif;
@@ -106,14 +135,10 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
   letter-spacing:-.5px;
 }
 .auth-tagline strong{color:var(--g);font-style:normal;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:34px;}
-.auth-features{display:flex;flex-direction:column;gap:12px;}
+.auth-features{display:flex;flex-direction:column;gap:10px;}
 .auth-feat {
   display:flex;align-items:center;gap:10px;
-  font-size:13px;color:var(--t2);
-}
-.auth-feat-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--g);flex-shrink:0;
+  font-size:12px;color:rgba(248,250,252,.55);
 }
 /* Right form panel */
 .auth-right {
@@ -123,17 +148,18 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
   overflow-y:auto;
 }
 .auth-tabs {
-  display:flex;gap:0;margin-bottom:28px;
-  border:1px solid var(--line2);border-radius:7px;overflow:hidden;
+  display:flex;gap:4px;margin-bottom:28px;
+  background:var(--surface);border:1px solid var(--line2);
+  border-radius:9px;padding:4px;
 }
 .auth-tab {
   flex:1;padding:9px;text-align:center;
-  font-size:13px;font-weight:600;letter-spacing:.04em;
-  cursor:pointer;transition:all .15s;color:var(--t3);
-  background:transparent;border:none;
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;transition:all .18s;color:var(--t3);
+  background:transparent;border:none;border-radius:6px;
 }
-.auth-tab.active{background:var(--g);color:var(--bg);}
-.auth-tab:not(.active):hover{color:var(--t1);background:var(--surface);}
+.auth-tab.active{background:var(--g);color:#000;box-shadow:0 2px 8px rgba(16,185,129,.3);}
+.auth-tab:not(.active):hover{color:var(--t1);background:var(--surface2);}
 .auth-form{display:flex;flex-direction:column;gap:14px;}
 .auth-form.hidden{display:none;}
 .auth-title {
@@ -534,6 +560,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 }
 .pill-paid{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25);}
 .pill-pending{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
+.pill-sent{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.22);}
 .pill-overdue{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.22);}
 .pill-draft{background:rgba(100,116,139,.12);color:var(--t3);border:1px solid rgba(100,116,139,.2);}
 
@@ -971,12 +998,15 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 .modal-overlay.hidden{display:none;}
 .modal{
   background:var(--bg2);border:1px solid var(--line2);
-  border-radius:16px;width:480px;max-width:95vw;overflow:hidden;
+  border-radius:16px;width:480px;max-width:95vw;
+  max-height:92vh;display:flex;flex-direction:column;
+  overflow:hidden;
   box-shadow:0 24px 64px rgba(0,0,0,.4);
 }
 .modal-header{
   padding:18px 24px;border-bottom:1px solid var(--line);
   display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
 }
 .modal-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2px;}
 .modal-close{
@@ -987,11 +1017,11 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
   font-size:17px;transition:all .15s;
 }
 .modal-close:hover{border-color:var(--danger);color:var(--danger);}
-.modal-body{padding:22px 24px;display:flex;flex-direction:column;gap:14px;}
+.modal-body{padding:22px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;}
 .modal-footer{
   padding:14px 24px;border-top:1px solid var(--line);
   display:flex;gap:8px;justify-content:flex-end;
-  background:var(--bg3);
+  background:var(--bg3);flex-shrink:0;
 }
 
 /* ── EMPTY STATES ── */
@@ -1582,9 +1612,12 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 
     <!-- Left branding panel -->
     <div class="auth-left">
-      <div class="auth-logo">
+      <div class="auth-left-grid"></div>
+
+      <!-- Logo -->
+      <div class="auth-logo" style="position:relative;z-index:1;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
             <rect x="0"  y="17" width="6" height="15" rx="2" fill="#10B981"/>
             <rect x="9"  y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
             <rect x="18" y="6"  width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
@@ -1593,18 +1626,34 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
           <span>Stage<em>Pay</em></span>
         </div>
       </div>
-      <div>
+
+      <!-- Headline + invoice card -->
+      <div style="position:relative;z-index:1;">
         <div class="auth-tagline">Invoice like a<br><strong>professional.</strong></div>
-        <div style="width:40px;height:2px;background:var(--g);margin:16px 0;border-radius:1px;"></div>
-        <div style="font-size:13px;color:var(--t3);line-height:1.7;max-width:240px;">
-          Built for architects, engineers, consultants and contractors across Botswana.
+        <div style="width:36px;height:2px;background:var(--g);margin:14px 0 18px;border-radius:1px;opacity:.7;"></div>
+
+        <!-- Floating invoice card mockup -->
+        <div class="auth-card-preview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.5);">INVOICE</div>
+            <span class="auth-card-badge">Paid</span>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Molapo Tower Ltd.</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.75);margin-bottom:14px;">Structural Assessment · Phase 2</div>
+          <div style="height:1px;background:rgba(255,255,255,.07);margin-bottom:12px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase;">Total due</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:#10B981;">P 24,500</span>
+          </div>
         </div>
       </div>
-      <div class="auth-features">
+
+      <!-- Features -->
+      <div class="auth-features" style="position:relative;z-index:1;">
         <div class="auth-feat"><div class="auth-feat-dot"></div>AI invoice generation in seconds</div>
-        <div class="auth-feat"><div class="auth-feat-dot"></div>Automated payment reminders</div>
+        <div class="auth-feat"><div class="auth-feat-dot"></div>WhatsApp PDF delivery to clients</div>
         <div class="auth-feat"><div class="auth-feat-dot"></div>Multi-currency · Pula, Rand, USD+</div>
-        <div class="auth-feat"><div class="auth-feat-dot"></div>Professional PDF export</div>
+        <div class="auth-feat"><div class="auth-feat-dot"></div>Automated payment reminders</div>
       </div>
     </div>
 
@@ -1904,7 +1953,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 
   <div class="nav-section">Account</div>
   <div class="nav-item" onclick="switchView('settings',this)">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Settings
   </div>
 
@@ -1939,7 +1988,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
           Edit profile
         </button>
         <button class="profile-popup-item" onclick="closeProfilePopup();switchView('settings',document.querySelectorAll('.nav-item')[5])">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Account settings
         </button>
         <div class="profile-popup-divider"></div>
@@ -2105,15 +2154,19 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label">Client name</label>
-                  <input class="form-input" id="f-client" placeholder="e.g. Molapo Tower Ltd.">
+                  <input class="form-input" id="f-client" placeholder="e.g. Molapo Tower Ltd." oninput="updatePreview()">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Client email</label>
-                  <input class="form-input" id="f-email" type="email" placeholder="client@company.co.bw">
+                  <input class="form-input" id="f-email" type="email" placeholder="client@company.co.bw" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Client phone (WhatsApp)</label>
+                  <input class="form-input" id="f-phone" type="tel" placeholder="+267 71 234 567">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Invoice #</label>
-                  <input class="form-input" id="f-invnum" value="INV-055">
+                  <input class="form-input" id="f-invnum" value="INV-055" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Currency</label>
@@ -2127,15 +2180,15 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                 </div>
                 <div class="form-group">
                   <label class="form-label">Issue date</label>
-                  <input class="form-input" id="f-date" type="date">
+                  <input class="form-input" id="f-date" type="date" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Due date</label>
-                  <input class="form-input" id="f-due" type="date">
+                  <input class="form-input" id="f-due" type="date" oninput="updatePreview()">
                 </div>
                 <div class="form-group full">
                   <label class="form-label">Project description</label>
-                  <input class="form-input" id="f-project" placeholder="e.g. Molapo Tower — Phase 2 Structural Review">
+                  <input class="form-input" id="f-project" placeholder="e.g. Molapo Tower — Phase 2 Structural Review" oninput="updatePreview()">
                 </div>
               </div>
 
@@ -2245,7 +2298,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 
                 <div class="form-group full">
                   <label class="form-label">Notes (optional)</label>
-                  <input class="form-input" id="f-notes" placeholder="e.g. Bank: FNB Botswana, Acc: 62123456789">
+                  <input class="form-input" id="f-notes" placeholder="e.g. Bank: FNB Botswana, Acc: 62123456789" oninput="updatePreview()">
                 </div>
               </div>
 
@@ -2405,6 +2458,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
         <div class="inv-filters" style="margin-bottom:0;flex-shrink:0;">
           <button class="filter-btn active" onclick="filterInvoices('all',this)">All</button>
           <button class="filter-btn" onclick="filterInvoices('paid',this)">Paid</button>
+          <button class="filter-btn" onclick="filterInvoices('sent',this)">Sent</button>
           <button class="filter-btn" onclick="filterInvoices('pending',this)">Pending</button>
           <button class="filter-btn" onclick="filterInvoices('overdue',this)">Overdue</button>
           <button class="filter-btn" onclick="filterInvoices('draft',this)">Draft</button>
@@ -3560,6 +3614,14 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
     </div>
     <div class="modal-body" style="gap:12px;">
 
+      <!-- Channel toggle -->
+      <div style="display:flex;gap:0;background:var(--surface);border-radius:8px;padding:3px;border:1px solid var(--line2);">
+        <button id="em-chan-email-btn" onclick="setSendChannel('email')" style="flex:1;padding:8px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.04em;background:var(--g);color:var(--bg);">✉ Email</button>
+        <button id="em-chan-wa-btn" onclick="setSendChannel('whatsapp')" style="flex:1;padding:8px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.04em;background:transparent;color:var(--t2);">💬 WhatsApp</button>
+      </div>
+
+      <!-- Email fields -->
+      <div id="em-email-section">
       <!-- To / CC -->
       <div class="form-grid">
         <div class="form-group full">
@@ -3611,6 +3673,22 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
         <span style="font-size:12px;color:var(--t2);" id="em-attachment-label">INV-055.pdf attached</span>
         <span style="margin-left:auto;" class="pill pill-paid">PDF</span>
       </div>
+      </div><!-- /em-email-section -->
+
+      <!-- WhatsApp section -->
+      <div id="em-wa-section" style="display:none;flex-direction:column;gap:12px;">
+        <div class="form-group full">
+          <label class="form-label">WhatsApp number</label>
+          <input class="form-input" id="em-wa-phone" type="tel" placeholder="+267 71 234 567">
+        </div>
+        <div style="padding:14px;background:var(--surface);border-radius:8px;border:1px solid var(--line2);">
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Message preview</div>
+          <pre id="em-wa-preview" style="font-size:13px;color:var(--t2);white-space:pre-wrap;line-height:1.7;font-family:inherit;margin:0;"></pre>
+        </div>
+        <div style="font-size:11px;color:var(--t3);padding:8px 10px;background:rgba(37,211,102,.06);border-radius:6px;border:1px solid rgba(37,211,102,.15);">
+          The client receives the invoice as a <strong style="color:var(--g);">PDF attachment</strong> directly in WhatsApp.
+        </div>
+      </div>
 
     </div>
     <div class="modal-footer" style="justify-content:space-between;">
@@ -3618,7 +3696,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
         <button class="topbar-btn btn-outline" onclick="closeEmailModal()">Cancel</button>
         <button class="topbar-btn btn-outline" onclick="saveAsDraftFromModal()">Save Draft</button>
       </div>
-      <button class="topbar-btn btn-primary" id="em-send-btn" onclick="doSendEmail()" style="min-width:130px;">
+      <button class="topbar-btn btn-primary" id="em-send-btn" onclick="doSend()" style="min-width:130px;">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l12-6-6 12V8H2z"/></svg>
         Send Invoice
       </button>
@@ -3686,12 +3764,20 @@ const _supa = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cGJzaGpyYnRxcmV1bnhucHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzU0MjQsImV4cCI6MjA5Mjg1MTQyNH0.VBf1Pv9rkLeDAuj2M4OEOYVt7w42k9ZhowyU-1eyLwY'
 );
 
+async function _apiHeaders() {
+  const { data: { session } } = await _supa.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+  };
+}
+
 async function _loadUserData(userId) {
   const [invRes, cliRes] = await Promise.all([
     _supa.from('invoices').select('*').eq('user_id', userId).order('created_at', {ascending: false}),
     _supa.from('clients').select('*').eq('user_id', userId).order('name'),
   ]);
-  const statusColor = s => s==='paid'?'#10B981':s==='overdue'?'#EF4444':s==='pending'?'#3B82F6':'#64748B';
+  const statusColor = s => s==='paid'?'#10B981':s==='overdue'?'#EF4444':(s==='pending'||s==='sent')?'#3B82F6':'#64748B';
   invoices = (invRes.data || []).map(r => ({
     _dbid:    r.id,
     id:       r.invoice_number,
@@ -3864,6 +3950,7 @@ function saveSessionTimeout() {
 /* ── DATA ── */
 let invoices = [];
 let clients  = [];
+let emSendChannel = 'email';
 let expenses = [];
 
 /* ── DEMO DATA (only loaded for demo@stagepay.co) ── */
@@ -4003,8 +4090,6 @@ function init() {
   const due30 = new Date(Date.now()+30*86400000).toISOString().split('T')[0];
   document.getElementById('f-date').value = today;
   document.getElementById('f-due').value = due30;
-  document.getElementById('prev-date').textContent = formatDate(today);
-
   // Load defaults from settings
   const savedVat  = document.getElementById('s-def-vat')?.value;
   const savedCur  = document.getElementById('s-def-currency')?.value;
@@ -4090,6 +4175,7 @@ function renderInvoiceTable() {
     const msgs = {
       all:     { title:'No invoices yet',      sub:'Send your first invoice and your cash flow starts here.',      icon:'#3B82F6', cta:'New Invoice',    action:"switchView('generator',document.querySelectorAll('.nav-item')[1])" },
       paid:    { title:'No paid invoices',      sub:'Your paid invoices will appear here once clients settle up.',  icon:'#10B981', cta:'View all',        action:"filterInvoices('all',document.querySelector('.filter-btn'))" },
+      sent:    { title:'No sent invoices yet',  sub:'Invoices you send via email or WhatsApp will appear here.',   icon:'#3B82F6', cta:'New Invoice',    action:"switchView('generator',document.querySelectorAll('.nav-item')[1])" },
       pending: { title:'Nothing pending',       sub:"You're all clear — no invoices waiting for payment.",           icon:'#10B981', cta:'New Invoice',    action:"switchView('generator',document.querySelectorAll('.nav-item')[1])" },
       overdue: { title:'No overdue invoices',   sub:"Great news — everything is paid up or within terms.",          icon:'#10B981', cta:null,             action:null },
       draft:   { title:'No drafts saved',       sub:'Start an invoice and save it as a draft to find it here.',     icon:'#64748B', cta:'New Invoice',    action:"switchView('generator',document.querySelectorAll('.nav-item')[1])" },
@@ -4148,8 +4234,30 @@ function quickOpenInvoice(invId) {
 function quickSend(invId) {
   const inv = invoices.find(i => i.id === invId);
   if (!inv) return;
-  // Navigate to generator, load the invoice, open email modal
-  quickOpenInvoice(invId);
+
+  // Load all draft data into the generator form
+  switchView('generator', document.querySelectorAll('.nav-item')[1]);
+  document.getElementById('f-client').value  = inv.client  || '';
+  document.getElementById('f-email').value   = inv.email   || '';
+  document.getElementById('f-phone').value   = inv.phone   || '';
+  const addrEl = document.getElementById('f-address'); if (addrEl) addrEl.value = inv.address || '';
+  document.getElementById('f-project').value = inv.project || '';
+  document.getElementById('f-invnum').value  = inv.id      || '';
+  document.getElementById('f-date').value    = inv.date    || '';
+  document.getElementById('f-due').value     = inv.due     || '';
+  const notesEl = document.getElementById('f-notes'); if (notesEl) notesEl.value = inv.notes || '';
+  const curEl   = document.getElementById('f-currency'); if (curEl && inv.currency) curEl.value = inv.currency;
+  const vatEl   = document.getElementById('f-vat'); if (vatEl && inv.vatRate) vatEl.value = inv.vatRate;
+
+  // Restore line items (use saved items if available, otherwise one row for the total)
+  lineItems = [];
+  document.getElementById('line-items').innerHTML = '';
+  const items = (inv.items && inv.items.length)
+    ? inv.items
+    : [{ desc: inv.project || 'Services rendered', qty: '1', rate: String(inv.subtotal || inv.amount || '') }];
+  items.forEach(l => addLineItem(l.desc || '', String(l.qty || '1'), String(l.rate || ''), ''));
+
+  updatePreview();
   setTimeout(() => sendInvoice(), 300);
 }
 
@@ -4235,7 +4343,7 @@ function removeLI(id){
 
 /* ── PREVIEW ── */
 function updatePreview(){ try {
-  if(!document.getElementById('prev-date')) return;
+  if(!document.getElementById('prev-meta')) return;
   const cur=document.getElementById('f-currency')?.value||'P';
   const vat=parseFloat(document.getElementById('f-vat')?.value||14)/100;
   const client=document.getElementById('f-client')?.value||'Client Name';
@@ -4252,7 +4360,6 @@ function updatePreview(){ try {
   document.getElementById('prev-email').textContent=email||'—';
   document.getElementById('prev-project-label').textContent=project;
   document.getElementById('prev-meta').innerHTML=invnum+' · '+formatDate(date);
-  document.getElementById('prev-date').textContent=formatDate(date);
   // Footer invoice number
   const footNum = document.getElementById('prev-invnum-footer');
   if(footNum) footNum.textContent = invnum + ' · ' + formatDate(date);
@@ -4288,8 +4395,10 @@ function updatePreview(){ try {
   tbody.innerHTML=lineItems.map(li=>{
     const amt=parseFloat(li.qty||0)*parseFloat(li.rate||0);
     subtotal+=amt;
-    updateLIAmt(li.id);
-    return `<tr><td>${esc(li.desc||'—')}</td><td style="text-align:right">${esc(li.qty||1)}</td><td style="text-align:right">${cur}${parseFloat(li.rate||0).toLocaleString()}</td><td>${cur}${amt.toLocaleString()}</td></tr>`;
+    // Update the form-row amount display directly (avoid calling updateLIAmt which recurses back into updatePreview)
+    const amtEl=document.getElementById(li.id+'_amt');
+    if(amtEl) amtEl.textContent=amt>0?cur+amt.toLocaleString():'—';
+    return `<tr><td>${esc(li.desc||'—')}</td><td style="text-align:right">${esc(li.qty||1)}</td><td style="text-align:right">${cur}${parseFloat(li.rate||0).toLocaleString()}</td><td>${cur}${amt.toFixed(2)}</td></tr>`;
   }).join('');
 
   const vatAmt=subtotal*vat;
@@ -4557,6 +4666,7 @@ function clearForm(){
   document.getElementById('ai-input').value='';
   document.getElementById('f-client').value='';
   document.getElementById('f-email').value='';
+  document.getElementById('f-phone').value='';
   document.getElementById('f-project').value='';
   document.getElementById('f-notes').value='';
   const tcEl=document.getElementById('f-tc');
@@ -4597,9 +4707,20 @@ function clearForm(){
 }
 
 /* ── EMAIL MODAL ── */
-function sendInvoice() {
+async function sendInvoice() {
   const client = document.getElementById('f-client').value.trim();
   if (!client) { showToast('Add a client name first', 'error'); return; }
+  const invnum = document.getElementById('f-invnum').value.trim();
+  const existing = invoices.find(i => i.id === invnum);
+  if (!existing?._dbid) {
+    _persistDraft();
+    await new Promise(resolve => {
+      const t = setInterval(() => {
+        if (invoices.find(i => i.id === invnum)?._dbid) { clearInterval(t); resolve(); }
+      }, 100);
+      setTimeout(() => { clearInterval(t); resolve(); }, 4000);
+    });
+  }
   openEmailModal();
 }
 
@@ -4631,6 +4752,25 @@ Please do not hesitate to reach out if you have any questions.
 Kind regards,
 ${getFirmName()}`;
 
+  // Populate WhatsApp section
+  const phone = document.getElementById('f-phone')?.value?.trim() || '';
+  document.getElementById('em-wa-phone').value = phone;
+  const appUrl = window.location.origin;
+  const inv = invoices.find(i => i.id === invnum);
+  const waLink = inv?._dbid ? `${appUrl}/invoice/[link in message]` : `${appUrl}/invoice/...`;
+  document.getElementById('em-wa-preview').textContent = [
+    `Hello,`,
+    ``,
+    `${getFirmName()} has sent you invoice ${invnum} for *${total}*.`,
+    document.getElementById('f-due').value ? `Payment is due by *${formatDate(document.getElementById('f-due').value)}*.` : null,
+    ``,
+    `View and download your invoice here:`,
+    waLink,
+    ``,
+    `Sent via StagePay`,
+  ].filter(l => l !== null).join('\n');
+
+  setSendChannel('email');
   document.getElementById('email-modal').classList.remove('hidden');
   // Populate firm signature
   const signEl = document.getElementById('em-firm-sign');
@@ -4639,6 +4779,27 @@ ${getFirmName()}`;
 
 function closeEmailModal() {
   document.getElementById('email-modal').classList.add('hidden');
+}
+
+function setSendChannel(ch) {
+  emSendChannel = ch;
+  const isWA = ch === 'whatsapp';
+  document.getElementById('em-email-section').style.display = isWA ? 'none' : 'contents';
+  const waSection = document.getElementById('em-wa-section');
+  waSection.style.display = isWA ? 'flex' : 'none';
+  const emailBtn = document.getElementById('em-chan-email-btn');
+  const waBtn    = document.getElementById('em-chan-wa-btn');
+  if (emailBtn) { emailBtn.style.background = isWA ? 'transparent' : 'var(--g)'; emailBtn.style.color = isWA ? 'var(--t2)' : 'var(--bg)'; }
+  if (waBtn)    { waBtn.style.background    = isWA ? '#25D366' : 'transparent'; waBtn.style.color    = isWA ? '#fff'       : 'var(--t2)'; }
+  const sendBtn = document.getElementById('em-send-btn');
+  if (sendBtn) {
+    sendBtn.style.background  = isWA ? '#25D366' : '';
+    sendBtn.style.borderColor = isWA ? '#25D366' : '';
+    sendBtn.style.color       = isWA ? '#fff'    : '';
+    sendBtn.innerHTML = isWA
+      ? `💬 Send via WhatsApp`
+      : `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l12-6-6 12V8H2z"/></svg> Send Invoice`;
+  }
 }
 
 async function composeEmail() {
@@ -4710,70 +4871,153 @@ Tone: ${tone}`
   }
 }
 
-function doSendEmail() {
-  const to      = document.getElementById('em-to').value.trim();
-  const subject = document.getElementById('em-subject').value.trim();
-  const body    = document.getElementById('em-body').value.trim();
-  const invnum  = document.getElementById('f-invnum').value;
-  const client  = document.getElementById('f-client').value.trim();
+function doSend() {
+  if (emSendChannel === 'whatsapp') doSendWhatsApp();
+  else doSendEmail();
+}
 
+async function doSendEmail() {
+  const to     = document.getElementById('em-to').value.trim();
+  const invnum = document.getElementById('f-invnum').value;
+  const client = document.getElementById('f-client').value.trim();
   if (!to) { showToast('Enter a recipient email address', 'error'); return; }
-  if (!subject) { showToast('Add a subject line', 'error'); return; }
 
-  // Only gate new invoices — updating a draft-to-pending doesn't count as a new insert
-  const _isNewInvoice = !invoices.find(i => i.id === invnum && i.status !== 'draft');
-  if (_isNewInvoice && !checkPlanLimit()) return;
+  let inv = invoices.find(i => i.id === invnum);
+  if (!inv?._dbid) {
+    _persistDraft();
+    await new Promise(resolve => {
+      const t = setInterval(() => {
+        if (invoices.find(i => i.id === invnum)?._dbid) { clearInterval(t); resolve(); }
+      }, 100);
+      setTimeout(() => { clearInterval(t); resolve(); }, 5000);
+    });
+    inv = invoices.find(i => i.id === invnum);
+    if (!inv?._dbid) { showToast('Invoice could not be saved — check your connection', 'error'); return; }
+  }
 
-  const btn = document.getElementById('em-send-btn');
+  const btn  = document.getElementById('em-send-btn');
+  const orig = btn.innerHTML;
   btn.textContent = 'Sending...';
   btn.disabled = true;
 
-  // Simulate send (in production this hits your email API e.g. SendGrid / Mailgun)
-  setTimeout(() => {
-    // Duplicate guard — don't add if already in list as pending/sent
-    const existing = invoices.find(i => i.id === invnum && i.status !== 'draft');
-    if (!existing) {
-      const cur   = document.getElementById('f-currency').value;
-      const total = document.getElementById('prev-total').textContent;
-      const newInv = {
-        id: invnum, client,
-        project: document.getElementById('f-project').value || 'Professional Services',
-        date: document.getElementById('f-date').value,
-        due:  document.getElementById('f-due').value,
-        amount: parseFloat(total.replace(/[^0-9.]/g, '')),
-        status: 'pending', color: '#3B82F6',
-        initials: client.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
-      };
-      invoices.unshift(newInv);
-      _dbSaveInvoice(newInv);
-    } else if (existing.status === 'draft') {
-      existing.status = 'pending';
-      existing.color  = '#3B82F6';
-      _dbUpdateInvoiceStatus(existing.id, 'pending', '#3B82F6');
-    }
+  try {
+    const res  = await fetch('/api/email/send', {
+      method: 'POST',
+      headers: await _apiHeaders(),
+      body: JSON.stringify({ invoice_id: inv._dbid, to_email: to }),
+    });
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch { throw new Error(text || `Server error ${res.status}`); }
+    if (!res.ok) throw new Error(data.error || 'Send failed');
 
-    // Bump invoice number in form AND settings
-    const num = parseInt(invnum.replace(/\D/g,'')) + 1;
-    const pfx = document.getElementById('s-inv-prefix')?.value || 'INV-';
-    const newNum = pfx + String(num).padStart(3,'0');
-    document.getElementById('f-invnum').value = newNum;
+    inv.status = 'sent'; inv.color = '#3B82F6';
+    _dbUpdateInvoiceStatus(inv.id, 'sent');
+
+    const num  = parseInt(invnum.replace(/\D/g,'')) + 1;
+    const pfx  = document.getElementById('s-inv-prefix')?.value || 'INV-';
+    document.getElementById('f-invnum').value = pfx + String(num).padStart(3,'0');
     const nextEl = document.getElementById('s-inv-next');
     if (nextEl) nextEl.value = num;
 
     renderDashInvoices(); updateDashStats(); renderActionRequired(); renderActivityFeed();
-    renderInvoiceTable();
-    updateMobBadge();
+    renderInvoiceTable(); updateMobBadge();
     document.getElementById('overdue-badge').textContent = invoices.filter(i => i.status === 'overdue').length;
 
-    closeEmailModal();
-    clearForm();
-    logActivity('sent', client, `${invnum} · ${cur}${parseFloat(document.getElementById('prev-total')?.textContent?.replace(/[^0-9.]/g,'')||0).toLocaleString()}`, 'var(--info)');
+    btn.innerHTML = orig; btn.disabled = false;
+    closeEmailModal(); clearForm();
+    logActivity('sent', client, `${invnum} · emailed to ${to}`, 'var(--info)');
     showToast('Invoice ' + invnum + ' sent to ' + to, 'success');
     switchView('invoices', document.querySelectorAll('.nav-item')[2]);
-
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l12-6-6 12V8H2z"/></svg> Send Invoice`;
+  } catch(e) {
+    showToast(e.message, 'error');
+    btn.innerHTML = orig;
     btn.disabled = false;
-  }, 1200);
+  }
+}
+
+async function doSendWhatsApp() {
+  const phone  = document.getElementById('em-wa-phone').value.trim();
+  const invnum = document.getElementById('f-invnum').value;
+  const client = document.getElementById('f-client').value.trim();
+  if (!phone) { showToast('Enter a WhatsApp number', 'error'); return; }
+
+  let inv = invoices.find(i => i.id === invnum);
+  if (!inv?._dbid) {
+    _persistDraft();
+    await new Promise(resolve => {
+      const t = setInterval(() => {
+        if (invoices.find(i => i.id === invnum)?._dbid) { clearInterval(t); resolve(); }
+      }, 100);
+      setTimeout(() => { clearInterval(t); resolve(); }, 5000);
+    });
+    inv = invoices.find(i => i.id === invnum);
+    if (!inv?._dbid) { showToast('Invoice could not be saved — check your connection', 'error'); return; }
+  }
+
+  const btn  = document.getElementById('em-send-btn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+
+  try {
+    // Step 1: generate PDF blob using existing jsPDF code
+    btn.textContent = 'Generating PDF...';
+    const pdfBlob = await exportPDF(true);
+    if (!pdfBlob) throw new Error('PDF generation failed — add at least one line item');
+
+    // Step 2: convert blob to base64
+    btn.textContent = 'Sending via WhatsApp...';
+    const arrayBuffer = await pdfBlob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+    const pdfBase64 = btoa(binary);
+    const safeClient = client.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    const filename = `${safeClient}_${invnum}.pdf`;
+
+    const vatRate  = parseFloat(document.getElementById('f-vat')?.value) || 14;
+    const subtotal = lineItems.reduce((s, l) => s + parseFloat(l.qty||0) * parseFloat(l.rate||0), 0);
+    const totalAmt = subtotal + subtotal * (vatRate / 100);
+    const currency = document.getElementById('f-currency')?.value || 'P';
+    const dueDate  = document.getElementById('f-due')?.value || null;
+
+    // Step 3: send to server — server uploads PDF and sends WhatsApp with mediaUrl
+    const res = await fetch('/api/whatsapp/send', {
+      method: 'POST',
+      headers: await _apiHeaders(),
+      body: JSON.stringify({
+        invoice_id: inv._dbid, to_phone: phone, pdf_base64: pdfBase64, filename,
+        invoice_number: invnum, client_name: client, total_amount: totalAmt, currency, due_date: dueDate,
+      }),
+    });
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch { throw new Error(text || `Server error ${res.status}`); }
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+
+    inv.status = 'sent'; inv.color = '#3B82F6';
+    _dbUpdateInvoiceStatus(inv.id, 'sent');
+
+    const num  = parseInt(invnum.replace(/\D/g,'')) + 1;
+    const pfx  = document.getElementById('s-inv-prefix')?.value || 'INV-';
+    document.getElementById('f-invnum').value = pfx + String(num).padStart(3,'0');
+    const nextEl = document.getElementById('s-inv-next');
+    if (nextEl) nextEl.value = num;
+
+    renderDashInvoices(); updateDashStats(); renderActionRequired(); renderActivityFeed();
+    renderInvoiceTable(); updateMobBadge();
+    document.getElementById('overdue-badge').textContent = invoices.filter(i => i.status === 'overdue').length;
+
+    btn.innerHTML = orig; btn.disabled = false;
+    closeEmailModal(); clearForm();
+    logActivity('sent', client, `${invnum} · WhatsApp PDF to ${phone}`, '#25D366');
+    showToast('Invoice PDF sent via WhatsApp to ' + phone, 'success');
+    switchView('invoices', document.querySelectorAll('.nav-item')[2]);
+  } catch(e) {
+    showToast(e.message, 'error');
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
 }
 
 function saveAsDraftFromModal() {
@@ -4789,7 +5033,6 @@ function _persistDraft() {
   const client  = document.getElementById('f-client').value.trim() || 'Unnamed client';
   const invnum  = document.getElementById('f-invnum').value || 'INV-001';
   const project = document.getElementById('f-project').value || 'Draft invoice';
-  const total   = parseFloat(document.getElementById('prev-total')?.textContent?.replace(/[^0-9.]/g,'')) || 0;
   const cur     = document.getElementById('f-currency')?.value || 'P';
 
   // Only count as a new invoice when no draft with this number already exists
@@ -4812,9 +5055,10 @@ function _persistDraft() {
   const existingIdx = invoices.findIndex(i => i.id === invnum && i.status === 'draft');
   if (existingIdx > -1) invoices.splice(existingIdx, 1);
 
-  const subtotal  = parseFloat(document.getElementById('prev-subtotal')?.textContent?.replace(/[^0-9.]/g,'')) || total;
-  const vatAmount = parseFloat(document.getElementById('prev-vat-total')?.textContent?.replace(/[^0-9.]/g,'')) || 0;
   const vatRate   = parseFloat(document.getElementById('f-vat')?.value) || 14;
+  const subtotal  = lineItems.reduce((s, l) => s + parseFloat(l.qty||0) * parseFloat(l.rate||0), 0);
+  const vatAmount = subtotal * (vatRate / 100);
+  const total     = subtotal + vatAmount;
   const deposit   = parseFloat(document.getElementById('f-deposit-pct')?.value) || 0;
   const draftInv = {
     id: invnum, client, project,
@@ -4832,6 +5076,27 @@ function _persistDraft() {
   };
   invoices.unshift(draftInv);
   _dbSaveInvoice(draftInv);
+
+  // Auto-save client if not already in the client list
+  if (client && client !== 'Unnamed client') {
+    const alreadySaved = clients.some(c => c.name.toLowerCase() === client.toLowerCase());
+    if (!alreadySaved) {
+      const newClient = {
+        name:     client,
+        email:    draftInv.email   || '',
+        phone:    draftInv.phone   || '',
+        address:  draftInv.address || '',
+        city: '', country: '', vatNumber: '', notes: '',
+        type: 'BWP', invoices: 0, total: 0,
+        color: '#10B981',
+        initials: client.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2),
+      };
+      clients.unshift(newClient);
+      _dbSaveClient(newClient);
+      renderClients();
+      renderClientPills();
+    }
+  }
 
   renderDashInvoices(); updateDashStats(); renderActionRequired(); renderActivityFeed();
   renderInvoiceTable();
@@ -4862,20 +5127,19 @@ document.addEventListener('input',e=>{
 });
 
 /* ── PDF EXPORT ── */
-async function exportPDF() {
-  const btn = document.getElementById('pdf-btn');
+async function exportPDF(returnBlob = false) {
+  const btn = returnBlob ? null : document.getElementById('pdf-btn');
   const client = document.getElementById('f-client').value.trim() || 'Client';
   const invnum = document.getElementById('f-invnum').value || 'INV-001';
 
   // Validate
   if (!lineItems.length || lineItems.every(l => !l.desc && !l.rate)) {
-    showToast('Add at least one line item first', 'error');
-    return;
+    if (!returnBlob) showToast('Add at least one line item first', 'error');
+    return null;
   }
 
   // Loading state
-  btn.textContent = 'Generating...';
-  btn.disabled = true;
+  if (btn) { btn.textContent = 'Generating...'; btn.disabled = true; }
 
   // Wait for jsPDF to load if needed
   if (typeof window.jspdf === 'undefined') {
@@ -5296,8 +5560,14 @@ async function exportPDF() {
     doc.setTextColor(100, 116, 139);
     doc.text(`Page 1 of 1  ·  ${invnum}`, W - margin, footerY + 11, { align: 'right' });
 
-    // ── SAVE ──
-    const filename = `${invnum}_${client.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)}.pdf`;
+    // ── SAVE / RETURN ──
+    const safeClient = client.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    const filename = `${safeClient}_${invnum}.pdf`;
+
+    if (returnBlob) {
+      return doc.output('blob');
+    }
+
     doc.save(filename);
     showToast(`${filename} downloaded`, 'success');
 
@@ -5312,10 +5582,13 @@ async function exportPDF() {
 
   } catch (err) {
     console.error(err);
-    showToast('PDF export failed — try again', 'error');
+    if (!returnBlob) showToast('PDF export failed — try again', 'error');
+    return null;
   } finally {
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 1h6l4 4v10H4V1z"/><path d="M10 1v4h4"/><path d="M6 9h4M6 12h2"/></svg> Export PDF`;
-    btn.disabled = false;
+    if (btn) {
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 1h6l4 4v10H4V1z"/><path d="M10 1v4h4"/><path d="M6 9h4M6 12h2"/></svg> Export PDF`;
+      btn.disabled = false;
+    }
   }
 }
 
@@ -6758,17 +7031,24 @@ function renderClientPills() {
   if (!row) return;
   const colors = ['#10B981','#3B82F6','#F59E0B','#EF4444','#E8D8C3'];
   row.innerHTML = clients.slice(0, 5).map((c, i) => `
-    <button class="client-pill" data-name="${esc(c.name)}" data-email="${esc(c.email)}" onclick="selectClientPill(this.dataset.name,this.dataset.email)">
+    <button class="client-pill" data-name="${esc(c.name)}" data-email="${esc(c.email)}" data-phone="${esc(c.phone||'')}" onclick="selectClientPill(this.dataset.name,this.dataset.email,this.dataset.phone)">
       <div class="client-pill-av" style="background:${colors[i%colors.length]}22;color:${colors[i%colors.length]}">${esc(c.initials)}</div>
       ${esc(c.name.split(' ')[0])}
     </button>`).join('');
 }
 
-function selectClientPill(name, email) {
+function selectClientPill(name, email, phone) {
   document.getElementById('f-client').value = name;
   document.getElementById('f-email').value = email || '';
+  document.getElementById('f-phone').value = phone || '';
   updatePreview();
   showToast('Client set — ' + name, 'success');
+}
+
+function invoiceClient(name, email, phone) {
+  selectClientPill(name, email, phone);
+  const navEl = document.querySelector('.nav-item[onclick*="generator"]');
+  switchView('generator', navEl);
 }
 
 const PROMPT_CHIPS = {
@@ -7186,6 +7466,10 @@ function renderClientsWithSearch() {
       </div>
       ${c.phone ? `<div style="margin-top:8px;font-size:11px;color:var(--t3);display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.02 3.89L0 16l4.25-1.11A7.94 7.94 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>${esc(c.phone)}</div>` : ''}
       <div style="margin-top:10px;display:flex;gap:6px;">
+        <button data-name="${esc(c.name)}" data-email="${esc(c.email||'')}" data-phone="${esc(c.phone||'')}" onclick="event.stopPropagation();invoiceClient(this.dataset.name,this.dataset.email,this.dataset.phone)" style="flex:1;font-size:10px;padding:5px 8px;border-radius:5px;border:1px solid var(--g);background:rgba(16,185,129,.08);color:var(--g);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:600;" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">
+          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+          Invoice
+        </button>
         <button data-client="${esc(c.name)}" onclick="event.stopPropagation();generateClientStatement(this.dataset.client)" style="flex:1;font-size:10px;padding:5px 8px;border-radius:5px;border:1px solid var(--line2);background:transparent;color:var(--t3);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;" onmouseover="this.style.borderColor='var(--g)';this.style.color='var(--g)'" onmouseout="this.style.borderColor='var(--line2)';this.style.color='var(--t3)'">
           <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 1h6l4 4v10H4V1z"/><path d="M10 1v4h4"/></svg>
           Statement
@@ -7840,7 +8124,7 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
     <span class="mob-tab-label">Clients</span>
   </button>
   <button class="mob-tab" id="mobtab-settings" onclick="mobSwitch('settings',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     <span class="mob-tab-label">Settings</span>
   </button>
 </nav>

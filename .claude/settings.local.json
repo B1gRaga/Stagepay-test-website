@@ -7,7 +7,8 @@
       "Bash(ssh -o BatchMode=yes -T git@github.com)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\nkweb\\\\Downloads\\\\Stagepay\\\\lib\" -Recurse | Sort-Object FullName | ForEach-Object { $_.FullName })"
     ]
   }
 }

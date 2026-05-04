@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/app', '/api/ai', '/api/invoices/public']
+const PUBLIC_PATHS = ['/', '/app', '/api/ai', '/api/invoices/public', '/invoice']
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -24,7 +24,16 @@ export async function proxy(request: NextRequest) {
   )
 
   // Refresh session — required for Server Components
-  const { data: { user } } = await supabase.auth.getUser()
+  let { data: { user } } = await supabase.auth.getUser()
+
+  // Fall back to Bearer token for clients that can't use cookies (e.g. app.html)
+  if (!user) {
+    const authHeader = request.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const { data: bearerData } = await supabase.auth.getUser(authHeader.slice(7))
+      user = bearerData?.user ?? null
+    }
+  }
 
   const { pathname } = request.nextUrl
   const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))

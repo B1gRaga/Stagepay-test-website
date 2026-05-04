@@ -19,6 +19,7 @@
     "next": "16.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.12.2",
     "tailwind-merge": "^2.2.0",
     "twilio": "^6.0.0"
   },
