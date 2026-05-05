@@ -5228,9 +5228,12 @@ async function exportPDF(returnBlob = false) {
       const lx = margin + 3;
       if (hasLogo) {
         try { doc.addImage(brandSettings.logo, brandSettings.logoType, lx, 7, lw, lh, '', 'FAST'); } catch(_) {}
+        const nx = lx + lw + 4;
+        doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(248,250,252);
+        doc.text(pdfFirmName, nx, 16);
         doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(100,116,139);
-        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), lx, 26);
-        if (pdfContact) doc.text(pdfContact, lx, 32);
+        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), nx, 23);
+        if (pdfContact) doc.text(pdfContact, nx, 29);
       } else {
         doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(248,250,252);
         doc.text(pdfFirmName, lx, 18);
@@ -5250,9 +5253,12 @@ async function exportPDF(returnBlob = false) {
       const lx = margin;
       if (hasLogo) {
         try { doc.addImage(brandSettings.logo, brandSettings.logoType, lx, 7, lw, lh, '', 'FAST'); } catch(_) {}
+        const nx = lx + lw + 4;
+        doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,23,42);
+        doc.text(pdfFirmName, nx, 16);
         doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(100,116,139);
-        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), lx, 26);
-        if (pdfContact) doc.text(pdfContact, lx, 32);
+        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), nx, 23);
+        if (pdfContact) doc.text(pdfContact, nx, 29);
       } else {
         doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(15,23,42);
         doc.text(pdfFirmName, lx, 18);
@@ -5273,9 +5279,12 @@ async function exportPDF(returnBlob = false) {
       const lx = margin;
       if (hasLogo) {
         try { doc.addImage(brandSettings.logo, brandSettings.logoType, lx, 7, lw, lh, '', 'FAST'); } catch(_) {}
+        const nx = lx + lw + 4;
+        doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(17,24,39);
+        doc.text(pdfFirmName, nx, 16);
         doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(156,163,175);
-        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), lx, 26);
-        if (pdfContact) doc.text(pdfContact, lx, 32);
+        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), nx, 23);
+        if (pdfContact) doc.text(pdfContact, nx, 29);
       } else {
         doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(17,24,39);
         doc.text(pdfFirmName, lx, 18);
@@ -5295,9 +5304,12 @@ async function exportPDF(returnBlob = false) {
       const lx = margin + 8;
       if (hasLogo) {
         try { doc.addImage(brandSettings.logo, brandSettings.logoType, lx, 7, lw, lh, '', 'FAST'); } catch(_) {}
+        const nx = lx + lw + 4;
+        doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,23,42);
+        doc.text(pdfFirmName, nx, 15);
         doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(100,116,139);
-        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), lx, 26);
-        if (pdfContact) doc.text(pdfContact, lx, 32);
+        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), nx, 22);
+        if (pdfContact) doc.text(pdfContact, nx, 28);
       } else {
         doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(15,23,42);
         doc.text(pdfFirmName, lx, 17);
@@ -5322,10 +5334,13 @@ async function exportPDF(returnBlob = false) {
       const lx = margin;
       if (hasLogo) {
         try { doc.addImage(brandSettings.logo, brandSettings.logoType, lx, 7, lw, lh, '', 'FAST'); } catch(_) {}
+        const nx = lx + lw + 4;
+        doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+        doc.text(pdfFirmName, nx, 16);
         doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
         doc.globalAlpha = 0.75;
-        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), lx, 26);
-        if (pdfContact) doc.text(pdfContact, lx, 32);
+        doc.text((pdfTagline + '  ·  ' + pdfAddress).toUpperCase(), nx, 23);
+        if (pdfContact) doc.text(pdfContact, nx, 29);
         doc.globalAlpha = 1;
       } else {
         doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
@@ -6545,7 +6560,8 @@ async function confirmEnable2FA() {
   currentUser.twoFAEnabled = true;
   currentUser.totpSecret = _newTOTPSecret;
   if (currentUser.id) {
-    _supa.from('profiles').upsert({ id: currentUser.id, two_fa_enabled: true, totp_secret: _newTOTPSecret }, { onConflict: 'id' });
+    _supa.from('profiles').upsert({ id: currentUser.id, two_fa_enabled: true, totp_secret: _newTOTPSecret }, { onConflict: 'id' })
+      .then(({ error }) => { if (error) { console.error('[DB] 2FA save:', error.message); showToast('2FA enabled locally — run DB migration 005 to persist it', 'warn'); } });
   }
   _newTOTPSecret = null;
   document.getElementById('tfa-setup-wrap').style.display = 'none';
@@ -6860,6 +6876,12 @@ async function doLogout() {
   document.getElementById('l-email').value    = '';
   document.getElementById('l-password').value = '';
   document.getElementById('auth-error').classList.remove('show');
+  // Reset login button — it stays in "Signing in…" state after a successful login
+  const loginBtn = document.getElementById('login-btn');
+  if (loginBtn) {
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = 'Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+  }
   // Reset the success state so the tick/You're in screen doesn't persist
   document.getElementById('auth-success').classList.remove('show');
   document.getElementById('success-bar').style.width = '0%';

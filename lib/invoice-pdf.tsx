@@ -82,14 +82,16 @@ function InvoicePDF({ invoice, items, profile }: {
 
         {/* ── Header bar ── */}
         <View style={s.header}>
-          <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             {profile.logo_url ? (
               <Image src={profile.logo_url} style={s.logo} />
             ) : null}
-            <Text style={s.firmName}>{firmName}</Text>
-            {firmAddress ? <Text style={s.firmDetail}>{firmAddress}</Text> : null}
-            {firmContact ? <Text style={s.firmDetail}>{firmContact}</Text> : null}
-            {firmVat     ? <Text style={s.firmDetail}>VAT: {firmVat}</Text> : null}
+            <View>
+              <Text style={s.firmName}>{firmName}</Text>
+              {firmAddress ? <Text style={s.firmDetail}>{firmAddress}</Text> : null}
+              {firmContact ? <Text style={s.firmDetail}>{firmContact}</Text> : null}
+              {firmVat     ? <Text style={s.firmDetail}>VAT: {firmVat}</Text> : null}
+            </View>
           </View>
           <View>
             <Text style={s.invTitle}>INVOICE</Text>
