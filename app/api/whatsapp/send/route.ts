@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext, createServiceClient } from '@/lib/supabase/server'
 import twilio from 'twilio'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
+
+const PHONE_RE = /^\+?[1-9]\d{6,14}$/
+const MAX_PDF_BYTES = 10 * 1024 * 1024 // 10 MB
 
 export async function POST(req: NextRequest) {
   const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = _supabase as any
+
+  if (!rateLimit(user.id, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   let invoice_id: string, to_phone: string, pdf_base64: string | undefined, filename: string | undefined
   let invoice_number: string | undefined, client_name: string | undefined
@@ -28,6 +36,10 @@ export async function POST(req: NextRequest) {
   }
   if (!invoice_id || !to_phone) {
     return NextResponse.json({ error: 'invoice_id and to_phone are required' }, { status: 400 })
+  }
+  const barePhone = to_phone.replace(/^whatsapp:/, '')
+  if (!PHONE_RE.test(barePhone)) {
+    return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
   }
 
   // Verify invoice belongs to user (lightweight select — we use client-supplied values for message text)
@@ -64,7 +76,12 @@ export async function POST(req: NextRequest) {
     try {
       const serviceClient = createServiceClient()
       const pdfBuffer = Buffer.from(pdf_base64, 'base64')
-      const safeName = filename || `${invoice_id}_${Date.now()}.pdf`
+      if (pdfBuffer.length > MAX_PDF_BYTES) {
+        return NextResponse.json({ error: 'PDF exceeds 10 MB limit' }, { status: 400 })
+      }
+      // Strip any path separators from the filename to prevent path traversal
+      const rawName = filename || `${invoice_id}_${Date.now()}.pdf`
+      const safeName = rawName.replace(/[/\\]/g, '_')
       const storagePath = `${user.id}/${safeName}`
 
       const { error: uploadErr } = await serviceClient.storage
@@ -111,7 +128,7 @@ export async function POST(req: NextRequest) {
       .eq('id', invoice_id)
 
     return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'Failed to send WhatsApp message' }, { status: 500 })
   }
 }

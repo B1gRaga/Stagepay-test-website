@@ -3,6 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 
 type Params = { params: Promise<{ id: string }> }
 
+const VALID_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const
+const ALLOWED_FIELDS = [
+  'status', 'client_id', 'client_name', 'client_email', 'client_phone',
+  'client_address', 'client_vat', 'project', 'notes', 'issue_date',
+  'due_date', 'currency', 'vat_rate', 'deposit_amount',
+] as const
+
 // GET /api/invoices/[id]
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
@@ -28,17 +35,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  const { items, ...fields } = body
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  if (body.status && !VALID_STATUSES.includes(body.status as typeof VALID_STATUSES[number])) {
+    return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
+  }
+
+  const { items, ...rest } = body
+  const fields = Object.fromEntries(
+    ALLOWED_FIELDS.filter(k => rest[k] !== undefined).map(k => [k, rest[k]])
+  )
 
   // Recalculate totals if items are being updated
-  if (items) {
+  if (Array.isArray(items)) {
     const subtotal = items.reduce((sum: number, item: { quantity: number; unit_price: number }) =>
       sum + item.quantity * item.unit_price, 0)
-    const vat_rate = fields.vat_rate ?? 14
+    const vat_rate = typeof fields.vat_rate === 'number' ? fields.vat_rate : 14
     fields.vat_amount = subtotal * (vat_rate / 100)
     fields.subtotal = subtotal
-    fields.total = subtotal + fields.vat_amount - (fields.deposit_amount ?? 0)
+    fields.total = subtotal + (fields.vat_amount as number) - ((fields.deposit_amount as number) ?? 0)
 
     // Replace all line items
     await supabase.from('invoice_items').delete().eq('invoice_id', id)
@@ -62,7 +82,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .select('*, invoice_items(*)')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
   return NextResponse.json({ invoice: data })
 }
 
@@ -79,6 +99,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     .eq('id', id)
     .eq('user_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

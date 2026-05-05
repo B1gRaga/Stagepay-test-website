@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const VALID_CHANNELS = ['whatsapp', 'email'] as const
+
 // GET /api/reminders?invoice_id=xxx
 export async function GET(req: NextRequest) {
   const supabase = await createClient() as any
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
   if (invoice_id) query = query.eq('invoice_id', invoice_id)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to fetch reminders' }, { status: 500 })
   return NextResponse.json({ reminders: data })
 }
 
@@ -29,7 +31,28 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  if (!body.invoice_id) {
+    return NextResponse.json({ error: 'invoice_id is required' }, { status: 400 })
+  }
+
+  if (body.channel && !VALID_CHANNELS.includes(body.channel as typeof VALID_CHANNELS[number])) {
+    return NextResponse.json({ error: `Invalid channel. Must be one of: ${VALID_CHANNELS.join(', ')}` }, { status: 400 })
+  }
+
+  if (body.days_after_due !== undefined && (typeof body.days_after_due !== 'number' || body.days_after_due < 0)) {
+    return NextResponse.json({ error: 'days_after_due must be a non-negative number' }, { status: 400 })
+  }
+
+  if (body.send_at && isNaN(Date.parse(body.send_at as string))) {
+    return NextResponse.json({ error: 'send_at must be a valid date' }, { status: 400 })
+  }
 
   // Verify invoice belongs to this user
   const { data: invoice } = await supabase
@@ -41,7 +64,6 @@ export async function POST(req: NextRequest) {
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
 
-  // Auto-populate recipient from invoice if not provided
   const recipient_phone = body.recipient_phone ?? invoice.client_phone
   const recipient_email = body.recipient_email ?? invoice.client_email
 
@@ -61,6 +83,6 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to create reminder' }, { status: 500 })
   return NextResponse.json({ reminder: data }, { status: 201 })
 }

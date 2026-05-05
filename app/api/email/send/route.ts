@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/supabase/server'
 import { Resend } from 'resend'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req: NextRequest) {
   const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = _supabase as any
+
+  if (!rateLimit(user.id, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   let invoice_id: string, to_email: string
   try {
@@ -20,6 +27,9 @@ export async function POST(req: NextRequest) {
   }
   if (!invoice_id || !to_email) {
     return NextResponse.json({ error: 'invoice_id and to_email are required' }, { status: 400 })
+  }
+  if (!EMAIL_RE.test(to_email)) {
+    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
   }
 
   const { data: invoice } = await supabase
@@ -148,7 +158,7 @@ export async function POST(req: NextRequest) {
       .eq('id', invoice_id)
 
     return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
   }
 }
