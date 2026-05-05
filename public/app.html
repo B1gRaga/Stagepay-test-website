@@ -3814,6 +3814,22 @@ async function _loadUserData(userId) {
     initials: (r.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2),
   }));
   expenses = []; // Phase 2
+  _syncNextInvoiceNum();
+}
+
+function _syncNextInvoiceNum() {
+  if (!invoices.length) return;
+  const maxNum = Math.max(...invoices.map(i => {
+    const m = String(i.id || '').match(/(\d+)$/);
+    return m ? parseInt(m[1]) : 0;
+  }));
+  if (maxNum <= 0) return;
+  const next   = maxNum + 1;
+  const pfx    = document.getElementById('s-inv-prefix')?.value || 'INV-';
+  const nextEl = document.getElementById('s-inv-next');
+  if (nextEl) nextEl.value = next;
+  const invnumEl = document.getElementById('f-invnum');
+  if (invnumEl) invnumEl.value = pfx + String(next).padStart(3, '0');
 }
 
 async function _dbSaveInvoice(inv) {
@@ -4735,7 +4751,7 @@ function openEmailModal() {
 
   document.getElementById('em-inv-label').textContent = invnum + ' · ' + client;
   document.getElementById('em-to').value = email;
-  document.getElementById('em-subject').value = `Invoice ${invnum} — ${project || 'Professional Services'} — ${total}`;
+  document.getElementById('em-subject').value = `Invoice ${invnum}`;
   document.getElementById('em-attachment-label').textContent = invnum + '.pdf attached';
 
   // Default body
