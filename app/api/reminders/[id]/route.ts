@@ -6,7 +6,7 @@ type Params = { params: Promise<{ id: string }> }
 // PATCH /api/reminders/[id] — update or cancel
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/reminders/[id]
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

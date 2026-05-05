@@ -5,8 +5,9 @@ import twilio from 'twilio'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-  const { supabase, user } = await getAuthContext(req)
+  const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = _supabase as any
 
   let invoice_id: string, to_phone: string, pdf_base64: string | undefined, filename: string | undefined
   let invoice_number: string | undefined, client_name: string | undefined

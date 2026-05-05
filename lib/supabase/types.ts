@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
-export type InvoiceStatus = 'draft' | 'pending' | 'overdue' | 'paid'
+export type InvoiceStatus = 'draft' | 'pending' | 'sent' | 'overdue' | 'paid'
 export type ReminderStatus = 'scheduled' | 'sent' | 'failed' | 'cancelled'
 export type ReminderChannel = 'whatsapp' | 'email'
 export type Plan = 'free' | 'pro' | 'business'
@@ -70,6 +70,8 @@ export interface Database {
           currency: string
           whatsapp_sent_at: string | null
           whatsapp_to: string | null
+          email_sent_at: string | null
+          email_to: string | null
           public_token: string | null
           created_at: string
           updated_at: string

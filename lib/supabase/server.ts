@@ -45,8 +45,7 @@ export async function getAuthContext(req: { headers: { get(name: string): string
 
 // Service role client — bypasses RLS, only use in trusted server code
 export function createServiceClient() {
-  const { createClient } = require('@supabase/supabase-js')
-  return createClient<Database>(
+  return createJsClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )

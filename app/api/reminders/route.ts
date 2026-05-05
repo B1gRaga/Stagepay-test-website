@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // GET /api/reminders?invoice_id=xxx
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/reminders — schedule a reminder
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

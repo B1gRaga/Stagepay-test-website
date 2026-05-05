@@ -5,8 +5,10 @@ import { Resend } from 'resend'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-  const { supabase, user } = await getAuthContext(req)
+  const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = _supabase as any
 
   let invoice_id: string, to_email: string
   try {

@@ -6,7 +6,7 @@ type Params = { params: Promise<{ id: string }> }
 // GET /api/invoices/[id]
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // PATCH /api/invoices/[id] — update fields or mark as paid
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -69,7 +69,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/invoices/[id]
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
