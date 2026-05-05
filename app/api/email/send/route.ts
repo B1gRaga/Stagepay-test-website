@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    await supabase
+    const { error: statusErr } = await supabase
       .from('invoices')
       .update({
         email_sent_at: new Date().toISOString(),
@@ -109,9 +109,12 @@ export async function POST(req: NextRequest) {
         status: invoice.status === 'draft' ? 'sent' : invoice.status,
       })
       .eq('id', invoice_id)
+    if (statusErr) console.error('[Email] invoice status update failed:', statusErr.message)
 
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
+  } catch(err: any) {
+    const msg = err?.message || 'Failed to send email'
+    console.error('[Email] send error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

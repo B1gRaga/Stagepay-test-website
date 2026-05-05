@@ -118,13 +118,16 @@ export async function POST(req: NextRequest) {
     await client.messages.create(msgParams)
 
     // Record the send on the invoice
-    await supabase
+    const { error: statusErr } = await supabase
       .from('invoices')
       .update({ status: invoice.status === 'draft' ? 'sent' : invoice.status })
       .eq('id', invoice_id)
+    if (statusErr) console.error('[WhatsApp] invoice status update failed:', statusErr.message)
 
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'Failed to send WhatsApp message' }, { status: 500 })
+  } catch(err: any) {
+    const msg = err?.message || 'Failed to send WhatsApp message'
+    console.error('[WhatsApp] Twilio error:', msg, 'code:', err?.code, 'status:', err?.status)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
