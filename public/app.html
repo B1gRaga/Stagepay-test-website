@@ -6213,15 +6213,32 @@ function selectTemplate(name, el) {
   }[name], 'success');
 }
 
-function saveFirmDetails() {
+async function saveFirmDetails() {
   const name = document.getElementById('s-firm-name').value.trim();
   if (!name) { showToast('Enter your firm name', 'error'); return; }
   brandSettings.firmName = name;
   updateLivePreview();
   updatePreview();
-  // Reflect in sidebar
   document.querySelector('.user-name').textContent = name.split(' ')[0];
-  showToast('Firm details saved', 'success');
+
+  if (!currentUser?.id) { showToast('Firm details saved locally', 'success'); return; }
+
+  const payload = {
+    firm_name:  name,
+    email:      document.getElementById('s-email')?.value.trim()   || null,
+    phone:      document.getElementById('s-phone')?.value.trim()   || null,
+    address:    document.getElementById('s-address')?.value.trim() || null,
+    vat_number: document.getElementById('s-vat-num')?.value.trim() || null,
+    country:    document.getElementById('s-country')?.value        || 'Botswana',
+  };
+
+  const { error } = await _supa.from('profiles').update(payload).eq('id', currentUser.id);
+  if (error) {
+    console.error('[DB] save profile:', error.message);
+    showToast('Saved locally — could not sync to server', 'warn');
+  } else {
+    showToast('Firm details saved', 'success');
+  }
 }
 
 // Init branding thumbs on load
@@ -8105,10 +8122,15 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
     document.getElementById('sidebar-av').textContent   = initials;
     document.getElementById('sidebar-name').textContent = firm || name;
     document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
-    const firmInput = document.getElementById('s-firm-name');
-    if (firmInput) firmInput.value = firm || '';
-    const emailInput = document.getElementById('s-email');
-    if (emailInput) emailInput.value = sbUser.email;
+
+    // Populate all Settings fields from profile
+    const _set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    _set('s-firm-name', profile?.firm_name || firm);
+    _set('s-email',     profile?.email     || sbUser.email);
+    _set('s-phone',     profile?.phone);
+    _set('s-address',   profile?.address);
+    _set('s-vat-num',   profile?.vat_number);
+    if (profile?.country) { const sel = document.getElementById('s-country'); if (sel) sel.value = profile.country; }
 
     updatePreview(); updateDashStats();
     renderDashInvoices(); renderActionRequired(); renderActivityFeed();
