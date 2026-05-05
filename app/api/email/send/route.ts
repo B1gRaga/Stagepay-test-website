@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const [{ data: invoice }, { data: profile }] = await Promise.all([
     supabase.from('invoices').select('*, invoice_items(*)').eq('id', invoice_id).eq('user_id', user.id).single(),
-    supabase.from('profiles').select('firm_name, name, email').eq('id', user.id).single(),
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
   ])
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
