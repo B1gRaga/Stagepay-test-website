@@ -6076,6 +6076,12 @@ function handleLogoUpload(e) {
     const existingPreview = document.getElementById('prev-logo-img');
     if (existingPreview) existingPreview.src = dataUrl;
 
+    // Persist logo to DB so it survives logout/refresh
+    if (currentUser?.id) {
+      _supa.from('profiles').update({ logo_url: dataUrl }).eq('id', currentUser.id)
+        .then(({ error }) => { if (error) console.error('[DB] save logo:', error.message); });
+    }
+
     showToast('Logo uploaded', 'success');
   };
   reader.readAsDataURL(file);
@@ -6218,6 +6224,44 @@ function selectTemplate(name, el) {
     modern:'Dark Modern', clean:'Clean Light',
     minimal:'Minimal Line', bold:'Bold Accent', executive:'Executive'
   }[name], 'success');
+}
+
+// ── Shared helper: populate every Settings field from a Supabase profile row ──
+// Called by both doLogin() and restoreSession() so they never diverge.
+function _populateSettingsFromProfile(profile, sbUser) {
+  const _set = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; };
+  _set('s-firm-name', profile?.firm_name);
+  _set('s-email',     profile?.email  || sbUser?.email);
+  _set('s-phone',     profile?.phone);
+  _set('s-address',   profile?.address);
+  _set('s-vat-num',   profile?.vat_number);
+  if (profile?.country) { const sel = document.getElementById('s-country'); if (sel) sel.value = profile.country; }
+
+  // Restore logo from DB
+  if (profile?.logo_url) {
+    const img  = document.getElementById('logo-preview-img');
+    const ph   = document.getElementById('logo-placeholder');
+    const hint = document.getElementById('logo-change-hint');
+    const zone = document.getElementById('logo-zone');
+    if (img)  { img.src = profile.logo_url; img.style.display = 'block'; }
+    if (ph)   ph.style.display = 'none';
+    if (hint) hint.style.display = 'block';
+    if (zone) zone.classList.add('has-logo');
+    brandSettings.logo     = profile.logo_url;
+    brandSettings.logoType = profile.logo_url.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    const _dimImg = new Image();
+    _dimImg.onload = () => { if (_dimImg.naturalHeight > 0) brandSettings.logoAspect = _dimImg.naturalWidth / _dimImg.naturalHeight; };
+    _dimImg.src = profile.logo_url;
+  }
+
+  // Restore 2FA state into currentUser so _refreshTFAStatusUI reads it correctly
+  if (profile?.two_fa_enabled && profile?.totp_secret) {
+    currentUser.twoFAEnabled = true;
+    currentUser.totpSecret   = profile.totp_secret;
+  } else {
+    currentUser.twoFAEnabled = false;
+    delete currentUser.totpSecret;
+  }
 }
 
 async function saveFirmDetails() {
@@ -6492,7 +6536,7 @@ async function confirmEnable2FA() {
   currentUser.twoFAEnabled = true;
   currentUser.totpSecret = _newTOTPSecret;
   if (currentUser.id) {
-    _supa.from('profiles').update({ twoFAEnabled: true, totpSecret: _newTOTPSecret }).eq('id', currentUser.id);
+    _supa.from('profiles').update({ two_fa_enabled: true, totp_secret: _newTOTPSecret }).eq('id', currentUser.id);
   }
   _newTOTPSecret = null;
   document.getElementById('tfa-setup-wrap').style.display = 'none';
@@ -6511,7 +6555,7 @@ function disable2FA() {
   currentUser.twoFAEnabled = false;
   delete currentUser.totpSecret;
   if (currentUser.id) {
-    _supa.from('profiles').update({ twoFAEnabled: false, totpSecret: null }).eq('id', currentUser.id);
+    _supa.from('profiles').update({ two_fa_enabled: false, totp_secret: null }).eq('id', currentUser.id);
   }
   document.getElementById('tfa-recovery-wrap').style.display = 'none';
   _refreshTFAStatusUI();
@@ -6576,14 +6620,16 @@ async function doLogin() {
   loginAttempts = 0;
   const sbUser = data.user;
   const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
-  const name     = profile?.name     || sbUser.user_metadata?.name     || email.split('@')[0];
-  const firm     = profile?.firm     || sbUser.user_metadata?.firm     || '';
-  const plan     = profile?.plan     || sbUser.user_metadata?.plan     || 'free';
-  const initials = profile?.initials || sbUser.user_metadata?.initials || name.substring(0,2).toUpperCase();
+  const name     = profile?.name      || sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || email.split('@')[0];
+  const firm     = profile?.firm_name || sbUser.user_metadata?.firm      || '';
+  const plan     = profile?.plan      || 'free';
+  const initials = name.substring(0,2).toUpperCase();
   currentUser = { id: sbUser.id, email, name, firm, plan, initials };
 
   await _loadUserData(sbUser.id);
   enterApp(currentUser);
+  // Populate ALL settings fields from DB (phone, address, VAT, country, logo, 2FA)
+  _populateSettingsFromProfile(profile, sbUser);
 }
 
 /* ── PROFILE POPUP ── */
@@ -6718,6 +6764,12 @@ async function doSignup() {
   }
 
   currentUser = { id: data.user.id, email, name, firm, plan: selectedPlan, initials };
+
+  // Write firm_name to profile row (trigger only inserts id/email/name)
+  const country = document.getElementById('s-country-auth')?.value || 'Botswana';
+  _supa.from('profiles').update({ firm_name: firm, country, plan: selectedPlan }).eq('id', data.user.id)
+    .then(({ error: e }) => { if (e) console.error('[DB] signup profile:', e.message); });
+
   enterApp(currentUser);
 }
 
@@ -8130,14 +8182,8 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
     document.getElementById('sidebar-name').textContent = firm || name;
     document.getElementById('sidebar-plan').textContent = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
 
-    // Populate all Settings fields from profile
-    const _set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    _set('s-firm-name', profile?.firm_name || firm);
-    _set('s-email',     profile?.email     || sbUser.email);
-    _set('s-phone',     profile?.phone);
-    _set('s-address',   profile?.address);
-    _set('s-vat-num',   profile?.vat_number);
-    if (profile?.country) { const sel = document.getElementById('s-country'); if (sel) sel.value = profile.country; }
+    // Populate all Settings fields from profile (logo, 2FA, etc.)
+    _populateSettingsFromProfile(profile, sbUser);
 
     updatePreview(); updateDashStats();
     renderDashInvoices(); renderActionRequired(); renderActivityFeed();
