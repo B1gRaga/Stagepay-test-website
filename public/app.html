@@ -5093,6 +5093,13 @@ function _persistDraft() {
   invoices.unshift(draftInv);
   _dbSaveInvoice(draftInv);
 
+  // Advance the next-invoice counter so the next new invoice gets a fresh number
+  if (!_isExistingDraft) {
+    const num    = parseInt(invnum.replace(/\D/g,'')) + 1;
+    const nextEl = document.getElementById('s-inv-next');
+    if (nextEl) nextEl.value = num;
+  }
+
   // Auto-save client if not already in the client list
   if (client && client !== 'Unnamed client') {
     const alreadySaved = clients.some(c => c.name.toLowerCase() === client.toLowerCase());
