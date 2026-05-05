@@ -5,7 +5,6 @@ import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
-const PHONE_RE = /^\+?[1-9]\d{6,14}$/
 const MAX_PDF_BYTES = 10 * 1024 * 1024 // 10 MB
 
 export async function POST(req: NextRequest) {
@@ -37,8 +36,8 @@ export async function POST(req: NextRequest) {
   if (!invoice_id || !to_phone) {
     return NextResponse.json({ error: 'invoice_id and to_phone are required' }, { status: 400 })
   }
-  const barePhone = to_phone.replace(/^whatsapp:/, '')
-  if (!PHONE_RE.test(barePhone)) {
+  const barePhone = to_phone.replace(/^whatsapp:/, '').replace(/\D/g, '')
+  if (barePhone.length < 7) {
     return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
   }
 
@@ -67,8 +66,6 @@ export async function POST(req: NextRequest) {
   }
 
   const senderName = profile?.firm_name || profile?.name || 'Your service provider'
-  const sym = currency || 'P'
-  const totalFormatted = `${sym}${Number(total_amount ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
 
   // Upload PDF to Supabase Storage so Twilio can fetch it as mediaUrl
   let pdfUrl: string | undefined
@@ -104,13 +101,12 @@ export async function POST(req: NextRequest) {
   const message = [
     `Hello,`,
     ``,
-    `${senderName} has sent you invoice ${invoice_number} for *${totalFormatted}*.`,
+    `${senderName} has sent you invoice *${invoice_number}*.`,
     due_date ? `Payment is due by *${due_date}*.` : null,
-    ``,
     pdfUrl ? `Please find your invoice PDF attached.` : null,
     ``,
     `Sent via StagePay`,
-  ].filter(l => l !== null).join('\n')
+  ].filter(Boolean).join('\n')
 
   try {
     const client = twilio(accountSid, authToken)
