@@ -6078,7 +6078,7 @@ function handleLogoUpload(e) {
 
     // Persist logo to DB so it survives logout/refresh
     if (currentUser?.id) {
-      _supa.from('profiles').update({ logo_url: dataUrl }).eq('id', currentUser.id)
+      _supa.from('profiles').upsert({ id: currentUser.id, logo_url: dataUrl }, { onConflict: 'id' })
         .then(({ error }) => { if (error) console.error('[DB] save logo:', error.message); });
     }
 
@@ -6262,6 +6262,10 @@ function _populateSettingsFromProfile(profile, sbUser) {
     currentUser.twoFAEnabled = false;
     delete currentUser.totpSecret;
   }
+
+  // Refresh the invoice preview so firm name / logo appear immediately
+  if (typeof updatePreview === 'function') updatePreview();
+  if (typeof updateLivePreview === 'function') updateLivePreview();
 }
 
 async function saveFirmDetails() {
@@ -6283,10 +6287,15 @@ async function saveFirmDetails() {
     country:    document.getElementById('s-country')?.value        || 'Botswana',
   };
 
-  const { error } = await _supa.from('profiles').update(payload).eq('id', currentUser.id);
+  // upsert instead of update: handles accounts where the profile row was
+  // never created by the DB trigger (silent failure with plain update).
+  const { error } = await _supa.from('profiles').upsert(
+    { id: currentUser.id, ...payload },
+    { onConflict: 'id' }
+  );
   if (error) {
     console.error('[DB] save profile:', error.message);
-    showToast('Saved locally — could not sync to server', 'warn');
+    showToast('Could not save to server — check your connection', 'warn');
   } else {
     showToast('Firm details saved', 'success');
   }
@@ -6536,7 +6545,7 @@ async function confirmEnable2FA() {
   currentUser.twoFAEnabled = true;
   currentUser.totpSecret = _newTOTPSecret;
   if (currentUser.id) {
-    _supa.from('profiles').update({ two_fa_enabled: true, totp_secret: _newTOTPSecret }).eq('id', currentUser.id);
+    _supa.from('profiles').upsert({ id: currentUser.id, two_fa_enabled: true, totp_secret: _newTOTPSecret }, { onConflict: 'id' });
   }
   _newTOTPSecret = null;
   document.getElementById('tfa-setup-wrap').style.display = 'none';
@@ -6555,7 +6564,7 @@ function disable2FA() {
   currentUser.twoFAEnabled = false;
   delete currentUser.totpSecret;
   if (currentUser.id) {
-    _supa.from('profiles').update({ two_fa_enabled: false, totp_secret: null }).eq('id', currentUser.id);
+    _supa.from('profiles').upsert({ id: currentUser.id, two_fa_enabled: false, totp_secret: null }, { onConflict: 'id' });
   }
   document.getElementById('tfa-recovery-wrap').style.display = 'none';
   _refreshTFAStatusUI();
@@ -6765,10 +6774,12 @@ async function doSignup() {
 
   currentUser = { id: data.user.id, email, name, firm, plan: selectedPlan, initials };
 
-  // Write firm_name to profile row (trigger only inserts id/email/name)
+  // Write firm_name to profile row — upsert handles race with the DB trigger
   const country = document.getElementById('s-country-auth')?.value || 'Botswana';
-  _supa.from('profiles').update({ firm_name: firm, country, plan: selectedPlan }).eq('id', data.user.id)
-    .then(({ error: e }) => { if (e) console.error('[DB] signup profile:', e.message); });
+  _supa.from('profiles').upsert(
+    { id: data.user.id, email, name, firm_name: firm, country, plan: selectedPlan },
+    { onConflict: 'id' }
+  ).then(({ error: e }) => { if (e) console.error('[DB] signup profile:', e.message); });
 
   enterApp(currentUser);
 }
