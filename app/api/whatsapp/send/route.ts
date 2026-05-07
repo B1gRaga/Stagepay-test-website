@@ -98,22 +98,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const message = [
-    `Hello,`,
-    ``,
-    `${senderName} has sent you invoice *${invoice_number}*.`,
-    due_date ? `Payment is due by *${due_date}*.` : null,
-    pdfUrl ? `Please find your invoice PDF attached.` : null,
-    ``,
-    `Sent via StagePay`,
-  ].filter(Boolean).join('\n')
+  const amountFormatted = total_amount
+    ? `${currency || 'P'}${Number(total_amount).toLocaleString('en', { minimumFractionDigits: 2 })}`
+    : ''
 
   try {
     const client = twilio(accountSid, authToken)
     const toFormatted = to_phone.startsWith('whatsapp:') ? to_phone : `whatsapp:${to_phone}`
 
-    const msgParams: any = { from, to: toFormatted, body: message }
-    if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
+    const msgParams: any = {
+      from,
+      to: toFormatted,
+      contentSid: 'HX5154b93335b426292a72e32acee271b0',
+      contentVariables: JSON.stringify({
+        '1': senderName,
+        '2': invoice_number || '',
+        '3': amountFormatted,
+        '4': due_date || 'upon receipt',
+        '5': pdfUrl || '',
+      }),
+    }
 
     await client.messages.create(msgParams)
 
