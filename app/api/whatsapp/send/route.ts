@@ -117,12 +117,24 @@ export async function POST(req: NextRequest) {
       `Thank you for your business!`,
     ].filter(Boolean).join('\n')
 
-    const msgParams: any = {
-      from,
-      to: toFormatted,
-      body,
+    const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID
+    const msgParams: any = { from, to: toFormatted }
+
+    if (templateSid) {
+      // Use approved Content Template (works outside the 24-hour messaging window)
+      msgParams.contentSid = templateSid
+      msgParams.contentVariables = JSON.stringify({
+        '1': senderName,
+        '2': invoice_number || '',
+        '3': amountFormatted,
+        '4': due_date || 'upon receipt',
+        '5': pdfUrl || '',
+      })
+    } else {
+      // Free-form body — only works within 24 hours of recipient messaging first
+      msgParams.body = body
+      if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
     }
-    if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
 
     await client.messages.create(msgParams)
 
