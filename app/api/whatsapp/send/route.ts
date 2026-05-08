@@ -106,18 +106,23 @@ export async function POST(req: NextRequest) {
     const client = twilio(accountSid, authToken)
     const toFormatted = to_phone.startsWith('whatsapp:') ? to_phone : `whatsapp:${to_phone}`
 
+    const body = [
+      `Hello from ${senderName} 👋`,
+      ``,
+      `Please find your invoice attached.`,
+      invoice_number ? `📄 Invoice: ${invoice_number}` : '',
+      amountFormatted   ? `💰 Amount:  ${amountFormatted}` : '',
+      due_date          ? `📅 Due:     ${due_date}` : '',
+      ``,
+      `Thank you for your business!`,
+    ].filter(Boolean).join('\n')
+
     const msgParams: any = {
       from,
       to: toFormatted,
-      contentSid: 'HX5154b93335b426292a72e32acee271b0',
-      contentVariables: JSON.stringify({
-        '1': senderName,
-        '2': invoice_number || '',
-        '3': amountFormatted,
-        '4': due_date || 'upon receipt',
-        '5': pdfUrl || '',
-      }),
+      body,
     }
+    if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
 
     await client.messages.create(msgParams)
 
