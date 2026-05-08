@@ -4520,7 +4520,7 @@ async function generateTC(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-5',
+        model:'claude-sonnet-4-6',
         max_tokens:300,
         system:'Write concise invoice terms and conditions for a professional services firm in Botswana. 3-4 sentences. No headers. Plain text only. Practical and legally grounded.',
         messages:[{role:'user',content:`Project: ${project}. Profession: ${profession}. Include: payment timeline, late payment clause, ownership of work, dispute resolution.`}]
@@ -4562,7 +4562,7 @@ Rules: extract client name; split into logical line items; numeric qty/rate only
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-5',
+        model:'claude-sonnet-4-6',
         max_tokens:800,
         system:systemPrompt,
         messages:[{role:'user',content:prompt}]
@@ -4903,7 +4903,7 @@ async function composeEmail() {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
         system: `You write invoice email bodies for StagePay, a Botswana-based professional invoicing app. 
 Write ONLY the email body — no subject line, no "Subject:", no markdown. 
@@ -5976,7 +5976,7 @@ Keep it short — 2-3 paragraphs max. Sender: ${getFirmName()}, Gaborone.`;
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: isWA ? 200 : 400,
         system: isWA ? waSystemPrompt : emailSystemPrompt,
         messages: [{
@@ -6061,7 +6061,7 @@ async function rewritePreview() {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 250,
         system: `Write a short 7-day overdue payment reminder email body. Professional tone. No subject line. No markdown. Start with "Dear [Client]," Max 3 short paragraphs. Sender: ${getFirmName()}, Gaborone, Botswana.`,
         messages: [{ role: 'user', content: `Client: ${sampleInv.client}, Invoice: ${sampleInv.id}, Amount: P${sampleInv.amount.toLocaleString()}, 7 days overdue.` }]
