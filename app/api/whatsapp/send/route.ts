@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = twilio(accountSid, authToken)
-    const toFormatted = to_phone.startsWith('whatsapp:') ? to_phone : `whatsapp:${to_phone}`
+    const toFormatted = `whatsapp:+${barePhone}`
 
     const body = [
       `Hello from ${senderName} 👋`,
