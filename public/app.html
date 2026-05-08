@@ -4162,7 +4162,7 @@ function renderDashInvoices() {
     </div>`;
     return;
   }
-  el.innerHTML=invoices.slice(0,6).map(inv=>`
+  el.innerHTML=invoices.slice(0,20).map(inv=>`
     <div class="inv-list-item" onclick="switchView('invoices',document.querySelectorAll('.nav-item')[2])">
       <div class="inv-avatar" style="background:${esc(inv.color)}22;color:${esc(inv.color)};">${esc(inv.initials||inv.client.substring(0,2).toUpperCase())}</div>
       <div class="inv-info">
@@ -5845,9 +5845,10 @@ function openReminderModal(invId) {
   document.getElementById('rmod-amount').textContent = 'P' + inv.amount.toLocaleString();
   document.getElementById('rmod-due').textContent = 'Due ' + formatDate(inv.due);
 
-  // Match phone from clients
+  // Match phone and email from clients
   const clientRec = clients.find(c => c.name === inv.client);
   if (clientRec?.phone) activeReminderInv.phone = clientRec.phone;
+  if (clientRec?.email) activeReminderInv.email = clientRec.email;
 
   // Show/hide phone indicator
   const phoneInd   = document.getElementById('rmod-phone-indicator');
@@ -5997,17 +5998,37 @@ Tone: ${toneMap[tone]}`
     if (isWA) {
       lastWAMessage = text;
       document.getElementById('rmod-wa-body').textContent = text;
+      // WhatsApp: user opens the link to send manually via wa.me
+      if (!reminderLog[inv.id]) reminderLog[inv.id] = [];
+      reminderLog[inv.id].push({ day: days, sent: true, date: new Date().toLocaleDateString(), channel: 'whatsapp' });
+      logActivity('remind_wa', inv.client, `${inv.id} · ${getDaysOverdue(inv)} days overdue`, '#25D366');
+      renderActionRequired();
     } else {
       document.getElementById('rmod-preview-body').innerHTML = text.replace(/\n/g, '<br>');
+      // Email: actually send via API
+      const toEmail = inv.email || inv.client_email;
+      if (!toEmail) {
+        showToast('No email address for this client — add one in the client record', 'error');
+      } else if (!inv._dbid) {
+        showToast('Invoice not yet saved — save it first before sending a reminder', 'error');
+      } else {
+        const sendRes = await fetch('/api/email/send', {
+          method: 'POST',
+          headers: await _apiHeaders(),
+          body: JSON.stringify({ invoice_id: inv._dbid, to_email: toEmail, custom_body: text })
+        });
+        const sendData = await sendRes.json();
+        if (!sendRes.ok) {
+          showToast(sendData.error || 'Failed to send reminder', 'error');
+        } else {
+          if (!reminderLog[inv.id]) reminderLog[inv.id] = [];
+          reminderLog[inv.id].push({ day: days, sent: true, date: new Date().toLocaleDateString(), channel: 'email' });
+          showToast(`Reminder sent to ${toEmail}`, 'success');
+          logActivity('remind', inv.client, `${inv.id} · ${getDaysOverdue(inv)} days overdue`, 'var(--warn)');
+          renderActionRequired();
+        }
+      }
     }
-
-    if (!reminderLog[inv.id]) reminderLog[inv.id] = [];
-    reminderLog[inv.id].push({ day: days, sent: true, date: new Date().toLocaleDateString(), channel: isWA ? 'whatsapp' : 'email' });
-
-    if (!isWA) showToast(`Reminder sent to ${inv.client}`, 'success');
-    logActivity(isWA ? 'remind_wa' : 'remind', inv.client,
-      `${inv.id} · ${getDaysOverdue(inv)} days overdue`, isWA ? '#25D366' : 'var(--warn)');
-    renderActionRequired();
 
   } catch(e) {
     const fallback = isWA
@@ -7780,9 +7801,7 @@ function _buildStatement(clientName, clientInvs) {
 
 /* ── DEMO FILL ── */
 function fillDemo() {
-  document.getElementById('l-email').value    = 'demo@stagepay.co';
-  document.getElementById('l-password').value = 'demo1234';
-  showToast('Demo credentials filled — click Sign in','info');
+  showToast('Demo access is not available on this build','info');
 }
 
 /* ── ACTIVITY LOG ── */

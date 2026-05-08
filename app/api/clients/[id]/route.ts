@@ -32,6 +32,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .update(safe)
     .eq('id', id)
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .select()
     .single()
 
@@ -39,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   return NextResponse.json({ client: data })
 }
 
-// DELETE /api/clients/[id]
+// DELETE /api/clients/[id] — soft delete: sets deleted_at, preserves invoice history
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const supabase = await createClient() as any
@@ -48,9 +49,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { error } = await supabase
     .from('clients')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', user.id)
+    .is('deleted_at', null)
 
   if (error) return NextResponse.json({ error: 'Failed to delete client' }, { status: 500 })
   return NextResponse.json({ success: true })

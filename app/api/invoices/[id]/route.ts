@@ -24,11 +24,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     .eq('user_id', user.id)
     .single()
 
-  if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ invoice: data })
 }
 
-// PATCH /api/invoices/[id] — update fields or mark as paid
+// PATCH /api/invoices/[id]
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
   const supabase = await createClient() as any
@@ -46,43 +46,87 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
   }
 
+  if (body.vat_rate !== undefined) {
+    const vat = Number(body.vat_rate)
+    if (isNaN(vat) || vat < 0 || vat > 100) {
+      return NextResponse.json({ error: 'vat_rate must be between 0 and 100' }, { status: 400 })
+    }
+  }
+
   const { items, ...rest } = body
   const fields = Object.fromEntries(
     ALLOWED_FIELDS.filter(k => rest[k] !== undefined).map(k => [k, rest[k]])
   )
 
-  // Recalculate totals if items are being updated
+  // Recalculate totals when items are being updated
   if (Array.isArray(items)) {
-    const subtotal = items.reduce((sum: number, item: { quantity: number; unit_price: number }) =>
-      sum + item.quantity * item.unit_price, 0)
-    const vat_rate = typeof fields.vat_rate === 'number' ? fields.vat_rate : 14
-    fields.vat_amount = subtotal * (vat_rate / 100)
-    fields.subtotal = subtotal
-    fields.total = subtotal + (fields.vat_amount as number) - ((fields.deposit_amount as number) ?? 0)
+    for (const item of items) {
+      if (!item.description?.toString().trim()) {
+        return NextResponse.json({ error: 'Each line item must have a description' }, { status: 400 })
+      }
+      if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+        return NextResponse.json({ error: 'Line item quantity must be greater than 0' }, { status: 400 })
+      }
+      if (typeof item.unit_price !== 'number' || item.unit_price < 0) {
+        return NextResponse.json({ error: 'Line item unit price cannot be negative' }, { status: 400 })
+      }
+    }
 
-    // Replace all line items
+    const subtotal       = items.reduce((s: number, i: { quantity: number; unit_price: number }) => s + i.quantity * i.unit_price, 0)
+    const vat_rate       = typeof fields.vat_rate === 'number' ? fields.vat_rate : 14
+    const deposit_amount = typeof fields.deposit_amount === 'number' ? fields.deposit_amount : 0
+
+    if (deposit_amount < 0) {
+      return NextResponse.json({ error: 'deposit_amount cannot be negative' }, { status: 400 })
+    }
+    if (deposit_amount > subtotal + subtotal * (vat_rate / 100)) {
+      return NextResponse.json({ error: 'deposit_amount cannot exceed the invoice total' }, { status: 400 })
+    }
+
+    fields.vat_amount = subtotal * (vat_rate / 100)
+    fields.subtotal   = subtotal
+    fields.total      = subtotal + (fields.vat_amount as number) - deposit_amount
+
     await supabase.from('invoice_items').delete().eq('invoice_id', id)
-    await supabase.from('invoice_items').insert(
+    const { error: itemsErr } = await supabase.from('invoice_items').insert(
       items.map((item: { description: string; quantity: number; unit_price: number }, idx: number) => ({
-        invoice_id: id,
-        user_id: user.id,
+        invoice_id:  id,
+        user_id:     user.id,
         description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        sort_order: idx,
+        quantity:    item.quantity,
+        unit_price:  item.unit_price,
+        sort_order:  idx,
       }))
     )
+    if (itemsErr) return NextResponse.json({ error: 'Failed to update line items' }, { status: 500 })
   }
 
+  if (Object.keys(fields).length === 0 && !Array.isArray(items)) {
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+  }
+
+  if (Object.keys(fields).length > 0) {
+    const { data, error } = await supabase
+      .from('invoices')
+      .update(fields)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select('*, invoice_items(*)')
+      .single()
+
+    if (error) return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+    return NextResponse.json({ invoice: data })
+  }
+
+  // Items-only update: fetch and return current state
   const { data, error } = await supabase
     .from('invoices')
-    .update(fields)
+    .select('*, invoice_items(*)')
     .eq('id', id)
     .eq('user_id', user.id)
-    .select('*, invoice_items(*)')
     .single()
 
-  if (error) return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 })
   return NextResponse.json({ invoice: data })
 }
 

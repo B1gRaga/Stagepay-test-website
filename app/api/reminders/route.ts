@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invoice_id is required' }, { status: 400 })
   }
 
-  if (body.channel && !VALID_CHANNELS.includes(body.channel as typeof VALID_CHANNELS[number])) {
+  const channel = (body.channel as string) ?? 'whatsapp'
+  if (!VALID_CHANNELS.includes(channel as typeof VALID_CHANNELS[number])) {
     return NextResponse.json({ error: `Invalid channel. Must be one of: ${VALID_CHANNELS.join(', ')}` }, { status: 400 })
   }
 
@@ -50,8 +51,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'days_after_due must be a non-negative number' }, { status: 400 })
   }
 
-  if (body.send_at && isNaN(Date.parse(body.send_at as string))) {
+  if (!body.send_at || isNaN(Date.parse(body.send_at as string))) {
     return NextResponse.json({ error: 'send_at must be a valid date' }, { status: 400 })
+  }
+
+  // Reject past dates
+  if (new Date(body.send_at as string) <= new Date()) {
+    return NextResponse.json({ error: 'send_at must be a future date' }, { status: 400 })
   }
 
   // Verify invoice belongs to this user
@@ -64,20 +70,28 @@ export async function POST(req: NextRequest) {
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
 
-  const recipient_phone = body.recipient_phone ?? invoice.client_phone
-  const recipient_email = body.recipient_email ?? invoice.client_email
+  const recipient_phone = (body.recipient_phone as string | undefined) ?? invoice.client_phone
+  const recipient_email = (body.recipient_email as string | undefined) ?? invoice.client_email
+
+  // Validate recipient is present for the chosen channel
+  if (channel === 'whatsapp' && !recipient_phone) {
+    return NextResponse.json({ error: 'WhatsApp reminder requires a phone number. Add one to the invoice or provide recipient_phone.' }, { status: 400 })
+  }
+  if (channel === 'email' && !recipient_email) {
+    return NextResponse.json({ error: 'Email reminder requires an email address. Add one to the invoice or provide recipient_email.' }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from('reminders')
     .insert({
-      user_id: user.id,
-      invoice_id: body.invoice_id,
-      send_at: body.send_at,
-      days_after_due: body.days_after_due ?? null,
-      channel: body.channel ?? 'whatsapp',
+      user_id:         user.id,
+      invoice_id:      body.invoice_id,
+      send_at:         body.send_at,
+      days_after_due:  body.days_after_due ?? null,
+      channel,
       recipient_phone,
       recipient_email,
-      status: 'scheduled',
+      status:          'scheduled',
       message_preview: body.message_preview ?? null,
     })
     .select()

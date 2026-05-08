@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes'] as const
 type ClientField = typeof ALLOWED_FIELDS[number]
 
-// GET /api/clients
+// GET /api/clients — returns only non-deleted clients
 export async function GET() {
   const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,6 +14,7 @@ export async function GET() {
     .from('clients')
     .select('*')
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .order('name')
 
   if (error) return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 })

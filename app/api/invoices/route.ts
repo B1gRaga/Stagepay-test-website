@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// GET /api/invoices — list all invoices for the authenticated user
+const PAGE_SIZE = 50
+
+// GET /api/invoices — list invoices for the authenticated user (paginated)
 export async function GET(req: NextRequest) {
   const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
@@ -9,19 +11,21 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
+  const page   = Math.max(0, parseInt(searchParams.get('page') ?? '0', 10))
 
   let query = supabase
     .from('invoices')
-    .select('*, invoice_items(*)')
+    .select('*, invoice_items(*)', { count: 'exact' })
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+    .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
 
   if (status) query = query.eq('status', status)
 
-  const { data, error } = await query
+  const { data, error, count } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ invoices: data })
+  return NextResponse.json({ invoices: data, total: count, page, page_size: PAGE_SIZE })
 }
 
 // POST /api/invoices — create a new invoice with its line items
@@ -30,68 +34,98 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  const { items = [], ...invoiceData } = body
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
 
-  // Generate invoice number: INV-YYYYMM-XXX
-  const { count } = await supabase
-    .from('invoices')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+  const { items = [] } = body as { items?: { description: string; quantity: number; unit_price: number }[] }
 
-  const now = new Date()
-  const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-  const invoice_number = `INV-${ym}-${String((count || 0) + 1).padStart(3, '0')}`
+  // Validate line items
+  for (const item of items) {
+    if (!item.description?.toString().trim()) {
+      return NextResponse.json({ error: 'Each line item must have a description' }, { status: 400 })
+    }
+    if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+      return NextResponse.json({ error: 'Line item quantity must be greater than 0' }, { status: 400 })
+    }
+    if (typeof item.unit_price !== 'number' || item.unit_price < 0) {
+      return NextResponse.json({ error: 'Line item unit price cannot be negative' }, { status: 400 })
+    }
+  }
+
+  // Validate VAT rate
+  const vat_rate = Number(body.vat_rate ?? 14)
+  if (isNaN(vat_rate) || vat_rate < 0 || vat_rate > 100) {
+    return NextResponse.json({ error: 'vat_rate must be between 0 and 100' }, { status: 400 })
+  }
 
   // Calculate totals
-  const subtotal = items.reduce((sum: number, item: { quantity: number; unit_price: number }) =>
-    sum + item.quantity * item.unit_price, 0)
-  const vat_rate = invoiceData.vat_rate ?? 14
-  const vat_amount = subtotal * (vat_rate / 100)
-  const deposit_amount = invoiceData.deposit_amount ?? 0
+  const subtotal       = items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
+  const vat_amount     = subtotal * (vat_rate / 100)
+  const deposit_amount = Number(body.deposit_amount ?? 0)
+
+  if (deposit_amount < 0) {
+    return NextResponse.json({ error: 'deposit_amount cannot be negative' }, { status: 400 })
+  }
+  if (deposit_amount > subtotal + vat_amount) {
+    return NextResponse.json({ error: 'deposit_amount cannot exceed the invoice total' }, { status: 400 })
+  }
+
   const total = subtotal + vat_amount - deposit_amount
+
+  // Atomically generate invoice number via DB function (no race condition)
+  const { data: invoiceNumber, error: numErr } = await supabase.rpc('next_invoice_number', { p_user_id: user.id })
+  if (numErr || !invoiceNumber) {
+    return NextResponse.json({ error: 'Failed to generate invoice number' }, { status: 500 })
+  }
 
   const { data: invoice, error: invErr } = await supabase
     .from('invoices')
     .insert({
-      user_id: user.id,
-      invoice_number,
-      status: invoiceData.status ?? 'draft',
-      client_id: invoiceData.client_id ?? null,
-      client_name: invoiceData.client_name,
-      client_email: invoiceData.client_email ?? null,
-      client_phone: invoiceData.client_phone ?? null,
-      client_address: invoiceData.client_address ?? null,
-      client_vat: invoiceData.client_vat ?? null,
-      project: invoiceData.project ?? null,
-      notes: invoiceData.notes ?? null,
-      issue_date: invoiceData.issue_date ?? new Date().toISOString().split('T')[0],
-      due_date: invoiceData.due_date ?? null,
+      user_id:        user.id,
+      invoice_number: invoiceNumber,
+      status:         (body.status as string) ?? 'draft',
+      client_id:      body.client_id ?? null,
+      client_name:    body.client_name,
+      client_email:   body.client_email ?? null,
+      client_phone:   body.client_phone ?? null,
+      client_address: body.client_address ?? null,
+      client_vat:     body.client_vat ?? null,
+      project:        body.project ?? null,
+      notes:          body.notes ?? null,
+      issue_date:     body.issue_date ?? new Date().toISOString().split('T')[0],
+      due_date:       body.due_date ?? null,
       subtotal,
       vat_rate,
       vat_amount,
       deposit_amount,
       total,
-      currency: invoiceData.currency ?? 'P',
+      currency:       body.currency ?? 'P',
     })
     .select()
     .single()
 
   if (invErr) return NextResponse.json({ error: invErr.message }, { status: 500 })
 
-  // Insert line items
   if (items.length > 0) {
     const { error: itemsErr } = await supabase.from('invoice_items').insert(
-      items.map((item: { description: string; quantity: number; unit_price: number }, idx: number) => ({
-        invoice_id: invoice.id,
-        user_id: user.id,
+      items.map((item, idx) => ({
+        invoice_id:  invoice.id,
+        user_id:     user.id,
         description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        sort_order: idx,
+        quantity:    item.quantity,
+        unit_price:  item.unit_price,
+        sort_order:  idx,
       }))
     )
-    if (itemsErr) return NextResponse.json({ error: itemsErr.message }, { status: 500 })
+    if (itemsErr) {
+      // Roll back: delete the invoice we just created
+      await supabase.from('invoices').delete().eq('id', invoice.id)
+      return NextResponse.json({ error: 'Failed to save line items: ' + itemsErr.message }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ invoice }, { status: 201 })

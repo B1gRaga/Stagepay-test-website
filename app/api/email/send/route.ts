@@ -8,24 +8,34 @@ export const runtime = 'nodejs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 export async function POST(req: NextRequest) {
   const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = _supabase as any
 
   if (!rateLimit(user.id, 10, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  let invoice_id: string, to_email: string
+  let invoice_id: string, to_email: string, custom_body: string | undefined
   try {
     const body = await req.json()
-    invoice_id = body.invoice_id
-    to_email   = body.to_email
+    invoice_id  = body.invoice_id
+    to_email    = body.to_email
+    custom_body = body.custom_body  // optional: plain text for reminder emails
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
+
   if (!invoice_id || !to_email) {
     return NextResponse.json({ error: 'invoice_id and to_email are required' }, { status: 400 })
   }
@@ -43,15 +53,24 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'Email not configured' }, { status: 503 })
 
-  const senderName = profile?.firm_name || profile?.name || 'Your service provider'
-  const sym = invoice.currency || 'P'
-  const total = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
-  const dueLine = invoice.due_date
-    ? `<p style="margin:0 0 8px">Payment is due by <strong>${invoice.due_date}</strong>.</p>`
+  const senderName = escapeHtml(profile?.firm_name || profile?.name || 'Your service provider')
+  const invoiceNum = escapeHtml(invoice.invoice_number)
+  const sym        = escapeHtml(invoice.currency || 'P')
+  const total      = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+  const dueLine    = invoice.due_date
+    ? `<p style="margin:0 0 8px">Payment is due by <strong>${escapeHtml(invoice.due_date)}</strong>.</p>`
     : ''
 
-  const html = `
-<!DOCTYPE html>
+  // Use custom_body (reminder text) if provided, otherwise render the standard invoice template
+  const bodyContent = custom_body
+    ? `<p style="margin:0 0 16px;font-size:16px">Hello,</p>
+       <div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(custom_body)}</div>`
+    : `<p style="margin:0 0 16px;font-size:16px">Hello,</p>
+       <p style="margin:0 0 16px"><strong>${senderName}</strong> has sent you invoice <strong>${invoiceNum}</strong> for <strong>${total}</strong>.</p>
+       ${dueLine}
+       <p style="margin:16px 0 0;color:#555">Please find your invoice attached as a PDF to this email.</p>`
+
+  const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#333">
@@ -65,10 +84,7 @@ export async function POST(req: NextRequest) {
         </tr>
         <tr>
           <td style="padding:32px">
-            <p style="margin:0 0 16px;font-size:16px">Hello,</p>
-            <p style="margin:0 0 16px"><strong>${senderName}</strong> has sent you invoice <strong>${invoice.invoice_number}</strong> for <strong>${total}</strong>.</p>
-            ${dueLine}
-            <p style="margin:16px 0 0;color:#555">Please find your invoice attached as a PDF to this email.</p>
+            ${bodyContent}
           </td>
         </tr>
         <tr>
@@ -83,32 +99,31 @@ export async function POST(req: NextRequest) {
 </html>`
 
   const fromAddress = (process.env.RESEND_FROM_EMAIL || 'invoices@stagepay.co.bw').replace(/\.$/, '')
+  const subject     = custom_body
+    ? `Payment reminder: Invoice ${invoiceNum}`
+    : `Invoice ${invoiceNum} – ${total}`
 
   try {
     const pdfBuffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {})
 
     const resend = new Resend(apiKey)
     await resend.emails.send({
-      from: `${senderName} via StagePay <${fromAddress}>`,
-      to: [to_email],
-      subject: `Invoice ${invoice.invoice_number} – ${total}`,
+      from:    `${senderName} via StagePay <${fromAddress}>`,
+      to:      [to_email],
+      subject,
       html,
-      attachments: [
-        {
-          filename: `${invoice.invoice_number}.pdf`,
-          content: pdfBuffer,
-        },
-      ],
+      attachments: [{ filename: `${invoiceNum}.pdf`, content: pdfBuffer }],
     })
 
     const { error: statusErr } = await supabase
       .from('invoices')
       .update({
         email_sent_at: new Date().toISOString(),
-        email_to: to_email,
-        status: invoice.status === 'draft' ? 'sent' : invoice.status,
+        email_to:      to_email,
+        status:        invoice.status === 'draft' ? 'sent' : invoice.status,
       })
       .eq('id', invoice_id)
+
     if (statusErr) console.error('[Email] invoice status update failed:', statusErr.message)
 
     return NextResponse.json({ success: true })
