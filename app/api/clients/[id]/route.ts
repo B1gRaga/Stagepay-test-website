@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { stripTags } from '@/lib/sanitize'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -20,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const safe = Object.fromEntries(
-    ALLOWED_FIELDS.filter(k => body[k] !== undefined).map(k => [k, body[k]])
+    ALLOWED_FIELDS.filter(k => body[k] !== undefined).map(k => [k, stripTags(body[k])])
   )
 
   if (Object.keys(safe).length === 0) {

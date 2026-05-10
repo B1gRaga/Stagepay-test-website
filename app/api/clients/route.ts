@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { stripTags } from '@/lib/sanitize'
 
 const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes'] as const
 type ClientField = typeof ALLOWED_FIELDS[number]
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   const safe = Object.fromEntries(
-    ALLOWED_FIELDS.filter(k => body[k] !== undefined).map(k => [k, body[k]])
+    ALLOWED_FIELDS.filter(k => body[k] !== undefined).map(k => [k, stripTags(body[k])])
   ) as Record<ClientField, unknown>
 
   const { data, error } = await supabase

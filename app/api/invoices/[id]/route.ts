@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { stripTags } from '@/lib/sanitize'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -53,9 +54,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
+  const TEXT_FIELDS = new Set(['client_name', 'project', 'notes', 'client_address', 'client_email', 'client_phone', 'client_vat'])
+
   const { items, ...rest } = body
   const fields = Object.fromEntries(
-    ALLOWED_FIELDS.filter(k => rest[k] !== undefined).map(k => [k, rest[k]])
+    ALLOWED_FIELDS.filter(k => rest[k] !== undefined).map(k => [
+      k,
+      TEXT_FIELDS.has(k) && typeof rest[k] === 'string' ? stripTags(rest[k]) : rest[k],
+    ])
   )
 
   // Recalculate totals when items are being updated

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 
 const PAGE_SIZE = 50
 
@@ -89,13 +90,13 @@ export async function POST(req: NextRequest) {
       invoice_number: invoiceNumber,
       status:         (body.status as string) ?? 'draft',
       client_id:      body.client_id ?? null,
-      client_name:    body.client_name,
-      client_email:   body.client_email ?? null,
-      client_phone:   body.client_phone ?? null,
-      client_address: body.client_address ?? null,
-      client_vat:     body.client_vat ?? null,
-      project:        body.project ?? null,
-      notes:          body.notes ?? null,
+      client_name:    stripTags(body.client_name),
+      client_email:   stripTagsOrNull(body.client_email),
+      client_phone:   stripTagsOrNull(body.client_phone),
+      client_address: stripTagsOrNull(body.client_address),
+      client_vat:     stripTagsOrNull(body.client_vat),
+      project:        stripTagsOrNull(body.project),
+      notes:          stripTagsOrNull(body.notes),
       issue_date:     body.issue_date ?? new Date().toISOString().split('T')[0],
       due_date:       body.due_date ?? null,
       subtotal,
