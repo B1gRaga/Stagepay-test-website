@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext, createServiceClient } from '@/lib/supabase/server'
 import twilio from 'twilio'
-import { rateLimit } from '@/lib/rate-limit'
+import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = _supabase as any
 
-  if (!rateLimit(user.id, 10, 60_000)) {
+  if (!(await rateLimit(user.id, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 

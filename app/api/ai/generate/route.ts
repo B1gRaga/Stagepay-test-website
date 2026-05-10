@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { rateLimit } from '@/lib/rate-limit'
+import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 
-const SYSTEM_PROMPT = `You are an invoice generation assistant for StagePay, an invoicing platform for professionals in Botswana and Africa.
+const BASE_SYSTEM_PROMPT = `You are an invoice generation assistant for StagePay, a global invoicing platform for professionals.
 
 Extract structured invoice data from the user's plain-English description. Return ONLY valid JSON matching this exact shape:
 
@@ -22,8 +22,8 @@ Extract structured invoice data from the user's plain-English description. Retur
 }
 
 Rules:
-- currency defaults to "P" (Botswana Pula) unless another currency is clearly stated
-- vat_rate defaults to 14 (Botswana standard) unless another country/rate is mentioned
+- currency defaults to "{{DEFAULT_CURRENCY}}" unless another currency is clearly stated
+- vat_rate defaults to {{DEFAULT_VAT_RATE}} (user's default {{TAX_LABEL}} rate) unless another rate is mentioned
 - deposit_amount is the amount already paid, not a percentage
 - If a percentage deposit is mentioned (e.g. "50% deposit paid"), calculate the actual amount from the subtotal
 - due_days is the payment term in days (e.g. "Net 30" → 30, "due in 7 days" → 7)
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(user.id, 20, 60_000)) {
+  if (!(await rateLimit(user.id, 20, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -53,6 +53,22 @@ export async function POST(req: NextRequest) {
 
   if (!prompt?.trim()) return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
 
+  // Load user's tax/currency preferences to personalise the AI prompt
+  const { data: profile } = await (supabase as any)
+    .from('profiles')
+    .select('default_currency, tax_label, default_vat_rate')
+    .eq('id', user.id)
+    .single()
+
+  const currency = String(profile?.default_currency ?? 'P')
+  const taxLabel = String(profile?.tax_label        ?? 'VAT')
+  const vatRate  = Number(profile?.default_vat_rate  ?? 14)
+
+  const systemPrompt = BASE_SYSTEM_PROMPT
+    .replace('{{DEFAULT_CURRENCY}}', currency)
+    .replace('{{DEFAULT_VAT_RATE}}', String(vatRate))
+    .replace('{{TAX_LABEL}}',        taxLabel)
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -63,7 +79,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       model:      'claude-haiku-4-5-20251001',
       max_tokens: 1024,
-      system:     SYSTEM_PROMPT,
+      system:     systemPrompt,
       messages:   [{ role: 'user', content: prompt }],
     }),
   })

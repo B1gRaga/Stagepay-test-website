@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>StagePay — App</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#10B981">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StagePay">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -1580,6 +1587,41 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 
   /* ── HIDE desktop-only elements ── */
   .mob-hidden{display:none!important;}
+}
+
+/* ── Mobile polish ─────────────────────────────────────────────────
+   iOS: inputs < 16px trigger auto-zoom on focus — force 16px minimum.
+   touch-action: manipulation removes the 300ms tap delay on all controls.
+   overscroll-behavior prevents the full-page rubber-band bounce on iOS.
+──────────────────────────────────────────────────────────────────── */
+@media (max-width:768px) {
+  input, select, textarea {
+    font-size: max(16px, 1em) !important;
+  }
+  button, a, [onclick],
+  .mob-tab, .nav-item, .topbar-btn, .filter-btn,
+  .prompt-chip, .deposit-preset, .swatch, .toggle-switch {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .content {
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  .modal {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Slightly larger tap targets for icon-only controls */
+  .del-btn, .theme-toggle {
+    min-width: 36px;
+    min-height: 36px;
+  }
+  /* On very narrow screens (iPhone SE, 320px) keep forms usable */
+  @media (max-width: 374px) {
+    .content { padding: 12px; }
+    .stat-val { font-size: 22px; }
+    .line-item-row { grid-template-columns: 1fr 60px 60px 28px; }
+  }
 }
 
 /* ── Tablet tweaks ── */

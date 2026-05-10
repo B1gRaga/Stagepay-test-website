@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/supabase/server'
-import { rateLimit } from '@/lib/rate-limit'
+import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   const { user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(user.id, 20, 60_000)) {
+  if (!(await rateLimit(user.id, 20, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
