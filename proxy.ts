@@ -43,6 +43,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // CSRF: reject cross-origin mutations. Requests without Origin (server-to-server,
+  // Bearer token clients) are allowed through — only browser cross-origin requests
+  // carry an Origin that doesn't match the host.
+  const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+  if (pathname.startsWith('/api/') && !SAFE_METHODS.has(request.method)) {
+    const origin = request.headers.get('origin')
+    if (origin) {
+      const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
+      try {
+        if (new URL(origin).host !== host) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      } catch {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+  }
+
   return supabaseResponse
 }
 
