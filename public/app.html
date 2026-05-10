@@ -4553,48 +4553,49 @@ async function generateInvoice(){
   if(rc) rc.style.display='none';
 
   try {
-    const systemPrompt=`You are an invoice generator for StagePay, a professional invoicing app.
-Parse the user description and return ONLY valid JSON in this exact format with no markdown:
-{"client":"client name","project":"short project (max 8 words)","lineItems":[{"desc":"description","qty":1,"rate":950}],"vatRate":14,"depositPct":0,"notes":"payment notes"}
-Rules: extract client name; split into logical line items; numeric qty/rate only; default VAT 14%; set depositPct if deposit mentioned; keep professional.`;
-
-    const res=await fetch('/api/ai',{
+    const res=await fetch('/api/ai/generate',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:800,
-        system:systemPrompt,
-        messages:[{role:'user',content:prompt}]
-      })
+      body:JSON.stringify({prompt})
     });
 
     const data=await res.json();
-    if(data.error) throw new Error(data.error.message||'API error');
-    let text=data.content?.map(b=>b.text||'').join('');
-    text=text.replace(/```json|```/g,'').trim();
-    const parsed=JSON.parse(text);
+    if(data.error) throw new Error(data.error);
+    const inv=data.invoice;
+    if(!inv) throw new Error('No invoice data returned');
 
-    if(parsed.client) document.getElementById('f-client').value=parsed.client;
-    if(parsed.project) document.getElementById('f-project').value=parsed.project;
-    if(parsed.vatRate) document.getElementById('f-vat').value=parsed.vatRate;
-    if(parsed.notes) document.getElementById('f-notes').value=parsed.notes;
+    if(inv.client_name) document.getElementById('f-client').value=inv.client_name;
+    if(inv.client_email) document.getElementById('f-email').value=inv.client_email;
+    if(inv.client_phone) document.getElementById('f-phone').value=inv.client_phone;
+    if(inv.project) document.getElementById('f-project').value=inv.project;
+    if(inv.vat_rate) document.getElementById('f-vat').value=inv.vat_rate;
+    if(inv.notes) document.getElementById('f-notes').value=inv.notes;
+    if(inv.currency) document.getElementById('f-currency').value=inv.currency;
 
-    if(parsed.depositPct>0){
+    if(inv.deposit_amount>0){
       const dt=document.getElementById('deposit-toggle');
       const df=document.getElementById('deposit-fields');
       const lb=document.getElementById('deposit-off-label');
       if(dt&&!dt.classList.contains('on')){dt.classList.add('on');if(df)df.style.display='block';if(lb)lb.textContent='On';}
-      document.getElementById('f-deposit-pct').value=parsed.depositPct;
+      document.getElementById('f-deposit-pct').value=inv.deposit_amount;
     }
 
     lineItems=[];
     document.getElementById('line-items').innerHTML='';
-    if(parsed.lineItems?.length) parsed.lineItems.forEach(li=>addLineItem(li.desc,String(li.qty),String(li.rate)));
+    if(inv.items?.length) inv.items.forEach(item=>addLineItem(item.description,String(item.quantity),String(item.unit_price)));
 
     updatePreview();
     const cur=document.getElementById('f-currency')?.value||'P';
-    showAIResultDelight(parsed,cur);
+    const subtotal=(inv.items||[]).reduce((s,i)=>s+i.quantity*i.unit_price,0);
+    const vatAmt=subtotal*(inv.vat_rate/100);
+    const total=subtotal+vatAmt;
+    const delightParsed={
+      client:inv.client_name,
+      lineItems:(inv.items||[]).map(i=>({qty:i.quantity,rate:i.unit_price})),
+      vatRate:inv.vat_rate,
+      depositPct:total>0&&inv.deposit_amount>0?Math.round(inv.deposit_amount/total*100):0
+    };
+    showAIResultDelight(delightParsed,cur);
 
     const advBody=document.getElementById('adv-body');
     const chevron=document.getElementById('adv-chevron');
@@ -4782,13 +4783,7 @@ async function sendInvoice() {
   const invnum = document.getElementById('f-invnum').value.trim();
   const existing = invoices.find(i => i.id === invnum);
   if (!existing?._dbid) {
-    _persistDraft();
-    await new Promise(resolve => {
-      const t = setInterval(() => {
-        if (invoices.find(i => i.id === invnum)?._dbid) { clearInterval(t); resolve(); }
-      }, 100);
-      setTimeout(() => { clearInterval(t); resolve(); }, 4000);
-    });
+    await _persistDraft();
   }
   openEmailModal();
 }
@@ -4953,13 +4948,7 @@ async function doSendEmail() {
 
   let inv = invoices.find(i => i.id === invnum);
   if (!inv?._dbid) {
-    _persistDraft();
-    await new Promise(resolve => {
-      const t = setInterval(() => {
-        if (invoices.find(i => i.id === invnum)?._dbid) { clearInterval(t); resolve(); }
-      }, 100);
-      setTimeout(() => { clearInterval(t); resolve(); }, 5000);
-    });
+    await _persistDraft();
     inv = invoices.find(i => i.id === invnum);
     if (!inv?._dbid) { showToast('Invoice could not be saved — check your connection', 'error'); return; }
   }
@@ -5013,13 +5002,7 @@ async function doSendWhatsApp() {
 
   let inv = invoices.find(i => i.id === invnum);
   if (!inv?._dbid) {
-    _persistDraft();
-    await new Promise(resolve => {
-      const t = setInterval(() => {
-        if (invoices.find(i => i.id === invnum)?._dbid) { clearInterval(t); resolve(); }
-      }, 100);
-      setTimeout(() => { clearInterval(t); resolve(); }, 5000);
-    });
+    await _persistDraft();
     inv = invoices.find(i => i.id === invnum);
     if (!inv?._dbid) { showToast('Invoice could not be saved — check your connection', 'error'); return; }
   }
@@ -5098,7 +5081,7 @@ function saveAsDraft(){
   _persistDraft();
 }
 
-function _persistDraft() {
+async function _persistDraft() {
   const client  = document.getElementById('f-client').value.trim() || 'Unnamed client';
   const invnum  = document.getElementById('f-invnum').value || 'INV-001';
   const project = document.getElementById('f-project').value || 'Draft invoice';
@@ -5144,7 +5127,7 @@ function _persistDraft() {
     initials: client.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)
   };
   invoices.unshift(draftInv);
-  _dbSaveInvoice(draftInv);
+  await _dbSaveInvoice(draftInv);
 
   // Advance the next-invoice counter so the next new invoice gets a fresh number
   if (!_isExistingDraft) {

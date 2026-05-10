@@ -10,11 +10,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  const ALLOWED = ['status', 'send_at', 'message_preview', 'channel', 'recipient_phone', 'recipient_email'] as const
+  const safe = Object.fromEntries(
+    ALLOWED.filter(k => body[k] !== undefined).map(k => [k, body[k]])
+  )
+  if (Object.keys(safe).length === 0) {
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from('reminders')
-    .update(body)
+    .update(safe)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()

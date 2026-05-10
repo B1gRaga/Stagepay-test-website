@@ -18,12 +18,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const buffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {})
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${invoice.invoice_number}.pdf"`,
-    },
-  })
+  try {
+    const buffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {})
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${invoice.invoice_number}.pdf"`,
+      },
+    })
+  } catch (err: any) {
+    console.error('[PDF] generation failed:', err?.message)
+    return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 })
+  }
 }
