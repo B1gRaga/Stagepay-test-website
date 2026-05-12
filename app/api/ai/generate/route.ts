@@ -94,24 +94,16 @@ export async function POST(req: NextRequest) {
           },
         ],
         messages: [{ role: 'user', content: userMessage }],
-        output_config: {
-          format: {
-            type: 'json_schema',
-            json_schema: {
-              name:   'invoice',
-              schema: INVOICE_JSON_SCHEMA,
-              strict: true,
-            },
-          },
-        },
       },
       {
         headers: { 'anthropic-beta': 'prompt-caching-2024-07-31' },
       }
     )
 
-    const text = response.content?.[0]?.text ?? ''
-    const invoice = JSON.parse(text)
+    const text = (response.content?.[0]?.text ?? '').trim()
+    // Strip markdown code fences if the model wraps the JSON
+    const jsonText = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+    const invoice = JSON.parse(jsonText)
     return NextResponse.json({ invoice })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI error'

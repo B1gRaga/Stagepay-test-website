@@ -109,10 +109,9 @@ async function sendReminderEmail(reminder: any, invoice: any, senderName: string
 }
 
 async function sendReminderWhatsApp(reminder: any, invoice: any, senderName: string, amount: string) {
-  const accountSid  = process.env.TWILIO_ACCOUNT_SID
-  const authToken   = process.env.TWILIO_AUTH_TOKEN
-  const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID
-  const from        = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+  const accountSid = process.env.TWILIO_ACCOUNT_SID
+  const authToken  = process.env.TWILIO_AUTH_TOKEN
+  const from       = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
 
   if (!accountSid || !authToken) throw new Error('WhatsApp not configured')
 
@@ -122,19 +121,11 @@ async function sendReminderWhatsApp(reminder: any, invoice: any, senderName: str
 
   const msgParams: any = { from, to }
 
-  if (templateSid) {
-    msgParams.contentSid = templateSid
-    msgParams.contentVariables = JSON.stringify({
-      '1': senderName,
-      '2': invoice.invoice_number || '',
-      '3': amount,
-      '4': invoice.due_date || 'upon receipt',
-      '5': '',
-    })
-  } else {
-    msgParams.body = reminder.message_preview ||
-      `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`
-  }
+  // Reminders never carry a PDF, so never use the content template
+  // (it expects a media URL at variable 5 — an empty string causes Twilio
+  // to reject with "Media URLs are invalid"). Always send free-form body.
+  msgParams.body = reminder.message_preview ||
+    `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`
 
   await client.messages.create(msgParams)
 }

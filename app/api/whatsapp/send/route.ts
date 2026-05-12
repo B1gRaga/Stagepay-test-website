@@ -130,18 +130,20 @@ export async function POST(req: NextRequest) {
     const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID
     const msgParams: any = { from, to: toFormatted }
 
-    if (templateSid) {
-      // Use approved Content Template (works outside the 24-hour messaging window)
+    // Only use the content template when a PDF URL is present — the template
+    // expects a media URL at variable 5, and passing an empty string causes
+    // Twilio to reject with "Media URLs are invalid".
+    if (templateSid && pdfUrl) {
       msgParams.contentSid = templateSid
       msgParams.contentVariables = JSON.stringify({
         '1': senderName,
         '2': dbInvoiceNumber,
         '3': amountFormatted,
         '4': dbDueDate || 'upon receipt',
-        '5': pdfUrl || '',
+        '5': pdfUrl,
       })
     } else {
-      // Free-form body — only works within 24 hours of recipient messaging first
+      // Free-form body (custom reminders / confirmations / no PDF)
       msgParams.body = body
       if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
     }

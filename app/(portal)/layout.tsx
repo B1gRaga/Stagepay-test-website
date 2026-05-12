@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import SidebarNav from '@/components/portal/SidebarNav'
+import SupportBtn from '@/components/portal/SupportBtn'
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,12 +20,13 @@ export default async function PortalLayout({ children }: { children: React.React
     <>
       {/* Restores theme before first paint — prevents flash */}
       <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('stagepay-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})()` }} />
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+      <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflow: 'hidden' }}>
         <SidebarNav displayName={displayName} userEmail={user.email!} plan={profile?.plan ?? 'free'} />
-        <main style={{ flex: 1, minWidth: 0, overflow: 'auto', paddingBottom: '80px' }}>
+        <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', paddingBottom: '80px' }}>
           {children}
         </main>
       </div>
+      <SupportBtn />
     </>
   )
 }
