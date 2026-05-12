@@ -1,74 +1,65 @@
 import { renderToBuffer, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { resolveTheme, type InvoiceTheme } from './invoice-themes'
 
-const GREEN  = '#10B981'
-const NAVY   = '#0F172A'
-const SLATE  = '#64748B'
-const LIGHT  = '#F8FAFC'
-const LINE   = '#E2E8F0'
-const RED    = '#EF4444'
-const WHITE  = '#FFFFFF'
+function makeStyles(t: InvoiceTheme) {
+  const L = t.lineColor
+  return StyleSheet.create({
+    page:         { fontFamily: 'Helvetica', fontSize: 10, padding: 40, color: t.bodyText, backgroundColor: t.pageBg },
 
-const s = StyleSheet.create({
-  page:        { fontFamily: 'Helvetica', fontSize: 10, padding: 40, color: NAVY, backgroundColor: WHITE },
+    header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', backgroundColor: t.headerBg, padding: '16pt 20pt', marginHorizontal: -40, marginTop: -40, marginBottom: 20 },
+    logo:         { width: 60, height: 20, objectFit: 'contain', marginBottom: 4 },
+    firmName:     { fontSize: 16, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor, letterSpacing: 1 },
+    firmDetail:   { fontSize: 8,  color: t.headerSubColor, marginTop: 2 },
+    invTitle:     { fontSize: 24, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor, textAlign: 'right', letterSpacing: 2 },
+    invMeta:      { fontSize: 9,  color: t.headerSubColor, textAlign: 'right', marginTop: 2 },
+    invDue:       { fontSize: 9,  color: '#EF4444', textAlign: 'right', marginTop: 2 },
 
-  // ── Header bar ───────────────────────────────────────────────────────────
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', backgroundColor: NAVY, padding: '16pt 20pt', marginHorizontal: -40, marginTop: -40, marginBottom: 20 },
-  logo:        { width: 60, height: 20, objectFit: 'contain', marginBottom: 4 },
-  firmName:    { fontSize: 16, fontFamily: 'Helvetica-Bold', color: GREEN, letterSpacing: 1 },
-  firmDetail:  { fontSize: 8, color: '#94A3B8', marginTop: 2 },
-  invTitle:    { fontSize: 24, fontFamily: 'Helvetica-Bold', color: GREEN, textAlign: 'right', letterSpacing: 2 },
-  invMeta:     { fontSize: 9, color: '#94A3B8', textAlign: 'right', marginTop: 2 },
-  invDue:      { fontSize: 9, color: RED, textAlign: 'right', marginTop: 2 },
+    boxes:        { flexDirection: 'row', marginBottom: 16 },
+    box:          { flex: 1, backgroundColor: t.boxBg, padding: '10pt 12pt', marginRight: 8, borderRadius: 3 },
+    boxLast:      { flex: 1, backgroundColor: t.boxBg, padding: '10pt 12pt', borderRadius: 3 },
+    boxLabel:     { fontSize: 7, fontFamily: 'Helvetica-Bold', color: t.accentColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 5 },
+    boxName:      { fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.bodyText, marginBottom: 3 },
+    boxDetail:    { fontSize: 8,  color: '#64748B', marginTop: 2 },
 
-  // ── FROM / BILL TO boxes ─────────────────────────────────────────────────
-  boxes:       { flexDirection: 'row', marginBottom: 16 },
-  box:         { flex: 1, backgroundColor: LIGHT, padding: '10pt 12pt', marginRight: 8, borderRadius: 3 },
-  boxLast:     { flex: 1, backgroundColor: LIGHT, padding: '10pt 12pt', borderRadius: 3 },
-  boxLabel:    { fontSize: 7, fontFamily: 'Helvetica-Bold', color: GREEN, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 5 },
-  boxName:     { fontSize: 11, fontFamily: 'Helvetica-Bold', color: NAVY, marginBottom: 3 },
-  boxDetail:   { fontSize: 8, color: SLATE, marginTop: 2 },
+    projectRow:   { flexDirection: 'row', marginBottom: 14 },
+    projectLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#64748B', letterSpacing: 1, textTransform: 'uppercase', marginRight: 6, marginTop: 1 },
+    projectVal:   { fontSize: 9, color: t.bodyText },
 
-  // ── Project strip ────────────────────────────────────────────────────────
-  projectRow:  { flexDirection: 'row', marginBottom: 14 },
-  projectLabel:{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: SLATE, letterSpacing: 1, textTransform: 'uppercase', marginRight: 6, marginTop: 1 },
-  projectVal:  { fontSize: 9, color: NAVY },
+    tableHead:    { flexDirection: 'row', backgroundColor: t.tableHeadBg, padding: '6pt 8pt' },
+    tableRow:     { flexDirection: 'row', padding: '6pt 8pt', borderBottom: `1pt solid ${L}` },
+    tableRowAlt:  { flexDirection: 'row', padding: '6pt 8pt', borderBottom: `1pt solid ${L}`, backgroundColor: t.tableRowAltBg },
+    th:           { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, letterSpacing: 0.5 },
+    td:           { fontSize: 9, color: t.bodyText },
+    tdMuted:      { fontSize: 9, color: '#64748B' },
+    col1:         { flex: 4 },
+    col2:         { flex: 1,   textAlign: 'right' },
+    col3:         { flex: 1.2, textAlign: 'right' },
+    col4:         { flex: 1.4, textAlign: 'right' },
 
-  // ── Table ────────────────────────────────────────────────────────────────
-  tableHead:   { flexDirection: 'row', backgroundColor: NAVY, padding: '6pt 8pt' },
-  tableRow:    { flexDirection: 'row', padding: '6pt 8pt', borderBottom: `1pt solid ${LINE}` },
-  tableRowAlt: { flexDirection: 'row', padding: '6pt 8pt', borderBottom: `1pt solid ${LINE}`, backgroundColor: LIGHT },
-  th:          { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 0.5 },
-  td:          { fontSize: 9, color: NAVY },
-  tdMuted:     { fontSize: 9, color: SLATE },
-  col1:        { flex: 4 },
-  col2:        { flex: 1, textAlign: 'right' },
-  col3:        { flex: 1.2, textAlign: 'right' },
-  col4:        { flex: 1.4, textAlign: 'right' },
+    totalsWrap:   { alignSelf: 'flex-end', width: '42%', marginTop: 10 },
+    totalRow:     { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
+    totalLbl:     { fontSize: 9, color: '#64748B' },
+    totalVal:     { fontSize: 9, color: t.bodyText },
+    grandRow:     { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: t.grandRowBg, padding: '8pt 10pt', borderRadius: 3, marginTop: 6 },
+    grandLbl:     { fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.grandRowText },
+    grandVal:     { fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.grandRowText },
 
-  // ── Totals ───────────────────────────────────────────────────────────────
-  totalsWrap:  { alignSelf: 'flex-end', width: '42%', marginTop: 10 },
-  totalRow:    { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  totalLbl:    { fontSize: 9, color: SLATE },
-  totalVal:    { fontSize: 9, color: NAVY },
-  grandRow:    { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: GREEN, padding: '8pt 10pt', borderRadius: 3, marginTop: 6 },
-  grandLbl:    { fontSize: 11, fontFamily: 'Helvetica-Bold', color: WHITE },
-  grandVal:    { fontSize: 11, fontFamily: 'Helvetica-Bold', color: WHITE },
+    notesLbl:     { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#64748B', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3, marginTop: 16 },
+    notesVal:     { fontSize: 9, color: '#64748B', lineHeight: 1.5 },
 
-  // ── Notes ────────────────────────────────────────────────────────────────
-  notesLbl:    { fontSize: 7, fontFamily: 'Helvetica-Bold', color: SLATE, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3, marginTop: 16 },
-  notesVal:    { fontSize: 9, color: SLATE, lineHeight: 1.5 },
+    footer:       { position: 'absolute', bottom: 28, left: 40, right: 40, borderTop: `1pt solid ${L}`, paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between' },
+    footerTxt:    { fontSize: 7.5, color: t.footerTextColor },
+  })
+}
 
-  // ── Footer ───────────────────────────────────────────────────────────────
-  footer:      { position: 'absolute', bottom: 28, left: 40, right: 40, borderTop: `1pt solid ${LINE}`, paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between' },
-  footerTxt:   { fontSize: 7.5, color: '#CBD5E1' },
-})
-
-function InvoicePDF({ invoice, items, profile, showPaidStamp }: {
-  invoice:       Record<string, any>
-  items:         Record<string, any>[]
-  profile:       Record<string, any>
+function InvoicePDF({ invoice, items, profile, showPaidStamp, theme }: {
+  invoice:        Record<string, any>
+  items:          Record<string, any>[]
+  profile:        Record<string, any>
   showPaidStamp?: boolean
+  theme:          InvoiceTheme
 }) {
+  const s   = makeStyles(theme)
   const sym = invoice.currency || 'P'
   const fmt = (n: number) => `${sym}${Number(n ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
 
@@ -140,10 +131,10 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp }: {
         </View>
         {items.map((item: any, i: number) => (
           <View key={i} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
-            <Text style={{ ...s.td,    ...s.col1 }}>{item.description}</Text>
-            <Text style={{ ...s.tdMuted, ...s.col2 }}>{item.quantity}</Text>
-            <Text style={{ ...s.tdMuted, ...s.col3 }}>{fmt(item.unit_price)}</Text>
-            <Text style={{ ...s.td,    ...s.col4 }}>{fmt(item.amount)}</Text>
+            <Text style={{ ...s.td,     ...s.col1 }}>{item.description}</Text>
+            <Text style={{ ...s.tdMuted,...s.col2 }}>{item.quantity}</Text>
+            <Text style={{ ...s.tdMuted,...s.col3 }}>{fmt(item.unit_price)}</Text>
+            <Text style={{ ...s.td,     ...s.col4 }}>{fmt(item.amount)}</Text>
           </View>
         ))}
 
@@ -183,16 +174,14 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp }: {
           <Text style={s.footerTxt}>{invoice.invoice_number}</Text>
         </View>
 
-        {/* ── PAID watermark stamp ── */}
+        {/* ── PAID watermark ── */}
         {showPaidStamp && (
           <>
-            {/* Large diagonal watermark */}
             <View style={{ position: 'absolute', top: 240, left: 0, right: 0, alignItems: 'center', transform: 'rotate(-35deg)', opacity: 0.08 }}>
-              <Text style={{ fontSize: 120, fontFamily: 'Helvetica-Bold', color: GREEN, letterSpacing: 18 }}>PAID</Text>
+              <Text style={{ fontSize: 120, fontFamily: 'Helvetica-Bold', color: theme.accentColor, letterSpacing: 18 }}>PAID</Text>
             </View>
-            {/* Corner badge */}
-            <View style={{ position: 'absolute', top: 58, right: 36, borderRadius: 4, backgroundColor: GREEN, padding: '7pt 14pt' }}>
-              <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 4 }}>PAID</Text>
+            <View style={{ position: 'absolute', top: 58, right: 36, borderRadius: 4, backgroundColor: theme.accentColor, padding: '7pt 14pt' }}>
+              <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: theme.grandRowText, letterSpacing: 4 }}>PAID</Text>
             </View>
           </>
         )}
@@ -203,12 +192,28 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp }: {
 }
 
 export async function generateInvoicePDF(
-  invoice:       Record<string, any>,
-  items:         Record<string, any>[],
-  profile:       Record<string, any>,
-  options?:      { showPaidStamp?: boolean }
+  invoice:   Record<string, any>,
+  items:     Record<string, any>[],
+  profile:   Record<string, any>,
+  options?:  {
+    showPaidStamp?:  boolean
+    theme?:          string | null
+    primaryColor?:   string | null
+    headerColor?:    string | null
+  }
 ): Promise<Buffer> {
+  const theme = resolveTheme(
+    options?.theme        ?? profile.invoice_theme,
+    options?.primaryColor ?? profile.brand_color_primary,
+    options?.headerColor  ?? profile.brand_color_header,
+  )
   return renderToBuffer(
-    <InvoicePDF invoice={invoice} items={items} profile={profile} showPaidStamp={options?.showPaidStamp} />
+    <InvoicePDF
+      invoice={invoice}
+      items={items}
+      profile={profile}
+      showPaidStamp={options?.showPaidStamp}
+      theme={theme}
+    />
   )
 }

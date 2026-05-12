@@ -22,6 +22,9 @@ export interface Database {
           currency: string
           logo_url: string | null
           plan: Plan
+          invoice_theme: string | null
+          brand_color_primary: string | null
+          brand_color_header: string | null
           subscription_expires_at: string | null
           dpo_transaction_ref: string | null
           created_at: string

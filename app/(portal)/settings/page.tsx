@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
 
 type Profile = {
   name: string | null
@@ -18,6 +19,9 @@ type Profile = {
   tax_label: string
   default_vat_rate: number
   two_fa_enabled: boolean
+  invoice_theme: string | null
+  brand_color_primary: string | null
+  brand_color_header: string | null
 }
 
 type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'security'
@@ -226,7 +230,146 @@ const CSS = `
   @media(max-width:600px){
     .settings-wrap{padding:0 0 24px;}
   }
+
+  .theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;}
+  @media(max-width:700px){.theme-grid{grid-template-columns:repeat(3,1fr);}}
+  .theme-card{cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid transparent;transition:border-color .15s,transform .1s;}
+  .theme-card:hover{transform:scale(1.03);}
+  .theme-card.selected{border-color:var(--g);box-shadow:0 0 0 3px rgba(16,185,129,.15);}
+  .theme-card-name{text-align:center;font-size:10px;padding:4px 4px 6px;color:var(--t3);background:var(--surface);font-weight:400;font-family:'Archivo',sans-serif;}
+  .theme-card.selected .theme-card-name{color:var(--g);font-weight:600;}
+
+  .color-fields{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+  .color-field{flex:1;min-width:160px;}
+  .color-field-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:6px;}
+  .color-field-row{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line2);border-radius:7px;padding:6px 10px;transition:border-color .2s,box-shadow .2s;}
+  .color-field-row:focus-within{border-color:rgba(16,185,129,.45);box-shadow:0 0 0 3px rgba(16,185,129,.07);}
+  .color-field-hex{flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--t1);font-family:'Courier New',monospace;min-width:0;}
+  .color-field-hint{font-size:10px;color:var(--t3);margin-top:4px;}
+  .color-clear-btn{background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:0;line-height:1;flex-shrink:0;}
+  .color-clear-btn:hover{color:var(--t1);}
+
+  .preview-wrap{background:#f0f0f0;border-radius:10px;padding:16px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;}
+  .preview-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:10px;}
 `
+
+function BrandingColorField({
+  label, value, placeholder, onChange
+}: {
+  label: string
+  value: string
+  placeholder: string
+  onChange: (v: string) => void
+}) {
+  const isValid = /^#[0-9a-f]{6}$/i.test(value)
+  const swatchColor = isValid ? value : placeholder
+  return (
+    <div className="color-field">
+      <div className="color-field-label">{label}</div>
+      <div className="color-field-row">
+        <input
+          type="color"
+          value={swatchColor}
+          onChange={e => onChange(e.target.value)}
+          style={{ width: 26, height: 26, borderRadius: 5, border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, background: 'none' }}
+          title="Pick a colour"
+        />
+        <input
+          type="text"
+          className="color-field-hex"
+          value={value}
+          placeholder={placeholder}
+          maxLength={7}
+          onChange={e => onChange(e.target.value)}
+          spellCheck={false}
+        />
+        {value && (
+          <button className="color-clear-btn" onClick={() => onChange('')} title="Reset to theme default">×</button>
+        )}
+      </div>
+      <div className="color-field-hint">
+        {value ? (isValid ? `Custom · ${value}` : 'Enter a valid hex e.g. #10B981') : `Theme default: ${placeholder}`}
+      </div>
+    </div>
+  )
+}
+
+function InvoicePreviewMock({ theme: t, firmName }: { theme: InvoiceTheme; firmName: string }) {
+  const fw = (n: number) => ({ fontWeight: n } as const)
+  const uc = { textTransform: 'uppercase' as const }
+  return (
+    <div style={{ background: t.pageBg, borderRadius: 6, overflow: 'hidden', fontFamily: 'Arial,sans-serif', width: '100%', maxWidth: 420, boxShadow: '0 4px 24px rgba(0,0,0,.18)', fontSize: 9 }}>
+
+      {/* Header */}
+      <div style={{ background: t.headerBg, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ color: t.headerFirmColor, ...fw(700), fontSize: 13, letterSpacing: 0.5 }}>{firmName}</div>
+          <div style={{ color: t.headerSubColor, fontSize: 8, marginTop: 2 }}>Gaborone, Botswana</div>
+          <div style={{ color: t.headerSubColor, fontSize: 8, marginTop: 1 }}>info@yourfirm.co.bw</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ color: t.headerFirmColor, ...fw(700), fontSize: 18, letterSpacing: 2 }}>INVOICE</div>
+          <div style={{ color: t.headerSubColor, fontSize: 8, marginTop: 2 }}>INV-0042</div>
+          <div style={{ color: t.headerSubColor, fontSize: 8, marginTop: 1 }}>Due: 2026-06-01</div>
+        </div>
+      </div>
+
+      <div style={{ padding: '10px 14px', background: t.pageBg }}>
+        {/* FROM / BILL TO */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          {(['From', 'Bill To'] as const).map((lbl, i) => (
+            <div key={lbl} style={{ flex: 1, background: t.boxBg, padding: '6px 8px', borderRadius: 3 }}>
+              <div style={{ color: t.accentColor, fontSize: 7, ...fw(700), ...uc, letterSpacing: 0.8, marginBottom: 4 }}>{lbl}</div>
+              <div style={{ color: t.bodyText, ...fw(600), fontSize: 9 }}>{i === 0 ? (firmName || 'Your Firm') : 'Acme Corp'}</div>
+              <div style={{ color: '#64748B', fontSize: 8, marginTop: 2 }}>{i === 0 ? 'Gaborone, BW' : 'client@acme.com'}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table header */}
+        <div style={{ background: t.tableHeadBg, padding: '5px 8px', display: 'flex' }}>
+          <span style={{ flex: 4, color: t.tableHeadText, fontSize: 8, ...fw(700) }}>Description</span>
+          <span style={{ flex: 1, color: t.tableHeadText, fontSize: 8, ...fw(700), textAlign: 'right' as const }}>Qty</span>
+          <span style={{ flex: 1.4, color: t.tableHeadText, fontSize: 8, ...fw(700), textAlign: 'right' as const }}>Amount</span>
+        </div>
+
+        {/* Rows */}
+        {[
+          { desc: 'Design services (4 hrs)', qty: '4', amt: 'P1,000.00', alt: false },
+          { desc: 'Strategy consulting (2 hrs)', qty: '2', amt: 'P1,000.00', alt: true },
+        ].map(row => (
+          <div key={row.desc} style={{ padding: '4px 8px', display: 'flex', background: row.alt ? t.tableRowAltBg : t.pageBg, borderBottom: `1px solid ${t.lineColor}` }}>
+            <span style={{ flex: 4, color: t.bodyText, fontSize: 8 }}>{row.desc}</span>
+            <span style={{ flex: 1, color: '#64748B', fontSize: 8, textAlign: 'right' as const }}>{row.qty}</span>
+            <span style={{ flex: 1.4, color: t.bodyText, fontSize: 8, textAlign: 'right' as const }}>{row.amt}</span>
+          </div>
+        ))}
+
+        {/* Totals */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+          <div style={{ width: '44%' }}>
+            {[['Subtotal', 'P2,000.00'], ['VAT (14%)', 'P280.00']].map(([lbl, val]) => (
+              <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', paddingBlock: '2px' }}>
+                <span style={{ color: '#64748B', fontSize: 8 }}>{lbl}</span>
+                <span style={{ color: t.bodyText, fontSize: 8 }}>{val}</span>
+              </div>
+            ))}
+            <div style={{ background: t.grandRowBg, borderRadius: 3, padding: '5px 8px', marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: t.grandRowText, fontSize: 9, ...fw(700) }}>Balance Due</span>
+              <span style={{ color: t.grandRowText, fontSize: 9, ...fw(700) }}>P2,280.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ borderTop: `1px solid ${t.lineColor}`, padding: '5px 14px', display: 'flex', justifyContent: 'space-between', background: t.pageBg }}>
+        <span style={{ color: t.footerTextColor, fontSize: 7 }}>Generated by StagePay</span>
+        <span style={{ color: t.footerTextColor, fontSize: 7 }}>INV-0042</span>
+      </div>
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const [profile, setProfile]   = useState<Profile | null>(null)
@@ -239,6 +382,9 @@ export default function SettingsPage() {
   const searchParams = useSearchParams()
   const billingStatus = searchParams.get('billing')
   const billingPlan   = searchParams.get('plan')
+
+  // Branding state
+  const [branding, setBranding] = useState({ invoice_theme: 'dark-modern', brand_color_primary: '', brand_color_header: '' })
 
   // Firm details form state
   const [firm, setFirm] = useState({ name: '', firm_name: '', phone: '', address: '', city: '', country: 'BW', vat_number: '' })
@@ -255,6 +401,11 @@ export default function SettingsPage() {
       .then(d => {
         const p: Profile = d.profile
         setProfile(p)
+        setBranding({
+          invoice_theme:       p.invoice_theme       ?? 'dark-modern',
+          brand_color_primary: p.brand_color_primary ?? '',
+          brand_color_header:  p.brand_color_header  ?? '',
+        })
         setFirm({
           name:       p.name       ?? '',
           firm_name:  p.firm_name  ?? '',
@@ -366,20 +517,111 @@ export default function SettingsPage() {
                   <span style={{ fontSize: 12, color: 'var(--t3)' }}>Logo uploaded · manage in app</span>
                 </div>
               ) : (
-                      <div className="logo-zone" style={{ cursor: 'default', opacity: .7 }}>
-                    <div className="logo-zone-icon">⬆</div>
-                    <div className="logo-zone-label">Logo upload coming soon</div>
-                    <div className="logo-zone-sub">PNG, SVG, JPG · Max 2MB</div>
-                  </div>
+                <div className="logo-zone" style={{ cursor: 'default', opacity: .7 }}>
+                  <div className="logo-zone-icon">⬆</div>
+                  <div className="logo-zone-label">Logo upload coming soon</div>
+                  <div className="logo-zone-sub">PNG, SVG, JPG · Max 2MB</div>
+                </div>
               )}
             </div>
+
+            {/* ── Invoice template & colours ── */}
             <div className="settings-section">
-              <div className="settings-section-title">Brand colour &amp; template <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Customise</span></div>
-              <div className="settings-section-desc">Colour picker, template selection, and live PDF preview are available in the invoice generator.</div>
-              <Link href="/new-invoice" className="topbar-btn btn-primary" style={{ textDecoration: 'none' }}>
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
-                Preview in invoice generator
-              </Link>
+              <div className="settings-section-title">
+                Invoice template &amp; colours
+                <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Customise</span>
+              </div>
+              <div className="settings-section-desc">
+                Choose a template that matches your brand, then fine-tune with custom accent and header colours. Changes apply to every invoice PDF you generate.
+              </div>
+
+              {/* Theme cards */}
+              <div className="theme-grid">
+                {THEME_ORDER.map(id => {
+                  const t = THEME_PRESETS[id]
+                  return (
+                    <div
+                      key={id}
+                      className={`theme-card${branding.invoice_theme === id ? ' selected' : ''}`}
+                      onClick={() => setBranding(p => ({ ...p, invoice_theme: id }))}
+                    >
+                      {/* Mini preview */}
+                      <div style={{ background: t.pageBg }}>
+                        <div style={{ background: t.headerBg, height: 26, padding: '4px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <div style={{ width: 28, height: 5, background: t.headerFirmColor, borderRadius: 1, opacity: 0.9 }}/>
+                            <div style={{ width: 18, height: 3, background: t.headerSubColor, borderRadius: 1, opacity: 0.5 }}/>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
+                            <div style={{ width: 22, height: 5, background: t.headerFirmColor, borderRadius: 1, opacity: 0.7 }}/>
+                            <div style={{ width: 14, height: 3, background: t.headerSubColor, borderRadius: 1, opacity: 0.4 }}/>
+                          </div>
+                        </div>
+                        <div style={{ padding: '4px 6px' }}>
+                          <div style={{ display: 'flex', gap: 3, marginBottom: 3 }}>
+                            <div style={{ flex: 1, height: 12, background: t.boxBg, borderRadius: 1, border: `1px solid ${t.lineColor}` }}/>
+                            <div style={{ flex: 1, height: 12, background: t.boxBg, borderRadius: 1, border: `1px solid ${t.lineColor}` }}/>
+                          </div>
+                          <div style={{ height: 7, background: t.tableHeadBg, borderRadius: 1, marginBottom: 1 }}/>
+                          <div style={{ height: 5, background: t.pageBg, borderBottom: `1px solid ${t.lineColor}` }}/>
+                          <div style={{ height: 5, background: t.tableRowAltBg, borderBottom: `1px solid ${t.lineColor}` }}/>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 3 }}>
+                            <div style={{ width: '45%', height: 9, background: t.grandRowBg, borderRadius: 2 }}/>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="theme-card-name">{t.name}</div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Custom colour overrides */}
+              <div style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600, marginBottom: 10 }}>
+                Custom colours <span style={{ fontWeight: 400, color: 'var(--t3)' }}>— override accent &amp; header (optional)</span>
+              </div>
+              <div className="color-fields">
+                <BrandingColorField
+                  label="Accent colour"
+                  value={branding.brand_color_primary}
+                  placeholder={THEME_PRESETS[branding.invoice_theme]?.accentColor ?? '#10B981'}
+                  onChange={v => setBranding(p => ({ ...p, brand_color_primary: v }))}
+                />
+                <BrandingColorField
+                  label="Header background"
+                  value={branding.brand_color_header}
+                  placeholder={THEME_PRESETS[branding.invoice_theme]?.headerBg ?? '#0F172A'}
+                  onChange={v => setBranding(p => ({ ...p, brand_color_header: v }))}
+                />
+              </div>
+
+              {/* Live preview */}
+              <div className="preview-label">Live preview</div>
+              <div className="preview-wrap">
+                <InvoicePreviewMock
+                  theme={resolveTheme(
+                    branding.invoice_theme,
+                    /^#[0-9a-f]{6}$/i.test(branding.brand_color_primary) ? branding.brand_color_primary : null,
+                    /^#[0-9a-f]{6}$/i.test(branding.brand_color_header)  ? branding.brand_color_header  : null,
+                  )}
+                  firmName={firm.firm_name || firm.name || 'Your Firm'}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                <button
+                  className="topbar-btn btn-primary"
+                  disabled={saving}
+                  onClick={() => save({
+                    invoice_theme:       branding.invoice_theme,
+                    brand_color_primary: branding.brand_color_primary || null,
+                    brand_color_header:  branding.brand_color_header  || null,
+                  }, 'brand')}
+                >
+                  {saving ? 'Saving…' : 'Save branding'}
+                </button>
+                {saved === 'brand' && <span className="success-toast">✓ Saved</span>}
+              </div>
             </div>
           </div>
 
