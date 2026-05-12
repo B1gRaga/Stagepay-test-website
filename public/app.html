@@ -1860,6 +1860,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
             </button>
           </div>
+          <div class="auth-footer-text">Already have an account? <a onclick="showAuthTab('login')">Sign in →</a></div>
         </div>
 
         <!-- Step 3: Plan -->
@@ -1903,6 +1904,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
               </div>
             </div>
           </div>
+          <div class="auth-footer-text" style="margin-bottom:4px;">Already have an account? <a onclick="showAuthTab('login')">Sign in →</a></div>
           <div style="display:flex;gap:10px;">
             <button class="auth-btn" style="background:transparent;border:1px solid var(--line2);color:var(--t2);flex:0 0 auto;padding:13px 20px;" onclick="prevSignupStep(3)">← Back</button>
             <button class="auth-btn" style="flex:1;" id="create-acct-btn" onclick="doSignup()">

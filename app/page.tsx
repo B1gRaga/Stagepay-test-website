@@ -81,6 +81,7 @@ export default function Home() {
             <a href="#who">Who it&apos;s for</a>
           </div>
           <div className="nav-right">
+            <a href="/auth/login" className="nav-sign-in">Sign in</a>
             <a href="/auth/signup" className="nav-cta">Try it free →</a>
           </div>
         </div>

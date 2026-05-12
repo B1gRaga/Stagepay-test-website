@@ -42,6 +42,9 @@ nav{
 .nav-links a:hover{color:var(--t1);}
 @media(max-width:680px){.nav-links{display:none;}}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-sign-in{font-size:13px;color:var(--t3);text-decoration:none;transition:color .2s;padding:8px 4px;}
+.nav-sign-in:hover{color:var(--t1);}
+@media(max-width:480px){.nav-sign-in{display:none;}}
 .nav-cta{
   padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;
   background:var(--g);color:#060A12;text-decoration:none;
