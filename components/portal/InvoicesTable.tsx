@@ -7,6 +7,7 @@ export type Invoice = {
   invoice_number: string
   client_name: string
   client_email?: string | null
+  client_phone?: string | null
   project: string | null
   issue_date: string | null
   total: number
@@ -119,6 +120,10 @@ const CSS = `
   /* Modal */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
   .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);}
+  .modal-tabs{display:flex;gap:2px;padding:12px 24px 0;border-bottom:1px solid var(--line);}
+  .modal-tab{padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--t3);font-family:'Archivo',sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .modal-tab.active{color:var(--g);border-bottom-color:var(--g);}
+  .modal-tab:hover:not(.active){color:var(--t2);}
   .modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
   .modal-title{font-size:15px;font-weight:600;color:var(--t1);}
   .modal-sub{font-size:12px;color:var(--t3);margin-top:2px;}
@@ -157,7 +162,7 @@ const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | nul
   draft:   { title: 'No drafts saved',      sub: 'Start an invoice and save it as a draft to find it here.',  cta: 'New Invoice' },
 }
 
-type ForwardModalState = { inv: Invoice; email: string; sending: boolean; sent: boolean; err: string }
+type ForwardModalState = { inv: Invoice; channel: 'email' | 'whatsapp'; email: string; phone: string; sending: boolean; sent: boolean; err: string }
 
 export default function InvoicesTable({ initialInvoices }: { initialInvoices: Invoice[] }) {
   const [filter, setFilter]     = useState<string>('all')
@@ -195,20 +200,33 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
   }
 
   function openForwardPaid(inv: Invoice) {
-    setFwdModal({ inv, email: inv.client_email || '', sending: false, sent: false, err: '' })
+    setFwdModal({ inv, channel: 'email', email: inv.client_email || '', phone: inv.client_phone || '', sending: false, sent: false, err: '' })
   }
 
   async function sendForwardPaid() {
     if (!fwdModal) return
     setFwdModal(p => p ? { ...p, sending: true, err: '' } : null)
     try {
-      const res = await fetch('/api/email/send', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoice_id: fwdModal.inv.id, to_email: fwdModal.email, paid_stamp: true }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to send')
+      if (fwdModal.channel === 'email') {
+        const res = await fetch('/api/email/send', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoice_id: fwdModal.inv.id, to_email: fwdModal.email, paid_stamp: true }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Failed to send')
+      } else {
+        const sym = fwdModal.inv.currency || 'P'
+        const amount = `${sym}${Number(fwdModal.inv.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+        const waBody = `Hi ${fwdModal.inv.client_name} 👋\n\nGreat news — your payment for invoice *${fwdModal.inv.invoice_number}* of *${amount}* has been received and confirmed. ✅\n\nThank you for your prompt payment. We appreciate your business!`
+        const res = await fetch('/api/whatsapp/send', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoice_id: fwdModal.inv.id, to_phone: fwdModal.phone, custom_body: waBody }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Failed to send WhatsApp message')
+      }
       setFwdModal(p => p ? { ...p, sending: false, sent: true } : null)
     } catch (e: any) {
       setFwdModal(p => p ? { ...p, sending: false, err: e.message } : null)
@@ -331,12 +349,31 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
             <div className="modal-header">
               <div>
                 <div className="modal-title">Forward as Paid — {fwdModal.inv.invoice_number}</div>
-                <div className="modal-sub">Sends a payment confirmation with a PAID stamp to the client</div>
+                <div className="modal-sub">Send a payment confirmation to the client</div>
               </div>
               <button className="modal-close" onClick={() => setFwdModal(null)}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
               </button>
             </div>
+
+            {!fwdModal.sent && (
+              <div className="modal-tabs">
+                <button
+                  className={`modal-tab${fwdModal.channel === 'email' ? ' active' : ''}`}
+                  onClick={() => setFwdModal(p => p ? { ...p, channel: 'email', err: '' } : null)}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ display:'inline', marginRight:5 }}><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 6l7 4 7-4"/></svg>
+                  Email
+                </button>
+                <button
+                  className={`modal-tab${fwdModal.channel === 'whatsapp' ? ' active' : ''}`}
+                  onClick={() => setFwdModal(p => p ? { ...p, channel: 'whatsapp', err: '' } : null)}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="#25D366" style={{ display:'inline', marginRight:5 }}><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.02 3.89L0 16l4.25-1.11A7.94 7.94 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>
+                  WhatsApp
+                </button>
+              </div>
+            )}
 
             <div className="modal-body">
               {fwdModal.sent ? (
@@ -345,7 +382,11 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                     <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--t1)', marginBottom: 6 }}>Confirmation sent!</div>
-                  <div style={{ fontSize: 12, color: 'var(--t3)' }}>Payment confirmation with PAID stamp emailed to {fwdModal.email}</div>
+                  <div style={{ fontSize: 12, color: 'var(--t3)' }}>
+                    {fwdModal.channel === 'whatsapp'
+                      ? `WhatsApp sent to ${fwdModal.phone}`
+                      : `Payment confirmation with PAID stamp emailed to ${fwdModal.email}`}
+                  </div>
                 </div>
               ) : (
                 <>
@@ -358,16 +399,29 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                     </div>
                     <span className="pill pill-paid" style={{ marginLeft: 'auto' }}>paid</span>
                   </div>
-                  <div className="modal-field">
-                    <div className="modal-label">Client email</div>
-                    <input
-                      className="modal-input"
-                      type="email"
-                      placeholder="client@example.com"
-                      value={fwdModal.email}
-                      onChange={e => setFwdModal(p => p ? { ...p, email: e.target.value } : null)}
-                    />
-                  </div>
+                  {fwdModal.channel === 'email' ? (
+                    <div className="modal-field">
+                      <div className="modal-label">Client email</div>
+                      <input
+                        className="modal-input"
+                        type="email"
+                        placeholder="client@example.com"
+                        value={fwdModal.email}
+                        onChange={e => setFwdModal(p => p ? { ...p, email: e.target.value } : null)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="modal-field">
+                      <div className="modal-label">Client phone (with country code)</div>
+                      <input
+                        className="modal-input"
+                        type="tel"
+                        placeholder="+267 71 234 567"
+                        value={fwdModal.phone}
+                        onChange={e => setFwdModal(p => p ? { ...p, phone: e.target.value } : null)}
+                      />
+                    </div>
+                  )}
                   {fwdModal.err && (
                     <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: -8, marginBottom: 12 }}>{fwdModal.err}</div>
                   )}
@@ -381,11 +435,14 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                 <button
                   className="modal-btn modal-btn-primary"
                   onClick={sendForwardPaid}
-                  disabled={fwdModal.sending || !fwdModal.email}
+                  disabled={fwdModal.sending || (fwdModal.channel === 'email' ? !fwdModal.email : !fwdModal.phone)}
                 >
                   {fwdModal.sending ? 'Sending…' : (
                     <>
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
+                      {fwdModal.channel === 'whatsapp'
+                        ? <svg width="12" height="12" viewBox="0 0 16 16" fill="#0F172A"><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.02 3.89L0 16l4.25-1.11A7.94 7.94 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>
+                        : <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
+                      }
                       Send Confirmation
                     </>
                   )}

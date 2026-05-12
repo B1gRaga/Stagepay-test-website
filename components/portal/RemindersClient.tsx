@@ -235,6 +235,7 @@ type ComposeState = {
   waBody:    string
   sending:   boolean
   sent:      boolean
+  sentVia:   'email' | 'whatsapp'
   copied:    boolean
   err:       string
 }
@@ -289,6 +290,7 @@ export default function RemindersClient({
       waBody:    genWhatsApp(inv, firmName),
       sending:   false,
       sent:      false,
+      sentVia:   'email',
       copied:    false,
       err:       '',
     })
@@ -305,7 +307,26 @@ export default function RemindersClient({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send')
-      setCompose(p => p ? { ...p, sending: false, sent: true } : null)
+      setCompose(p => p ? { ...p, sending: false, sent: true, sentVia: 'email' } : null)
+    } catch (e: any) {
+      setCompose(p => p ? { ...p, sending: false, err: e.message } : null)
+    }
+  }
+
+  async function sendWhatsApp() {
+    if (!compose) return
+    const phone = compose.inv.client_phone
+    if (!phone) return
+    setCompose(p => p ? { ...p, sending: true, err: '' } : null)
+    try {
+      const res = await fetch('/api/whatsapp/send', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoice_id: compose.inv.id, to_phone: phone, custom_body: compose.waBody }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to send WhatsApp message')
+      setCompose(p => p ? { ...p, sending: false, sent: true, sentVia: 'whatsapp' } : null)
     } catch (e: any) {
       setCompose(p => p ? { ...p, sending: false, err: e.message } : null)
     }
@@ -545,8 +566,8 @@ export default function RemindersClient({
                   ) : (
                     <>
                       <div className="wa-info">
-                        <strong>Copy this message</strong> and paste it into WhatsApp.
-                        The message is pre-written and ready to send.
+                        <strong>Send directly</strong> via WhatsApp or copy to paste manually.
+                        {!compose.inv.client_phone && <span style={{ color:'var(--warn)', display:'block', marginTop:4 }}>No phone number — add one to the invoice to enable sending.</span>}
                       </div>
                       <div className="modal-field">
                         <div className="modal-label" style={{ display:'flex', justifyContent:'space-between' }}>
@@ -577,19 +598,34 @@ export default function RemindersClient({
                       )}
                     </button>
                   ) : (
-                    <button className="modal-btn modal-btn-primary" onClick={copyWa}>
-                      {compose.copied ? (
-                        <>
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="1" width="9" height="11" rx="1"/><rect x="1" y="4" width="9" height="11" rx="1"/></svg>
-                          Copy Message
-                        </>
-                      )}
-                    </button>
+                    <>
+                      <button className="modal-btn modal-btn-secondary" onClick={copyWa} style={{ marginRight: 'auto' }}>
+                        {compose.copied ? (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="1" width="9" height="11" rx="1"/><rect x="1" y="4" width="9" height="11" rx="1"/></svg>
+                            Copy
+                          </>
+                        )}
+                      </button>
+                      <button
+                        className="modal-btn modal-btn-primary"
+                        onClick={sendWhatsApp}
+                        disabled={compose.sending || !compose.inv.client_phone}
+                        title={!compose.inv.client_phone ? 'No phone number on this invoice' : ''}
+                      >
+                        {compose.sending ? 'Sending…' : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="#0F172A"><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.74 1.02 3.89L0 16l4.25-1.11A7.94 7.94 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>
+                            Send WhatsApp
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               </>
@@ -600,7 +636,11 @@ export default function RemindersClient({
                     <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
                   </div>
                   <div style={{ fontSize:15, fontWeight:600, color:'var(--t1)', marginBottom:6 }}>Reminder sent!</div>
-                  <div style={{ fontSize:12, color:'var(--t3)', marginBottom:16 }}>Email delivered to {compose.emailTo}</div>
+                  <div style={{ fontSize:12, color:'var(--t3)', marginBottom:16 }}>
+                    {compose.sentVia === 'whatsapp'
+                      ? `WhatsApp message sent to ${compose.inv.client_phone}`
+                      : `Email delivered to ${compose.emailTo}`}
+                  </div>
                   <button className="modal-btn modal-btn-secondary" onClick={() => setCompose(null)}>Close</button>
                 </div>
               </div>

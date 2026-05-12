@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
   let invoice_id: string, to_phone: string, pdf_base64: string | undefined, filename: string | undefined
   let invoice_number: string | undefined, client_name: string | undefined
   let total_amount: number | undefined, currency: string | undefined, due_date: string | undefined
+  let custom_body: string | undefined
   try {
     const body = await req.json()
     invoice_id     = body.invoice_id
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
     total_amount   = body.total_amount
     currency       = body.currency
     due_date       = body.due_date
+    custom_body    = typeof body.custom_body === 'string' ? body.custom_body.slice(0, 4000) : undefined
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -114,7 +116,7 @@ export async function POST(req: NextRequest) {
     const client = twilio(accountSid, authToken)
     const toFormatted = `whatsapp:+${barePhone}`
 
-    const body = [
+    const body = custom_body || [
       `Hello from ${senderName} 👋`,
       ``,
       `Please find your invoice attached.`,

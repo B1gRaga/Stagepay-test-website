@@ -58,15 +58,6 @@ const CSS = `
     --t1:#0F172A;--t2:rgba(15,23,42,0.65);--t3:rgba(15,23,42,0.38);
     --g-dim:rgba(16,185,129,0.08);
   }
-  .theme-btn{
-    display:flex;align-items:center;justify-content:center;gap:6px;
-    width:100%;padding:7px 12px;border-radius:6px;border:1px solid var(--line2);
-    background:transparent;color:var(--t3);cursor:pointer;font-size:11px;font-weight:600;
-    font-family:'Archivo',sans-serif;letter-spacing:.05em;text-transform:uppercase;
-    transition:all .15s;margin-bottom:8px;
-  }
-  .theme-btn:hover{border-color:var(--g);color:var(--g);}
-
   .sidebar{
     width:224px;flex-shrink:0;
     background:var(--bg2);
@@ -160,22 +151,6 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
   const pathname = usePathname()
   const router = useRouter()
   const [popupOpen, setPopupOpen] = useState(false)
-  // Reads the data-theme already set by the layout init script (no flash)
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof document === 'undefined') return true
-    return document.documentElement.getAttribute('data-theme') !== 'light'
-  })
-
-  function toggleTheme() {
-    const next = isDark ? 'light' : 'dark'
-    setIsDark(!isDark)
-    if (next === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light')
-    } else {
-      document.documentElement.removeAttribute('data-theme')
-    }
-    try { localStorage.setItem('stagepay-theme', next) } catch {}
-  }
 
   const initials = displayName
     .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || '??'
@@ -201,7 +176,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
               <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
               <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
-            <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, letterSpacing: 3 }}>
+            <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 26, letterSpacing: 3 }}>
               Stage<em>Pay</em>
             </span>
           </div>
@@ -245,21 +220,6 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
             <kbd style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 4, padding: '2px 6px', color: 'var(--t3)' }}>R</kbd>
             <span style={{ fontSize: 10, color: 'var(--t3)', marginRight: 6 }}>Reminders</span>
           </div>
-
-          {/* Theme toggle */}
-          <button className="theme-btn" onClick={toggleTheme}>
-            {isDark ? (
-              <>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4"/></svg>
-                Light mode
-              </>
-            ) : (
-              <>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M13.5 10A6 6 0 016 2.5a6 6 0 100 11 6 6 0 007.5-3.5z"/></svg>
-                Dark mode
-              </>
-            )}
-          </button>
 
           {/* User pill */}
           <div className="user-pill" onClick={() => setPopupOpen(p => !p)}>

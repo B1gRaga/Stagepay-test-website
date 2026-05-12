@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import ThemeToggleBtn from '@/components/portal/ThemeToggleBtn'
 
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#E8D8C3', '#EF4444', '#059669']
 
@@ -175,6 +176,7 @@ export default async function DashboardPage() {
       <div className="topbar">
         <div className="page-title">DASHBOARD</div>
         <div className="topbar-right">
+          <ThemeToggleBtn />
           <Link href="/invoices" className="topbar-btn btn-outline" style={{ textDecoration: 'none' }}>
             View all invoices
           </Link>
