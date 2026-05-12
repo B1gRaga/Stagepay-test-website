@@ -22,6 +22,8 @@ export interface Database {
           currency: string
           logo_url: string | null
           plan: Plan
+          subscription_expires_at: string | null
+          dpo_transaction_ref: string | null
           created_at: string
           updated_at: string
         }

@@ -48,7 +48,9 @@ async function redisRateLimit(
     return true
   }
 
-  const [[, count]] = await res.json() as [[string, number]]
+  // Upstash REST pipeline returns [{result: N}, {result: N}] — not [[null, N]]
+  const results = await res.json() as Array<{ result: number }>
+  const count = results[0]?.result ?? 0
   return count <= limit
 }
 

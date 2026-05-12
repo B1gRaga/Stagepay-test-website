@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/supabase/server'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 
+// Only haiku is allowed via this proxy — prevents clients from selecting
+// expensive models (opus/sonnet) and draining the API budget.
+const ALLOWED_MODEL = 'claude-haiku-4-5'
+const MAX_TOKENS_CAP = 1024
+
 export async function POST(req: NextRequest) {
   const { user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -15,23 +20,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: { message: 'API key not configured' } }, { status: 500 })
   }
 
-  let body: { model?: string; messages?: unknown; max_tokens?: number; system?: string }
+  let body: { messages?: unknown; max_tokens?: number }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: { message: 'Invalid request body' } }, { status: 400 })
   }
 
-  if (!body.model || !body.messages) {
-    return NextResponse.json({ error: { message: 'model and messages are required' } }, { status: 400 })
+  if (!body.messages) {
+    return NextResponse.json({ error: { message: 'messages is required' } }, { status: 400 })
   }
 
-  // Only forward known safe fields to Anthropic
+  // Model and max_tokens are server-controlled; system prompt is never
+  // forwarded — both prevent cost drain and prompt injection.
   const payload = {
-    model: body.model,
-    messages: body.messages,
-    max_tokens: body.max_tokens ?? 1024,
-    ...(body.system ? { system: body.system } : {}),
+    model:      ALLOWED_MODEL,
+    messages:   body.messages,
+    max_tokens: Math.min(Number(body.max_tokens) || MAX_TOKENS_CAP, MAX_TOKENS_CAP),
   }
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {

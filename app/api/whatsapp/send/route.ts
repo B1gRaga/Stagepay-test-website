@@ -41,10 +41,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
   }
 
-  // Verify invoice belongs to user (lightweight select — we use client-supplied values for message text)
+  // Fetch the full invoice from the DB — never use client-supplied values
+  // for message content (invoice_number, total, etc.) as they are
+  // attacker-controlled and bypass the ownership check.
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, status')
+    .select('id, status, invoice_number, client_name, total, currency, due_date')
     .eq('id', invoice_id)
     .eq('user_id', user.id)
     .single()
@@ -98,8 +100,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const amountFormatted = total_amount
-    ? `${currency || 'P'}${Number(total_amount).toLocaleString('en', { minimumFractionDigits: 2 })}`
+  // Use DB values for message content — ignore client-supplied fields
+  const dbInvoiceNumber = invoice.invoice_number || ''
+  const dbTotal         = invoice.total
+  const dbCurrency      = invoice.currency || 'P'
+  const dbDueDate       = invoice.due_date || ''
+
+  const amountFormatted = dbTotal != null
+    ? `${dbCurrency}${Number(dbTotal).toLocaleString('en', { minimumFractionDigits: 2 })}`
     : ''
 
   try {
@@ -110,9 +118,9 @@ export async function POST(req: NextRequest) {
       `Hello from ${senderName} 👋`,
       ``,
       `Please find your invoice attached.`,
-      invoice_number ? `📄 Invoice: ${invoice_number}` : '',
-      amountFormatted   ? `💰 Amount:  ${amountFormatted}` : '',
-      due_date          ? `📅 Due:     ${due_date}` : '',
+      dbInvoiceNumber ? `📄 Invoice: ${dbInvoiceNumber}` : '',
+      amountFormatted ? `💰 Amount:  ${amountFormatted}` : '',
+      dbDueDate       ? `📅 Due:     ${dbDueDate}` : '',
       ``,
       `Thank you for your business!`,
     ].filter(Boolean).join('\n')
@@ -125,9 +133,9 @@ export async function POST(req: NextRequest) {
       msgParams.contentSid = templateSid
       msgParams.contentVariables = JSON.stringify({
         '1': senderName,
-        '2': invoice_number || '',
+        '2': dbInvoiceNumber,
         '3': amountFormatted,
-        '4': due_date || 'upon receipt',
+        '4': dbDueDate || 'upon receipt',
         '5': pdfUrl || '',
       })
     } else {
