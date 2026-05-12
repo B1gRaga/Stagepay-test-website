@@ -31,15 +31,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     invoice_id  = body.invoice_id
     to_email    = body.to_email
-    custom_body = body.custom_body  // optional: plain text for reminder emails
+    custom_body = body.custom_body
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  if (!invoice_id || !to_email) {
+  if (!invoice_id! || !to_email!) {
     return NextResponse.json({ error: 'invoice_id and to_email are required' }, { status: 400 })
   }
-  if (!EMAIL_RE.test(to_email)) {
+  if (!EMAIL_RE.test(to_email!)) {
     return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
   }
 

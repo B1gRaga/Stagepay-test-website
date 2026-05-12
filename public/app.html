@@ -4011,37 +4011,6 @@ let clients  = [];
 let emSendChannel = 'email';
 let expenses = [];
 
-/* ── DEMO DATA (only loaded for demo@stagepay.co) ── */
-const DEMO_INVOICES = [
-  {id:'INV-054',client:'Molapo Tower Ltd.',project:'Structural Review Ph.2',date:'2026-04-10',due:'2026-05-10',amount:46056,status:'paid',color:'#10B981'},
-  {id:'INV-053',client:'BW Renewable Energy',project:'Consulting Retainer — Apr',date:'2026-04-08',due:'2026-05-08',amount:37734,status:'pending',color:'#3B82F6'},
-  {id:'INV-052',client:'Greenway Consulting',project:'Workshop Facilitation',date:'2026-03-28',due:'2026-04-28',amount:24000,status:'pending',color:'#F59E0B',views:3,lastViewed:'14:32 today'},
-  {id:'INV-051',client:'Apex Design Co.',project:'Brand Strategy Sessions',date:'2026-03-15',due:'2026-04-01',amount:11400,status:'overdue',color:'#EF4444'},
-  {id:'INV-050',client:'Northside Properties',project:'Site Inspection Report',date:'2026-03-10',due:'2026-03-31',amount:8750,status:'overdue',color:'#EF4444'},
-  {id:'INV-049',client:'Francistown Municipality',project:'Urban Planning Study',date:'2026-03-01',due:'2026-04-01',amount:62000,status:'paid',color:'#10B981'},
-  {id:'INV-048',client:'Kalahari Solar Ltd.',project:'Feasibility Assessment',date:'2026-02-20',due:'2026-03-22',amount:18900,status:'paid',color:'#10B981'},
-  {id:'INV-047',client:'Apex Design Co.',project:'Identity System Design',date:'2026-02-10',due:'2026-03-10',amount:14500,status:'draft',color:'#64748B'},
-];
-const DEMO_CLIENTS = [
-  {name:'Molapo Tower Ltd.',type:'Engineering company',email:'projects@molap.co.bw',phone:'+26771234567',invoices:3,total:92056,color:'#10B981',initials:'MT'},
-  {name:'BW Renewable Energy',type:'Government / Parastatal',email:'finance@bwrenew.co.bw',phone:'+26772345678',invoices:2,total:67734,color:'#3B82F6',initials:'BR'},
-  {name:'Greenway Consulting',type:'Consulting firm',email:'admin@greenway.co.bw',phone:'+26773456789',invoices:4,total:108000,color:'#F59E0B',initials:'GC'},
-  {name:'Apex Design Co.',type:'Design agency',email:'billing@apexdesign.co.bw',phone:'+26774567890',invoices:3,total:25900,color:'#EF4444',initials:'AD'},
-  {name:'Northside Properties',type:'Contractor',email:'accounts@northside.co.bw',phone:'+26775678901',invoices:1,total:8750,color:'#E8D8C3',initials:'NP'},
-  {name:'Francistown Municipality',type:'Government / Parastatal',email:'projects@francistown.gov.bw',phone:'+26776789012',invoices:5,total:162000,color:'#10B981',initials:'FM'},
-];
-const DEMO_EXPENSES = [
-  {id:'EXP-001',date:'2026-04-15',desc:'Office rent — April',     category:'Overhead',  amount:3500},
-  {id:'EXP-002',date:'2026-04-10',desc:'Adobe Creative Cloud',    category:'Software',  amount:299},
-  {id:'EXP-003',date:'2026-03-28',desc:'Client lunch — Molapo',   category:'Entertainment',amount:380},
-  {id:'EXP-004',date:'2026-03-20',desc:'Replacement laptop charger',category:'Equipment',amount:850},
-];
-
-function loadDemoData() {
-  invoices.push(...DEMO_INVOICES);
-  clients.push(...DEMO_CLIENTS);
-  expenses.push(...DEMO_EXPENSES);
-}
 
 /* ── PLAN ENFORCEMENT ── */
 const PLAN_LIMITS = { free: 5, pro: Infinity, business: Infinity };
@@ -6440,9 +6409,6 @@ function initSettings() {
 let currentUser = null;
 let selectedPlan = 'free';
 
-// Demo account credentials (bypasses Supabase — no real account needed)
-const _DEMO_EMAIL = 'demo@stagepay.co';
-const _DEMO_PW    = 'demo1234';
 
 function showAuthTab(tab) {
   document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
@@ -6545,7 +6511,8 @@ async function computeTOTP(secret, offsetSteps = 0) {
 async function verifyTOTPCode(secret, userCode) {
   const clean = userCode.replace(/\s/g,'');
   if (!/^\d{6}$/.test(clean)) return false;
-  for (const offset of [0, -1, 1]) {
+  // Allow ±2 steps (±60 seconds) to tolerate device clock drift
+  for (const offset of [0, -1, 1, -2, 2]) {
     if (await computeTOTP(secret, offset) === clean) return true;
   }
   return false;
@@ -6726,15 +6693,6 @@ async function doLogin() {
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Signing in...';
-
-  // Demo shortcut — no Supabase account needed
-  if (email === _DEMO_EMAIL && pw === _DEMO_PW) {
-    loginAttempts = 0;
-    currentUser = { email, name: 'Demo User', firm: 'Demo Business', plan: 'business', initials: 'DB' };
-    loadDemoData();
-    enterApp(currentUser);
-    return;
-  }
 
   const { data, error } = await _supa.auth.signInWithPassword({ email, password: pw });
 
@@ -6968,11 +6926,6 @@ function enterApp(user) {
   if(firmInput) firmInput.value = user.firm || '';
   const emailInput = document.getElementById('s-email');
   if(emailInput && user.email) emailInput.value = user.email;
-
-  // Load demo data for the demo account
-  if (user.email === 'demo@stagepay.co') {
-    loadDemoData();
-  }
 
   // Slide out auth after 2.2s
   setTimeout(() => {
@@ -8319,11 +8272,23 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
 // ── SESSION RESTORE ──
 (async function restoreSession() {
   try {
-    const { data: { session } } = await _supa.auth.getSession();
-    if (!session) return;
+    let { data: { session } } = await _supa.auth.getSession();
 
-    // Hide auth layer immediately once we have a valid session
-    document.getElementById('auth-layer').classList.add('hidden');
+    // If no localStorage session, try bridging from Next.js cookie-based session
+    if (!session) {
+      try {
+        const res = await fetch('/api/auth/session', { credentials: 'include' });
+        if (res.ok) {
+          const { access_token, refresh_token } = await res.json();
+          if (access_token && refresh_token) {
+            const { data } = await _supa.auth.setSession({ access_token, refresh_token });
+            session = data.session;
+          }
+        }
+      } catch(_) {}
+    }
+
+    if (!session) return;
 
     const sbUser = session.user;
     const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
@@ -8335,6 +8300,22 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
     currentUser = { id: sbUser.id, email: sbUser.email, name, firm, plan, initials };
 
     await _loadUserData(sbUser.id);
+
+    // Enforce 2FA — must verify TOTP before entering app (even for session-restored logins)
+    if (profile?.two_fa_enabled && profile?.totp_secret) {
+      currentUser.twoFAEnabled = true;
+      currentUser.totpSecret   = profile.totp_secret;
+      _populateSettingsFromProfile(profile, sbUser);
+      _pending2FAUser = currentUser;
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
+      document.getElementById('form-2fa').classList.remove('hidden');
+      document.getElementById('tfa-code').value = '';
+      _startTFACountdown();
+      return; // auth layer stays visible until TOTP is verified
+    }
+
+    // No 2FA — hide auth layer and enter app
+    document.getElementById('auth-layer').classList.add('hidden');
 
     document.getElementById('sidebar-av').textContent   = initials;
     document.getElementById('sidebar-name').textContent = firm || name;

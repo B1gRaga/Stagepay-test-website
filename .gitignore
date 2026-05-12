@@ -31,3 +31,5 @@ next-env.d.ts
 
 # Google OAuth (regenerated on auth)
 token.json
+
+.vercel
