@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="StagePay">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/vendor/supabase.min.js"></script>
 <style>
 :root {
   /* ── Brand greens (kept, slightly shifted to muted emerald) ── */
@@ -4336,9 +4336,9 @@ function addLineItem(desc='',qty='1',rate='',amt='') {
   row.className='line-item-row';
   row.id=id;
   row.innerHTML=`
-    <input class="form-input" style="font-size:13px;padding:7px 10px" placeholder="Description" value="${desc}" oninput="updateLI('${id}','desc',this.value)">
-    <input class="form-input" style="font-size:13px;padding:7px 10px;text-align:right" type="number" placeholder="1" value="${qty}" oninput="updateLI('${id}','qty',this.value)">
-    <input class="form-input" style="font-size:13px;padding:7px 10px;text-align:right" type="number" placeholder="0.00" value="${rate}" oninput="updateLI('${id}','rate',this.value)">
+    <input class="form-input" style="font-size:13px;padding:7px 10px" placeholder="Description" value="${esc(desc)}" oninput="updateLI('${id}','desc',this.value)">
+    <input class="form-input" style="font-size:13px;padding:7px 10px;text-align:right" type="number" placeholder="1" value="${esc(qty)}" oninput="updateLI('${id}','qty',this.value)">
+    <input class="form-input" style="font-size:13px;padding:7px 10px;text-align:right" type="number" placeholder="0.00" value="${esc(rate)}" oninput="updateLI('${id}','rate',this.value)">
     <div class="li-amt" id="${id}_amt">—</div>
     <button class="del-btn" onclick="removeLI('${id}')">×</button>`;
   container.appendChild(row);
@@ -4405,7 +4405,7 @@ function updatePreview(){ try {
   if(firmDetailEl){
     const addr  = document.getElementById('s-address')?.value || '';
     const email = document.getElementById('s-email')?.value   || '';
-    firmDetailEl.innerHTML = addr + (email ? '<br>' + email : '');
+    firmDetailEl.innerHTML = esc(addr) + (email ? '<br>' + esc(email) : '');
   }
 
   // T&C
@@ -5215,7 +5215,7 @@ async function exportPDF(returnBlob = false) {
   if (typeof window.jspdf === 'undefined') {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.src = '/vendor/jspdf.umd.min.js';
       s.onload = resolve;
       s.onerror = reject;
       document.head.appendChild(s);
@@ -6588,7 +6588,7 @@ function _refreshTFAStatusUI() {
 function _loadQRLib(cb) {
   if (typeof window.QRCode !== 'undefined') { cb(); return; }
   const s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  s.src = '/vendor/qrcode.min.js';
   s.onload = cb;
   s.onerror = () => { document.getElementById('tfa-qrcode').innerHTML = '<span style="font-size:11px;color:var(--t3);">QR lib failed to load. Use manual key above.</span>'; };
   document.head.appendChild(s);
@@ -7077,7 +7077,7 @@ function getMonthRevData() {
 function initDashCharts() {
   if (typeof Chart === 'undefined') {
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    s.src = '/vendor/chart.umd.js';
     s.onload = () => buildCharts();
     document.head.appendChild(s);
   } else {
@@ -7690,7 +7690,7 @@ async function generateClientStatement(clientName) {
 
   if (typeof window.jspdf === 'undefined') {
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.src = '/vendor/jspdf.umd.min.js';
     s.onload = () => _buildStatement(clientName, clientInvs);
     document.head.appendChild(s);
   } else {
