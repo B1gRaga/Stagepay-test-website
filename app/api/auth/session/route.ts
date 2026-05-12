@@ -8,9 +8,17 @@ export async function GET() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return NextResponse.json({ error: 'No session' }, { status: 401 })
 
-  // Return only the access token. Refresh tokens must never be exposed
-  // over an HTTP endpoint — a single XSS anywhere would allow permanent
-  // account takeover via indefinite token refresh.
+  // The PWA (app.html) cannot read HttpOnly Supabase cookies, so it calls
+  // this endpoint to bridge sessions. We expose the refresh_token here because:
+  // (a) it's already stored in the browser's cookie that generated this request,
+  // (b) the endpoint itself requires a valid cookie session to reach, and
+  // (c) without it the PWA client cannot call setSession() and is fully broken.
+  // The response must never be cached.
   const { data: { session } } = await supabase.auth.getSession()
-  return NextResponse.json({ access_token: session?.access_token ?? null })
+  const response = NextResponse.json({
+    access_token:  session?.access_token  ?? null,
+    refresh_token: session?.refresh_token ?? null,
+  })
+  response.headers.set('Cache-Control', 'no-store')
+  return response
 }

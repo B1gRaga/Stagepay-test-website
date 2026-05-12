@@ -145,9 +145,10 @@ const CSS = `
 interface Props {
   displayName: string
   userEmail: string
+  plan?: string
 }
 
-export default function SidebarNav({ displayName, userEmail }: Props) {
+export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [popupOpen, setPopupOpen] = useState(false)
@@ -250,7 +251,7 @@ export default function SidebarNav({ displayName, userEmail }: Props) {
             <div className="user-av">{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="user-name">{displayName}</div>
-              <div className="user-plan">Free Plan</div>
+              <div className="user-plan">{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</div>
             </div>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--t3)', flexShrink: 0 }}><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg>
           </div>

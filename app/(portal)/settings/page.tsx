@@ -101,7 +101,7 @@ const SEC_RISKS = [
   { badge: 'fixed', title: 'Weak auth — single-factor password only',   owasp: 'A07', desc: 'TOTP-based 2FA is available. When enabled, a code is required after every password login.' },
   { badge: 'high',  title: 'Plaintext passwords in memory',             owasp: 'A02', desc: 'Supabase handles auth server-side with bcrypt hashing. No plaintext passwords are stored.' },
   { badge: 'med',   title: 'Missing CSRF protection',                   owasp: 'A01', desc: 'All API routes use cookie-based sessions with SameSite protections via Supabase SSR.' },
-  { badge: 'low',   title: 'No Content Security Policy header',         owasp: 'A05', desc: 'A CSP header should be added in next.config.ts to restrict script-src to known origins.' },
+  { badge: 'fixed', title: 'No Content Security Policy header',         owasp: 'A05', desc: 'CSP is enforced via next.config.js headers(), restricting script-src, frame-ancestors, and other directives.' },
 ]
 
 const CSS = `
