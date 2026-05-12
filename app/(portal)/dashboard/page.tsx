@@ -25,6 +25,12 @@ const CSS = `
     --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
     --danger:#EF4444;--warn:#F59E0B;
   }
+  html[data-theme="light"]{
+    --bg:#F8FAFC;--bg2:#FFFFFF;--surface:#F1F5F9;
+    --line:rgba(15,23,42,0.08);--line2:rgba(15,23,42,0.14);
+    --t1:#0F172A;--t2:rgba(15,23,42,0.65);--t3:rgba(15,23,42,0.38);
+    --g-dim:rgba(16,185,129,0.08);
+  }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 
@@ -48,8 +54,8 @@ const CSS = `
     cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;
     text-transform:uppercase;font-family:'Archivo',sans-serif;text-decoration:none;
   }
-  .btn-primary{background:var(--g);color:var(--bg);box-shadow:0 2px 8px rgba(16,185,129,.2);}
-  .btn-primary:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 4px 14px rgba(16,185,129,.3);}
+  .btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.4),0 2px 8px rgba(16,185,129,.2);}
+  .btn-primary:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 0 24px rgba(16,185,129,.6),0 4px 16px rgba(16,185,129,.3);}
   .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);}
   .btn-outline:hover{border-color:var(--g);color:var(--g);}
 
@@ -115,13 +121,40 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
 
   const supabaseAny = supabase as any
-  const [{ data: rawInvoices }, { data: profile }] = await Promise.all([
+
+  const now = new Date()
+  const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const hour = now.getHours()
+
+  const [
+    { data: recent },
+    { count: unpaidCount },
+    { count: overdueCount },
+    { count: paidMonthCount },
+    { data: profile },
+  ] = await Promise.all([
     supabaseAny
       .from('invoices')
       .select('id, invoice_number, client_name, project, total, status, issue_date, currency')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(200),
+      .limit(5),
+    supabaseAny
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .in('status', ['pending', 'sent']),
+    supabaseAny
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'overdue'),
+    supabaseAny
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'paid')
+      .gte('issue_date', thisMonthStart),
     supabaseAny
       .from('profiles')
       .select('name, firm_name, default_currency')
@@ -129,21 +162,10 @@ export default async function DashboardPage() {
       .single(),
   ])
 
-  const invoices: any[] = rawInvoices || []
   const sym = profile?.default_currency || 'P'
-
-  const now = new Date()
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = (profile?.firm_name || profile?.name || '').split(' ')[0] || ''
   const greetingText = firstName ? `${greeting}, ${firstName}` : 'Welcome back'
-
-  const unpaid  = invoices.filter(i => ['pending', 'sent'].includes(i.status))
-  const overdue = invoices.filter(i => i.status === 'overdue')
-  const paidMonth = invoices.filter(i => i.status === 'paid' && i.issue_date?.startsWith(thisMonth))
-
-  const recent = invoices.slice(0, 20)
 
   return (
     <>
@@ -182,21 +204,21 @@ export default async function DashboardPage() {
           <div className="card">
             <div className="stat-inner">
               <div className="stat-label-sm">Unpaid</div>
-              <div className="stat-val-big" style={{ color: 'var(--warn)' }}>{unpaid.length}</div>
+              <div className="stat-val-big" style={{ color: 'var(--warn)' }}>{unpaidCount ?? 0}</div>
               <div className="stat-sub-sm">invoices awaiting payment</div>
             </div>
           </div>
           <div className="card">
             <div className="stat-inner" style={{ animationDelay: '.05s' }}>
               <div className="stat-label-sm">Overdue</div>
-              <div className="stat-val-big" style={{ color: 'var(--danger)' }}>{overdue.length}</div>
+              <div className="stat-val-big" style={{ color: 'var(--danger)' }}>{overdueCount ?? 0}</div>
               <div className="stat-sub-sm">past due date</div>
             </div>
           </div>
           <div className="card">
             <div className="stat-inner" style={{ animationDelay: '.1s' }}>
               <div className="stat-label-sm">Paid this month</div>
-              <div className="stat-val-big" style={{ color: 'var(--g)' }}>{paidMonth.length}</div>
+              <div className="stat-val-big" style={{ color: 'var(--g)' }}>{paidMonthCount ?? 0}</div>
               <div className="stat-sub-sm">invoices settled</div>
             </div>
           </div>
@@ -211,7 +233,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="card-body">
-            {recent.length === 0 ? (
+            {(recent ?? []).length === 0 ? (
               <div className="empty-state">
                 <div className="empty-illustration">
                   <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#3B82F6" strokeWidth="1.8"><path d="M5 4h14l4 4v16H5V4z"/><path d="M19 4v4h4"/><path d="M9 13h10M9 17h6"/></svg>
@@ -221,7 +243,7 @@ export default async function DashboardPage() {
                 <Link href="/new-invoice" className="empty-cta">Create first invoice</Link>
               </div>
             ) : (
-              recent.map((inv: any, i: number) => {
+              (recent ?? []).map((inv: any, i: number) => {
                 const color = avatarColor(inv.client_name || '', i)
                 const inv_initials = initials(inv.client_name || '')
                 const currSym = inv.currency || sym

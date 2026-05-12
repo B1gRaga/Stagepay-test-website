@@ -26,12 +26,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  let invoice_id: string, to_email: string, custom_body: string | undefined
+  let invoice_id: string, to_email: string, custom_body: string | undefined, paid_stamp: boolean
   try {
     const body = await req.json()
     invoice_id  = body.invoice_id
     to_email    = body.to_email
     custom_body = body.custom_body
+    paid_stamp  = !!body.paid_stamp
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -61,8 +62,14 @@ export async function POST(req: NextRequest) {
     ? `<p style="margin:0 0 8px">Payment is due by <strong>${escapeHtml(invoice.due_date)}</strong>.</p>`
     : ''
 
-  // Use custom_body (reminder text) if provided, otherwise render the standard invoice template
-  const bodyContent = custom_body
+  const paidBodyContent = `<p style="margin:0 0 16px;font-size:16px">Dear ${escapeHtml(invoice.client_name || 'Client')},</p>
+       <p style="margin:0 0 16px">This is to confirm that invoice <strong>${invoiceNum}</strong> for <strong>${total}</strong> has been received and is marked as <strong style="color:#10B981">PAID</strong>.</p>
+       <p style="margin:0 0 16px;color:#555">Please find the paid invoice attached for your records.</p>
+       <p style="margin:0;color:#555">Thank you for your prompt payment.</p>`
+
+  const bodyContent = paid_stamp
+    ? paidBodyContent
+    : custom_body
     ? `<p style="margin:0 0 16px;font-size:16px">Hello,</p>
        <div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(custom_body)}</div>`
     : `<p style="margin:0 0 16px;font-size:16px">Hello,</p>
@@ -99,12 +106,14 @@ export async function POST(req: NextRequest) {
 </html>`
 
   const fromAddress = (process.env.RESEND_FROM_EMAIL || 'invoices@stagepay.co.bw').replace(/\.$/, '')
-  const subject     = custom_body
+  const subject     = paid_stamp
+    ? `Payment Confirmation: Invoice ${invoiceNum}`
+    : custom_body
     ? `Payment reminder: Invoice ${invoiceNum}`
     : `Invoice ${invoiceNum} – ${total}`
 
   try {
-    const pdfBuffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {})
+    const pdfBuffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {}, { showPaidStamp: paid_stamp })
 
     const resend = new Resend(apiKey)
     await resend.emails.send({

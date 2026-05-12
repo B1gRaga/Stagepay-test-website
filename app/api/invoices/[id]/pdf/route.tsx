@@ -4,11 +4,15 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf'
 
 type Params = { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const showPaidStamp = searchParams.get('paid') === 'true'
+  const inline        = searchParams.get('view') === 'true'
 
   const supabaseAny = supabase as any
   const [{ data: invoice }, { data: profile }] = await Promise.all([
@@ -19,11 +23,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   try {
-    const buffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {})
+    const buffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {}, { showPaidStamp })
+    const disposition = inline
+      ? `inline; filename="${invoice.invoice_number}.pdf"`
+      : `attachment; filename="${invoice.invoice_number}.pdf"`
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${invoice.invoice_number}.pdf"`,
+        'Content-Disposition': disposition,
       },
     })
   } catch (err: any) {

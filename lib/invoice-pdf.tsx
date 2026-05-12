@@ -63,10 +63,11 @@ const s = StyleSheet.create({
   footerTxt:   { fontSize: 7.5, color: '#CBD5E1' },
 })
 
-function InvoicePDF({ invoice, items, profile }: {
-  invoice: Record<string, any>
-  items:   Record<string, any>[]
-  profile: Record<string, any>
+function InvoicePDF({ invoice, items, profile, showPaidStamp }: {
+  invoice:       Record<string, any>
+  items:         Record<string, any>[]
+  profile:       Record<string, any>
+  showPaidStamp?: boolean
 }) {
   const sym = invoice.currency || 'P'
   const fmt = (n: number) => `${sym}${Number(n ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
@@ -182,17 +183,32 @@ function InvoicePDF({ invoice, items, profile }: {
           <Text style={s.footerTxt}>{invoice.invoice_number}</Text>
         </View>
 
+        {/* ── PAID watermark stamp ── */}
+        {showPaidStamp && (
+          <>
+            {/* Large diagonal watermark */}
+            <View style={{ position: 'absolute', top: 240, left: 0, right: 0, alignItems: 'center', transform: 'rotate(-35deg)', opacity: 0.08 }}>
+              <Text style={{ fontSize: 120, fontFamily: 'Helvetica-Bold', color: GREEN, letterSpacing: 18 }}>PAID</Text>
+            </View>
+            {/* Corner badge */}
+            <View style={{ position: 'absolute', top: 58, right: 36, borderRadius: 4, backgroundColor: GREEN, padding: '7pt 14pt' }}>
+              <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 4 }}>PAID</Text>
+            </View>
+          </>
+        )}
+
       </Page>
     </Document>
   )
 }
 
 export async function generateInvoicePDF(
-  invoice: Record<string, any>,
-  items:   Record<string, any>[],
-  profile: Record<string, any>
+  invoice:       Record<string, any>,
+  items:         Record<string, any>[],
+  profile:       Record<string, any>,
+  options?:      { showPaidStamp?: boolean }
 ): Promise<Buffer> {
   return renderToBuffer(
-    <InvoicePDF invoice={invoice} items={items} profile={profile} />
+    <InvoicePDF invoice={invoice} items={items} profile={profile} showPaidStamp={options?.showPaidStamp} />
   )
 }
