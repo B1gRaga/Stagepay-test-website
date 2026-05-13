@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LineItem = { desc: string; qty: number; rate: number }
@@ -280,7 +280,9 @@ const CSS = `
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function NewInvoicePage() {
-  const router = useRouter()
+  const router      = useRouter()
+  const searchParams = useSearchParams()
+  const editId       = searchParams.get('edit')
 
   // Data
   const [profile,  setProfile]  = useState<Profile | null>(null)
@@ -324,19 +326,43 @@ export default function NewInvoicePage() {
   const [sendError,      setSendError]      = useState('')
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/profile',  { credentials: 'include' }).then(r => r.json()),
-      fetch('/api/clients',  { credentials: 'include' }).then(r => r.json()),
-    ]).then(([pd, cd]) => {
+    const calls: Promise<any>[] = [
+      fetch('/api/profile', { credentials: 'include' }).then(r => r.json()),
+      fetch('/api/clients', { credentials: 'include' }).then(r => r.json()),
+    ]
+    if (editId) calls.push(fetch(`/api/invoices/${editId}`, { credentials: 'include' }).then(r => r.json()))
+
+    Promise.all(calls).then(([pd, cd, editData]) => {
       const p: Profile = pd.profile
       if (p) {
         setProfile(p)
-        setCurrency(p.default_currency || 'P')
-        setVatRate(Number(p.default_vat_rate) || 14)
+        if (!editId) {
+          setCurrency(p.default_currency || 'P')
+          setVatRate(Number(p.default_vat_rate) || 14)
+        }
       }
       setClients(cd.clients ?? [])
+
+      if (editId && editData?.invoice) {
+        const inv = editData.invoice
+        setClientName(inv.client_name || '')
+        setClientEmail(inv.client_email || '')
+        setClientPhone(inv.client_phone || '')
+        setProject(inv.project || '')
+        setCurrency(inv.currency || p?.default_currency || 'P')
+        setIssueDate(inv.issue_date || today())
+        setDueDate(inv.due_date || addDays(today(), 30))
+        setVatRate(inv.vat_rate ?? 14)
+        setNotes(inv.notes || '')
+        if (inv.deposit_amount > 0) setDepositOn(true)
+        if (inv.invoice_items?.length) {
+          setItems(inv.invoice_items
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .map((it: any) => ({ desc: it.description, qty: it.quantity, rate: it.unit_price })))
+        }
+      }
     })
-  }, [])
+  }, [editId])
 
   // ── Computed totals ──
   const subtotal = useMemo(() => items.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0), [items])
@@ -425,30 +451,44 @@ export default function NewInvoicePage() {
   async function saveInvoice(status: 'draft' | 'sent') {
     setSaving(true)
     try {
-      const res = await fetch('/api/invoices', {
-        method: 'POST', credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          status,
-          client_name:   clientName || 'Unknown Client',
-          client_email:  clientEmail || null,
-          client_phone:  clientPhone || null,
-          project:       project || null,
-          currency,
-          issue_date:    issueDate,
-          due_date:      dueDate || null,
-          vat_rate:      vatRate,
-          deposit_amount: depositAmt,
-          notes:         notes || null,
-          items: items.filter(i => i.desc.trim()).map(i => ({
-            description: i.desc,
-            quantity:    Number(i.qty) || 1,
-            unit_price:  Number(i.rate) || 0,
-          })),
-        }),
-      })
-      const data = await res.json()
+      const payload = {
+        status,
+        client_name:    clientName || 'Unknown Client',
+        client_email:   clientEmail || null,
+        client_phone:   clientPhone || null,
+        project:        project || null,
+        currency,
+        issue_date:     issueDate,
+        due_date:       dueDate || null,
+        vat_rate:       vatRate,
+        deposit_amount: depositAmt,
+        notes:          notes || null,
+        items: items.filter(i => i.desc.trim()).map(i => ({
+          description: i.desc,
+          quantity:    Number(i.qty) || 1,
+          unit_price:  Number(i.rate) || 0,
+        })),
+      }
+
+      const url    = editId ? `/api/invoices/${editId}` : '/api/invoices'
+      const method = editId ? 'PATCH' : 'POST'
+      const res    = await fetch(url, { method, credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+      const data   = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
+
+      // Auto-save client if name provided and not already in clients list
+      const name = clientName.trim()
+      if (name && name !== 'Unknown Client') {
+        const exists = clients.some(c => c.name.toLowerCase() === name.toLowerCase())
+        if (!exists) {
+          fetch('/api/clients', {
+            method: 'POST', credentials: 'include',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ name, email: clientEmail || undefined, phone: clientPhone || undefined }),
+          }).catch(() => {})
+        }
+      }
+
       return data.invoice
     } finally {
       setSaving(false)
@@ -544,7 +584,7 @@ export default function NewInvoicePage() {
     <>
       <style>{CSS}</style>
 
-      <div className="topbar"><div className="page-title">NEW INVOICE</div></div>
+      <div className="topbar"><div className="page-title">{editId ? 'EDIT INVOICE' : 'NEW INVOICE'}</div></div>
 
       <div className="gen-wrap">
         <div className="gen-layout">

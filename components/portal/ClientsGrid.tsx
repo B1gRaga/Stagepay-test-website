@@ -15,7 +15,7 @@ export type Client = {
 
 export type ClientStats = { count: number; total: number; currency: string }
 
-const COLORS = ['#10B981','#3B82F6','#F59E0B','#E8D8C3','#EF4444','#059669']
+const AVATAR_COLOR = '#10B981'
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '??'
@@ -27,8 +27,7 @@ function fmt(n: number, sym: string) {
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&display=swap');
-  :root{
+:root{
     --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
     --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
@@ -172,8 +171,8 @@ export default function ClientsGrid({
           </div>
         ) : (
           <div className="clients-grid">
-            {filtered.map((c, i) => {
-              const color = COLORS[i % COLORS.length]
+            {filtered.map((c) => {
+              const color = AVATAR_COLOR
               const ini   = initials(c.name)
               const stats = statsMap[c.id] ?? { count: 0, total: 0, currency: 'P' }
               const sym   = stats.currency || 'P'

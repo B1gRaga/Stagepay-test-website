@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ThemeToggleBtn from '@/components/portal/ThemeToggleBtn'
 
-const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#E8D8C3', '#EF4444', '#059669']
+const AVATAR_COLOR = '#10B981'
 
-function avatarColor(name: string, index: number): string {
-  return COLORS[index % COLORS.length]
+function avatarColor(_name: string, _index: number): string {
+  return AVATAR_COLOR
 }
 
 function initials(name: string): string {

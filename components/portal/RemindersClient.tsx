@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export type Invoice = {
   id: string
@@ -93,8 +94,7 @@ ${firmName}`
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&display=swap');
-  :root{
+:root{
     --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
     --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
@@ -249,6 +249,8 @@ export default function RemindersClient({
   initialReminders: Reminder[]
   firmName:         string
 }) {
+  const router = useRouter()
+  const [invoices,  setInvoices]  = useState<Invoice[]>(initialInvoices)
   const [reminders, setReminders] = useState<Reminder[]>(initialReminders)
   const [autoOn,    setAutoOn]    = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {}
@@ -264,10 +266,12 @@ export default function RemindersClient({
   )
   const [waOn,      setWaOn]      = useState(false)
   const [compose,   setCompose]   = useState<ComposeState | null>(null)
+  const [contactModal, setContactModal] = useState<{ inv: Invoice; email: string; phone: string; pendingInvId: string } | null>(null)
+  const [contactSaving, setContactSaving] = useState(false)
 
   const pending = useMemo(
-    () => initialInvoices.filter(i => ACTIVE_STATUSES.includes(i.status)),
-    [initialInvoices]
+    () => invoices.filter(i => ACTIVE_STATUSES.includes(i.status)),
+    [invoices]
   )
 
   const remStats = useMemo(() => {
@@ -332,6 +336,30 @@ export default function RemindersClient({
     }
   }
 
+  async function saveContact() {
+    if (!contactModal) return
+    setContactSaving(true)
+    try {
+      const res = await fetch(`/api/invoices/${contactModal.inv.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_email: contactModal.email || null,
+          client_phone: contactModal.phone || null,
+        }),
+      })
+      if (!res.ok) return
+      const updated = { ...contactModal.inv, client_email: contactModal.email || null, client_phone: contactModal.phone || null }
+      setInvoices(prev => prev.map(i => i.id === updated.id ? updated : i))
+      setContactModal(null)
+      // Retry auto-toggle with the updated invoice
+      const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent
+      await toggleAuto(updated, fakeEvent)
+    } finally {
+      setContactSaving(false)
+    }
+  }
+
   function copyWa() {
     if (!compose) return
     navigator.clipboard.writeText(compose.waBody).then(() => {
@@ -357,8 +385,7 @@ export default function RemindersClient({
       if (inv.client_email) channels.push('email')
       if (waOn && inv.client_phone) channels.push('whatsapp')
       if (channels.length === 0) {
-        setRemError('No email or phone on this invoice — add contact details first.')
-        setTimeout(() => setRemError(null), 3500)
+        setContactModal({ inv, email: inv.client_email || '', phone: inv.client_phone || '', pendingInvId: inv.id })
         setToggling(p => ({ ...p, [inv.id]: false }))
         return
       }
@@ -512,6 +539,48 @@ export default function RemindersClient({
 
         </div>
       </div>
+
+      {/* Add contact details modal */}
+      {contactModal && (
+        <div className="modal-backdrop" onClick={() => !contactSaving && setContactModal(null)}>
+          <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Add contact details</div>
+                <div className="modal-sub">{contactModal.inv.client_name} · {contactModal.inv.invoice_number}</div>
+              </div>
+              <button className="modal-close" onClick={() => setContactModal(null)}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
+                Auto-reminders need at least an email or phone number. Add them here and they will be saved to the invoice.
+              </div>
+              <div className="modal-field">
+                <div className="modal-label">Email</div>
+                <input className="modal-input" type="email" placeholder="client@example.com"
+                  value={contactModal.email}
+                  onChange={e => setContactModal(p => p ? { ...p, email: e.target.value } : null)} />
+              </div>
+              <div className="modal-field">
+                <div className="modal-label">Phone (with country code)</div>
+                <input className="modal-input" type="tel" placeholder="+267 71 234 567"
+                  value={contactModal.phone}
+                  onChange={e => setContactModal(p => p ? { ...p, phone: e.target.value } : null)} />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-btn modal-btn-secondary" onClick={() => setContactModal(null)}>Cancel</button>
+              <button
+                className="modal-btn modal-btn-primary"
+                onClick={saveContact}
+                disabled={contactSaving || (!contactModal.email && !contactModal.phone)}
+              >{contactSaving ? 'Saving…' : 'Save & enable auto-reminders'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Compose modal */}
       {compose && (

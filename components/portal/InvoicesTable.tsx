@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export type Invoice = {
   id: string
@@ -29,8 +30,7 @@ function fmtDate(d: string | null) {
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&display=swap');
-  :root{
+:root{
     --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
     --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
@@ -110,6 +110,10 @@ const CSS = `
   .act-print:hover{border-color:var(--info);color:var(--info);}
   .act-forward{background:var(--g-dim);border:1px solid rgba(16,185,129,.3) !important;color:var(--g);}
   .act-forward:hover{background:rgba(16,185,129,.15);}
+  .act-delete{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2) !important;color:var(--danger);transition:all .12s;}
+  .act-delete:hover{background:rgba(239,68,68,.15);}
+  .act-edit{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2) !important;color:var(--info);transition:all .12s;}
+  .act-edit:hover{background:rgba(59,130,246,.15);}
 
   .empty-state{text-align:center;padding:52px 20px;}
   .empty-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
@@ -165,13 +169,17 @@ const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | nul
 type ForwardModalState = { inv: Invoice; channel: 'email' | 'whatsapp'; email: string; phone: string; sending: boolean; sent: boolean; err: string }
 
 export default function InvoicesTable({ initialInvoices }: { initialInvoices: Invoice[] }) {
-  const [filter, setFilter]     = useState<string>('all')
-  const [search, setSearch]     = useState('')
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [fwdModal, setFwdModal] = useState<ForwardModalState | null>(null)
+  const router = useRouter()
+  const [invoices, setInvoices]   = useState<Invoice[]>(initialInvoices)
+  const [filter, setFilter]       = useState<string>('all')
+  const [search, setSearch]       = useState('')
+  const [selected, setSelected]   = useState<Set<string>>(new Set())
+  const [fwdModal, setFwdModal]   = useState<ForwardModalState | null>(null)
+  const [deleteId, setDeleteId]   = useState<string | null>(null)
+  const [deleting, setDeleting]   = useState(false)
 
   const filtered = useMemo(() => {
-    let list = filter === 'all' ? initialInvoices : initialInvoices.filter(i => i.status === filter)
+    let list = filter === 'all' ? invoices : invoices.filter(i => i.status === filter)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(i =>
@@ -181,7 +189,22 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
       )
     }
     return list
-  }, [initialInvoices, filter, search])
+  }, [invoices, filter, search])
+
+  async function confirmDelete() {
+    if (!deleteId) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/invoices/${deleteId}`, { method: 'DELETE', credentials: 'include' })
+      if (res.ok) {
+        setInvoices(prev => prev.filter(i => i.id !== deleteId))
+        setSelected(prev => { const n = new Set(prev); n.delete(deleteId); return n })
+      }
+    } finally {
+      setDeleting(false)
+      setDeleteId(null)
+    }
+  }
 
   function toggleAll(checked: boolean) {
     setSelected(checked ? new Set(filtered.map(i => i.id)) : new Set())
@@ -324,7 +347,7 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 6V2h8v4M4 12H2V7h12v5h-2M4 10h8v4H4z"/></svg>
                       </button>
                       {/* Status-specific actions */}
-                      {inv.status === 'draft'   && <Link href="/new-invoice" className="act-btn act-send">Send</Link>}
+                      {inv.status === 'draft'   && <Link href={`/new-invoice?edit=${inv.id}`} className="act-btn act-edit">Edit</Link>}
                       {inv.status === 'pending' && <Link href="/reminders" className="act-btn act-remind" style={{ border: '1px solid var(--warn)' }}>Remind</Link>}
                       {inv.status === 'overdue' && <Link href="/reminders" className="act-btn act-chase" style={{ border: '1px solid rgba(239,68,68,.3)' }}>Chase</Link>}
                       {inv.status === 'paid'    && (
@@ -333,6 +356,10 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                           Forward
                         </button>
                       )}
+                      {/* Delete */}
+                      <button className="act-btn act-delete" onClick={() => setDeleteId(inv.id)} title="Delete invoice">
+                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
+                      </button>
                     </span>
                   </div>
                 </div>
@@ -341,6 +368,32 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
           )}
         </div>
       </div>
+
+      {/* Delete confirm modal */}
+      {deleteId && (
+        <div className="modal-backdrop" onClick={() => !deleting && setDeleteId(null)}>
+          <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Delete invoice?</div>
+                <div className="modal-sub">This cannot be undone.</div>
+              </div>
+              <button className="modal-close" onClick={() => setDeleteId(null)}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
+              </button>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-btn modal-btn-secondary" onClick={() => setDeleteId(null)}>Cancel</button>
+              <button
+                className="modal-btn"
+                style={{ background: 'rgba(239,68,68,.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,.3)' }}
+                onClick={confirmDelete}
+                disabled={deleting}
+              >{deleting ? 'Deleting…' : 'Yes, delete'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Forward as Paid modal */}
       {fwdModal && (
