@@ -209,12 +209,10 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
 
-      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-      if (aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
-        window.location.href = '/auth/mfa'
-      } else {
-        window.location.href = '/dashboard'
-      }
+      // Check for verified TOTP factors — more reliable than AAL level check
+      const { data: factors } = await supabase.auth.mfa.listFactors()
+      const hasMFA = factors?.totp?.some((f: any) => f.status === 'verified') ?? false
+      window.location.href = hasMFA ? '/auth/mfa' : '/dashboard'
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
