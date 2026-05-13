@@ -6,6 +6,7 @@ const ALLOWED = [
   'name', 'firm_name', 'phone', 'address', 'city', 'country',
   'vat_number', 'default_currency', 'tax_label', 'default_vat_rate',
   'invoice_theme', 'brand_color_primary', 'brand_color_header',
+  'whatsapp_reminders_enabled',
 ] as const
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
@@ -18,7 +19,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header')
+    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled')
     .eq('id', user.id)
     .single()
 
@@ -54,6 +55,8 @@ export async function PATCH(req: NextRequest) {
       const v = String(body[key])
       if (v !== '' && !HEX_COLOR_RE.test(v)) return NextResponse.json({ error: `${key} must be a hex colour like #10B981` }, { status: 400 })
       updates[key] = v === '' ? null : v
+    } else if (key === 'whatsapp_reminders_enabled') {
+      updates[key] = Boolean(body[key])
     } else {
       updates[key] = body[key] === null ? null : stripTags(body[key])
     }

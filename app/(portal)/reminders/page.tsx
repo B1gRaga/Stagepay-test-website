@@ -20,7 +20,7 @@ export default async function RemindersPage() {
       .eq('user_id', user.id),
     (supabase as any)
       .from('profiles')
-      .select('firm_name, name')
+      .select('firm_name, name, whatsapp_reminders_enabled')
       .eq('id', user.id)
       .single(),
   ])
@@ -32,6 +32,7 @@ export default async function RemindersPage() {
       initialInvoices={invoices ?? []}
       initialReminders={reminders ?? []}
       firmName={firmName}
+      initialWaOn={profile?.whatsapp_reminders_enabled ?? false}
     />
   )
 }

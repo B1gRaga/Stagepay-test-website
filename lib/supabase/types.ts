@@ -25,6 +25,7 @@ export interface Database {
           invoice_theme: string | null
           brand_color_primary: string | null
           brand_color_header: string | null
+          whatsapp_reminders_enabled: boolean
           subscription_expires_at: string | null
           dpo_transaction_ref: string | null
           created_at: string

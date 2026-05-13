@@ -244,10 +244,12 @@ export default function RemindersClient({
   initialInvoices,
   initialReminders,
   firmName,
+  initialWaOn = false,
 }: {
   initialInvoices:  Invoice[]
   initialReminders: Reminder[]
   firmName:         string
+  initialWaOn?:     boolean
 }) {
   const router = useRouter()
   const [invoices,  setInvoices]  = useState<Invoice[]>(initialInvoices)
@@ -264,7 +266,7 @@ export default function RemindersClient({
   const [schedule,  setSchedule]  = useState<Record<string, boolean>>(
     Object.fromEntries(SCHEDULE_RULES.map(r => [r.day, r.defaultOn]))
   )
-  const [waOn,      setWaOn]      = useState(false)
+  const [waOn,      setWaOn]      = useState(initialWaOn)
   const [compose,   setCompose]   = useState<ComposeState | null>(null)
   const [contactModal, setContactModal] = useState<{ inv: Invoice; email: string; phone: string; pendingInvId: string } | null>(null)
   const [contactSaving, setContactSaving] = useState(false)
@@ -533,7 +535,15 @@ export default function RemindersClient({
                 WhatsApp reminders
                 <span className="wa-badge">Channel</span>
               </div>
-              <div className={`toggle-sw${waOn ? ' on' : ''}`} onClick={() => setWaOn(p => !p)}/>
+              <div className={`toggle-sw${waOn ? ' on' : ''}`} onClick={() => {
+                const next = !waOn
+                setWaOn(next)
+                fetch('/api/profile', {
+                  method: 'PATCH', credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ whatsapp_reminders_enabled: next }),
+                }).catch(() => {})
+              }}/>
             </div>
           </div>
 
