@@ -1,187 +1,374 @@
-import { renderToBuffer, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { renderToBuffer, Document, Page, Text, View, Image } from '@react-pdf/renderer'
 import { resolveTheme, type InvoiceTheme } from './invoice-themes'
 
-function makeStyles(t: InvoiceTheme) {
-  const L = t.lineColor
-  return StyleSheet.create({
-    page:         { fontFamily: 'Helvetica', fontSize: 10, padding: 40, color: t.bodyText, backgroundColor: t.pageBg },
+// ─── constants ────────────────────────────────────────────────────────────────
+const PAD     = 36           // page padding (pt)
+const EMERALD = '#10B981'
+const PALE_EM = '#E8F8F2'
+const MUTED   = '#94A3B8'
+const NAVY    = '#0F172A'
+const WHITE   = '#FFFFFF'
 
-    header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', backgroundColor: t.headerBg, padding: '16pt 20pt', marginHorizontal: -40, marginTop: -40, marginBottom: 20 },
-    logo:         { width: 60, height: 20, objectFit: 'contain', marginBottom: 4 },
-    firmName:     { fontSize: 16, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor, letterSpacing: 1 },
-    firmDetail:   { fontSize: 8,  color: t.headerSubColor, marginTop: 2 },
-    invTitle:     { fontSize: 24, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor, textAlign: 'right', letterSpacing: 2 },
-    invMeta:      { fontSize: 9,  color: t.headerSubColor, textAlign: 'right', marginTop: 2 },
-    invDue:       { fontSize: 9,  color: '#EF4444', textAlign: 'right', marginTop: 2 },
-
-    boxes:        { flexDirection: 'row', marginBottom: 16 },
-    box:          { flex: 1, backgroundColor: t.boxBg, padding: '10pt 12pt', marginRight: 8, borderRadius: 3 },
-    boxLast:      { flex: 1, backgroundColor: t.boxBg, padding: '10pt 12pt', borderRadius: 3 },
-    boxLabel:     { fontSize: 7, fontFamily: 'Helvetica-Bold', color: t.accentColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 5 },
-    boxName:      { fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.bodyText, marginBottom: 3 },
-    boxDetail:    { fontSize: 8,  color: '#64748B', marginTop: 2 },
-
-    projectRow:   { flexDirection: 'row', marginBottom: 14 },
-    projectLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#64748B', letterSpacing: 1, textTransform: 'uppercase', marginRight: 6, marginTop: 1 },
-    projectVal:   { fontSize: 9, color: t.bodyText },
-
-    tableHead:    { flexDirection: 'row', backgroundColor: t.tableHeadBg, padding: '6pt 8pt' },
-    tableRow:     { flexDirection: 'row', padding: '6pt 8pt', borderBottom: `1pt solid ${L}` },
-    tableRowAlt:  { flexDirection: 'row', padding: '6pt 8pt', borderBottom: `1pt solid ${L}`, backgroundColor: t.tableRowAltBg },
-    th:           { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, letterSpacing: 0.5 },
-    td:           { fontSize: 9, color: t.bodyText },
-    tdMuted:      { fontSize: 9, color: '#64748B' },
-    col1:         { flex: 4 },
-    col2:         { flex: 1,   textAlign: 'right' },
-    col3:         { flex: 1.2, textAlign: 'right' },
-    col4:         { flex: 1.4, textAlign: 'right' },
-
-    totalsWrap:   { alignSelf: 'flex-end', width: '42%', marginTop: 10 },
-    totalRow:     { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-    totalLbl:     { fontSize: 9, color: '#64748B' },
-    totalVal:     { fontSize: 9, color: t.bodyText },
-    grandRow:     { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: t.grandRowBg, padding: '8pt 10pt', borderRadius: 3, marginTop: 6 },
-    grandLbl:     { fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.grandRowText },
-    grandVal:     { fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.grandRowText },
-
-    notesLbl:     { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#64748B', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3, marginTop: 16 },
-    notesVal:     { fontSize: 9, color: '#64748B', lineHeight: 1.5 },
-
-    footer:       { position: 'absolute', bottom: 28, left: 40, right: 40, borderTop: `1pt solid ${L}`, paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between' },
-    footerTxt:    { fontSize: 7.5, color: t.footerTextColor },
-  })
+// ─── Logo placeholder ─────────────────────────────────────────────────────────
+// Dark circle, emerald border, inner ring, 4 ascending bars
+function LogoMark() {
+  const D = 38
+  const bars = [
+    { h: 8,  op: 1.00 },
+    { h: 11, op: 0.82 },
+    { h: 14, op: 0.65 },
+    { h: 17, op: 0.48 },
+  ]
+  return (
+    <View style={{
+      width: D, height: D, borderRadius: D / 2,
+      backgroundColor: NAVY,
+      borderWidth: 1.8, borderColor: EMERALD, borderStyle: 'solid',
+      flexShrink: 0, overflow: 'hidden',
+    }}>
+      {/* Decorative inner ring at 84% radius */}
+      <View style={{
+        position: 'absolute',
+        top: 3, left: 3,
+        width: D - 6, height: D - 6,
+        borderRadius: (D - 6) / 2,
+        borderWidth: 0.6, borderColor: EMERALD, borderStyle: 'solid',
+        opacity: 0.3,
+      }} />
+      {/* 4 ascending bars, bottom-anchored */}
+      <View style={{
+        position: 'absolute', bottom: 7, left: 0, right: 0,
+        flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end',
+        gap: 2,
+      }}>
+        {bars.map((b, i) => (
+          <View key={i} style={{
+            width: 4, height: b.h,
+            backgroundColor: EMERALD, opacity: b.op,
+            borderTopLeftRadius: 2, borderTopRightRadius: 2,
+          }} />
+        ))}
+      </View>
+    </View>
+  )
 }
 
-function InvoicePDF({ invoice, items, profile, showPaidStamp, theme }: {
+// ─── Meta pill (issue date / due date / terms / status) ───────────────────────
+function MetaCard({ label, value, valueColor, t }: {
+  label:       string
+  value:       string
+  valueColor?: string
+  t:           InvoiceTheme
+}) {
+  const hasBorder = !!t.metaCardBorder
+  return (
+    <View style={{
+      flex: 1, minHeight: 22, borderRadius: 5,
+      backgroundColor: t.metaCardBg,
+      ...(hasBorder ? { borderWidth: 0.8, borderColor: t.metaCardBorder, borderStyle: 'solid' } : {}),
+      padding: '3pt 8pt',
+      justifyContent: 'space-between',
+    }}>
+      <Text style={{ fontSize: 6, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+        {label}
+      </Text>
+      <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: valueColor ?? t.bodyText }}>
+        {value}
+      </Text>
+    </View>
+  )
+}
+
+// ─── Address pill (FROM / BILL TO) ────────────────────────────────────────────
+function AddressCard({ label, name, line1, line2, t }: {
+  label:  string
+  name:   string
+  line1?: string
+  line2?: string
+  t:      InvoiceTheme
+}) {
+  const hasBorder = !!t.metaCardBorder
+  return (
+    <View style={{
+      flex: 1, minHeight: 24, borderRadius: 5,
+      backgroundColor: t.metaCardBg,
+      ...(hasBorder ? { borderWidth: 0.8, borderColor: t.metaCardBorder, borderStyle: 'solid' } : {}),
+      padding: '4pt 10pt',
+    }}>
+      <Text style={{
+        fontSize: 6, fontFamily: 'Helvetica-Bold', color: EMERALD,
+        textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3,
+      }}>
+        {label}
+      </Text>
+      <Text style={{ fontSize: 9.5, fontFamily: 'Helvetica-Bold', color: t.bodyText }}>
+        {name}
+      </Text>
+      {line1 ? <Text style={{ fontSize: 7.5, color: MUTED, marginTop: 2 }}>{line1}</Text> : null}
+      {line2 ? <Text style={{ fontSize: 7.5, color: MUTED, marginTop: 1 }}>{line2}</Text> : null}
+    </View>
+  )
+}
+
+// ─── Main invoice component ───────────────────────────────────────────────────
+function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
   invoice:        Record<string, any>
   items:          Record<string, any>[]
   profile:        Record<string, any>
   showPaidStamp?: boolean
   theme:          InvoiceTheme
 }) {
-  const s   = makeStyles(theme)
   const sym = invoice.currency || 'P'
   const fmt = (n: number) => `${sym}${Number(n ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
 
+  // Firm info
   const firmName    = profile.firm_name || profile.name || 'Your Company'
   const firmAddress = [profile.address, profile.city, profile.country].filter(Boolean).join(', ')
   const firmContact = [profile.email, profile.phone].filter(Boolean).join('  ·  ')
-  const firmVat     = profile.vat_number
+  const subLabel    = profile.vat_number ? `VAT No: ${profile.vat_number}` : 'Professional Services'
+
+  // Meta
+  const terms       = invoice.due_days != null ? `Net ${invoice.due_days}` : 'Due on Receipt'
+  const statusLabel = invoice.status === 'paid' ? 'PAID' : invoice.status === 'overdue' ? 'OVERDUE' : 'UNPAID'
+  const statusColor = invoice.status === 'paid' ? EMERALD : invoice.status === 'overdue' ? '#F0B376' : '#F35480'
+
+  // Deposit
+  const depositAmt  = Number(invoice.deposit_amount ?? 0)
+  const hasDeposit  = depositAmt > 0
+  const depositPct  = Number(invoice.subtotal) > 0
+    ? Math.round((depositAmt / Number(invoice.subtotal)) * 100)
+    : 0
 
   return (
     <Document>
-      <Page size="A4" style={s.page}>
-
-        {/* ── Header bar ── */}
-        <View style={s.header}>
+      <Page
+        size="A4"
+        style={{
+          fontFamily: 'Helvetica',
+          fontSize: 10,
+          padding: PAD,
+          paddingBottom: PAD + 32,   // room for absolute footer
+          color: t.bodyText,
+          backgroundColor: t.pageBg,
+        }}
+      >
+        {/* ── HEADER ─────────────────────────────────────────────────────────── */}
+        <View style={{
+          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          backgroundColor: t.headerBg,
+          marginHorizontal: -PAD, marginTop: -PAD, marginBottom: 12,
+          padding: `12pt ${PAD}pt`,
+          borderBottomLeftRadius: 10, borderBottomRightRadius: 10,
+        }}>
+          {/* Left: logo + firm info */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            {profile.logo_url ? (
-              <Image src={profile.logo_url} style={s.logo} />
-            ) : null}
+            {profile.logo_url
+              ? <Image src={profile.logo_url} style={{ width: 38, height: 38, borderRadius: 19, objectFit: 'contain', flexShrink: 0 }} />
+              : <LogoMark />
+            }
             <View>
-              <Text style={s.firmName}>{firmName}</Text>
-              {firmAddress ? <Text style={s.firmDetail}>{firmAddress}</Text> : null}
-              {firmContact ? <Text style={s.firmDetail}>{firmContact}</Text> : null}
-              {firmVat     ? <Text style={s.firmDetail}>VAT: {firmVat}</Text> : null}
+              <Text style={{ fontSize: 17, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor }}>
+                {firmName}
+              </Text>
+              <Text style={{ fontSize: 8, color: EMERALD, marginTop: 2 }}>{subLabel}</Text>
+              {/* Thin emerald rule */}
+              <View style={{ width: 30, height: 1, backgroundColor: EMERALD, marginTop: 3, marginBottom: 3 }} />
+              {firmAddress
+                ? <Text style={{ fontSize: 6.5, color: t.headerSubColor }}>{firmAddress}</Text>
+                : null}
+              {firmContact
+                ? <Text style={{ fontSize: 6.5, color: t.headerSubColor, marginTop: 1 }}>{firmContact}</Text>
+                : null}
             </View>
           </View>
-          <View>
-            <Text style={s.invTitle}>INVOICE</Text>
-            <Text style={s.invMeta}>{invoice.invoice_number}</Text>
-            <Text style={s.invMeta}>Issued: {invoice.issue_date}</Text>
-            {invoice.due_date
-              ? <Text style={s.invDue}>Due: {invoice.due_date}</Text>
-              : null}
+
+          {/* Right: INVOICE + number */}
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{
+              fontSize: 36, fontFamily: 'Helvetica-Bold',
+              color: t.invoiceLabelColor, letterSpacing: 2,
+            }}>
+              INVOICE
+            </Text>
+            <Text style={{ fontSize: 9, color: t.headerSubColor, marginTop: 2 }}>
+              {invoice.invoice_number}
+            </Text>
           </View>
         </View>
 
-        {/* ── FROM / BILL TO ── */}
-        <View style={s.boxes}>
-          <View style={s.box}>
-            <Text style={s.boxLabel}>From</Text>
-            <Text style={s.boxName}>{firmName}</Text>
-            {firmAddress ? <Text style={s.boxDetail}>{firmAddress}</Text> : null}
-            {firmContact ? <Text style={s.boxDetail}>{firmContact}</Text> : null}
-            {firmVat     ? <Text style={s.boxDetail}>VAT: {firmVat}</Text> : null}
-          </View>
-          <View style={s.boxLast}>
-            <Text style={s.boxLabel}>Bill To</Text>
-            <Text style={s.boxName}>{invoice.client_name}</Text>
-            {invoice.client_address ? <Text style={s.boxDetail}>{invoice.client_address}</Text> : null}
-            {invoice.client_email   ? <Text style={s.boxDetail}>{invoice.client_email}</Text>   : null}
-            {invoice.client_phone   ? <Text style={s.boxDetail}>{invoice.client_phone}</Text>   : null}
-            {invoice.client_vat     ? <Text style={s.boxDetail}>VAT: {invoice.client_vat}</Text>: null}
-          </View>
+        {/* ── META ROW ───────────────────────────────────────────────────────── */}
+        <View style={{ flexDirection: 'row', gap: 5, marginBottom: 8 }}>
+          <MetaCard label="Issue Date"    value={invoice.issue_date  ?? '—'}          t={t} />
+          <MetaCard label="Due Date"      value={invoice.due_date    ?? 'On Receipt'} t={t} />
+          <MetaCard label="Payment Terms" value={terms}                               t={t} />
+          <MetaCard label="Status"        value={statusLabel} valueColor={statusColor} t={t} />
         </View>
 
-        {/* ── Project ── */}
-        {invoice.project ? (
-          <View style={s.projectRow}>
-            <Text style={s.projectLabel}>Project:</Text>
-            <Text style={s.projectVal}>{invoice.project}</Text>
-          </View>
-        ) : null}
-
-        {/* ── Line items table ── */}
-        <View style={s.tableHead}>
-          <Text style={{ ...s.th, ...s.col1 }}>Description</Text>
-          <Text style={{ ...s.th, ...s.col2 }}>Qty</Text>
-          <Text style={{ ...s.th, ...s.col3 }}>Rate</Text>
-          <Text style={{ ...s.th, ...s.col4 }}>Amount</Text>
+        {/* ── FROM / BILL TO ─────────────────────────────────────────────────── */}
+        <View style={{ flexDirection: 'row', gap: 5, marginBottom: 10 }}>
+          <AddressCard
+            label="From"
+            name={firmName}
+            line1={firmAddress || undefined}
+            line2={firmContact || undefined}
+            t={t}
+          />
+          <AddressCard
+            label="Bill To"
+            name={invoice.client_name}
+            line1={invoice.client_email || invoice.client_address || undefined}
+            line2={invoice.project      || invoice.client_phone   || undefined}
+            t={t}
+          />
         </View>
+
+        {/* ── TABLE HEADER ───────────────────────────────────────────────────── */}
+        <View style={{
+          flexDirection: 'row',
+          backgroundColor: t.tableHeadBg,
+          borderRadius: 4,
+          padding: '5pt 8pt',
+          marginBottom: 2,
+        }}>
+          <Text style={{ flex: 4,   fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, textTransform: 'uppercase', letterSpacing: 0.5 }}>Description</Text>
+          <Text style={{ flex: 1,   fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, textAlign: 'center',  letterSpacing: 0.5 }}>Qty</Text>
+          <Text style={{ flex: 1.2, fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, textAlign: 'center',  letterSpacing: 0.5 }}>Rate</Text>
+          <Text style={{ flex: 1.4, fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, textAlign: 'right',   letterSpacing: 0.5 }}>Amount</Text>
+        </View>
+
+        {/* ── TABLE ROWS ─────────────────────────────────────────────────────── */}
         {items.map((item: any, i: number) => (
-          <View key={i} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
-            <Text style={{ ...s.td,     ...s.col1 }}>{item.description}</Text>
-            <Text style={{ ...s.tdMuted,...s.col2 }}>{item.quantity}</Text>
-            <Text style={{ ...s.tdMuted,...s.col3 }}>{fmt(item.unit_price)}</Text>
-            <Text style={{ ...s.td,     ...s.col4 }}>{fmt(item.amount)}</Text>
+          <View key={i} style={{
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: i % 2 === 0 ? t.tableRowAltBg : 'transparent',
+            borderRadius: 3,
+            paddingVertical: 3, paddingHorizontal: 8,
+            marginBottom: 1,
+          }}>
+            <Text style={{ flex: 4,   fontSize: 8.5, color: t.bodyText }}>
+              {item.description}
+            </Text>
+            <Text style={{ flex: 1,   fontSize: 8.5, color: MUTED, textAlign: 'center' }}>
+              {item.quantity}
+            </Text>
+            <Text style={{ flex: 1.2, fontSize: 8.5, color: MUTED, textAlign: 'center' }}>
+              {fmt(item.unit_price)}
+            </Text>
+            <Text style={{ flex: 1.4, fontSize: 8.5, color: t.bodyText, fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>
+              {fmt(item.amount)}
+            </Text>
           </View>
         ))}
 
-        {/* ── Totals ── */}
-        <View style={s.totalsWrap}>
-          <View style={s.totalRow}>
-            <Text style={s.totalLbl}>Subtotal</Text>
-            <Text style={s.totalVal}>{fmt(invoice.subtotal)}</Text>
+        {/* ── SUBTOTALS ──────────────────────────────────────────────────────── */}
+        <View style={{ alignSelf: 'flex-end', width: '56%', marginTop: 8 }}>
+          {/* Thin rule */}
+          <View style={{ height: 1, backgroundColor: t.lineColor, marginBottom: 6 }} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 }}>
+            <Text style={{ fontSize: 8.5, color: MUTED }}>Subtotal</Text>
+            <Text style={{ fontSize: 8.5, color: t.bodyText }}>{fmt(invoice.subtotal)}</Text>
           </View>
-          <View style={s.totalRow}>
-            <Text style={s.totalLbl}>VAT ({invoice.vat_rate}%)</Text>
-            <Text style={s.totalVal}>{fmt(invoice.vat_amount)}</Text>
-          </View>
-          {invoice.deposit_amount > 0 ? (
-            <View style={s.totalRow}>
-              <Text style={{ ...s.totalLbl, color: '#F59E0B' }}>Deposit paid</Text>
-              <Text style={{ ...s.totalVal, color: '#F59E0B' }}>−{fmt(invoice.deposit_amount)}</Text>
-            </View>
-          ) : null}
-          <View style={s.grandRow}>
-            <Text style={s.grandLbl}>Balance Due</Text>
-            <Text style={s.grandVal}>{fmt(invoice.total)}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 8.5, color: MUTED }}>VAT ({invoice.vat_rate}%)</Text>
+            <Text style={{ fontSize: 8.5, color: t.bodyText }}>{fmt(invoice.vat_amount)}</Text>
           </View>
         </View>
 
-        {/* ── Notes ── */}
+        {/* ── TOTAL DUE PILL ─────────────────────────────────────────────────── */}
+        <View style={{
+          alignSelf: 'flex-end', width: '56%',
+          height: 16, borderRadius: 7,
+          backgroundColor: t.grandRowBg,
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          paddingHorizontal: 10,
+          marginTop: 16,
+        }}>
+          <Text style={{ fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: t.grandRowText }}>
+            TOTAL DUE
+          </Text>
+          <Text style={{ fontSize: 13, fontFamily: 'Helvetica-Bold', color: t.grandRowText }}>
+            {fmt(invoice.total)}
+          </Text>
+        </View>
+
+        {/* ── DEPOSIT REQUIRED PILL ──────────────────────────────────────────── */}
+        {hasDeposit && (
+          <View style={{
+            alignSelf: 'flex-end', width: '56%',
+            minHeight: 20, borderRadius: 7,
+            backgroundColor: PALE_EM,
+            borderWidth: 1, borderColor: EMERALD, borderStyle: 'solid',
+            paddingHorizontal: 10, paddingVertical: 4,
+            marginTop: 6,
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: EMERALD }}>
+                DEPOSIT REQUIRED ({depositPct}%)
+              </Text>
+              <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.bodyText }}>
+                {fmt(depositAmt)}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 6.5, color: MUTED, marginTop: 2 }}>
+              Due upon signing / commencement
+            </Text>
+          </View>
+        )}
+
+        {/* ── TERMS & CONDITIONS ─────────────────────────────────────────────── */}
         {invoice.notes ? (
-          <View>
-            <Text style={s.notesLbl}>Notes</Text>
-            <Text style={s.notesVal}>{invoice.notes}</Text>
+          <View style={{ marginTop: 12 }}>
+            <Text style={{
+              fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.bodyText,
+              textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4,
+            }}>
+              Terms &amp; Conditions
+            </Text>
+            <Text style={{ fontSize: 6.5, color: MUTED, lineHeight: 1.6 }}>
+              {invoice.notes}
+            </Text>
           </View>
         ) : null}
 
-        {/* ── Footer ── */}
-        <View style={s.footer}>
-          <Text style={s.footerTxt}>Generated by StagePay</Text>
-          <Text style={s.footerTxt}>{invoice.invoice_number}</Text>
+        {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
+        <View style={{
+          position: 'absolute', bottom: -PAD, left: -PAD, right: -PAD,
+          backgroundColor: t.footerBg,
+          borderTopLeftRadius: 10, borderTopRightRadius: 10,
+          padding: `8pt ${PAD}pt`,
+          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <View>
+            <Text style={{ fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: t.footerBrandColor }}>
+              STAGEPAY
+            </Text>
+            <Text style={{ fontSize: 5, color: t.footerTextColor, marginTop: 1 }}>
+              Generated by StagePay · Professional Invoicing for Botswana
+            </Text>
+          </View>
+          <Text style={{ fontSize: 6, color: t.footerTextColor, textAlign: 'right' }}>
+            Page 1 of 1 · {invoice.invoice_number}
+          </Text>
         </View>
 
-        {/* ── PAID watermark ── */}
+        {/* ── PAID STAMP ─────────────────────────────────────────────────────── */}
         {showPaidStamp && (
           <>
-            <View style={{ position: 'absolute', top: 240, left: 0, right: 0, alignItems: 'center', transform: 'rotate(-35deg)', opacity: 0.08 }}>
-              <Text style={{ fontSize: 120, fontFamily: 'Helvetica-Bold', color: theme.accentColor, letterSpacing: 18 }}>PAID</Text>
+            <View style={{
+              position: 'absolute', top: 240, left: 0, right: 0,
+              alignItems: 'center', transform: 'rotate(-35deg)', opacity: 0.08,
+            }}>
+              <Text style={{ fontSize: 120, fontFamily: 'Helvetica-Bold', color: t.accentColor, letterSpacing: 18 }}>
+                PAID
+              </Text>
             </View>
-            <View style={{ position: 'absolute', top: 58, right: 36, borderRadius: 4, backgroundColor: theme.accentColor, padding: '7pt 14pt' }}>
-              <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: theme.grandRowText, letterSpacing: 4 }}>PAID</Text>
+            <View style={{
+              position: 'absolute', top: 58, right: 36,
+              borderRadius: 4, backgroundColor: t.accentColor, padding: '7pt 14pt',
+            }}>
+              <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: t.grandRowText, letterSpacing: 4 }}>
+                PAID
+              </Text>
             </View>
           </>
         )}
@@ -191,11 +378,12 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme }: {
   )
 }
 
+// ─── Public export — signature unchanged ─────────────────────────────────────
 export async function generateInvoicePDF(
-  invoice:   Record<string, any>,
-  items:     Record<string, any>[],
-  profile:   Record<string, any>,
-  options?:  {
+  invoice:  Record<string, any>,
+  items:    Record<string, any>[],
+  profile:  Record<string, any>,
+  options?: {
     showPaidStamp?:  boolean
     theme?:          string | null
     primaryColor?:   string | null
