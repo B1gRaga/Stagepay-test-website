@@ -1,8 +1,7 @@
 import Link from 'next/link'
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@300;400;500;600&display=swap');
-  :root{
+:root{
     --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);--g-glow:rgba(16,185,129,0.18);
     --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);

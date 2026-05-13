@@ -16,8 +16,7 @@ const FEATURES = [
 ]
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&display=swap');
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Archivo',sans-serif;background:#060A12}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(24px,-18px) scale(1.06)}70%{transform:translate(-12px,14px) scale(.96)}}
@@ -207,8 +206,15 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true); setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false) }
-    else window.location.href = '/dashboard'
+    if (error) { setError(error.message); setLoading(false); return }
+
+    // Check if user has enrolled MFA factors
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+      window.location.href = '/auth/mfa'
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 
   return (

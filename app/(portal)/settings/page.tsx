@@ -1,8 +1,14 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 type Profile = {
   name: string | null
@@ -109,8 +115,7 @@ const SEC_RISKS = [
 ]
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&display=swap');
-  :root{
+:root{
     --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
     --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
@@ -379,12 +384,24 @@ export default function SettingsPage() {
   const [saved,     setSaved]     = useState<Panel | null>(null)
   const [upgrading, setUpgrading] = useState<string | null>(null)
 
+  // 2FA enroll modal state
+  const [mfaModal,   setMfaModal]   = useState<null | 'enroll' | 'unenroll'>(null)
+  const [mfaQr,      setMfaQr]      = useState('')
+  const [mfaSecret,  setMfaSecret]  = useState('')
+  const [mfaFactorId,setMfaFactorId]= useState('')
+  const [mfaCode,    setMfaCode]    = useState('')
+  const [mfaBusy,    setMfaBusy]    = useState(false)
+  const [mfaError,   setMfaError]   = useState('')
+
   const searchParams = useSearchParams()
   const billingStatus = searchParams.get('billing')
   const billingPlan   = searchParams.get('plan')
 
   // Branding state
   const [branding, setBranding] = useState({ invoice_theme: 'dark-modern', brand_color_primary: '', brand_color_header: '' })
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoError,     setLogoError]     = useState('')
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   // Firm details form state
   const [firm, setFirm] = useState({ name: '', firm_name: '', phone: '', address: '', city: '', country: 'BW', vat_number: '' })
@@ -440,6 +457,39 @@ export default function SettingsPage() {
     }
   }
 
+  async function uploadLogo(file: File) {
+    setLogoError('')
+    setLogoUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('logo', file)
+      const res  = await fetch('/api/profile/logo', { method: 'POST', credentials: 'include', body: fd })
+      const data = await res.json()
+      if (res.ok) {
+        setProfile(prev => prev ? { ...prev, logo_url: data.logo_url } : prev)
+      } else {
+        setLogoError(data.error ?? 'Upload failed')
+      }
+    } catch {
+      setLogoError('Network error')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  async function removeLogo() {
+    setLogoError('')
+    setLogoUploading(true)
+    try {
+      const res = await fetch('/api/profile/logo', { method: 'DELETE', credentials: 'include' })
+      if (res.ok) setProfile(prev => prev ? { ...prev, logo_url: null } : prev)
+    } catch {
+      setLogoError('Network error')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
   async function upgradePlan(plan: 'pro' | 'business') {
     setUpgrading(plan)
     try {
@@ -454,6 +504,51 @@ export default function SettingsPage() {
     } catch {
       alert('Network error. Please try again.')
       setUpgrading(null)
+    }
+  }
+
+  async function startEnroll2FA() {
+    setMfaError(''); setMfaBusy(true)
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'StagePay', friendlyName: 'Authenticator' })
+      if (error || !data) { setMfaError(error?.message ?? 'Enroll failed'); return }
+      setMfaFactorId(data.id)
+      setMfaQr(data.totp.qr_code)
+      setMfaSecret(data.totp.secret)
+      setMfaModal('enroll')
+    } finally {
+      setMfaBusy(false)
+    }
+  }
+
+  async function confirmEnroll2FA() {
+    if (mfaCode.length !== 6) return
+    setMfaError(''); setMfaBusy(true)
+    try {
+      const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
+      if (cErr || !challenge) { setMfaError(cErr?.message ?? 'Challenge failed'); return }
+      const { error: vErr } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challenge.id, code: mfaCode })
+      if (vErr) { setMfaError('Invalid code, try again'); return }
+      setProfile(prev => prev ? { ...prev, two_fa_enabled: true } : prev)
+      setMfaModal(null); setMfaCode('')
+    } finally {
+      setMfaBusy(false)
+    }
+  }
+
+  async function unenroll2FA() {
+    setMfaError(''); setMfaBusy(true)
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors()
+      const totp = factors?.totp?.[0]
+      if (totp) {
+        const { error } = await supabase.auth.mfa.unenroll({ factorId: totp.id })
+        if (error) { setMfaError(error.message); return }
+      }
+      setProfile(prev => prev ? { ...prev, two_fa_enabled: false } : prev)
+      setMfaModal(null)
+    } finally {
+      setMfaBusy(false)
     }
   }
 
@@ -511,18 +606,45 @@ export default function SettingsPage() {
             <div className="settings-section">
               <div className="settings-section-title">Logo <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Upload</span></div>
               <div className="settings-section-desc">Upload your company logo. PNG or SVG recommended. Shows on all invoices and emails.</div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f); e.target.value = '' }}
+              />
               {profile?.logo_url ? (
                 <div style={{ marginBottom: 16, padding: 16, background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--line2)', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <img src={profile.logo_url} alt="Logo" style={{ height: 48, objectFit: 'contain', borderRadius: 4 }}/>
-                  <span style={{ fontSize: 12, color: 'var(--t3)' }}>Logo uploaded · manage in app</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600 }}>Logo uploaded</div>
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>PNG, SVG, JPG · Max 2 MB</div>
+                  </div>
+                  <button
+                    className="topbar-btn btn-outline"
+                    style={{ fontSize: 11, padding: '5px 12px' }}
+                    disabled={logoUploading}
+                    onClick={() => logoInputRef.current?.click()}
+                  >{logoUploading ? 'Uploading…' : 'Change'}</button>
+                  <button
+                    className="topbar-btn"
+                    style={{ fontSize: 11, padding: '5px 12px', color: 'var(--danger)', borderColor: 'rgba(239,68,68,.3)' }}
+                    disabled={logoUploading}
+                    onClick={removeLogo}
+                  >Remove</button>
                 </div>
               ) : (
-                <div className="logo-zone" style={{ cursor: 'default', opacity: .7 }}>
-                  <div className="logo-zone-icon">⬆</div>
-                  <div className="logo-zone-label">Logo upload coming soon</div>
-                  <div className="logo-zone-sub">PNG, SVG, JPG · Max 2MB</div>
+                <div
+                  className="logo-zone"
+                  style={{ cursor: logoUploading ? 'wait' : 'pointer' }}
+                  onClick={() => !logoUploading && logoInputRef.current?.click()}
+                >
+                  <div className="logo-zone-icon">{logoUploading ? '…' : '⬆'}</div>
+                  <div className="logo-zone-label">{logoUploading ? 'Uploading…' : 'Click to upload logo'}</div>
+                  <div className="logo-zone-sub">PNG, SVG, JPG, WebP · Max 2 MB</div>
                 </div>
               )}
+              {logoError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{logoError}</div>}
             </div>
 
             {/* ── Invoice template & colours ── */}
@@ -927,9 +1049,12 @@ export default function SettingsPage() {
                     <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>{profile?.two_fa_enabled ? 'Your account is protected with TOTP.' : 'Your account only uses a password.'}</div>
                   </div>
                 </div>
-                <button className="topbar-btn btn-primary" style={{ padding: '6px 14px', fontSize: 12, opacity: .5, cursor: 'not-allowed' }} disabled>
-                  {profile?.two_fa_enabled ? 'Manage 2FA' : 'Enable 2FA'}
-                </button>
+                <button
+                  className={`topbar-btn ${profile?.two_fa_enabled ? 'btn-outline' : 'btn-primary'}`}
+                  style={{ padding: '6px 14px', fontSize: 12 }}
+                  disabled={mfaBusy}
+                  onClick={() => profile?.two_fa_enabled ? setMfaModal('unenroll') : startEnroll2FA()}
+                >{mfaBusy ? '…' : profile?.two_fa_enabled ? 'Remove 2FA' : 'Enable 2FA'}</button>
               </div>
             </div>
 
@@ -976,6 +1101,58 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── 2FA enroll modal ── */}
+      {mfaModal === 'enroll' && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--bg2)', border: '1px solid var(--line2)', borderRadius: 16, padding: 32, maxWidth: 420, width: '100%' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 6 }}>Set up authenticator</div>
+            <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 20 }}>Scan this QR code with Google Authenticator, Authy, or 1Password, then enter the 6-digit code to confirm.</div>
+            {mfaQr && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={mfaQr} alt="QR code" width={160} height={160} style={{ borderRadius: 8, background: '#fff', padding: 8 }}/>
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: 'var(--t3)', textAlign: 'center', marginBottom: 20, wordBreak: 'break-all' }}>
+              Can&apos;t scan? Manual key: <span style={{ color: 'var(--t2)', fontFamily: 'monospace' }}>{mfaSecret}</span>
+            </div>
+            {mfaError && <div style={{ fontSize: 12, color: 'var(--danger)', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>{mfaError}</div>}
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={mfaCode}
+              onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              style={{ width: '100%', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, padding: '10px 14px', fontSize: 20, letterSpacing: 6, textAlign: 'center', color: 'var(--t1)', outline: 'none', marginBottom: 14, fontFamily: 'monospace' }}
+            />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="topbar-btn btn-primary" style={{ flex: 1 }} disabled={mfaCode.length !== 6 || mfaBusy} onClick={confirmEnroll2FA}>
+                {mfaBusy ? 'Verifying…' : 'Activate 2FA'}
+              </button>
+              <button className="topbar-btn btn-outline" onClick={() => { setMfaModal(null); setMfaCode(''); setMfaError('') }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 2FA unenroll confirm ── */}
+      {mfaModal === 'unenroll' && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--bg2)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 16, padding: 32, maxWidth: 380, width: '100%' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 8 }}>Remove two-factor authentication?</div>
+            <div style={{ fontSize: 13, color: 'var(--t3)', marginBottom: 24 }}>Your account will only be protected by your password. You can re-enable 2FA at any time.</div>
+            {mfaError && <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 14 }}>{mfaError}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="topbar-btn" style={{ flex: 1, background: 'rgba(239,68,68,.1)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,.3)' }} disabled={mfaBusy} onClick={unenroll2FA}>
+                {mfaBusy ? 'Removing…' : 'Yes, remove 2FA'}
+              </button>
+              <button className="topbar-btn btn-outline" onClick={() => { setMfaModal(null); setMfaError('') }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
