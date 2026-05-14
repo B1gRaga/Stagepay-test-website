@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 
 const PAGE_SIZE = 50
@@ -77,8 +77,10 @@ export async function POST(req: NextRequest) {
 
   const total = subtotal + vat_amount - deposit_amount
 
-  // Atomically generate invoice number via DB function (no race condition)
-  const { data: invoiceNumber, error: numErr } = await supabase.rpc('next_invoice_number', { p_user_id: user.id })
+  // Atomically generate invoice number via service-role client.
+  // next_invoice_number is revoked from authenticated; only service_role may call it.
+  const svcClient = createServiceClient() as any
+  const { data: invoiceNumber, error: numErr } = await svcClient.rpc('next_invoice_number', { p_user_id: user.id })
   if (numErr || !invoiceNumber) {
     return NextResponse.json({ error: 'Failed to generate invoice number' }, { status: 500 })
   }

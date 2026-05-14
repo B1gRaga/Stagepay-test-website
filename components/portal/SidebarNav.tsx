@@ -131,10 +131,11 @@ const CSS = `
   .profile-popup-item.danger:hover{background:rgba(224,85,64,.08);color:var(--danger);}
   .profile-popup-divider{height:1px;background:var(--line);margin:2px 0;}
 
+  .sp-nav-mob{display:flex;flex-direction:column;}
   @media(max-width:768px){
     .sidebar{width:100%;min-height:auto;height:auto;flex-direction:row;border-right:none;border-bottom:1px solid var(--line);position:fixed;bottom:0;top:auto;z-index:100;overflow:visible;}
     .sidebar-logo{display:none;}
-    .sp-nav-mob{display:flex;flex-direction:row;padding:6px;flex:1;overflow-x:auto;}
+    .sp-nav-mob{flex-direction:row;padding:6px;flex:1;overflow-x:auto;}
     .nav-item{flex-direction:column;gap:3px;padding:6px 12px;font-size:10px;min-width:64px;justify-content:center;align-items:center;border-radius:8px;margin:0;}
     .nav-item span.nav-label{display:block;}
     .sidebar-footer{display:none;}
@@ -183,7 +184,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
           <small>Professional invoicing</small>
         </div>
 
-        <div className="sp-nav-mob" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="sp-nav-mob">
           <div className="nav-section">Main</div>
           {NAV_MAIN.map(({ key, href, label, icon }) => (
             <Link

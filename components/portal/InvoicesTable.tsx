@@ -177,6 +177,24 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
   const [fwdModal, setFwdModal]   = useState<ForwardModalState | null>(null)
   const [deleteId, setDeleteId]   = useState<string | null>(null)
   const [deleting, setDeleting]   = useState(false)
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null)
+
+  async function markAsPaid(id: string) {
+    setMarkingPaid(id)
+    try {
+      const res = await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'paid' }),
+      })
+      if (res.ok) {
+        setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: 'paid' } : i))
+      }
+    } finally {
+      setMarkingPaid(null)
+    }
+  }
 
   const filtered = useMemo(() => {
     let list = filter === 'all' ? invoices : invoices.filter(i => i.status === filter)
@@ -350,6 +368,17 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                       {inv.status === 'draft'   && <Link href={`/new-invoice?edit=${inv.id}`} className="act-btn act-edit">Edit</Link>}
                       {inv.status === 'pending' && <Link href="/reminders" className="act-btn act-remind" style={{ border: '1px solid var(--warn)' }}>Remind</Link>}
                       {inv.status === 'overdue' && <Link href="/reminders" className="act-btn act-chase" style={{ border: '1px solid rgba(239,68,68,.3)' }}>Chase</Link>}
+                      {(inv.status === 'sent' || inv.status === 'pending' || inv.status === 'overdue') && (
+                        <button
+                          className="act-btn act-send"
+                          onClick={() => markAsPaid(inv.id)}
+                          disabled={markingPaid === inv.id}
+                          title="Mark as paid"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
+                          {markingPaid === inv.id ? '…' : 'Paid'}
+                        </button>
+                      )}
                       {inv.status === 'paid'    && (
                         <button className="act-btn act-forward" onClick={() => openForwardPaid(inv)}>
                           <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 8h12M10 4l4 4-4 4"/></svg>

@@ -289,6 +289,7 @@ export default function NewInvoicePage() {
   const [clients,  setClients]  = useState<Client[]>([])
 
   // Form
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   const [clientName,  setClientName]  = useState('')
   const [clientEmail, setClientEmail] = useState('')
   const [clientPhone, setClientPhone] = useState('')
@@ -372,6 +373,7 @@ export default function NewInvoicePage() {
 
   // ── Helpers ──
   function clearForm() {
+    setSelectedClientId(null)
     setClientName(''); setClientEmail(''); setClientPhone(''); setProject('')
     setCurrency(profile?.default_currency || 'P')
     setIssueDate(today()); setDueDate(addDays(today(), 30))
@@ -383,6 +385,7 @@ export default function NewInvoicePage() {
   }
 
   function selectClient(c: Client) {
+    setSelectedClientId(c.id)
     setClientName(c.name)
     setClientEmail(c.email ?? '')
     setClientPhone(c.phone ?? '')
@@ -453,6 +456,7 @@ export default function NewInvoicePage() {
     try {
       const payload = {
         status,
+        client_id:      selectedClientId ?? null,
         client_name:    clientName || 'Unknown Client',
         client_email:   clientEmail || null,
         client_phone:   clientPhone || null,
@@ -476,20 +480,36 @@ export default function NewInvoicePage() {
       const data   = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
 
-      // Auto-save client if name provided and not already in clients list
+      const savedInvoice = data.invoice
+
+      // Auto-save client if name provided and no existing client was selected
       const name = clientName.trim()
-      if (name && name !== 'Unknown Client') {
+      if (name && name !== 'Unknown Client' && !selectedClientId) {
         const exists = clients.some(c => c.name.toLowerCase() === name.toLowerCase())
         if (!exists) {
-          fetch('/api/clients', {
-            method: 'POST', credentials: 'include',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ name, email: clientEmail || undefined, phone: clientPhone || undefined }),
-          }).catch(() => {})
+          try {
+            const cr = await fetch('/api/clients', {
+              method: 'POST', credentials: 'include',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ name, email: clientEmail || undefined, phone: clientPhone || undefined }),
+            })
+            if (cr.ok) {
+              const cd = await cr.json()
+              // Link the new client back to the invoice
+              if (cd.client?.id) {
+                setSelectedClientId(cd.client.id)
+                fetch(`/api/invoices/${savedInvoice.id}`, {
+                  method: 'PATCH', credentials: 'include',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ client_id: cd.client.id }),
+                }).catch(() => {})
+              }
+            }
+          } catch { /* non-fatal */ }
         }
       }
 
-      return data.invoice
+      return savedInvoice
     } finally {
       setSaving(false)
     }
@@ -689,7 +709,7 @@ export default function NewInvoicePage() {
                 <div className="form-grid">
                   <div className="form-group">
                     <label className="form-label">Client name</label>
-                    <input className="form-input" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="e.g. Molapo Tower Ltd."/>
+                    <input className="form-input" value={clientName} onChange={e => { setClientName(e.target.value); setSelectedClientId(null) }} placeholder="e.g. Molapo Tower Ltd."/>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Client email</label>
