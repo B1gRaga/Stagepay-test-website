@@ -138,6 +138,23 @@ export default function SignupPage() {
     e.preventDefault()
     if (password.length < 8) { setError('Password must be at least 8 characters'); return }
     setLoading(true); setError('')
+
+    try {
+      const hibp = await fetch('/api/auth/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      const { pwned } = await hibp.json()
+      if (pwned) {
+        setError('This password has appeared in a known data breach. Please choose a different password.')
+        setLoading(false)
+        return
+      }
+    } catch {
+      // HIBP check failed — continue with sign-up
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { data: { full_name: name.trim() } },
