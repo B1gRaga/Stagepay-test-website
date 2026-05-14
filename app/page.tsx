@@ -78,7 +78,6 @@ export default function Home() {
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
-            <a href="#who">Who it&apos;s for</a>
           </div>
           <div className="nav-right">
             <a href="/auth/login" className="nav-sign-in">Sign in</a>
@@ -96,14 +95,13 @@ export default function Home() {
           <div className="hero-left">
             <div className="hero-badge">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="#10B981"><circle cx="5" cy="5" r="5"/></svg>
-              AI-powered · WhatsApp delivery · Built for Botswana
+              The modern way to get paid
             </div>
             <h1 className="hero-h1">
-              Describe your work.<br/>We send the invoice<br/>on <em>WhatsApp</em> in 30 seconds.
+              Describe your work.<br/>We send the invoice<br/>on <em>WhatsApp</em>.
             </h1>
-            <p className="pain-hook">Stop manually building invoices in Word or Excel.</p>
             <p className="hero-sub">
-              Just tell StagePay what you did — AI generates a professional invoice instantly. Send it directly to your client via WhatsApp. Smart reminders chase overdue payments so you don&apos;t have to.
+              AI generates a professional invoice in seconds, delivers it to your client&apos;s WhatsApp, and sends automatic reminders until you&apos;re paid.
             </p>
             <div className="signup-box">
               <div className="signup-box-label">
@@ -125,11 +123,10 @@ export default function Home() {
                 <span>✓ Your data stays private</span>
               </div>
             </div>
-            <p className="trust-note">Built for freelancers and small businesses in Botswana · Sends via WhatsApp like your clients already use · No complexity</p>
           </div>
 
           <div className="hero-right">
-            <div className="mock-wrap">
+            <div className="mock-wrap hero-mock-float">
               <div className="mock-bar">
                 <div className="mock-dot" style={{background:'#EF4444'}}></div>
                 <div className="mock-dot" style={{background:'#F59E0B'}}></div>
@@ -211,7 +208,7 @@ export default function Home() {
                     Download PDF
                   </div>
                   <div className="mock-btn mock-btn-wa">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.07-1.35A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
                     Send via WhatsApp
                   </div>
                 </div>
@@ -236,7 +233,7 @@ export default function Home() {
             <div className="sec-head reveal">
               <div className="sec-tag">How it works</div>
               <h2 className="sec-h2">Three steps to <em>getting paid.</em></h2>
-              <p className="sec-p">No templates. No training. Just describe the work and we handle everything else.</p>
+              <p className="sec-p">No templates. No training. Just describe the work.</p>
             </div>
             <div className="how-grid reveal">
               <div className="how-step">
@@ -249,13 +246,13 @@ export default function Home() {
                 <div className="how-num">02</div>
                 <div className="how-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
                 <div className="how-title">AI builds the invoice</div>
-                <div className="how-desc">Client, line items, VAT, deposit and due date — extracted automatically. Edit anything before sending.</div>
+                <div className="how-desc">Client, line items, VAT and deposit extracted automatically. Edit anything before sending.</div>
               </div>
               <div className="how-step">
                 <div className="how-num">03</div>
                 <div className="how-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg></div>
                 <div className="how-title">Send via WhatsApp &amp; get paid</div>
-                <div className="how-desc">Deliver your invoice straight to your client&apos;s WhatsApp. Smart reminders follow up automatically on overdue invoices.</div>
+                <div className="how-desc">Invoice goes straight to your client&apos;s WhatsApp. Smart reminders follow up automatically on overdue payments.</div>
               </div>
             </div>
           </div>
@@ -268,7 +265,7 @@ export default function Home() {
           <div className="sec-head reveal text-center mx-auto">
             <div className="sec-tag">See it in action</div>
             <h2 className="sec-h2">Just <em>describe it.</em><br/>We handle the rest.</h2>
-            <p className="sec-p">No forms. No templates. Type like you&apos;re messaging a colleague.</p>
+            <p className="sec-p">No forms. No templates. Type like you&apos;re texting a colleague.</p>
           </div>
           <div className="aha-demo-grid reveal" style={{alignItems:'start'}}>
             <div className="aha-input-box">
@@ -353,7 +350,7 @@ export default function Home() {
                       Download PDF
                     </div>
                     <div className="mock-btn mock-btn-wa">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.07-1.35A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                      <svg width="10" height="10" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
                       Send via WhatsApp
                     </div>
                   </div>
@@ -371,41 +368,41 @@ export default function Home() {
             <div className="sec-head reveal">
               <div className="sec-tag">Features</div>
               <h2 className="sec-h2">Everything you need<br/>to <em>get paid faster.</em></h2>
-              <p className="sec-p">Built for the way professionals in Botswana actually work — mobile-first, WhatsApp-native, AI-powered from day one.</p>
+              <p className="sec-p">Mobile-first, WhatsApp-native, AI-powered from day one.</p>
             </div>
             <div className="feat-grid reveal">
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M12 2l-2 7H3l6 4-2 7 5-4 5 4-2-7 6-4h-7z"/></svg></div>
                 <div className="feat-title">AI Invoice Generation</div>
-                <div className="feat-desc">Describe your work in plain language. AI extracts the client, line items, rates and VAT automatically.</div>
+                <div className="feat-desc">Describe your work in plain language. AI extracts client, line items, rates and VAT automatically.</div>
                 <span className="feat-tag">Core feature</span>
               </div>
               <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l5.07-1.35A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg></div>
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="#10B981" opacity=".9"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg></div>
                 <div className="feat-title">WhatsApp Delivery</div>
-                <div className="feat-desc">Send your invoice directly to your client&apos;s WhatsApp. Clients actually open and respond to WhatsApp messages.</div>
+                <div className="feat-desc">Invoices land in your client&apos;s WhatsApp. They open them. They read them. They pay them.</div>
                 <span className="feat-tag">The differentiator</span>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
                 <div className="feat-title">Automatic Reminders</div>
-                <div className="feat-desc">Smart follow-ups go out at 3, 7, 14 and 30 days. You never have to chase a client awkwardly again.</div>
+                <div className="feat-desc">Smart follow-ups at 3, 7, 14 and 30 days — you never have to chase a client awkwardly again.</div>
                 <span className="feat-tag">WhatsApp</span>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
                 <div className="feat-title">Client Address Book</div>
-                <div className="feat-desc">Save client details once. Next time you invoice them, their name, contact and VAT number are pre-filled.</div>
+                <div className="feat-desc">Save client details once. Name, contact, and VAT number are pre-filled every time after.</div>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
                 <div className="feat-title">PDF Export</div>
-                <div className="feat-desc">One-click branded PDF with your firm name, bank details and payment terms included — ready to share anywhere.</div>
+                <div className="feat-desc">One-click branded PDF with your firm name, bank details and payment terms — ready to share anywhere.</div>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M2 9h6"/></svg></div>
                 <div className="feat-title">Deposit Billing</div>
-                <div className="feat-desc">Set 25%, 50% or a custom deposit. Shows as a clear row on the invoice — perfect for projects and retainers.</div>
+                <div className="feat-desc">25%, 50% or a custom deposit — shown as a clear row on the invoice. Perfect for projects and retainers.</div>
               </div>
             </div>
           </div>
@@ -420,49 +417,65 @@ export default function Home() {
             <h2 className="sec-h2">Stop spending hours<br/>on <em>admin.</em></h2>
             <p className="sec-p">Professionals waste 3–5 hours a week on invoicing. StagePay cuts that to minutes.</p>
           </div>
-          <div className="val-grid reveal">
-            <div>
-              <ul className="pain-list">
-                <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Open Word, find last invoice, update every field manually, calculate VAT — 45 minutes per invoice.</span></li>
-                <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Wrong VAT rate, missing bank details, wrong client name — send a corrected invoice, lose credibility.</span></li>
-                <li className="pain-item"><span className="pain-before">BEFORE</span><span className="pain-text">Chase payments manually via WhatsApp. Clients ignore it. You feel awkward. Money sits unpaid for months.</span></li>
-                <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Describe the job, hit Generate. Professional invoice in 30 seconds — correct VAT, branded, sent via WhatsApp.</span></li>
-                <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Smart reminders go out automatically at 3, 7, 14 and 30 days. You never have to chase again.</span></li>
-                <li className="pain-item"><span className="pain-after">AFTER</span><span className="pain-text">Every client saved once. Invoice them again in seconds — name, address, VAT number all pre-filled.</span></li>
-              </ul>
-            </div>
-            <div className="val-cta-box">
-              <h3>Ready to stop chasing payments?</h3>
-              <p>Start free — no credit card needed. Create your first invoice in under 2 minutes.</p>
-              <div className="flex-btns">
-                <a href="/auth/signup" className="btn-green">Create my first invoice →</a>
-                <a href="#features" className="btn-outline">See all features</a>
+          <div className="compare-grid reveal">
+            <div className="compare-card compare-before">
+              <div className="compare-label compare-label-before">Before StagePay</div>
+              <div className="compare-items">
+                <div className="compare-item">
+                  <div className="compare-dot compare-dot-red"></div>
+                  <span>Open Word, rebuild last month&apos;s template, calculate VAT manually — 45 min per invoice</span>
+                </div>
+                <div className="compare-item">
+                  <div className="compare-dot compare-dot-red"></div>
+                  <span>Wrong VAT rate, wrong client name — send a corrected copy, lose credibility</span>
+                </div>
+                <div className="compare-item">
+                  <div className="compare-dot compare-dot-red"></div>
+                  <span>Chase payments manually via WhatsApp. Feel awkward. Money sits unpaid for months</span>
+                </div>
               </div>
+            </div>
+            <div className="compare-card compare-after">
+              <div className="compare-label compare-label-after">With StagePay</div>
+              <div className="compare-items">
+                <div className="compare-item">
+                  <div className="compare-dot compare-dot-green"></div>
+                  <span>Describe the job. Professional invoice in 30 seconds — correct VAT, branded, sent via WhatsApp</span>
+                </div>
+                <div className="compare-item">
+                  <div className="compare-dot compare-dot-green"></div>
+                  <span>Smart reminders go out automatically at 3, 7, 14 and 30 days — you never chase again</span>
+                </div>
+                <div className="compare-item">
+                  <div className="compare-dot compare-dot-green"></div>
+                  <span>Every client saved once. Invoice them again in seconds — all details pre-filled</span>
+                </div>
+              </div>
+              <a href="/auth/signup" className="compare-cta">Start for free →</a>
             </div>
           </div>
         </div>
       </div>
 
       {/* WHO IT'S FOR */}
-      <div className="how-bg" id="who">
+      <div className="how-bg">
         <div className="sec">
           <div className="sec-inner">
-            <div className="sec-head reveal">
-              <div className="sec-tag">Who it&apos;s for</div>
-              <h2 className="sec-h2">Built for people who<br/><em>charge for their work.</em></h2>
-              <p className="sec-p">If you send invoices to clients, StagePay makes the whole process faster and more professional.</p>
+            <div className="sec-head reveal" style={{maxWidth:'100%',marginBottom:32}}>
+              <div className="sec-tag">Built for</div>
+              <h2 className="sec-h2">Anyone who charges<br/>for their <em>work.</em></h2>
             </div>
-            <div className="who-grid reveal">
+            <div className="who-strip reveal">
               {[
-                {emoji:'🏗️', title:'Architects & Engineers', desc:'Phase billing, site inspections, technical reports with VAT — all handled in seconds.'},
-                {emoji:'💻', title:'Freelancers', desc:'Quick invoices in minutes. Automatic WhatsApp reminders handle follow-up so you never feel awkward chasing.'},
-                {emoji:'🔧', title:'Contractors & Consultants', desc:'Labour, materials, milestones, retainers — multi-line invoices with deposit billing built in.'},
-                {emoji:'🏢', title:'Small Businesses', desc:'Professional invoices for every job. Save clients once, invoice them in seconds every time after that.'},
+                {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>, title:'Architects & Engineers', desc:'Phase billing, site inspections, technical reports'},
+                {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>, title:'Freelancers', desc:'Quick invoices, no admin overhead'},
+                {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-3 3z"/><path d="M5 22v-5l9-9"/></svg>, title:'Contractors', desc:'Labour, materials, milestones, retainers'},
+                {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, title:'Small Businesses', desc:'Professional invoices for every job'},
               ].map((w, i) => (
-                <div key={i} className="who-card">
-                  <div className="who-emoji">{w.emoji}</div>
-                  <div className="who-title">{w.title}</div>
-                  <div className="who-desc">{w.desc}</div>
+                <div key={i} className="who-tile">
+                  <div className="who-tile-icon">{w.icon}</div>
+                  <div className="who-tile-title">{w.title}</div>
+                  <div className="who-tile-desc">{w.desc}</div>
                 </div>
               ))}
             </div>
@@ -546,16 +559,16 @@ export default function Home() {
             </div>
             <div className="obj-grid reveal">
               <div className="obj-card">
-                <div className="obj-q">&quot;I already use Word or Excel for invoices.&quot;</div>
-                <div className="obj-a">That works — until you miss a VAT rate, send to the wrong client, or spend 40 minutes rebuilding last month&apos;s template. <strong>StagePay does it in 30 seconds.</strong></div>
+                <div className="obj-q">&quot;I already use Word or Excel.&quot;</div>
+                <div className="obj-a">That works — until you miss a VAT rate or spend 40 minutes rebuilding last month&apos;s template. <strong>StagePay does it in 30 seconds.</strong></div>
               </div>
               <div className="obj-card">
                 <div className="obj-q">&quot;Is my data safe?&quot;</div>
-                <div className="obj-a">Your business data is securely stored and encrypted — at rest and in transit. We use Supabase (SOC 2 compliant) for storage. <strong>We never sell your data, ever.</strong> Export everything anytime.</div>
+                <div className="obj-a">Stored encrypted, at rest and in transit. We use Supabase (SOC 2 compliant). <strong>We never sell your data — export everything anytime.</strong></div>
               </div>
               <div className="obj-card">
-                <div className="obj-q">&quot;Can I edit the invoice before sending?&quot;</div>
-                <div className="obj-a">Yes — every field is editable after AI generation. Add your logo, payment terms, bank details, or adjust any line item. <strong>Full control, zero friction.</strong></div>
+                <div className="obj-q">&quot;Can I edit before sending?&quot;</div>
+                <div className="obj-a">Every field is editable after AI generation — logo, payment terms, bank details, line items. <strong>Full control, zero friction.</strong></div>
               </div>
             </div>
           </div>
@@ -570,8 +583,8 @@ export default function Home() {
             <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'#10B981',display:'inline-block'}}></span>
             Early Access · First 100 Users
           </div>
-          <h2 className="final-cta-h">Send your next invoice<br/>on WhatsApp<br/>in <em>30 seconds.</em></h2>
-          <p className="final-cta-p">First 100 users get <strong>Pro free for 1 month</strong> — no credit card needed. Start invoicing smarter today.</p>
+          <h2 className="final-cta-h">The modern way<br/>to get <em>paid.</em></h2>
+          <p className="final-cta-p">First 100 users get <strong>Pro free for 1 month</strong> — no credit card needed.</p>
           <div className="final-form">
             <input type="email" id="finalEmail" className="final-form-input" placeholder="your@email.com"/>
             <button className="btn-signup" onClick={() => handleSignup('finalEmail')}>Get started free →</button>
@@ -602,7 +615,6 @@ export default function Home() {
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
-            <a href="#who">Who it&apos;s for</a>
             <a href="#">Privacy</a>
             <a href="#">Terms</a>
           </div>

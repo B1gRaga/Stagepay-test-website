@@ -340,6 +340,47 @@ footer{border-top:1px solid var(--line);padding:36px clamp(16px,4vw,48px);}
 .sticky-btn{padding:9px 18px;border-radius:7px;background:var(--g);color:#060A12;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;border:none;cursor:pointer;white-space:nowrap;transition:all .2s;}
 .sticky-btn:hover{background:var(--g2);}
 
+/* ── BEFORE / AFTER COMPARISON ── */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:700px){.compare-grid{grid-template-columns:1fr;}}
+.compare-card{border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:0;}
+.compare-before{background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.15);}
+.compare-after{background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.2);}
+.compare-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:20px;}
+.compare-label-before{color:#EF4444;}
+.compare-label-after{color:var(--g);}
+.compare-items{display:flex;flex-direction:column;gap:14px;flex:1;}
+.compare-item{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--t2);line-height:1.55;}
+.compare-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.compare-dot-red{background:#EF4444;}
+.compare-dot-green{background:var(--g);}
+.compare-cta{display:inline-flex;align-items:center;justify-content:center;margin-top:24px;padding:12px 24px;border-radius:9px;background:var(--g);color:#060A12;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;text-decoration:none;transition:all .2s;}
+.compare-cta:hover{background:var(--g2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(16,185,129,.4);}
+
+/* ── WHO IT'S FOR — TILE STRIP ── */
+.who-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+@media(max-width:900px){.who-strip{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.who-strip{grid-template-columns:1fr;}}
+.who-tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px 20px;transition:border-color .2s,transform .2s;}
+.who-tile:hover{border-color:rgba(16,185,129,.25);transform:translateY(-3px);}
+.who-tile-icon{width:40px;height:40px;border-radius:9px;background:var(--g-dim);border:1px solid rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.who-tile-title{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:5px;}
+.who-tile-desc{font-size:12px;color:var(--t3);line-height:1.5;}
+
+/* ── HERO INVOICE FLOAT ── */
+@keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.hero-mock-float{animation:heroFloat 7s ease-in-out infinite;}
+
+/* ── HERO BADGE GLOW ── */
+.hero-badge{transition:box-shadow .3s;}
+.hero-badge:hover{box-shadow:0 0 20px rgba(16,185,129,.2);}
+
+/* ── ENHANCED FEAT CARD ── */
+.feat-card:hover{
+  background:linear-gradient(160deg,rgba(16,185,129,.04),var(--surface));
+  border-color:rgba(16,185,129,.2);
+}
+
 /* ── UTIL ── */
 .flex-btns{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .text-center{text-align:center;}
