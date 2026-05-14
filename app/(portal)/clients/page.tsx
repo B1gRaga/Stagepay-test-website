@@ -17,18 +17,25 @@ export default async function ClientsPage() {
       .order('name'),
     (supabase as any)
       .from('invoices')
-      .select('client_id, total, currency')
-      .eq('user_id', user.id)
-      .not('client_id', 'is', null),
+      .select('client_id, client_name, total, currency')
+      .eq('user_id', user.id),
   ])
+
+  // Build a lookup from lowercase name → client id for fallback matching
+  const nameToId: Record<string, string> = {}
+  for (const c of (clients || [])) {
+    nameToId[c.name.toLowerCase()] = c.id
+  }
 
   const statsMap: Record<string, ClientStats> = {}
   for (const inv of (invSummaries || [])) {
-    if (!inv.client_id) continue
-    const s = statsMap[inv.client_id] ?? { count: 0, total: 0, currency: inv.currency || 'P' }
+    // Match by client_id if set, otherwise fall back to client_name match
+    const clientId = inv.client_id ?? nameToId[(inv.client_name || '').toLowerCase()]
+    if (!clientId) continue
+    const s = statsMap[clientId] ?? { count: 0, total: 0, currency: inv.currency || 'P' }
     s.count++
     s.total += Number(inv.total || 0)
-    statsMap[inv.client_id] = s
+    statsMap[clientId] = s
   }
 
   return <ClientsGrid clients={clients ?? []} statsMap={statsMap} />
