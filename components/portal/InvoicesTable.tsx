@@ -163,10 +163,10 @@ const CSS = `
     .filter-btn{white-space:nowrap;flex-shrink:0;}
   }
   @media(max-width:480px){
-    .inv-table-head,.inv-table-row{grid-template-columns:1fr 90px;}
-    .inv-table-head>*:nth-child(3),.inv-table-row>*:nth-child(3){display:none;}
+    .inv-table-head,.inv-table-row{grid-template-columns:1fr 72px;}
     .inv-table-head>*:nth-child(6),.inv-table-row>*:nth-child(6){display:none;}
     .inv-table-wrap{border-radius:8px;}
+    .act-delete{display:none;}
   }
 `
 
