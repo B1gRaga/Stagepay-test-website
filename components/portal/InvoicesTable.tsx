@@ -298,7 +298,7 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
       <div className="topbar">
         <div className="page-title">INVOICES</div>
         <div className="topbar-right">
-          <Link href="/new-invoice" className="topbar-btn btn-primary" style={{ textDecoration: 'none' }}>
+          <Link href="/new-invoice" className="topbar-btn btn-primary mob-hide" style={{ textDecoration: 'none' }}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
             New Invoice
           </Link>

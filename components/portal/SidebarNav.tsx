@@ -93,10 +93,47 @@ const CSS = `
   .profile-popup-item.danger:hover{background:rgba(224,85,64,.08);color:var(--danger);}
   .profile-popup-divider{height:1px;background:var(--line);margin:2px 0;}
 
+  /* ── MOBILE TOP BAR ── */
+  .mob-topbar{display:none;}
+  .mob-menu-popup{display:none;}
+
   /* ── MOBILE BOTTOM TAB BAR ── */
   .mob-tabbar{display:none;}
 
   @media(max-width:768px){
+    /* Mobile top bar */
+    .mob-topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      position:fixed;top:0;left:0;right:0;z-index:199;
+      height:calc(44px + env(safe-area-inset-top,0px));
+      padding:env(safe-area-inset-top,0px) 16px 0;
+      background:rgba(15,23,42,0.94);
+      backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--line);
+    }
+    html[data-theme="light"] .mob-topbar{background:rgba(248,250,252,0.94);}
+    .mob-topbar-logo{
+      display:flex;align-items:center;gap:8px;text-decoration:none;
+      font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--t1);
+    }
+    .mob-topbar-logo em{color:var(--g);font-style:normal;}
+    .mob-topbar-av{
+      width:30px;height:30px;border-radius:50%;
+      background:var(--g-dim);border:1px solid rgba(16,185,129,.25);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--g);
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
+    }
+    .mob-menu-popup{
+      display:block;
+      position:fixed;top:calc(44px + env(safe-area-inset-top,0px));right:0;width:220px;
+      background:var(--bg2);border:1px solid var(--line2);
+      border-radius:0 0 10px 10px;
+      box-shadow:0 8px 24px rgba(0,0,0,.3);
+      z-index:300;
+      animation:popupIn .15s ease both;
+    }
+
     /* Sidebar becomes a shell — only the mob-tabbar inside it is visible */
     .sidebar{
       width:100%;height:auto;min-height:auto;
@@ -183,7 +220,15 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
   const pathname = usePathname()
   const router   = useRouter()
   const [popupOpen, setPopupOpen] = useState(false)
+  const [mobMenuOpen, setMobMenuOpen] = useState(false)
   const [overdueCt, setOverdueCt] = useState(0)
+
+  useEffect(() => {
+    if (!mobMenuOpen) return
+    const close = () => setMobMenuOpen(false)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [mobMenuOpen])
 
   useEffect(() => {
     fetch('/api/invoices?status=overdue&page=0')
@@ -213,6 +258,48 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
   return (
     <>
       <style>{CSS}</style>
+
+      {/* ── MOBILE TOP BAR ── */}
+      <div className="mob-topbar">
+        <Link href="/dashboard" className="mob-topbar-logo">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+            <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
+            <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+            <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+          </svg>
+          <span>STAGE<em>PAY</em></span>
+        </Link>
+        <button
+          className="mob-topbar-av"
+          onClick={e => { e.stopPropagation(); setMobMenuOpen(p => !p) }}
+        >
+          {initials}
+        </button>
+      </div>
+
+      {/* Mobile profile dropdown */}
+      {mobMenuOpen && (
+        <div className="mob-menu-popup" onClick={e => e.stopPropagation()}>
+          <div className="profile-popup-header">
+            <div className="user-av" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0 }}>{initials}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
+              <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userEmail}</div>
+            </div>
+          </div>
+          <button className="profile-popup-item" onClick={() => { setMobMenuOpen(false); router.push('/settings') }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+            Edit profile
+          </button>
+          <div className="profile-popup-divider"/>
+          <button className="profile-popup-item danger" onClick={() => { setMobMenuOpen(false); handleLogout() }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/></svg>
+            Log out
+          </button>
+        </div>
+      )}
+
       <aside className="sidebar">
 
         {/* ── DESKTOP SIDEBAR ── */}
