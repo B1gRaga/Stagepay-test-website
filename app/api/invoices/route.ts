@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id:        user.id,
       invoice_number: invoiceNumber,
-      status:         (body.status as string) ?? 'draft',
+      status:         'draft',
       client_id:      body.client_id ?? null,
       client_name:    stripTags(body.client_name),
       client_email:   stripTagsOrNull(body.client_email),

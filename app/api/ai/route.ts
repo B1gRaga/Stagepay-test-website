@@ -7,12 +7,23 @@ import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 const ALLOWED_MODEL = 'claude-haiku-4-5'
 const MAX_TOKENS_CAP = 1024
 
+// Per-user daily cap — prevents a single account from burning unlimited
+// API credits by cycling through the per-minute window repeatedly.
+const DAILY_LIMIT = 50
+const DAY_MS      = 24 * 60 * 60 * 1000
+
 export async function POST(req: NextRequest) {
   const { user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Per-minute burst limit
   if (!(await rateLimit(user.id, 20, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
+  // Per-day limit — keyed separately so the windows don't interfere
+  if (!(await rateLimit(`daily:${user.id}`, DAILY_LIMIT, DAY_MS))) {
+    return NextResponse.json({ error: 'Daily AI request limit reached. Try again tomorrow.' }, { status: 429 })
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY

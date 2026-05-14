@@ -5,6 +5,15 @@ import { stripTags } from '@/lib/sanitize'
 type Params = { params: Promise<{ id: string }> }
 
 const VALID_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const
+
+const ALLOWED_TRANSITIONS: Record<string, readonly string[]> = {
+  draft:     ['sent', 'cancelled'],
+  sent:      ['paid', 'overdue', 'cancelled'],
+  overdue:   ['paid', 'cancelled'],
+  paid:      [],
+  cancelled: [],
+}
+
 const ALLOWED_FIELDS = [
   'status', 'client_id', 'client_name', 'client_email', 'client_phone',
   'client_address', 'client_vat', 'project', 'notes', 'issue_date',
@@ -36,6 +45,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Fetch current invoice upfront — verifies ownership and gives us the
+  // current status so we can validate transitions before writing anything.
+  const { data: currentInvoice, error: fetchErr } = await supabase
+    .from('invoices')
+    .select('id, status')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
+  if (fetchErr || !currentInvoice) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
@@ -43,8 +65,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  if (body.status && !VALID_STATUSES.includes(body.status as typeof VALID_STATUSES[number])) {
-    return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
+  if (body.status !== undefined) {
+    if (!VALID_STATUSES.includes(body.status as typeof VALID_STATUSES[number])) {
+      return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
+    }
+    if (body.status !== currentInvoice.status) {
+      const allowed = ALLOWED_TRANSITIONS[currentInvoice.status] ?? []
+      if (!allowed.includes(body.status as string)) {
+        return NextResponse.json({
+          error: `Cannot change status from '${currentInvoice.status}' to '${body.status}'`,
+        }, { status: 400 })
+      }
+    }
   }
 
   if (body.vat_rate !== undefined) {
