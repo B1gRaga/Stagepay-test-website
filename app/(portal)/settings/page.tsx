@@ -605,11 +605,11 @@ export default function SettingsPage() {
             </div>
             <div className="settings-section">
               <div className="settings-section-title">Logo <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Upload</span></div>
-              <div className="settings-section-desc">Upload your company logo. PNG or SVG recommended. Shows on all invoices and emails.</div>
+              <div className="settings-section-desc">Upload your company logo. PNG, JPG, or WebP recommended. Shows on all invoices and emails.</div>
               <input
                 ref={logoInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
                 style={{ display: 'none' }}
                 onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f); e.target.value = '' }}
               />
@@ -618,7 +618,7 @@ export default function SettingsPage() {
                   <img src={profile.logo_url} alt="Logo" style={{ height: 48, objectFit: 'contain', borderRadius: 4 }}/>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600 }}>Logo uploaded</div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>PNG, SVG, JPG · Max 2 MB</div>
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>PNG, JPG, WebP · Max 2 MB</div>
                   </div>
                   <button
                     className="topbar-btn btn-outline"
@@ -641,7 +641,7 @@ export default function SettingsPage() {
                 >
                   <div className="logo-zone-icon">{logoUploading ? '…' : '⬆'}</div>
                   <div className="logo-zone-label">{logoUploading ? 'Uploading…' : 'Click to upload logo'}</div>
-                  <div className="logo-zone-sub">PNG, SVG, JPG, WebP · Max 2 MB</div>
+                  <div className="logo-zone-sub">PNG, JPG, WebP · Max 2 MB</div>
                 </div>
               )}
               {logoError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{logoError}</div>}
