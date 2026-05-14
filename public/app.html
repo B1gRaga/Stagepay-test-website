@@ -1886,7 +1886,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                   <div style="font-size:11px;color:var(--t3);margin-top:3px;">Unlimited invoices · Reminders · Multi-currency</div>
                 </div>
                 <div style="text-align:right;">
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P199</div>
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P200</div>
                   <div style="font-size:10px;color:var(--t3);">/month</div>
                 </div>
               </div>
@@ -1898,7 +1898,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
                   <div style="font-size:11px;color:var(--t3);margin-top:3px;">Everything in Pro · 5 team members · Priority support</div>
                 </div>
                 <div style="text-align:right;">
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P499</div>
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--t1);">P500</div>
                   <div style="font-size:10px;color:var(--t3);">/month</div>
                 </div>
               </div>
@@ -4043,8 +4043,8 @@ function refreshPlanPanel() {
   const planNames = { free:'Starter', pro:'Pro', business:'Business' };
   const planSubs  = {
     free:     'Starter · Free · 5 invoices/month',
-    pro:      'Pro · P199/month · Renews automatically',
-    business: 'Business · P499/month · Renews automatically',
+    pro:      'Pro · P200/month · Renews automatically',
+    business: 'Business · P500/month · Renews automatically',
   };
   const planBadge = { free:'FREE', pro:'PRO', business:'BIZ' };
 
@@ -4057,16 +4057,16 @@ function refreshPlanPanel() {
 
   const planDescs = {
     free:     'You are on the <strong style="color:var(--g)">Starter</strong> plan — free forever.',
-    pro:      'You are on the <strong style="color:var(--g)">Pro</strong> plan — P199/month.',
-    business: 'You are on the <strong style="color:var(--g)">Business</strong> plan — P499/month.',
+    pro:      'You are on the <strong style="color:var(--g)">Pro</strong> plan — P200/month.',
+    business: 'You are on the <strong style="color:var(--g)">Business</strong> plan — P500/month.',
   };
   if (descEl) descEl.innerHTML = planDescs[plan] || planDescs.free;
 
   if (cardsEl) {
     const allPlans = [
       { id:'free',     label:'Starter',  price:'Free forever',                sub:'5 invoices/month · AI · PDF export',                  yearly:'' },
-      { id:'pro',      label:'Pro',      price:'P199 / month',                sub:'Unlimited invoices · AI + reminders · Multi-currency', yearly:'· P1,791/year (save 25%)' },
-      { id:'business', label:'Business', price:'P499 / month',                sub:'Everything in Pro · 5 team members · Priority support', yearly:'· P4,491/year (save 25%)' },
+      { id:'pro',      label:'Pro',      price:'P200 / month',                sub:'Unlimited invoices · AI + reminders · Multi-currency', yearly:'· P1,800/year (save 25%)' },
+      { id:'business', label:'Business', price:'P500 / month',                sub:'Everything in Pro · 5 team members · Priority support', yearly:'· P4,500/year (save 25%)' },
     ];
     cardsEl.innerHTML = allPlans.map(p => `
       <div class="plan-card${p.id===plan?' current':''}">

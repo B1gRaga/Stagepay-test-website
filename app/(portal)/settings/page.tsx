@@ -973,8 +973,8 @@ export default function SettingsPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 8 }}>
                 {[
                   { id: 'free',     name: 'Starter',  price: 'Free',     features: ['2 invoices/month', 'PDF export', 'WhatsApp send'],                               highlight: false },
-                  { id: 'pro',      name: 'Pro',       price: 'P199/mo',  features: ['Unlimited invoices', 'Email delivery', 'Auto-reminders', 'AI generation'],      highlight: true  },
-                  { id: 'business', name: 'Business',  price: 'P499/mo',  features: ['Everything in Pro', 'Multi-user', 'API access', 'Priority support'],            highlight: false },
+                  { id: 'pro',      name: 'Pro',       price: 'P200/mo',  features: ['Unlimited invoices', 'Email delivery', 'Auto-reminders', 'AI generation'],      highlight: true  },
+                  { id: 'business', name: 'Business',  price: 'P500/mo',  features: ['Everything in Pro', 'Multi-user', 'API access', 'Priority support'],            highlight: false },
                 ].map(plan => {
                   const isCurrent = plan.id === (profile?.plan ?? 'free')
                   const canUpgrade = !isCurrent && plan.id !== 'free'
