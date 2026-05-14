@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="StagePay">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="/vendor/supabase.min.js"></script>
 <style>
@@ -77,6 +77,49 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 #auth-layer.hidden {
   opacity:0;pointer-events:none;transform:scale(1.02);
 }
+
+/* ── LAUNCH SPLASH ── */
+#sp-splash {
+  position:fixed;inset:0;z-index:10000;
+  background:#0C1424;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .45s cubic-bezier(.4,0,.2,1),visibility .45s;
+}
+#sp-splash.sp-out{opacity:0;visibility:hidden;pointer-events:none;}
+.sp-splash-inner{display:flex;flex-direction:column;align-items:center;}
+.sp-mark{
+  animation:sp-up .55s cubic-bezier(.34,1.56,.64,1) both;
+  filter:drop-shadow(0 0 28px rgba(16,185,129,.45));
+}
+.sp-wordmark{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:30px;letter-spacing:8px;
+  color:#F8FAFC;margin:22px 0 6px;
+  animation:sp-up .5s cubic-bezier(.34,1.56,.64,1) .08s both;
+}
+.sp-wordmark em{color:#10B981;font-style:normal;}
+.sp-tagline{
+  font-family:'Archivo',sans-serif;
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(248,250,252,.22);margin-bottom:52px;
+  animation:sp-up .45s ease .14s both;
+}
+.sp-progress{
+  width:44px;height:1.5px;
+  background:rgba(255,255,255,.07);border-radius:1px;overflow:hidden;
+  animation:sp-up .4s ease .2s both;
+}
+.sp-progress-bar{
+  height:100%;width:0;
+  background:linear-gradient(90deg,#059669,#10B981);
+  border-radius:1px;
+  animation:sp-fill 1s cubic-bezier(.4,0,.2,1) .35s forwards;
+}
+@keyframes sp-up{
+  from{opacity:0;transform:translateY(12px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes sp-fill{to{width:100%;}}
 .auth-wrap {
   display:grid;grid-template-columns:1fr 1fr;
   width:100%;max-width:900px;height:580px;
@@ -1647,6 +1690,20 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 </head>
 <body>
 
+<!-- ── LAUNCH SPLASH ── -->
+<div id="sp-splash">
+  <div class="sp-splash-inner">
+    <svg class="sp-mark" width="72" height="72" viewBox="0 0 64 64" fill="none">
+      <rect x="8"  y="38" width="12" height="18" rx="2.5" fill="#065f46"/>
+      <rect x="26" y="27" width="12" height="29" rx="2.5" fill="#059669"/>
+      <rect x="44" y="14" width="12" height="42" rx="2.5" fill="#10B981"/>
+      <rect x="6"  y="57" width="52" height="1.5" rx=".75" fill="rgba(16,185,129,0.3)"/>
+    </svg>
+    <div class="sp-wordmark">STAGE<em>PAY</em></div>
+    <div class="sp-tagline">Invoice · Send · Get paid</div>
+    <div class="sp-progress"><div class="sp-progress-bar"></div></div>
+  </div>
+</div>
 
 <!-- ── AUTH LAYER ── -->
 <div id="auth-layer">
@@ -3802,6 +3859,16 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);displ
 </div>
 
 <script>
+/* ── SPLASH ── */
+function hideSplash(){
+  const el=document.getElementById('sp-splash');
+  if(!el||el.classList.contains('sp-out'))return;
+  el.classList.add('sp-out');
+  setTimeout(()=>el.remove(),460);
+}
+// Safety net — never leave splash visible more than 3 s
+setTimeout(hideSplash,3000);
+
 /* ── SUPABASE ── */
 const _supa = supabase.createClient(
   'https://tvpbshjrbtqreunxnpuv.supabase.co',
@@ -8290,7 +8357,7 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
       } catch(_) {}
     }
 
-    if (!session) return;
+    if (!session) { hideSplash(); return; }
 
     const sbUser = session.user;
     const { data: profile } = await _supa.from('profiles').select('*').eq('id', sbUser.id).single();
@@ -8313,10 +8380,12 @@ try { initSettings(); } catch(e) { console.warn('[StagePay] initSettings error:'
       document.getElementById('form-2fa').classList.remove('hidden');
       document.getElementById('tfa-code').value = '';
       _startTFACountdown();
-      return; // auth layer stays visible until TOTP is verified
+      hideSplash(); // reveal auth layer (2FA form) beneath the splash
+      return;
     }
 
     // No 2FA — hide auth layer and enter app
+    hideSplash();
     document.getElementById('auth-layer').classList.add('hidden');
 
     document.getElementById('sidebar-av').textContent   = initials;
