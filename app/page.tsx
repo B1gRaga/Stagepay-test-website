@@ -510,7 +510,7 @@ export default function Home() {
             <div className="price-card pop">
               <div className="pop-badge">Most Popular</div>
               <div className="price-tier">Pro</div>
-              <div className="price-amt">P199<span>/mo</span></div>
+              <div className="price-amt">P200<span>/mo</span></div>
               <div className="price-bill">Cancel anytime</div>
               <div className="price-divider"></div>
               <div className="price-list">
@@ -527,7 +527,7 @@ export default function Home() {
             <div className="price-card" style={{opacity:0.7}}>
               <div className="pop-badge" style={{background:'rgba(100,116,139,0.15)',color:'#94A3B8',border:'1px solid rgba(100,116,139,0.3)'}}>Coming Soon</div>
               <div className="price-tier">Business</div>
-              <div className="price-amt">P499<span>/mo</span></div>
+              <div className="price-amt">P500<span>/mo</span></div>
               <div className="price-bill">Team access · billed monthly</div>
               <div className="price-divider"></div>
               <div className="price-list">
