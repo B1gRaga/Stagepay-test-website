@@ -177,22 +177,24 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
   const [fwdModal, setFwdModal]   = useState<ForwardModalState | null>(null)
   const [deleteId, setDeleteId]   = useState<string | null>(null)
   const [deleting, setDeleting]   = useState(false)
-  const [markingPaid, setMarkingPaid] = useState<string | null>(null)
+  const [detailInv, setDetailInv] = useState<Invoice | null>(null)
+  const [markingPaid, setMarkingPaid] = useState(false)
 
-  async function markAsPaid(id: string) {
-    setMarkingPaid(id)
+  async function markAsPaid(inv: Invoice) {
+    setMarkingPaid(true)
     try {
-      const res = await fetch(`/api/invoices/${id}`, {
+      const res = await fetch(`/api/invoices/${inv.id}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'paid' }),
       })
       if (res.ok) {
-        setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: 'paid' } : i))
+        setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, status: 'paid' } : i))
+        setDetailInv(prev => prev ? { ...prev, status: 'paid' } : null)
       }
     } finally {
-      setMarkingPaid(null)
+      setMarkingPaid(false)
     }
   }
 
@@ -347,7 +349,7 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
             filtered.map(inv => {
               const sym = inv.currency || 'P'
               return (
-                <div key={inv.id} className="inv-table-row" style={{ color: 'inherit' }}>
+                <div key={inv.id} className="inv-table-row" style={{ color: 'inherit', cursor: 'pointer' }} onClick={() => setDetailInv(inv)}>
                   <div onClick={e => e.stopPropagation()}>
                     <input type="checkbox" style={{ cursor: 'pointer', accentColor: 'var(--g)' }}
                       checked={selected.has(inv.id)} onChange={e => toggleOne(inv.id, e.target.checked)} />
@@ -357,35 +359,9 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                   <div className="inv-td">{inv.project || '—'}</div>
                   <div className="inv-td">{fmtDate(inv.issue_date)}</div>
                   <div className="inv-td-amount">{fmt(Number(inv.total || 0), sym)}</div>
-                  <div className="inv-td" style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                  <div className="inv-td" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span className={`pill pill-${inv.status}`}>{inv.status}</span>
-                    <span onClick={e => e.stopPropagation()} style={{ display:'flex', gap:4, alignItems:'center' }}>
-                      {/* Print button */}
-                      <button className="act-btn act-print" onClick={() => printInvoice(inv.id)} title="Print invoice">
-                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 6V2h8v4M4 12H2V7h12v5h-2M4 10h8v4H4z"/></svg>
-                      </button>
-                      {/* Status-specific actions */}
-                      {inv.status === 'draft'   && <Link href={`/new-invoice?edit=${inv.id}`} className="act-btn act-edit">Edit</Link>}
-                      {inv.status === 'pending' && <Link href="/reminders" className="act-btn act-remind" style={{ border: '1px solid var(--warn)' }}>Remind</Link>}
-                      {inv.status === 'overdue' && <Link href="/reminders" className="act-btn act-chase" style={{ border: '1px solid rgba(239,68,68,.3)' }}>Chase</Link>}
-                      {(inv.status === 'sent' || inv.status === 'pending' || inv.status === 'overdue') && (
-                        <button
-                          className="act-btn act-send"
-                          onClick={() => markAsPaid(inv.id)}
-                          disabled={markingPaid === inv.id}
-                          title="Mark as paid"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
-                          {markingPaid === inv.id ? '…' : 'Paid'}
-                        </button>
-                      )}
-                      {inv.status === 'paid'    && (
-                        <button className="act-btn act-forward" onClick={() => openForwardPaid(inv)}>
-                          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
-                          Forward
-                        </button>
-                      )}
-                      {/* Delete */}
+                    <span onClick={e => e.stopPropagation()} style={{ display:'flex', gap:4, alignItems:'center', marginLeft: 'auto' }}>
                       <button className="act-btn act-delete" onClick={() => setDeleteId(inv.id)} title="Delete invoice">
                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
                       </button>
@@ -397,6 +373,101 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
           )}
         </div>
       </div>
+
+      {/* Invoice detail popup */}
+      {detailInv && (
+        <div className="modal-backdrop" onClick={() => setDetailInv(null)}>
+          <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">{detailInv.invoice_number || 'Invoice'}</div>
+                <div className="modal-sub">{detailInv.client_name} · {fmtDate(detailInv.issue_date)}</div>
+              </div>
+              <button className="modal-close" onClick={() => setDetailInv(null)}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              {/* Amount + status */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 4 }}>Total</div>
+                  <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 28, color: 'var(--t1)', letterSpacing: 1 }}>
+                    {fmt(Number(detailInv.total || 0), detailInv.currency || 'P')}
+                  </div>
+                </div>
+                <span className={`pill pill-${detailInv.status}`} style={{ fontSize: 11, padding: '5px 12px' }}>{detailInv.status}</span>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Mark as Paid */}
+                {(detailInv.status === 'sent' || detailInv.status === 'pending' || detailInv.status === 'overdue') && (
+                  <button
+                    className="modal-btn modal-btn-primary"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={() => markAsPaid(detailInv)}
+                    disabled={markingPaid}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M2 8l4 4 8-8"/></svg>
+                    {markingPaid ? 'Marking as paid…' : 'Mark as Paid'}
+                  </button>
+                )}
+                {/* Forward paid confirmation */}
+                {detailInv.status === 'paid' && (
+                  <button
+                    className="modal-btn"
+                    style={{ width: '100%', justifyContent: 'center', background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(16,185,129,.3)' }}
+                    onClick={() => { setDetailInv(null); openForwardPaid(detailInv) }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
+                    Forward Payment Confirmation
+                  </button>
+                )}
+                {/* Print PDF */}
+                <button
+                  className="modal-btn modal-btn-secondary"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => printInvoice(detailInv.id)}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 6V2h8v4M4 12H2V7h12v5h-2M4 10h8v4H4z"/></svg>
+                  Print / Download PDF
+                </button>
+                {/* Edit draft */}
+                {detailInv.status === 'draft' && (
+                  <Link
+                    href={`/new-invoice?edit=${detailInv.id}`}
+                    className="modal-btn modal-btn-secondary"
+                    style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+                    Edit Invoice
+                  </Link>
+                )}
+                {/* Remind / Chase */}
+                {(detailInv.status === 'pending' || detailInv.status === 'overdue') && (
+                  <Link
+                    href="/reminders"
+                    className="modal-btn modal-btn-secondary"
+                    style={{ width: '100%', justifyContent: 'center', textDecoration: 'none', borderColor: detailInv.status === 'overdue' ? 'rgba(239,68,68,.3)' : 'var(--warn)', color: detailInv.status === 'overdue' ? 'var(--danger)' : 'var(--warn)' }}
+                  >
+                    {detailInv.status === 'overdue' ? 'Chase Payment' : 'Send Reminder'}
+                  </Link>
+                )}
+                {/* Delete */}
+                <button
+                  className="modal-btn"
+                  style={{ width: '100%', justifyContent: 'center', background: 'rgba(239,68,68,.08)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,.2)', marginTop: 4 }}
+                  onClick={() => { setDetailInv(null); setDeleteId(detailInv.id) }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
+                  Delete Invoice
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirm modal */}
       {deleteId && (
