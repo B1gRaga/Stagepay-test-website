@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
+import PullToRefresh from '@/components/portal/PullToRefresh'
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -21,12 +22,14 @@ export default async function PortalLayout({ children }: { children: React.React
       {/* Restores theme before first paint — prevents flash */}
       <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('stagepay-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})()` }} />
       <style>{`
-        .portal-main{flex:1;min-width:0;overflow-y:auto;padding-bottom:0;}
+        .portal-main{flex:1;min-width:0;overflow-y:auto;padding-bottom:0;overscroll-behavior-y:contain;}
         @media(max-width:768px){
           .portal-main{
             padding-top:calc(44px + env(safe-area-inset-top,0px));
             padding-bottom:calc(56px + env(safe-area-inset-bottom,0px));
           }
+          /* Prevent iOS auto-zoom on input focus (inputs < 16px trigger zoom) */
+          input,select,textarea{font-size:max(16px,1em) !important;}
         }
 
         /* ── Mobile splash screen ── */
@@ -85,9 +88,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflow: 'hidden' }}>
         <SidebarNav displayName={displayName} userEmail={user.email!} plan={profile?.plan ?? 'free'} />
-        <main className="portal-main">
-          {children}
-        </main>
+        <PullToRefresh>{children}</PullToRefresh>
       </div>
       <SupportBtn />
     </>
