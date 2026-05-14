@@ -162,12 +162,12 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;font-family:'Archivo',sans-serif;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 0 14px rgba(16,185,129,.35);}
 .empty-cta:hover{background:#34d399;}
 
+@media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
 @media(max-width:700px){
   .list-head,.list-row{grid-template-columns:36px 1fr 90px 36px;}
   .list-head>*:nth-child(3),.list-row>*:nth-child(3),
   .list-head>*:nth-child(5),.list-row>*:nth-child(5){display:none;}
   .content{padding:16px;}
-  .topbar{padding:0 16px;}
 }
 `
 

@@ -20,9 +20,15 @@ export default async function PortalLayout({ children }: { children: React.React
     <>
       {/* Restores theme before first paint — prevents flash */}
       <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('stagepay-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})()` }} />
+      <style>{`
+        .portal-main{flex:1;min-width:0;overflow-y:auto;padding-bottom:0;}
+        @media(max-width:768px){
+          .portal-main{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px));}
+        }
+      `}</style>
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflow: 'hidden' }}>
         <SidebarNav displayName={displayName} userEmail={user.email!} plan={profile?.plan ?? 'free'} />
-        <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', paddingBottom: '80px' }}>
+        <main className="portal-main">
           {children}
         </main>
       </div>

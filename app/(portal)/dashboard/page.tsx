@@ -62,7 +62,13 @@ const CSS = `
   /* stat cards */
   @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-  @media(max-width:700px){.stats-row{grid-template-columns:1fr;}}
+  @media(max-width:700px){.stats-row{grid-template-columns:1fr 1fr;}}
+  @media(max-width:480px){.stats-row{grid-template-columns:1fr;}}
+  @media(max-width:768px){
+    .topbar{padding:0 16px;}
+    .mob-hide{display:none;}
+    .content{padding:16px;}
+  }
   .card{
     background:var(--bg2);border:1px solid var(--line);
     border-radius:12px;overflow:hidden;
@@ -176,10 +182,10 @@ export default async function DashboardPage() {
         <div className="page-title">DASHBOARD</div>
         <div className="topbar-right">
           <ThemeToggleBtn />
-          <Link href="/invoices" className="topbar-btn btn-outline" style={{ textDecoration: 'none' }}>
+          <Link href="/invoices" className="topbar-btn btn-outline mob-hide" style={{ textDecoration: 'none' }}>
             View all invoices
           </Link>
-          <Link href="/new-invoice" className="topbar-btn btn-primary" style={{ textDecoration: 'none' }}>
+          <Link href="/new-invoice" className="topbar-btn btn-primary mob-hide" style={{ textDecoration: 'none' }}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
             New Invoice
           </Link>

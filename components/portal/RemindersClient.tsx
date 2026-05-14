@@ -217,7 +217,8 @@ const CSS = `
     .inv-table-head{grid-template-columns:36px 1fr 100px 90px;}
     .inv-table-head>*:nth-child(5),.rem-row>*:nth-child(5){display:none;}
   }
-  @media(max-width:600px){.content{padding:16px;}.topbar{padding:0 16px;}}
+  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
+  @media(max-width:600px){.content{padding:16px;}}
 `
 
 const SCHEDULE_RULES = [

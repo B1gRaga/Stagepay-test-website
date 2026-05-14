@@ -154,7 +154,20 @@ const CSS = `
     .inv-table-head>*:nth-child(4),.inv-table-row>*:nth-child(4),
     .inv-table-head>*:nth-child(5),.inv-table-row>*:nth-child(5){display:none;}
   }
-  @media(max-width:600px){.content{padding:16px;}.topbar{padding:0 16px;}}
+  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
+  @media(max-width:600px){
+    .content{padding:12px 16px;}
+    .filter-bar{flex-direction:column;align-items:stretch;gap:8px;}
+    .search-wrap{flex:none;width:100%;}
+    .filter-btns{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+    .filter-btn{white-space:nowrap;flex-shrink:0;}
+  }
+  @media(max-width:480px){
+    .inv-table-head,.inv-table-row{grid-template-columns:1fr 90px;}
+    .inv-table-head>*:nth-child(3),.inv-table-row>*:nth-child(3){display:none;}
+    .inv-table-head>*:nth-child(6),.inv-table-row>*:nth-child(6){display:none;}
+    .inv-table-wrap{border-radius:8px;}
+  }
 `
 
 const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | null }> = {

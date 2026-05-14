@@ -272,6 +272,7 @@ const CSS = `
     .gen-layout{grid-template-columns:1fr;}
     .gen-right{display:none;}
   }
+  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
   @media(max-width:600px){
     .gen-wrap{padding:12px 16px;}
     .form-grid{grid-template-columns:1fr;}

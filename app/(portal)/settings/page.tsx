@@ -232,6 +232,7 @@ const CSS = `
     .settings-section::before{display:none;}
     .form-grid{grid-template-columns:1fr;}
   }
+  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
   @media(max-width:600px){
     .settings-wrap{padding:0 0 24px;}
   }
