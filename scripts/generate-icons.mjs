@@ -10,12 +10,16 @@ mkdirSync(out, { recursive: true })
 // Icon SVG — 3 ascending bars on dark navy, full-bleed (no rounded corners in SVG
 // so the OS mask looks intentional). Maskable safe zone is center 80%: 51px inset
 // on each side of a 512px canvas — bars sit comfortably within that zone.
+// 4-bar logo — matches the brand mark used throughout the app.
+// Bars go left-to-right shortest→tallest with opacity steps identical
+// to the sidebar SVG, on a full-bleed dark navy background.
 const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#0C1424"/>
-  <rect x="120" y="270" width="72" height="150" rx="10" fill="#065f46"/>
-  <rect x="220" y="190" width="72" height="230" rx="10" fill="#059669"/>
-  <rect x="320" y="105" width="72" height="315" rx="10" fill="#10B981"/>
-  <rect x="100" y="422" width="312" height="2"   rx="1" fill="rgba(16,185,129,0.25)"/>
+  <rect x="72"  y="312" width="72" height="120" rx="10" fill="#10B981" opacity=".48"/>
+  <rect x="184" y="232" width="72" height="200" rx="10" fill="#10B981" opacity=".65"/>
+  <rect x="296" y="152" width="72" height="280" rx="10" fill="#10B981" opacity=".82"/>
+  <rect x="408" y="72"  width="60" height="360" rx="10" fill="#10B981"/>
+  <rect x="56"  y="438" width="400" height="3"  rx="1.5" fill="rgba(16,185,129,0.2)"/>
 </svg>`
 
 const svgBuf = Buffer.from(iconSvg)
