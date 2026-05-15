@@ -154,7 +154,11 @@ const CSS = `
     .inv-table-head>*:nth-child(4),.inv-table-row>*:nth-child(4),
     .inv-table-head>*:nth-child(5),.inv-table-row>*:nth-child(5){display:none;}
   }
-  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
+  @media(max-width:768px){
+    .topbar{padding:0 16px;}.mob-hide{display:none !important;}
+    .inv-table-wrap{display:none;}
+    .inv-card-list{display:block;}
+  }
   @media(max-width:600px){
     .content{padding:12px 16px;}
     .filter-bar{flex-direction:column;align-items:stretch;gap:8px;}
@@ -162,18 +166,28 @@ const CSS = `
     .filter-btns{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
     .filter-btn{white-space:nowrap;flex-shrink:0;}
   }
-  @media(max-width:480px){
-    .inv-table-head,.inv-table-row{grid-template-columns:1fr 72px;}
-    .inv-table-head>*:nth-child(6),.inv-table-row>*:nth-child(6){display:none;}
-    .inv-table-wrap{border-radius:8px;}
-    .act-delete{display:none;}
-    .inv-mob-meta{display:block;}
+
+  /* ── Mobile card list ── */
+  .inv-card-list{display:none;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .inv-card-item{
+    display:flex;align-items:center;gap:14px;
+    padding:13px 16px;border-bottom:1px solid var(--line);
+    cursor:pointer;transition:background .15s;
+    -webkit-tap-highlight-color:transparent;
   }
-  .inv-mob-meta{
-    display:none;font-size:11px;color:var(--t3);
-    margin-top:3px;letter-spacing:.02em;white-space:nowrap;
-    overflow:hidden;text-overflow:ellipsis;
+  .inv-card-item:last-child{border-bottom:none;}
+  .inv-card-item:active{background:var(--surface);}
+  .inv-card-av{
+    width:36px;height:36px;border-radius:8px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',sans-serif;font-size:14px;
+    background:rgba(16,185,129,0.12);color:#10B981;
+    border:1px solid rgba(16,185,129,0.2);
   }
+  .inv-card-info{flex:1;min-width:0;}
+  .inv-card-client{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .inv-card-meta{font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .inv-card-amount{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.5px;color:#10B981;}
 `
 
 const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | null }> = {
@@ -374,10 +388,7 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                       checked={selected.has(inv.id)} onChange={e => toggleOne(inv.id, e.target.checked)} />
                   </div>
                   <div className="inv-td-num">{inv.invoice_number || '—'}</div>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="inv-td-client">{inv.client_name || '—'}</div>
-                    <div className="inv-mob-meta">{fmt(Number(inv.total || 0), sym)} · {inv.invoice_number || '—'}</div>
-                  </div>
+                  <div className="inv-td-client">{inv.client_name || '—'}</div>
                   <div className="inv-td">{inv.project || '—'}</div>
                   <div className="inv-td">{fmtDate(inv.issue_date)}</div>
                   <div className="inv-td-amount">{fmt(Number(inv.total || 0), sym)}</div>
@@ -393,6 +404,43 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
               )
             })
           )}
+        </div>
+
+        {/* ── Mobile card list (replaces table on ≤768px) ── */}
+        <div className="inv-card-list">
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon" style={{ background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.2)' }}>
+                <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#3B82F6" strokeWidth="1.8">
+                  <path d="M5 4h14l4 4v16H5V4z"/><path d="M19 4v4h4"/><path d="M9 13h10M9 17h6"/>
+                </svg>
+              </div>
+              <div className="empty-title">{EMPTY_MSGS[filter]?.title ?? 'No invoices'}</div>
+              <div className="empty-sub">{EMPTY_MSGS[filter]?.sub ?? ''}</div>
+              {EMPTY_MSGS[filter]?.cta && (
+                <a href="/new-invoice" className="empty-cta">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                  {EMPTY_MSGS[filter].cta}
+                </a>
+              )}
+            </div>
+          ) : filtered.map(inv => {
+            const sym = inv.currency || 'P'
+            const av = (inv.client_name || '').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || '??'
+            return (
+              <div key={inv.id} className="inv-card-item" onClick={() => setDetailInv(inv)}>
+                <div className="inv-card-av">{av}</div>
+                <div className="inv-card-info">
+                  <div className="inv-card-client">{inv.client_name || '—'}</div>
+                  <div className="inv-card-meta">{inv.invoice_number || '—'}{inv.project ? ` · ${inv.project}` : ''}</div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="inv-card-amount">{fmt(Number(inv.total || 0), sym)}</div>
+                  <div style={{ marginTop: 3 }}><span className={`pill pill-${inv.status}`}>{inv.status}</span></div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
