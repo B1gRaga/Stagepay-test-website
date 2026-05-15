@@ -14,12 +14,23 @@ mkdirSync(out, { recursive: true })
 // Bars go left-to-right shortest→tallest with opacity steps identical
 // to the sidebar SVG, on a full-bleed dark navy background.
 const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0C1424"/>
-  <rect x="72"  y="312" width="72" height="120" rx="10" fill="#10B981" opacity=".48"/>
-  <rect x="184" y="232" width="72" height="200" rx="10" fill="#10B981" opacity=".65"/>
-  <rect x="296" y="152" width="72" height="280" rx="10" fill="#10B981" opacity=".82"/>
-  <rect x="408" y="72"  width="60" height="360" rx="10" fill="#10B981"/>
-  <rect x="56"  y="438" width="400" height="3"  rx="1.5" fill="rgba(16,185,129,0.2)"/>
+  <defs>
+    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="68%" cy="50%" r="52%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0B1120"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <rect x="68"  y="308" width="78" height="128" rx="12" fill="url(#bar)" opacity=".5"/>
+  <rect x="182" y="224" width="78" height="212" rx="12" fill="url(#bar)" opacity=".68"/>
+  <rect x="296" y="140" width="78" height="296" rx="12" fill="url(#bar)" opacity=".84"/>
+  <rect x="410" y="56"  width="64" height="380" rx="12" fill="url(#bar)"/>
+  <rect x="52"  y="444" width="408" height="4"  rx="2" fill="rgba(16,185,129,0.3)"/>
 </svg>`
 
 const svgBuf = Buffer.from(iconSvg)

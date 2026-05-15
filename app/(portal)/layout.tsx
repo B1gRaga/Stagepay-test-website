@@ -37,52 +37,76 @@ export default async function PortalLayout({ children }: { children: React.React
           position:fixed;inset:0;z-index:9999;
           background:#0C1424;
           display:flex;align-items:center;justify-content:center;
-          transition:opacity .5s ease,visibility .5s;
+          transition:opacity .55s cubic-bezier(.4,0,.2,1),visibility .55s;
         }
-        html[data-theme="light"] #sp-splash{background:#F8FAFC;}
+        html[data-theme="light"] #sp-splash{background:#F1F5F9;}
         #sp-splash.sp-out{opacity:0;visibility:hidden;}
-        .sp-inner{display:flex;flex-direction:column;align-items:center;}
+        .sp-inner{display:flex;flex-direction:column;align-items:center;margin-top:-24px;}
         .sp-bar{transform-box:fill-box;transform-origin:50% 100%;}
-        .sp-b4{animation:sp-appear .35s ease both;}
-        .sp-b3{animation:sp-s3 .65s cubic-bezier(.34,1.56,.64,1) .08s both;}
-        .sp-b2{animation:sp-s2 .65s cubic-bezier(.34,1.56,.64,1) .16s both;}
-        .sp-b1{animation:sp-s1 .65s cubic-bezier(.34,1.56,.64,1) .24s both;}
-        .sp-baseline{animation:sp-appear .3s ease .4s both;}
+        .sp-b1{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .02s both;}
+        .sp-b2{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .12s both;}
+        .sp-b3{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .22s both;}
+        .sp-b4{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .32s both;}
+        .sp-baseline{animation:sp-appear .25s ease .5s both;}
         .sp-word{
-          font-family:'Bebas Neue',sans-serif;font-size:28px;
-          letter-spacing:6px;color:#F8FAFC;margin:22px 0 5px;
-          animation:sp-up .4s ease .55s both;
+          font-family:'Bebas Neue',sans-serif;font-size:34px;
+          letter-spacing:9px;color:#F8FAFC;margin:28px 0 6px;
+          animation:sp-up .45s ease .62s both;
         }
         html[data-theme="light"] .sp-word{color:#0F172A;}
         .sp-word em{color:#10B981;font-style:normal;}
         .sp-tag{
           font-family:'Archivo',sans-serif;font-size:10px;
-          letter-spacing:.18em;text-transform:uppercase;
-          color:rgba(248,250,252,.22);
-          animation:sp-up .35s ease .72s both;
+          letter-spacing:.2em;text-transform:uppercase;
+          color:rgba(248,250,252,.28);
+          animation:sp-up .38s ease .78s both;
         }
-        html[data-theme="light"] .sp-tag{color:rgba(15,23,42,.3);}
+        html[data-theme="light"] .sp-tag{color:rgba(15,23,42,.32);}
+        .sp-progress{
+          position:fixed;bottom:0;left:0;right:0;height:2px;
+          background:rgba(16,185,129,0.07);overflow:hidden;
+          animation:sp-appear .2s ease .18s both;
+        }
+        .sp-progress-fill{
+          height:100%;width:100%;
+          background:linear-gradient(90deg,#059669 0%,#10B981 55%,#34d399 100%);
+          transform-origin:left;transform:scaleX(0);
+          animation:sp-prog 1.45s cubic-bezier(.4,0,.2,1) .22s forwards;
+        }
         @keyframes sp-appear{from{opacity:0}to{opacity:1}}
-        @keyframes sp-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes sp-s3{0%{transform:scaleY(1.29)}60%{transform:scaleY(.94)}80%{transform:scaleY(1.03)}100%{transform:scaleY(1)}}
-        @keyframes sp-s2{0%{transform:scaleY(1.75)}60%{transform:scaleY(.91)}80%{transform:scaleY(1.04)}100%{transform:scaleY(1)}}
-        @keyframes sp-s1{0%{transform:scaleY(2.72)}60%{transform:scaleY(.88)}80%{transform:scaleY(1.06)}100%{transform:scaleY(1)}}
+        @keyframes sp-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes sp-rise{
+          0%{transform:scaleY(0);opacity:0}
+          45%{opacity:1}
+          70%{transform:scaleY(1.11)}
+          86%{transform:scaleY(0.96)}
+          100%{transform:scaleY(1)}
+        }
+        @keyframes sp-prog{to{transform:scaleX(1);}}
         @media(min-width:769px){#sp-splash{display:none;}}
       `}</style>
 
-      {/* Mobile splash — bars settle from equal height to correct heights */}
+      {/* Mobile splash — bars rise left-to-right with spring bounce */}
       <div id="sp-splash" aria-hidden="true">
         <div className="sp-inner">
-          <svg width="110" height="110" viewBox="0 0 64 64" fill="none">
-            <rect className="sp-bar sp-b4" x="46" y="7"  width="10" height="49" rx="2" fill="#10B981"/>
-            <rect className="sp-bar sp-b3" x="32" y="18" width="11" height="38" rx="2" fill="#10B981" opacity=".82"/>
-            <rect className="sp-bar sp-b2" x="18" y="28" width="11" height="28" rx="2" fill="#10B981" opacity=".65"/>
-            <rect className="sp-bar sp-b1" x="4"  y="38" width="11" height="18" rx="2" fill="#10B981" opacity=".48"/>
-            <rect className="sp-baseline"  x="3"  y="57" width="58" height="1.5" rx=".75" fill="rgba(16,185,129,0.25)"/>
+          <svg width="148" height="148" viewBox="0 0 64 64" fill="none"
+            style={{ filter: 'drop-shadow(0 0 18px rgba(16,185,129,0.5))' }}>
+            <defs>
+              <linearGradient id="sp-bg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#34d399"/>
+                <stop offset="100%" stopColor="#059669"/>
+              </linearGradient>
+            </defs>
+            <rect className="sp-bar sp-b1" x="4"  y="38" width="11" height="18" rx="2" fill="url(#sp-bg)" opacity=".5"/>
+            <rect className="sp-bar sp-b2" x="18" y="28" width="11" height="28" rx="2" fill="url(#sp-bg)" opacity=".68"/>
+            <rect className="sp-bar sp-b3" x="32" y="18" width="11" height="38" rx="2" fill="url(#sp-bg)" opacity=".84"/>
+            <rect className="sp-bar sp-b4" x="46" y="7"  width="11" height="49" rx="2" fill="url(#sp-bg)"/>
+            <rect className="sp-baseline"  x="3"  y="57" width="58" height="1.5" rx=".75" fill="rgba(16,185,129,0.35)"/>
           </svg>
           <div className="sp-word">STAGE<em>PAY</em></div>
           <div className="sp-tag">Invoice · Send · Get paid</div>
         </div>
+        <div className="sp-progress"><div className="sp-progress-fill"/></div>
       </div>
       <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},550);}setTimeout(hide,1500);})()` }} />
 

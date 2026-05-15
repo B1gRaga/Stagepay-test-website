@@ -167,6 +167,12 @@ const CSS = `
     .inv-table-head>*:nth-child(6),.inv-table-row>*:nth-child(6){display:none;}
     .inv-table-wrap{border-radius:8px;}
     .act-delete{display:none;}
+    .inv-mob-meta{display:block;}
+  }
+  .inv-mob-meta{
+    display:none;font-size:11px;color:var(--t3);
+    margin-top:3px;letter-spacing:.02em;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
   }
 `
 
@@ -368,7 +374,10 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
                       checked={selected.has(inv.id)} onChange={e => toggleOne(inv.id, e.target.checked)} />
                   </div>
                   <div className="inv-td-num">{inv.invoice_number || '—'}</div>
-                  <div className="inv-td-client">{inv.client_name || '—'}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="inv-td-client">{inv.client_name || '—'}</div>
+                    <div className="inv-mob-meta">{fmt(Number(inv.total || 0), sym)} · {inv.invoice_number || '—'}</div>
+                  </div>
                   <div className="inv-td">{inv.project || '—'}</div>
                   <div className="inv-td">{fmtDate(inv.issue_date)}</div>
                   <div className="inv-td-amount">{fmt(Number(inv.total || 0), sym)}</div>
