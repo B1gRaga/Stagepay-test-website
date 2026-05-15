@@ -154,6 +154,9 @@ const CSS = `
     .inv-table-head>*:nth-child(4),.inv-table-row>*:nth-child(4),
     .inv-table-head>*:nth-child(5),.inv-table-row>*:nth-child(5){display:none;}
   }
+  /* ── Mobile card list ── */
+  .inv-card-list{display:none;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+
   @media(max-width:768px){
     .topbar{padding:0 16px;}.mob-hide{display:none !important;}
     .inv-table-wrap{display:none;}
@@ -166,9 +169,6 @@ const CSS = `
     .filter-btns{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
     .filter-btn{white-space:nowrap;flex-shrink:0;}
   }
-
-  /* ── Mobile card list ── */
-  .inv-card-list{display:none;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
   .inv-card-item{
     display:flex;align-items:center;gap:14px;
     padding:13px 16px;border-bottom:1px solid var(--line);
