@@ -35,12 +35,12 @@ const CSS = `
   .sidebar-logo{
     padding:22px 20px 16px;
     border-bottom:1px solid var(--line);
-    font-family:'Bebas Neue',sans-serif;
+    font-family:var(--font-bebas),sans-serif;
     font-size:23px;letter-spacing:3px;color:var(--t1);
   }
   .sidebar-logo em{color:var(--g);font-style:normal;}
   .sidebar-logo small{
-    display:block;font-family:'Archivo',sans-serif;
+    display:block;font-family:var(--font-archivo),sans-serif;
     font-size:10px;letter-spacing:.12em;text-transform:uppercase;
     color:var(--t3);font-weight:500;margin-top:2px;
   }
@@ -56,7 +56,7 @@ const CSS = `
     font-size:13px;color:var(--t2);cursor:pointer;
     transition:all .15s;position:relative;
     text-decoration:none;background:transparent;border:none;
-    width:calc(100% - 16px);font-family:'Archivo',sans-serif;
+    width:calc(100% - 16px);font-family:var(--font-archivo),sans-serif;
   }
   .nav-item:hover{background:var(--surface);color:var(--t1);}
   .nav-item.active{background:var(--g-dim);color:var(--g);}
@@ -76,7 +76,7 @@ const CSS = `
   .sidebar-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--line);}
   .user-pill{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s;position:relative;}
   .user-pill:hover{background:var(--surface);}
-  .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(16,185,129,.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--g);flex-shrink:0;}
+  .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(16,185,129,.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-bebas),sans-serif;font-size:13px;color:var(--g);flex-shrink:0;}
   .user-name{font-size:13px;color:var(--t1);font-weight:500;}
   .user-plan{font-size:11px;color:var(--g);}
   .profile-popup{
@@ -87,7 +87,7 @@ const CSS = `
   }
   @keyframes popupIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   .profile-popup-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);}
-  .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:'Archivo',sans-serif;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
+  .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
   .profile-popup-item:hover{background:var(--surface);color:var(--t1);}
   .profile-popup-item.danger{color:var(--danger);}
   .profile-popup-item.danger:hover{background:rgba(224,85,64,.08);color:var(--danger);}
@@ -114,14 +114,14 @@ const CSS = `
     html[data-theme="light"] .mob-topbar{background:rgba(248,250,252,0.94);}
     .mob-topbar-logo{
       display:flex;align-items:center;gap:8px;text-decoration:none;
-      font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--t1);
+      font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2px;color:var(--t1);
     }
     .mob-topbar-logo em{color:var(--g);font-style:normal;}
     .mob-topbar-av{
       width:30px;height:30px;border-radius:50%;
       background:var(--g-dim);border:1px solid rgba(16,185,129,.25);
       display:flex;align-items:center;justify-content:center;
-      font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--g);
+      font-family:var(--font-bebas),sans-serif;font-size:12px;color:var(--g);
       cursor:pointer;-webkit-tap-highlight-color:transparent;
     }
     .mob-menu-popup{
@@ -162,7 +162,7 @@ const CSS = `
       display:flex;flex-direction:column;
       align-items:center;justify-content:center;
       flex:1;gap:3px;
-      font-size:10px;font-family:'Archivo',sans-serif;font-weight:500;
+      font-size:10px;font-family:var(--font-archivo),sans-serif;font-weight:500;
       color:var(--t3);text-decoration:none;
       position:relative;cursor:pointer;
       background:transparent;border:none;padding:0;
@@ -311,7 +311,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
               <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
               <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
-            <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 26, letterSpacing: 3 }}>
+            <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 26, letterSpacing: 3 }}>
               Stage<em>Pay</em>
             </span>
           </div>

@@ -53,7 +53,7 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
+  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes dots{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
   @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
@@ -61,7 +61,7 @@ const CSS = `
   @keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
 
   .gen-wrap{padding:16px 28px;height:calc(100vh - 56px);}
   .gen-layout{display:grid;grid-template-columns:1fr 400px;gap:16px;height:100%;}
@@ -76,7 +76,7 @@ const CSS = `
   .ai-hero-sub{font-size:11px;color:var(--t3);margin-top:1px;}
   .ai-big-textarea{
     width:100%;background:var(--surface);border:1px solid var(--line2);
-    border-radius:8px;padding:14px;font-family:'Archivo',sans-serif;
+    border-radius:8px;padding:14px;font-family:var(--font-archivo),sans-serif;
     font-size:14px;color:var(--t1);outline:none;resize:none;line-height:1.6;
     transition:border-color .2s, box-shadow .2s;
   }
@@ -90,7 +90,7 @@ const CSS = `
   .prompt-chip{
     padding:5px 12px;border-radius:20px;border:1px solid var(--line2);
     background:transparent;color:var(--t3);font-size:11px;font-weight:500;
-    cursor:pointer;transition:all .15s;font-family:'Archivo',sans-serif;
+    cursor:pointer;transition:all .15s;font-family:var(--font-archivo),sans-serif;
     letter-spacing:.03em;
   }
   .prompt-chip:hover{border-color:var(--g);color:var(--g);background:var(--g-dim);}
@@ -103,7 +103,7 @@ const CSS = `
   .ai-generate-btn{
     width:100%;background:var(--g);color:var(--bg);
     border:none;border-radius:8px;padding:14px;
-    font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;
+    font-family:var(--font-archivo),sans-serif;font-size:13px;font-weight:700;
     letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:8px;
     transition:all .2s;box-shadow:0 3px 10px rgba(16,185,129,.2);margin-top:12px;
@@ -145,7 +145,7 @@ const CSS = `
   .form-input,.form-select,.form-textarea{
     background:var(--surface);border:1px solid var(--line2);
     border-radius:7px;padding:10px 12px;
-    font-family:'Archivo',sans-serif;font-size:13px;color:var(--t1);
+    font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
   }
   .form-input:focus,.form-select:focus,.form-textarea:focus{
@@ -161,13 +161,13 @@ const CSS = `
     background:var(--surface);border:1px solid var(--line2);
     border-radius:20px;padding:4px 12px 4px 6px;
     font-size:12px;color:var(--t2);cursor:pointer;transition:all .15s;
-    font-family:'Archivo',sans-serif;border:none;
+    font-family:var(--font-archivo),sans-serif;border:none;
   }
   .client-pill:hover{border:1px solid var(--g);color:var(--t1);}
   .client-pill-av{
     width:18px;height:18px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Bebas Neue',sans-serif;font-size:10px;flex-shrink:0;
+    font-family:var(--font-bebas),sans-serif;font-size:10px;flex-shrink:0;
   }
 
   /* Line items */
@@ -182,7 +182,7 @@ const CSS = `
     background:transparent;border:1px dashed var(--line2);
     border-radius:6px;padding:8px 14px;cursor:pointer;
     font-size:12px;color:var(--t3);margin-top:8px;width:100%;
-    justify-content:center;transition:all .15s;font-family:'Archivo',sans-serif;
+    justify-content:center;transition:all .15s;font-family:var(--font-archivo),sans-serif;
   }
   .add-line-btn:hover{border-color:var(--g);color:var(--g);}
 
@@ -190,7 +190,7 @@ const CSS = `
   .deposit-preset{
     padding:4px 10px;border-radius:4px;border:1px solid var(--line2);
     background:transparent;color:var(--t3);font-size:11px;cursor:pointer;
-    transition:all .15s;font-family:'Archivo',sans-serif;font-weight:600;
+    transition:all .15s;font-family:var(--font-archivo),sans-serif;font-weight:600;
   }
   .deposit-preset.active{background:var(--g-dim);border-color:rgba(16,185,129,.3);color:var(--g);}
   .deposit-preset:hover{border-color:var(--g);color:var(--g);}
@@ -214,13 +214,13 @@ const CSS = `
     text-transform:uppercase;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:8px;
     transition:all .2s;box-shadow:0 3px 10px rgba(16,185,129,.2);
-    font-family:'Archivo',sans-serif;
+    font-family:var(--font-archivo),sans-serif;
   }
   .apply-btn:hover{background:#34d399;}
   .clear-btn{
     background:transparent;color:var(--t3);border:1px solid var(--line2);
     border-radius:8px;padding:12px 16px;font-size:12px;cursor:pointer;
-    transition:all .15s;white-space:nowrap;font-family:'Archivo',sans-serif;
+    transition:all .15s;white-space:nowrap;font-family:var(--font-archivo),sans-serif;
   }
   .clear-btn:hover{border-color:var(--danger);color:var(--danger);}
 
@@ -231,7 +231,7 @@ const CSS = `
   .preview-invoice{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;}
   .prev-top{background:var(--surface);padding:16px 18px;border-bottom:1px solid var(--line);position:relative;}
   .prev-top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g),transparent 60%);opacity:.6;}
-  .prev-brand{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
+  .prev-brand{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
   .prev-meta{font-size:11px;color:var(--t3);margin-top:3px;}
   .prev-body{padding:16px 18px;}
   .prev-from-to{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;}
@@ -247,10 +247,10 @@ const CSS = `
   .prev-total-row{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);padding:3px 0;}
   .prev-total-final{background:var(--g);border-radius:7px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
   .preview-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;}
-  .btn-primary{background:var(--g);color:var(--bg);border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;flex:1;font-family:'Archivo',sans-serif;transition:all .15s;}
+  .btn-primary{background:var(--g);color:var(--bg);border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;flex:1;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
   .btn-primary:hover{background:#34d399;}
   .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-  .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);border-radius:6px;padding:9px 14px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;font-family:'Archivo',sans-serif;transition:all .15s;}
+  .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);border-radius:6px;padding:9px 14px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
   .btn-outline:hover{border-color:var(--g);color:var(--g);}
   .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
 
@@ -258,12 +258,12 @@ const CSS = `
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;}
   .modal-box{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:480px;overflow:hidden;animation:modalIn .2s ease;}
   .modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
-  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
+  .modal-title{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
   .modal-close{background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;}
   .modal-body{padding:24px;}
   .modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;}
   .channel-tabs{display:flex;gap:6px;margin-bottom:20px;}
-  .channel-tab{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;font-family:'Archivo',sans-serif;text-transform:uppercase;letter-spacing:.05em;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .channel-tab{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-archivo),sans-serif;text-transform:uppercase;letter-spacing:.05em;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
   .channel-tab.active{border-color:var(--g);background:var(--g-dim);color:var(--g);}
   .channel-tab.active.wa{border-color:#25D366;background:rgba(37,211,102,.1);color:#25D366;}
   .success-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:8px;margin-bottom:16px;}
@@ -807,7 +807,7 @@ export default function NewInvoicePage() {
                         </div>
                         <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit due</div>
-                          <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 20, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
+                          <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
                         </div>
                       </div>
                     )}
@@ -858,7 +858,7 @@ export default function NewInvoicePage() {
                       <div className="prev-brand">{firmName.toUpperCase()}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--g)' }}>INVOICE</div>
+                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--g)' }}>INVOICE</div>
                       <div className="prev-meta">#{savedInvNum || 'Auto'} · {fmtDate(issueDate) || '—'}</div>
                     </div>
                   </div>
@@ -908,7 +908,7 @@ export default function NewInvoicePage() {
                   </div>
                   <div className="prev-total-final">
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'rgba(255,255,255,.8)' }}>Total Due</span>
-                    <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 20, color: '#fff', letterSpacing: 1 }}>{fmtAmt(total, currency)}</span>
+                    <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: '#fff', letterSpacing: 1 }}>{fmtAmt(total, currency)}</span>
                   </div>
 
                   {depositOn && depositAmt > 0 && (
@@ -918,7 +918,7 @@ export default function NewInvoicePage() {
                           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit Required</div>
                           <div style={{ fontSize: 11, color: 'var(--t3)' }}>{depositPct}% of total</div>
                         </div>
-                        <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
+                        <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 22, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
                       </div>
                     </div>
                   )}

@@ -32,7 +32,7 @@ const CSS = `
     --g-dim:rgba(16,185,129,0.08);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
+  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
 
   .content{flex:1;overflow-y:auto;padding:24px 28px;}
 
@@ -44,7 +44,7 @@ const CSS = `
     padding:0 28px;background:var(--bg2);
   }
   .page-title{
-    font-family:'Bebas Neue',sans-serif;
+    font-family:var(--font-bebas),sans-serif;
     font-size:20px;letter-spacing:2.5px;color:var(--t1);
   }
   .topbar-right{display:flex;align-items:center;gap:10px;}
@@ -52,7 +52,7 @@ const CSS = `
     display:flex;align-items:center;gap:7px;
     padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;
     cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;
-    text-transform:uppercase;font-family:'Archivo',sans-serif;text-decoration:none;
+    text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;
   }
   .btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.4),0 2px 8px rgba(16,185,129,.2);}
   .btn-primary:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 0 24px rgba(16,185,129,.6),0 4px 16px rgba(16,185,129,.3);}
@@ -76,7 +76,7 @@ const CSS = `
   }
   .stat-inner{padding:20px 24px;animation:cardIn .5s ease both;}
   .stat-label-sm{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
-  .stat-val-big{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:1px;line-height:1;}
+  .stat-val-big{font-family:var(--font-bebas),sans-serif;font-size:40px;letter-spacing:1px;line-height:1;}
   .stat-sub-sm{font-size:12px;color:var(--t3);margin-top:4px;}
 
   /* recent invoices card */
@@ -97,12 +97,12 @@ const CSS = `
   .inv-avatar{
     width:36px;height:36px;border-radius:8px;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;
+    font-family:var(--font-bebas),sans-serif;font-size:14px;flex-shrink:0;
   }
   .inv-info{flex:1;min-width:0;}
   .inv-client-name{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .inv-num-small{font-size:11px;color:var(--t3);margin-top:1px;}
-  .inv-amount-text{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.5px;}
+  .inv-amount-text{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:.5px;}
   .pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
   .pill-paid{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25);}
   .pill-pending{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
@@ -114,7 +114,7 @@ const CSS = `
   .empty-illustration{width:52px;height:52px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
   .empty-title{font-size:16px;color:var(--t1);margin-bottom:4px;}
   .empty-sub{font-size:12px;color:var(--t3);margin-bottom:14px;}
-  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:var(--bg);border:none;border-radius:6px;padding:8px 16px;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;font-family:'Archivo',sans-serif;letter-spacing:.04em;text-transform:uppercase;}
+  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:var(--bg);border:none;border-radius:6px;padding:8px 16px;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;}
 `
 
 function statusPill(status: string) {

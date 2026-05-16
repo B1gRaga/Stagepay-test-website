@@ -47,9 +47,9 @@ const config: Config = {
         ring:                 "hsl(var(--ring))",
       },
       fontFamily: {
-        heading: ["'Bebas Neue'", "sans-serif"],
-        serif:   ["'Instrument Serif'", "serif"],
-        sans:    ["'Archivo'", "sans-serif"],
+        heading: ["var(--font-bebas)", "sans-serif"],
+        serif:   ["var(--font-instrument)", "serif"],
+        sans:    ["var(--font-archivo)", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

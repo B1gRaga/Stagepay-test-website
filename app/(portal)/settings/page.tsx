@@ -123,12 +123,12 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
+  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
 
   .settings-wrap{padding:0 28px 24px;height:calc(100vh - 80px);}
   .settings-layout{
@@ -154,7 +154,7 @@ const CSS = `
     border-bottom:1px solid var(--line);
   }
   .settings-panel-hero-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .settings-panel-hero-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--t1);line-height:1;}
+  .settings-panel-hero-title{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:2px;color:var(--t1);line-height:1;}
   .settings-panel-hero-sub{font-size:12px;color:var(--t3);margin-top:3px;line-height:1.5;}
   .settings-panel-hero-badge{margin-left:auto;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px;white-space:nowrap;}
 
@@ -162,8 +162,8 @@ const CSS = `
   .settings-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
   .settings-section::before{content:'';position:absolute;left:-32px;top:0;width:3px;height:0;background:var(--g);border-radius:0 2px 2px 0;transition:height .3s ease;}
   .settings-section:hover::before{height:100%;}
-  .settings-section-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1.5px;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
-  .settings-section-badge{font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:3px;}
+  .settings-section-title{font-family:var(--font-bebas),sans-serif;font-size:17px;letter-spacing:1.5px;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+  .settings-section-badge{font-family:var(--font-archivo),sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:3px;}
   .settings-section-desc{font-size:12px;color:var(--t3);margin-bottom:18px;line-height:1.6;}
 
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -173,7 +173,7 @@ const CSS = `
   .form-input,.form-select,.form-textarea{
     background:var(--surface);border:1px solid var(--line2);
     border-radius:7px;padding:10px 12px;
-    font-family:'Archivo',sans-serif;font-size:13px;color:var(--t1);
+    font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
   }
   .form-input:focus,.form-select:focus,.form-textarea:focus{
@@ -183,7 +183,7 @@ const CSS = `
   .form-textarea{resize:vertical;min-height:80px;}
   .form-select option,.form-select optgroup{background:var(--bg2);color:var(--t1);}
 
-  .topbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);letter-spacing:.05em;text-transform:uppercase;font-family:'Archivo',sans-serif;text-decoration:none;background:transparent;color:var(--t2);}
+  .topbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;background:transparent;color:var(--t2);}
   .topbar-btn:hover{border-color:var(--g);color:var(--g);}
   .btn-primary{background:var(--g);color:var(--bg);border-color:var(--g);box-shadow:0 2px 8px rgba(16,185,129,.2);}
   .btn-primary:hover{background:#34d399;border-color:#34d399;color:var(--bg);}
@@ -242,7 +242,7 @@ const CSS = `
   .theme-card{cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid transparent;transition:border-color .15s,transform .1s;}
   .theme-card:hover{transform:scale(1.03);}
   .theme-card.selected{border-color:var(--g);box-shadow:0 0 0 3px rgba(16,185,129,.15);}
-  .theme-card-name{text-align:center;font-size:10px;padding:4px 4px 6px;color:var(--t3);background:var(--surface);font-weight:400;font-family:'Archivo',sans-serif;}
+  .theme-card-name{text-align:center;font-size:10px;padding:4px 4px 6px;color:var(--t3);background:var(--surface);font-weight:400;font-family:var(--font-archivo),sans-serif;}
   .theme-card.selected .theme-card-name{color:var(--g);font-weight:600;}
 
   .color-fields{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
@@ -981,8 +981,8 @@ export default function SettingsPage() {
                   const canUpgrade = !isCurrent && plan.id !== 'free'
                   return (
                     <div key={plan.name} className="plan-card" style={{ border: isCurrent ? '1px solid rgba(16,185,129,.4)' : undefined, gap: 8 }}>
-                      <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 18, letterSpacing: 1.5, color: plan.highlight ? 'var(--g)' : 'var(--t1)' }}>{plan.name}</div>
-                      <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: 'var(--t1)' }}>{plan.price}</div>
+                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 18, letterSpacing: 1.5, color: plan.highlight ? 'var(--g)' : 'var(--t1)' }}>{plan.name}</div>
+                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 22, color: 'var(--t1)' }}>{plan.price}</div>
                       {plan.features.map(f => <div key={f} style={{ fontSize: 11, color: 'var(--t3)', display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: 'var(--g)', fontSize: 10 }}>✓</span>{f}</div>)}
                       <div style={{ marginTop: 4 }}>
                         {isCurrent ? (

@@ -44,12 +44,12 @@ const CSS = `
     --g-dim:rgba(16,185,129,0.08);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
+  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
   .topbar-right{display:flex;align-items:center;gap:10px;}
-  .topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:'Archivo',sans-serif;text-decoration:none;}
+  .topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;}
   .btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.4),0 2px 8px rgba(16,185,129,.2);}
   .btn-primary:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 0 24px rgba(16,185,129,.6),0 4px 16px rgba(16,185,129,.3);}
   .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);}
@@ -62,7 +62,7 @@ const CSS = `
   .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;}
   .search-input{
     width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;
-    padding:9px 14px 9px 34px;font-family:'Archivo',sans-serif;font-size:13px;
+    padding:9px 14px 9px 34px;font-family:var(--font-archivo),sans-serif;font-size:13px;
     color:var(--t1);outline:none;transition:border-color .15s;
   }
   .search-input:focus{border-color:rgba(16,185,129,.4);}
@@ -72,7 +72,7 @@ const CSS = `
     padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;
     letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
     border:1px solid var(--line2);background:transparent;color:var(--t3);
-    transition:all .15s;font-family:'Archivo',sans-serif;
+    transition:all .15s;font-family:var(--font-archivo),sans-serif;
   }
   .filter-btn:hover,.filter-btn.active{border-color:var(--g);color:var(--g);background:var(--g-dim);}
 
@@ -90,9 +90,9 @@ const CSS = `
   .inv-table-row:last-child{border-bottom:none;}
   .inv-table-row:hover{background:var(--surface);}
   .inv-td{font-size:13px;color:var(--t2);}
-  .inv-td-num{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--t3);letter-spacing:1px;}
+  .inv-td-num{font-family:var(--font-bebas),sans-serif;font-size:15px;color:var(--t3);letter-spacing:1px;}
   .inv-td-client{font-size:13px;font-weight:600;color:var(--t1);}
-  .inv-td-amount{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--t1);letter-spacing:.5px;}
+  .inv-td-amount{font-family:var(--font-bebas),sans-serif;font-size:17px;color:var(--t1);letter-spacing:.5px;}
 
   .pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
   .pill-paid{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25);}
@@ -102,7 +102,7 @@ const CSS = `
   .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);}
   .pill-cancelled{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);}
 
-  .act-btn{font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.04em;font-family:'Archivo',sans-serif;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
+  .act-btn{font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.04em;font-family:var(--font-archivo),sans-serif;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
   .act-send{background:var(--g);color:#0F172A;}
   .act-remind{background:transparent;border:1px solid var(--warn) !important;color:var(--warn);}
   .act-chase{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3) !important;color:var(--danger);}
@@ -119,13 +119,13 @@ const CSS = `
   .empty-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
   .empty-title{font-size:16px;color:var(--t1);margin-bottom:6px;}
   .empty-sub{font-size:12px;color:var(--t3);margin-bottom:18px;max-width:320px;margin-left:auto;margin-right:auto;}
-  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:'Archivo',sans-serif;letter-spacing:.04em;text-transform:uppercase;}
+  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;}
 
   /* Modal */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
   .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);}
   .modal-tabs{display:flex;gap:2px;padding:12px 24px 0;border-bottom:1px solid var(--line);}
-  .modal-tab{padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--t3);font-family:'Archivo',sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .modal-tab{padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--t3);font-family:var(--font-archivo),sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
   .modal-tab.active{color:var(--g);border-bottom-color:var(--g);}
   .modal-tab:hover:not(.active){color:var(--t2);}
   .modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
@@ -137,9 +137,9 @@ const CSS = `
   .modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;}
   .modal-field{margin-bottom:16px;}
   .modal-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
-  .modal-input{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:9px 12px;font-family:'Archivo',sans-serif;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
+  .modal-input{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:9px 12px;font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
   .modal-input:focus{border-color:rgba(16,185,129,.4);}
-  .modal-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:'Archivo',sans-serif;}
+  .modal-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;}
   .modal-btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.35);}
   .modal-btn-primary:hover{background:#34d399;box-shadow:0 0 22px rgba(16,185,129,.55);}
   .modal-btn-secondary{background:transparent;color:var(--t2);border:1px solid var(--line2);}
@@ -180,14 +180,14 @@ const CSS = `
   .inv-card-av{
     width:36px;height:36px;border-radius:8px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Bebas Neue',sans-serif;font-size:14px;
+    font-family:var(--font-bebas),sans-serif;font-size:14px;
     background:rgba(16,185,129,0.12);color:#10B981;
     border:1px solid rgba(16,185,129,0.2);
   }
   .inv-card-info{flex:1;min-width:0;}
   .inv-card-client{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .inv-card-meta{font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .inv-card-amount{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.5px;color:#10B981;}
+  .inv-card-amount{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:.5px;color:#10B981;}
 `
 
 const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | null }> = {
@@ -462,7 +462,7 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 4 }}>Total</div>
-                  <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 28, color: 'var(--t1)', letterSpacing: 1 }}>
+                  <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 28, color: 'var(--t1)', letterSpacing: 1 }}>
                     {fmt(Number(detailInv.total || 0), detailInv.currency || 'P')}
                   </div>
                 </div>

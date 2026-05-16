@@ -49,14 +49,14 @@ export default async function PortalLayout({ children }: { children: React.React
         .sp-b4{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .32s both;}
         .sp-baseline{animation:sp-appear .25s ease .5s both;}
         .sp-word{
-          font-family:'Bebas Neue',sans-serif;font-size:34px;
+          font-family:var(--font-bebas),sans-serif;font-size:34px;
           letter-spacing:9px;color:#F8FAFC;margin:28px 0 6px;
           animation:sp-up .45s ease .62s both;
         }
         html[data-theme="light"] .sp-word{color:#0F172A;}
         .sp-word em{color:#10B981;font-style:normal;}
         .sp-tag{
-          font-family:'Archivo',sans-serif;font-size:10px;
+          font-family:var(--font-archivo),sans-serif;font-size:10px;
           letter-spacing:.2em;text-transform:uppercase;
           color:rgba(248,250,252,.28);
           animation:sp-up .38s ease .78s both;

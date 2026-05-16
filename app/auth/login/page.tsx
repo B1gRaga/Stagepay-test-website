@@ -17,7 +17,7 @@ const FEATURES = [
 
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Archivo',sans-serif;background:#060A12}
+  body{font-family:var(--font-archivo),sans-serif;background:#060A12}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(24px,-18px) scale(1.06)}70%{transform:translate(-12px,14px) scale(.96)}}
   @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-20px,22px) scale(1.04)}66%{transform:translate(16px,-10px) scale(.97)}}
@@ -99,15 +99,15 @@ const CSS = `
   .auth-left::before{
     content:'STAGEPAY';
     position:absolute;bottom:-18px;left:-8px;
-    font-family:'Bebas Neue',sans-serif;font-size:128px;letter-spacing:6px;
+    font-family:var(--font-bebas),sans-serif;font-size:128px;letter-spacing:6px;
     color:rgba(16,185,129,.05);pointer-events:none;user-select:none;line-height:1;
   }
 
-  .auth-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
+  .auth-logo{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
   .auth-logo em{color:#10B981;font-style:normal;}
 
-  .auth-tagline{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;line-height:1.2;color:#F8FAFC;}
-  .auth-tagline strong{color:#10B981;font-style:normal;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:36px;display:block;}
+  .auth-tagline{font-family:var(--font-instrument),serif;font-style:italic;font-size:30px;line-height:1.2;color:#F8FAFC;}
+  .auth-tagline strong{color:#10B981;font-style:normal;font-family:var(--font-bebas),sans-serif;letter-spacing:2px;font-size:36px;display:block;}
 
   /* Invoice card — floats gently */
   .auth-card{
@@ -139,12 +139,12 @@ const CSS = `
     flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;
     letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .18s;
     color:rgba(248,250,252,.35);background:transparent;border:none;border-radius:7px;
-    font-family:'Archivo',sans-serif;text-decoration:none;display:block;
+    font-family:var(--font-archivo),sans-serif;text-decoration:none;display:block;
   }
   .auth-tab.active{background:linear-gradient(135deg,#10B981,#059669);color:#000;box-shadow:0 2px 12px rgba(16,185,129,.35);}
   .auth-tab:not(.active):hover{color:rgba(248,250,252,.7);background:rgba(255,255,255,.05);}
 
-  .auth-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2.5px;color:#F8FAFC;margin-bottom:3px;}
+  .auth-title{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:2.5px;color:#F8FAFC;margin-bottom:3px;}
   .auth-sub{font-size:12px;color:rgba(248,250,252,.35);margin-bottom:10px;}
 
   .auth-divider{height:1px;background:rgba(255,255,255,.06);margin:0 0 18px;}
@@ -156,7 +156,7 @@ const CSS = `
     background:rgba(255,255,255,.04);
     border:1px solid rgba(255,255,255,.08);
     border-radius:8px;padding:12px 15px;
-    font-family:'Archivo',sans-serif;font-size:13px;color:#F8FAFC;
+    font-family:var(--font-archivo),sans-serif;font-size:13px;color:#F8FAFC;
     outline:none;transition:border-color .2s,box-shadow .2s,background .2s;width:100%;
   }
   .auth-input:focus{
@@ -176,7 +176,7 @@ const CSS = `
     font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
     cursor:pointer;transition:all .2s;margin-top:4px;
     display:flex;align-items:center;justify-content:center;gap:8px;
-    width:100%;font-family:'Archivo',sans-serif;
+    width:100%;font-family:var(--font-archivo),sans-serif;
     box-shadow:0 4px 20px rgba(16,185,129,.3);
     position:relative;overflow:hidden;
   }
@@ -249,7 +249,7 @@ export default function LoginPage() {
               <div style={{width:40,height:2,background:'linear-gradient(90deg,#10B981,transparent)',margin:'16px 0 20px',borderRadius:1}}/>
               <div className="auth-card">
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,letterSpacing:2,color:'rgba(255,255,255,.4)'}}>INVOICE · INV-047</div>
+                  <div style={{fontFamily:"var(--font-bebas),sans-serif",fontSize:12,letterSpacing:2,color:'rgba(255,255,255,.4)'}}>INVOICE · INV-047</div>
                   <span className="auth-badge">Paid</span>
                 </div>
                 <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginBottom:2}}>Molapo Tower Ltd.</div>
@@ -257,7 +257,7 @@ export default function LoginPage() {
                 <div style={{height:1,background:'rgba(255,255,255,.06)',marginBottom:14}}/>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                   <span style={{fontSize:10,color:'rgba(255,255,255,.3)',letterSpacing:'.06em',textTransform:'uppercase'}}>Total due</span>
-                  <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,letterSpacing:1,color:'#10B981',textShadow:'0 0 20px rgba(16,185,129,.3)'}}>P 24,500</span>
+                  <span style={{fontFamily:"var(--font-bebas),sans-serif",fontSize:26,letterSpacing:1,color:'#10B981',textShadow:'0 0 20px rgba(16,185,129,.3)'}}>P 24,500</span>
                 </div>
               </div>
             </div>

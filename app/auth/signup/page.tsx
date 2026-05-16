@@ -17,7 +17,7 @@ const FEATURES = [
 
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Archivo',sans-serif;background:#060A12}
+  body{font-family:var(--font-archivo),sans-serif;background:#060A12}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(24px,-18px) scale(1.06)}70%{transform:translate(-12px,14px) scale(.96)}}
   @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-20px,22px) scale(1.04)}66%{transform:translate(16px,-10px) scale(.97)}}
@@ -44,11 +44,11 @@ const CSS = `
   .orb-1{width:320px;height:320px;top:-80px;right:-80px;background:radial-gradient(circle,rgba(16,185,129,.18) 0%,transparent 65%);animation:orbFloat1 12s ease-in-out infinite;}
   .orb-2{width:220px;height:220px;bottom:60px;left:-60px;background:radial-gradient(circle,rgba(59,130,246,.12) 0%,transparent 65%);animation:orbFloat2 9s ease-in-out infinite;animation-delay:-4s;}
   .auth-grid{position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0,rgba(255,255,255,.016) 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,rgba(255,255,255,.016) 0,rgba(255,255,255,.016) 1px,transparent 1px,transparent 48px);pointer-events:none;}
-  .auth-left::before{content:'STAGEPAY';position:absolute;bottom:-18px;left:-8px;font-family:'Bebas Neue',sans-serif;font-size:128px;letter-spacing:6px;color:rgba(16,185,129,.05);pointer-events:none;user-select:none;line-height:1;}
-  .auth-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
+  .auth-left::before{content:'STAGEPAY';position:absolute;bottom:-18px;left:-8px;font-family:var(--font-bebas),sans-serif;font-size:128px;letter-spacing:6px;color:rgba(16,185,129,.05);pointer-events:none;user-select:none;line-height:1;}
+  .auth-logo{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
   .auth-logo em{color:#10B981;font-style:normal;}
-  .auth-tagline{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;line-height:1.2;color:#F8FAFC;}
-  .auth-tagline strong{color:#10B981;font-style:normal;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:36px;display:block;}
+  .auth-tagline{font-family:var(--font-instrument),serif;font-style:italic;font-size:30px;line-height:1.2;color:#F8FAFC;}
+  .auth-tagline strong{color:#10B981;font-style:normal;font-family:var(--font-bebas),sans-serif;letter-spacing:2px;font-size:36px;display:block;}
   .auth-card{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-radius:14px;padding:20px 22px;position:relative;z-index:1;backdrop-filter:blur(8px);box-shadow:0 12px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);animation:cardFloat 5s ease-in-out infinite;}
   .auth-badge{display:inline-block;background:rgba(16,185,129,.2);color:#10B981;font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
   .auth-feats{display:flex;flex-direction:column;gap:10px;position:relative;z-index:1;}
@@ -63,19 +63,19 @@ const CSS = `
   @media(max-width:480px){.auth-right{padding:32px 24px;}}
 
   .auth-tabs{display:flex;gap:4px;margin-bottom:28px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:4px;}
-  .auth-tab{flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .18s;color:rgba(248,250,252,.35);background:transparent;border:none;border-radius:7px;font-family:'Archivo',sans-serif;text-decoration:none;display:block;}
+  .auth-tab{flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .18s;color:rgba(248,250,252,.35);background:transparent;border:none;border-radius:7px;font-family:var(--font-archivo),sans-serif;text-decoration:none;display:block;}
   .auth-tab.active{background:linear-gradient(135deg,#10B981,#059669);color:#000;box-shadow:0 2px 12px rgba(16,185,129,.35);}
   .auth-tab:not(.active):hover{color:rgba(248,250,252,.7);background:rgba(255,255,255,.05);}
 
-  .auth-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2.5px;color:#F8FAFC;margin-bottom:3px;}
+  .auth-title{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:2.5px;color:#F8FAFC;margin-bottom:3px;}
   .auth-sub{font-size:12px;color:rgba(248,250,252,.35);margin-bottom:10px;}
   .auth-divider{height:1px;background:rgba(255,255,255,.06);margin:0 0 18px;}
   .auth-group{display:flex;flex-direction:column;gap:6px;}
   .auth-group label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:rgba(248,250,252,.4);font-weight:600;}
-  .auth-input{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px 15px;font-family:'Archivo',sans-serif;font-size:13px;color:#F8FAFC;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;width:100%;}
+  .auth-input{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px 15px;font-family:var(--font-archivo),sans-serif;font-size:13px;color:#F8FAFC;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;width:100%;}
   .auth-input:focus{background:rgba(255,255,255,.06);border-color:rgba(16,185,129,.45);box-shadow:0 0 0 3px rgba(16,185,129,.08),inset 0 1px 0 rgba(255,255,255,.03);}
   .auth-input::placeholder{color:rgba(248,250,252,.22);}
-  .auth-btn{background:linear-gradient(135deg,#10B981,#059669);color:#000;padding:13px;border-radius:8px;border:none;font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-family:'Archivo',sans-serif;box-shadow:0 4px 20px rgba(16,185,129,.3);position:relative;overflow:hidden;}
+  .auth-btn{background:linear-gradient(135deg,#10B981,#059669);color:#000;padding:13px;border-radius:8px;border:none;font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-family:var(--font-archivo),sans-serif;box-shadow:0 4px 20px rgba(16,185,129,.3);position:relative;overflow:hidden;}
   .auth-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);transform:translateX(-100%);transition:transform .5s;}
   .auth-btn:hover:not(:disabled)::after{transform:translateX(100%);}
   .auth-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(16,185,129,.4);}
@@ -105,7 +105,7 @@ const LeftPanel = () => (
       <div style={{width:40,height:2,background:'linear-gradient(90deg,#10B981,transparent)',margin:'16px 0 20px',borderRadius:1}}/>
       <div className="auth-card">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:12,letterSpacing:2,color:'rgba(255,255,255,.4)'}}>INVOICE · INV-047</div>
+          <div style={{fontFamily:"var(--font-bebas),sans-serif",fontSize:12,letterSpacing:2,color:'rgba(255,255,255,.4)'}}>INVOICE · INV-047</div>
           <span className="auth-badge">Paid</span>
         </div>
         <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginBottom:2}}>Molapo Tower Ltd.</div>
@@ -113,7 +113,7 @@ const LeftPanel = () => (
         <div style={{height:1,background:'rgba(255,255,255,.06)',marginBottom:14}}/>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <span style={{fontSize:10,color:'rgba(255,255,255,.3)',letterSpacing:'.06em',textTransform:'uppercase'}}>Total due</span>
-          <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,letterSpacing:1,color:'#10B981',textShadow:'0 0 20px rgba(16,185,129,.3)'}}>P 24,500</span>
+          <span style={{fontFamily:"var(--font-bebas),sans-serif",fontSize:26,letterSpacing:1,color:'#10B981',textShadow:'0 0 20px rgba(16,185,129,.3)'}}>P 24,500</span>
         </div>
       </div>
     </div>

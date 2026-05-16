@@ -9,21 +9,21 @@ const supabase = createBrowserClient(
 
 const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Archivo',sans-serif;background:#060A12;color:#F8FAFC}
+  body{font-family:var(--font-archivo),sans-serif;background:#060A12;color:#F8FAFC}
   @keyframes spin{to{transform:rotate(360deg)}}
   .mfa-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#060A12;position:relative;overflow:hidden}
   .mfa-page::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
   .mfa-orb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,transparent 65%);filter:blur(60px);width:500px;height:500px;top:-100px;left:-100px}
   .mfa-box{background:rgba(13,20,35,.98);border:1px solid rgba(16,185,129,.15);border-radius:20px;padding:44px 48px;width:100%;max-width:420px;position:relative;z-index:1}
-  .mfa-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;margin-bottom:32px}
+  .mfa-logo{font-family:var(--font-bebas),sans-serif;font-size:22px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;margin-bottom:32px}
   .mfa-logo em{color:#10B981;font-style:normal}
-  .mfa-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#F8FAFC;margin-bottom:4px}
+  .mfa-title{font-family:var(--font-bebas),sans-serif;font-size:22px;letter-spacing:2px;color:#F8FAFC;margin-bottom:4px}
   .mfa-sub{font-size:12px;color:rgba(248,250,252,.4);margin-bottom:28px}
   .mfa-digits{display:flex;gap:10px;justify-content:center;margin-bottom:24px}
   .mfa-digit{
     width:44px;height:52px;border-radius:10px;
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-    font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;
+    font-family:var(--font-bebas),sans-serif;font-size:28px;letter-spacing:2px;
     color:#F8FAFC;text-align:center;outline:none;
     transition:border-color .2s,box-shadow .2s;caret-color:transparent;
   }
@@ -31,7 +31,7 @@ const CSS = `
   .mfa-btn{
     background:linear-gradient(135deg,#10B981,#059669);color:#000;padding:13px;border-radius:8px;border:none;
     font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
-    transition:all .2s;width:100%;font-family:'Archivo',sans-serif;
+    transition:all .2s;width:100%;font-family:var(--font-archivo),sans-serif;
     box-shadow:0 4px 20px rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;gap:8px;
   }
   .mfa-btn:disabled{opacity:.5;cursor:not-allowed}

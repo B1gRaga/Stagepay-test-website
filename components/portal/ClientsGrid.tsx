@@ -55,13 +55,13 @@ html[data-theme="light"]{
   --g-dim:rgba(16,185,129,0.08);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
+body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
 
 /* Topbar */
 .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+.page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
 .topbar-right{display:flex;align-items:center;gap:10px;}
-.topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:'Archivo',sans-serif;text-decoration:none;}
+.topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;}
 .btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.35);}
 .btn-primary:hover{background:#34d399;transform:translateY(-1px);}
 
@@ -72,7 +72,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
 .search-wrap{position:relative;flex:1;min-width:200px;max-width:380px;}
 .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;}
-.search-input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 14px 9px 34px;font-family:'Archivo',sans-serif;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
+.search-input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 14px 9px 34px;font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
 .search-input:focus{border-color:rgba(16,185,129,.4);}
 .search-input::placeholder{color:var(--t3);}
 .toolbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
@@ -102,7 +102,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 .card-av{
   width:46px;height:46px;border-radius:12px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;
+  font-family:var(--font-bebas),sans-serif;font-size:17px;letter-spacing:1px;
   border:1px solid transparent;
 }
 .card-info{flex:1;min-width:0;}
@@ -113,7 +113,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 
 .card-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .card-stat{background:var(--surface);border-radius:8px;padding:10px 12px;}
-.card-stat-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--t1);line-height:1;}
+.card-stat-val{font-family:var(--font-bebas),sans-serif;font-size:22px;color:var(--t1);line-height:1;}
 .card-stat-label{font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-top:3px;}
 
 .card-footer{margin-top:14px;display:flex;align-items:center;gap:6px;}
@@ -137,13 +137,13 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 .list-av{
   width:36px;height:36px;border-radius:9px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.5px;
+  font-family:var(--font-bebas),sans-serif;font-size:13px;letter-spacing:.5px;
   border:1px solid transparent;
 }
 .list-name{font-size:13px;font-weight:600;color:var(--t1);}
 .list-contact{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .list-td{font-size:13px;color:var(--t2);}
-.list-amt{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--t1);}
+.list-amt{font-family:var(--font-bebas),sans-serif;font-size:16px;color:var(--t1);}
 .list-inv-count{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:26px;height:22px;border-radius:6px;
@@ -159,7 +159,7 @@ body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--t1);}
 .empty-icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
 .empty-title{font-size:17px;font-weight:600;color:var(--t1);margin-bottom:8px;}
 .empty-sub{font-size:13px;color:var(--t3);margin-bottom:22px;max-width:300px;margin-left:auto;margin-right:auto;line-height:1.6;}
-.empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;font-family:'Archivo',sans-serif;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 0 14px rgba(16,185,129,.35);}
+.empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 0 14px rgba(16,185,129,.35);}
 .empty-cta:hover{background:#34d399;}
 
 @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
@@ -222,7 +222,7 @@ export default function ClientsGrid({
             ].map(({ label, val }) => (
               <div key={label} style={{ background: 'var(--bg2)', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 18px' }}>
                 <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 6 }}>{label}</div>
-                <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 26, color: 'var(--t1)', letterSpacing: 1 }}>{val}</div>
+                <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 26, color: 'var(--t1)', letterSpacing: 1 }}>{val}</div>
               </div>
             ))}
           </div>
