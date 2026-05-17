@@ -18,6 +18,7 @@ const ALLOWED_FIELDS = [
   'status', 'client_id', 'client_name', 'client_email', 'client_phone',
   'client_address', 'client_vat', 'project', 'notes', 'issue_date',
   'due_date', 'currency', 'vat_rate', 'deposit_amount',
+  'discount_amount', 'is_recurring', 'recurrence_interval', 'next_recurring_date',
 ] as const
 
 // GET /api/invoices/[id]
@@ -110,20 +111,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    const subtotal       = items.reduce((s: number, i: { quantity: number; unit_price: number }) => s + i.quantity * i.unit_price, 0)
-    const vat_rate       = typeof fields.vat_rate === 'number' ? fields.vat_rate : 14
-    const deposit_amount = typeof fields.deposit_amount === 'number' ? fields.deposit_amount : 0
+    const subtotal        = items.reduce((s: number, i: { quantity: number; unit_price: number }) => s + i.quantity * i.unit_price, 0)
+    const vat_rate        = typeof fields.vat_rate === 'number' ? fields.vat_rate : 14
+    const discount_amount = typeof fields.discount_amount === 'number' ? fields.discount_amount : 0
+    const deposit_amount  = typeof fields.deposit_amount === 'number' ? fields.deposit_amount : 0
 
+    if (discount_amount < 0 || discount_amount > subtotal) {
+      return NextResponse.json({ error: 'discount_amount must be between 0 and the subtotal' }, { status: 400 })
+    }
     if (deposit_amount < 0) {
       return NextResponse.json({ error: 'deposit_amount cannot be negative' }, { status: 400 })
     }
-    if (deposit_amount > subtotal + subtotal * (vat_rate / 100)) {
+    const discounted = subtotal - discount_amount
+    if (deposit_amount > discounted + discounted * (vat_rate / 100)) {
       return NextResponse.json({ error: 'deposit_amount cannot exceed the invoice total' }, { status: 400 })
     }
 
-    fields.vat_amount = subtotal * (vat_rate / 100)
+    fields.vat_amount = discounted * (vat_rate / 100)
     fields.subtotal   = subtotal
-    fields.total      = subtotal + (fields.vat_amount as number) - deposit_amount
+    fields.total      = discounted + (fields.vat_amount as number) - deposit_amount
 
     await supabase.from('invoice_items').delete().eq('invoice_id', id)
     const { error: itemsErr } = await supabase.from('invoice_items').insert(

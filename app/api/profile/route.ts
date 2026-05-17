@@ -6,8 +6,10 @@ const ALLOWED = [
   'name', 'firm_name', 'phone', 'address', 'city', 'country',
   'vat_number', 'default_currency', 'tax_label', 'default_vat_rate',
   'invoice_theme', 'brand_color_primary', 'brand_color_header',
-  'whatsapp_reminders_enabled',
+  'whatsapp_reminders_enabled', 'business_type',
 ] as const
+
+const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
 const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-emerald'])
@@ -19,7 +21,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled')
+    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type')
     .eq('id', user.id)
     .single()
 
@@ -57,6 +59,11 @@ export async function PATCH(req: NextRequest) {
       updates[key] = v === '' ? null : v
     } else if (key === 'whatsapp_reminders_enabled') {
       updates[key] = Boolean(body[key])
+    } else if (key === 'business_type') {
+      if (body[key] === null) { updates[key] = null; continue }
+      const v = String(body[key])
+      if (!VALID_BUSINESS_TYPES.has(v)) return NextResponse.json({ error: 'Invalid business_type' }, { status: 400 })
+      updates[key] = v
     } else {
       updates[key] = body[key] === null ? null : stripTags(body[key])
     }

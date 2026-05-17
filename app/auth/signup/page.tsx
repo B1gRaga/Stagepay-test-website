@@ -125,18 +125,36 @@ const LeftPanel = () => (
   </div>
 )
 
+const BUSINESS_TYPES = [
+  { value: 'tuition_centre', label: 'Tuition Centre' },
+  { value: 'contractor',     label: 'Contractor' },
+  { value: 'freelancer',     label: 'Freelancer' },
+  { value: 'salon',          label: 'Salon' },
+  { value: 'agency',         label: 'Agency' },
+  { value: 'other',          label: 'Other' },
+]
+
 export default function SignupPage() {
-  const [name, setName]         = useState('')
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw]     = useState(false)
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [done, setDone]         = useState(false)
+  const [step, setStep]                 = useState<1 | 2>(1)
+  const [name, setName]                 = useState('')
+  const [email, setEmail]               = useState('')
+  const [password, setPassword]         = useState('')
+  const [businessType, setBusinessType] = useState('')
+  const [showPw, setShowPw]             = useState(false)
+  const [error, setError]               = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [done, setDone]                 = useState(false)
+
+  async function handleStepOne(e: React.FormEvent) {
+    e.preventDefault()
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
+    setError('')
+    setStep(2)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
+    if (!businessType) { setError('Please select your business type'); return }
     setLoading(true); setError('')
 
     try {
@@ -149,6 +167,7 @@ export default function SignupPage() {
       if (pwned) {
         setError('This password has appeared in a known data breach. Please choose a different password.')
         setLoading(false)
+        setStep(1)
         return
       }
     } catch {
@@ -157,7 +176,7 @@ export default function SignupPage() {
 
     const { data, error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: name.trim() } },
+      options: { data: { full_name: name.trim(), business_type: businessType } },
     })
     if (error) { setError(error.message); setLoading(false) }
     else if (data.session) window.location.href = '/dashboard'
@@ -209,40 +228,76 @@ export default function SignupPage() {
 
             {error && <div className="auth-error">{error}</div>}
 
-            <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
-              <div className="auth-group">
-                <label>Full name</label>
-                <input className="auth-input" type="text" required autoComplete="name"
-                  value={name} onChange={e => setName(e.target.value)}
-                  placeholder="e.g. Jane Smith"/>
-              </div>
-              <div className="auth-group">
-                <label>Email address</label>
-                <input className="auth-input" type="email" required autoComplete="email"
-                  value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="you@yourfirm.co.bw"/>
-              </div>
-              <div className="auth-group">
-                <label>Password</label>
-                <div style={{position:'relative'}}>
-                  <input className="auth-input" type={showPw ? 'text' : 'password'} required autoComplete="new-password"
-                    value={password} onChange={e => setPassword(e.target.value)}
-                    placeholder="Min. 8 characters" style={{paddingRight:44}}/>
-                  <button type="button" onClick={() => setShowPw(p => !p)}
-                    style={{position:'absolute',right:13,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',padding:0,color:'rgba(248,250,252,.3)',display:'flex',alignItems:'center'}}>
-                    {showPw
-                      ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 2l12 12M6.5 6.6A2 2 0 0010.4 9.5M4.1 4.2A7 7 0 001 8s2.4 5 7 5a6.8 6.8 0 003.9-1.2M6 3.1A6.8 6.8 0 0115 8s-.9 2-2.4 3.3"/></svg>
-                      : <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M1 8s2.4-5 7-5 7 5 7 5-2.4 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
-                    }
-                  </button>
+            {step === 1 ? (
+              <form onSubmit={handleStepOne} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
+                <div className="auth-group">
+                  <label>Full name</label>
+                  <input className="auth-input" type="text" required autoComplete="name"
+                    value={name} onChange={e => setName(e.target.value)}
+                    placeholder="e.g. Jane Smith"/>
                 </div>
-              </div>
-              <button type="submit" disabled={loading} className="auth-btn">
-                {loading
-                  ? <><span style={{width:14,height:14,borderRadius:'50%',border:'2px solid rgba(0,0,0,.25)',borderTopColor:'#000',animation:'spin .6s linear infinite',display:'inline-block'}}/> Creating account…</>
-                  : <>Create free account <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></>}
-              </button>
-            </form>
+                <div className="auth-group">
+                  <label>Email address</label>
+                  <input className="auth-input" type="email" required autoComplete="email"
+                    value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="you@yourfirm.co.bw"/>
+                </div>
+                <div className="auth-group">
+                  <label>Password</label>
+                  <div style={{position:'relative'}}>
+                    <input className="auth-input" type={showPw ? 'text' : 'password'} required autoComplete="new-password"
+                      value={password} onChange={e => setPassword(e.target.value)}
+                      placeholder="Min. 8 characters" style={{paddingRight:44}}/>
+                    <button type="button" onClick={() => setShowPw(p => !p)}
+                      style={{position:'absolute',right:13,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',padding:0,color:'rgba(248,250,252,.3)',display:'flex',alignItems:'center'}}>
+                      {showPw
+                        ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 2l12 12M6.5 6.6A2 2 0 0010.4 9.5M4.1 4.2A7 7 0 001 8s2.4 5 7 5a6.8 6.8 0 003.9-1.2M6 3.1A6.8 6.8 0 0115 8s-.9 2-2.4 3.3"/></svg>
+                        : <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M1 8s2.4-5 7-5 7 5 7 5-2.4 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+                <button type="submit" className="auth-btn" style={{marginTop:'auto'}}>
+                  Continue <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                  <button type="button" onClick={() => { setStep(1); setError('') }}
+                    style={{background:'transparent',border:'none',color:'rgba(248,250,252,.3)',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:5,fontSize:11}}>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M13 8H3M7 4l-4 4 4 4"/></svg>
+                    Back
+                  </button>
+                  <span style={{fontSize:11,color:'rgba(248,250,252,.2)'}}>Step 2 of 2</span>
+                </div>
+                <div className="auth-group">
+                  <label>What type of business are you?</label>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:4}}>
+                    {BUSINESS_TYPES.map(bt => (
+                      <button key={bt.value} type="button"
+                        onClick={() => setBusinessType(bt.value)}
+                        style={{
+                          padding:'10px 12px',borderRadius:8,border:'1px solid',
+                          borderColor: businessType === bt.value ? '#10B981' : 'rgba(255,255,255,.08)',
+                          background: businessType === bt.value ? 'rgba(16,185,129,.12)' : 'rgba(255,255,255,.03)',
+                          color: businessType === bt.value ? '#10B981' : 'rgba(248,250,252,.5)',
+                          fontSize:12,fontWeight:600,cursor:'pointer',
+                          fontFamily:'var(--font-archivo),sans-serif',
+                          transition:'all .15s',textAlign:'left',
+                        }}>
+                        {bt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button type="submit" disabled={loading || !businessType} className="auth-btn" style={{marginTop:'auto'}}>
+                  {loading
+                    ? <><span style={{width:14,height:14,borderRadius:'50%',border:'2px solid rgba(0,0,0,.25)',borderTopColor:'#000',animation:'spin .6s linear infinite',display:'inline-block'}}/> Creating account…</>
+                    : <>Create free account <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></>}
+                </button>
+              </form>
+            )}
 
             <div className="auth-footer">
               Already have an account? <Link href="/auth/login">Sign in →</Link>

@@ -302,6 +302,10 @@ export default function NewInvoicePage() {
   const [items,       setItems]       = useState<LineItem[]>([{ desc: '', qty: 1, rate: 0 }])
   const [depositOn,   setDepositOn]   = useState(false)
   const [depositPct,  setDepositPct]  = useState(50)
+  const [discountOn,  setDiscountOn]  = useState(false)
+  const [discountAmt, setDiscountAmt] = useState(0)
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurInterval, setRecurInterval] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly')
   const [notes,       setNotes]       = useState('')
   const [tc,          setTc]          = useState('')
   const [terms,       setTerms]       = useState('30')
@@ -367,10 +371,12 @@ export default function NewInvoicePage() {
   }, [editId])
 
   // ── Computed totals ──
-  const subtotal = useMemo(() => items.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0), [items])
-  const vatAmt   = useMemo(() => subtotal * (vatRate / 100), [subtotal, vatRate])
-  const total    = useMemo(() => subtotal + vatAmt, [subtotal, vatAmt])
-  const depositAmt = useMemo(() => depositOn ? total * (depositPct / 100) : 0, [depositOn, total, depositPct])
+  const subtotal       = useMemo(() => items.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0), [items])
+  const effectiveDiscount = useMemo(() => discountOn ? Math.min(discountAmt, subtotal) : 0, [discountOn, discountAmt, subtotal])
+  const discountedSub  = useMemo(() => subtotal - effectiveDiscount, [subtotal, effectiveDiscount])
+  const vatAmt         = useMemo(() => discountedSub * (vatRate / 100), [discountedSub, vatRate])
+  const total          = useMemo(() => discountedSub + vatAmt, [discountedSub, vatAmt])
+  const depositAmt     = useMemo(() => depositOn ? total * (depositPct / 100) : 0, [depositOn, total, depositPct])
 
   // ── Helpers ──
   function clearForm() {
@@ -381,6 +387,8 @@ export default function NewInvoicePage() {
     setVatRate(Number(profile?.default_vat_rate) || 14)
     setItems([{ desc: '', qty: 1, rate: 0 }])
     setDepositOn(false); setDepositPct(50)
+    setDiscountOn(false); setDiscountAmt(0)
+    setIsRecurring(false); setRecurInterval('monthly')
     setNotes(''); setTc(''); setTerms('30')
     setPrompt(''); setAiResult(null)
   }
@@ -457,17 +465,20 @@ export default function NewInvoicePage() {
     try {
       const payload = {
         status,
-        client_id:      selectedClientId ?? null,
-        client_name:    clientName || 'Unknown Client',
-        client_email:   clientEmail || null,
-        client_phone:   clientPhone || null,
-        project:        project || null,
+        client_id:            selectedClientId ?? null,
+        client_name:          clientName || 'Unknown Client',
+        client_email:         clientEmail || null,
+        client_phone:         clientPhone || null,
+        project:              project || null,
         currency,
-        issue_date:     issueDate,
-        due_date:       dueDate || null,
-        vat_rate:       vatRate,
-        deposit_amount: depositAmt,
-        notes:          notes || null,
+        issue_date:           issueDate,
+        due_date:             dueDate || null,
+        vat_rate:             vatRate,
+        discount_amount:      effectiveDiscount,
+        deposit_amount:       depositAmt,
+        is_recurring:         isRecurring,
+        recurrence_interval:  isRecurring ? recurInterval : undefined,
+        notes:                notes || null,
         items: items.filter(i => i.desc.trim()).map(i => ({
           description: i.desc,
           quantity:    Number(i.qty) || 1,
@@ -813,6 +824,64 @@ export default function NewInvoicePage() {
                     )}
                   </div>
 
+                  {/* Discount */}
+                  <div className="form-group full">
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      Discount
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{discountOn ? 'On' : 'Off'}</span>
+                        <div className={`toggle-sw${discountOn ? ' on' : ''}`} onClick={() => setDiscountOn(p => !p)}/>
+                      </span>
+                    </label>
+                    {discountOn && (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+                        <div style={{ flex: 1, minWidth: 120 }}>
+                          <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Discount amount</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <input className="form-input" type="number" min={0} max={subtotal} value={discountAmt} onChange={e => setDiscountAmt(Number(e.target.value) || 0)} style={{ width: 100, padding: '7px 10px' }}/>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              {[5, 10, 15, 20].map(p => {
+                                const amt = Math.round(subtotal * p / 100 * 100) / 100
+                                return (
+                                  <button key={p} className={`deposit-preset${discountAmt === amt ? ' active' : ''}`} onClick={() => setDiscountAmt(amt)}>{p}%</button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        {effectiveDiscount > 0 && (
+                          <div style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: '#F87171', marginBottom: 2 }}>Discount</div>
+                            <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: '#F87171' }}>−{fmtAmt(effectiveDiscount, currency)}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recurring */}
+                  <div className="form-group full">
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      Recurring invoice
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{isRecurring ? 'On' : 'Off'}</span>
+                        <div className={`toggle-sw${isRecurring ? ' on' : ''}`} onClick={() => setIsRecurring(p => !p)}/>
+                      </span>
+                    </label>
+                    {isRecurring && (
+                      <div style={{ marginTop: 8, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <select className="form-select" value={recurInterval} onChange={e => setRecurInterval(e.target.value as any)} style={{ width: 160 }}>
+                          <option value="monthly">Monthly</option>
+                          <option value="quarterly">Quarterly</option>
+                          <option value="yearly">Yearly</option>
+                        </select>
+                        <span style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                          A new draft invoice will be auto-generated each period. You can edit and send it before it goes out.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="form-group full">
                     <label className="form-label">Notes (optional)</label>
                     <input className="form-input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Bank: FNB Botswana, Acc: 62123456789"/>
@@ -904,6 +973,9 @@ export default function NewInvoicePage() {
 
                   <div className="prev-totals">
                     <div className="prev-total-row"><span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span></div>
+                    {effectiveDiscount > 0 && (
+                      <div className="prev-total-row" style={{ color: '#F87171' }}><span>Discount</span><span>−{fmtAmt(effectiveDiscount, currency)}</span></div>
+                    )}
                     <div className="prev-total-row"><span>VAT ({vatRate}%)</span><span>{fmtAmt(vatAmt, currency)}</span></div>
                   </div>
                   <div className="prev-total-final">
@@ -979,7 +1051,7 @@ export default function NewInvoicePage() {
                 <>
                   {savedInvNum && (
                     <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
-                      Invoice <strong style={{ color: 'var(--t2)' }}>{savedInvNum}</strong> for <strong style={{ color: 'var(--t2)' }}>{clientName}</strong> — {fmtAmt(total, currency)}
+                      Invoice <strong style={{ color: 'var(--t2)' }}>{savedInvNum}</strong> for <strong style={{ color: 'var(--t2)' }}>{clientName}</strong> — {fmtAmt(total - depositAmt, currency)}
                     </div>
                   )}
                   <div className="channel-tabs">

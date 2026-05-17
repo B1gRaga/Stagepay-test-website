@@ -399,11 +399,13 @@ export default function RemindersClient({
           if (!schedule[rule.day]) continue
           const sendAt = new Date(base)
           sendAt.setDate(sendAt.getDate() + parseInt(rule.day))
-          if (sendAt <= new Date()) continue
+          // If the date is already past (overdue invoice), fire on the next cron run
+          const now = new Date()
+          const scheduledAt = sendAt <= now ? new Date(now.getTime() + 2 * 60 * 1000) : sendAt
           const res = await fetch('/api/reminders', {
             method: 'POST', credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invoice_id: inv.id, channel: ch, send_at: sendAt.toISOString(), days_after_due: parseInt(rule.day) }),
+            body: JSON.stringify({ invoice_id: inv.id, channel: ch, send_at: scheduledAt.toISOString(), days_after_due: parseInt(rule.day) }),
           })
           if (res.ok) { const { reminder } = await res.json(); created.push(reminder) }
         }
@@ -412,7 +414,7 @@ export default function RemindersClient({
         setReminders(prev => [...prev, ...created])
         setAutoOn(p => ({ ...p, [inv.id]: true }))
       } else {
-        setRemError('All reminder dates are in the past — update the due date first.')
+        setRemError('Could not schedule reminders — check that the invoice has a client email or phone.')
         setTimeout(() => setRemError(null), 3500)
       }
     }

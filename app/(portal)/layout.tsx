@@ -11,11 +11,17 @@ export default async function PortalLayout({ children }: { children: React.React
 
   const { data: profile } = await (supabase as any)
     .from('profiles')
-    .select('name, firm_name, plan')
+    .select('name, firm_name, plan, business_type')
     .eq('id', user.id)
     .single()
 
   const displayName = profile?.firm_name || profile?.name || user.email!.split('@')[0]
+
+  // First-time users: send to onboarding to pick business type.
+  // /onboarding is outside the (portal) group so there is no redirect loop.
+  if (profile && !profile.business_type) {
+    redirect('/onboarding')
+  }
 
   return (
     <>
