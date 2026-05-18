@@ -255,6 +255,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
     await supa.auth.signOut()
+    try { sessionStorage.removeItem('sp-splash') } catch {}
     router.push('/auth/login')
   }
 

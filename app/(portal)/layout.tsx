@@ -42,79 +42,69 @@ export default async function PortalLayout({ children }: { children: React.React
         #sp-splash{
           position:fixed;inset:0;z-index:9999;
           background:#0C1424;
-          display:flex;align-items:center;justify-content:center;
-          transition:opacity .55s cubic-bezier(.4,0,.2,1),visibility .55s;
+          display:flex;align-items:center;justify-content:center;flex-direction:column;
+          transition:opacity .5s ease,visibility .5s;
         }
         html[data-theme="light"] #sp-splash{background:#F1F5F9;}
         #sp-splash.sp-out{opacity:0;visibility:hidden;}
-        .sp-inner{display:flex;flex-direction:column;align-items:center;margin-top:-24px;}
-        .sp-bar{transform-box:fill-box;transform-origin:50% 100%;}
-        .sp-b1{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .02s both;}
-        .sp-b2{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .12s both;}
-        .sp-b3{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .22s both;}
-        .sp-b4{animation:sp-rise .52s cubic-bezier(.34,1.56,.64,1) .32s both;}
-        .sp-baseline{animation:sp-appear .25s ease .5s both;}
+        .sp-inner{display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:-20px;}
+        /* Bars — start reversed (descending L→R), settle to ascending L→R */
+        .sp-bars{display:flex;align-items:flex-end;gap:5px;height:56px;filter:drop-shadow(0 0 16px rgba(16,185,129,.45));}
+        .sp-bar{border-radius:3px 3px 2px 2px;background:linear-gradient(to bottom,#34d399,#059669);}
+        .sp-b1{width:11px;animation:spB1 .85s cubic-bezier(.34,1.56,.64,1) .22s both;}
+        .sp-b2{width:11px;opacity:.82;animation:spB2 .85s cubic-bezier(.34,1.56,.64,1) .10s both;}
+        .sp-b3{width:11px;opacity:.65;animation:spB3 .85s cubic-bezier(.34,1.56,.64,1) .03s both;}
+        .sp-b4{width:10px;opacity:.48;animation:spB4 .85s cubic-bezier(.34,1.56,.64,1) 0s   both;}
+        @keyframes spB1{from{height:56px}to{height:26px}}
+        @keyframes spB2{from{height:46px}to{height:36px}}
+        @keyframes spB3{from{height:36px}to{height:46px}}
+        @keyframes spB4{from{height:26px}to{height:56px}}
         .sp-word{
           font-family:var(--font-bebas),sans-serif;font-size:34px;
-          letter-spacing:9px;color:#F8FAFC;margin:28px 0 6px;
-          animation:sp-up .45s ease .62s both;
+          letter-spacing:9px;color:#F8FAFC;
+          animation:sp-up .4s ease .90s both;
         }
         html[data-theme="light"] .sp-word{color:#0F172A;}
         .sp-word em{color:#10B981;font-style:normal;}
         .sp-tag{
           font-family:var(--font-archivo),sans-serif;font-size:10px;
           letter-spacing:.2em;text-transform:uppercase;
-          color:rgba(248,250,252,.28);
-          animation:sp-up .38s ease .78s both;
+          color:rgba(248,250,252,.28);margin-top:-16px;
+          animation:sp-up .35s ease 1.05s both;
         }
         html[data-theme="light"] .sp-tag{color:rgba(15,23,42,.32);}
         .sp-progress{
           position:fixed;bottom:0;left:0;right:0;height:2px;
           background:rgba(16,185,129,0.07);overflow:hidden;
-          animation:sp-appear .2s ease .18s both;
+          animation:sp-appear .2s ease .1s both;
         }
         .sp-progress-fill{
           height:100%;width:100%;
           background:linear-gradient(90deg,#059669 0%,#10B981 55%,#34d399 100%);
           transform-origin:left;transform:scaleX(0);
-          animation:sp-prog 1.45s cubic-bezier(.4,0,.2,1) .22s forwards;
+          animation:sp-prog 1.55s cubic-bezier(.4,0,.2,1) .15s forwards;
         }
         @keyframes sp-appear{from{opacity:0}to{opacity:1}}
-        @keyframes sp-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes sp-rise{
-          0%{transform:scaleY(0);opacity:0}
-          45%{opacity:1}
-          70%{transform:scaleY(1.11)}
-          86%{transform:scaleY(0.96)}
-          100%{transform:scaleY(1)}
-        }
+        @keyframes sp-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes sp-prog{to{transform:scaleX(1);}}
         @media(min-width:769px){#sp-splash{display:none;}}
       `}</style>
 
-      {/* Mobile splash — bars rise left-to-right with spring bounce */}
+      {/* Mobile splash — bars reorganise from reversed to correct order, then settle */}
       <div id="sp-splash" aria-hidden="true">
         <div className="sp-inner">
-          <svg width="148" height="148" viewBox="0 0 64 64" fill="none"
-            style={{ filter: 'drop-shadow(0 0 18px rgba(16,185,129,0.5))' }}>
-            <defs>
-              <linearGradient id="sp-bg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#34d399"/>
-                <stop offset="100%" stopColor="#059669"/>
-              </linearGradient>
-            </defs>
-            <rect className="sp-bar sp-b1" x="4"  y="38" width="11" height="18" rx="2" fill="url(#sp-bg)" opacity=".5"/>
-            <rect className="sp-bar sp-b2" x="18" y="28" width="11" height="28" rx="2" fill="url(#sp-bg)" opacity=".68"/>
-            <rect className="sp-bar sp-b3" x="32" y="18" width="11" height="38" rx="2" fill="url(#sp-bg)" opacity=".84"/>
-            <rect className="sp-bar sp-b4" x="46" y="7"  width="11" height="49" rx="2" fill="url(#sp-bg)"/>
-            <rect className="sp-baseline"  x="3"  y="57" width="58" height="1.5" rx=".75" fill="rgba(16,185,129,0.35)"/>
-          </svg>
+          <div className="sp-bars">
+            <div className="sp-bar sp-b1" />
+            <div className="sp-bar sp-b2" />
+            <div className="sp-bar sp-b3" />
+            <div className="sp-bar sp-b4" />
+          </div>
           <div className="sp-word">STAGE<em>PAY</em></div>
           <div className="sp-tag">Invoice · Send · Get paid</div>
         </div>
         <div className="sp-progress"><div className="sp-progress-fill"/></div>
       </div>
-      <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},550);}setTimeout(hide,1500);})()` }} />
+      <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},520);}try{if(!sessionStorage.getItem('sp-splash')){sessionStorage.setItem('sp-splash','1');setTimeout(hide,1750);}else{var el=document.getElementById('sp-splash');if(el)el.style.display='none';}}catch(e){setTimeout(hide,1750);}})()` }} />
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflow: 'hidden' }}>
         <SidebarNav displayName={displayName} userEmail={user.email!} plan={profile?.plan ?? 'free'} />
