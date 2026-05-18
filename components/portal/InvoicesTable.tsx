@@ -100,8 +100,9 @@ const CSS = `
   .pill-pending{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
   .pill-sent{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.22);}
   .pill-overdue{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.22);}
-  .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);}
-  .pill-cancelled{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);}
+  .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.45);border:1px solid rgba(100,116,139,.2);}
+  .pill-cancelled{background:rgba(100,116,139,.12);color:rgba(248,250,252,.45);border:1px solid rgba(100,116,139,.2);}
+  html[data-theme="light"] .pill-draft,html[data-theme="light"] .pill-cancelled{color:rgba(15,23,42,.5);background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25);}
 
   .act-btn{font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.04em;font-family:var(--font-archivo),sans-serif;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
   .act-send{background:var(--g);color:#0F172A;}

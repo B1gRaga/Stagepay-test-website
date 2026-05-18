@@ -53,6 +53,12 @@ const CSS = `
     --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
+  html[data-theme="light"]{
+    --bg:#EDF1F7;--bg2:#FFFFFF;--surface:#F4F7FC;--surface2:#E4ECF8;
+    --line:rgba(15,23,42,0.10);--line2:rgba(15,23,42,0.18);
+    --t1:#0F172A;--t2:rgba(15,23,42,0.68);--t3:rgba(15,23,42,0.52);
+    --g-dim:rgba(16,185,129,0.14);
+  }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -253,7 +259,8 @@ const CSS = `
   .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
   .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);border-radius:6px;padding:9px 14px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
   .btn-outline:hover{border-color:var(--g);color:var(--g);}
-  .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
+  .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.45);border:1px solid rgba(100,116,139,.2);display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
+  html[data-theme="light"] .pill-draft{color:rgba(15,23,42,.5);background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25);}
 
   /* Send Modal */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;}
@@ -727,7 +734,7 @@ export default function NewInvoiceClient({
                     {aiPreview.items.length > 0 && (
                       <div style={{ borderTop: '1px solid rgba(16,185,129,.15)', paddingTop: 8 }}>
                         {aiPreview.items.map((it, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,.04)', fontSize: 12, color: 'var(--t2)' }}>
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--line)', fontSize: 12, color: 'var(--t2)' }}>
                             <span style={{ flex: 1, marginRight: 8 }}>{it.desc}</span>
                             <span style={{ fontSize: 11, color: 'var(--t3)', marginRight: 10, whiteSpace: 'nowrap' }}>{it.qty} × {fmtAmt(it.rate, aiPreview.currency)}</span>
                             <span style={{ fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap' }}>{fmtAmt((it.qty || 0) * (it.rate || 0), aiPreview.currency)}</span>

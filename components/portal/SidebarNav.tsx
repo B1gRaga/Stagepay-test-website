@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { useState, useEffect } from 'react'
+import ThemeToggleBtn from './ThemeToggleBtn'
 
 const CSS = `
   :root{
@@ -270,12 +271,15 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
           </svg>
           <span>STAGE<em>PAY</em></span>
         </Link>
-        <button
-          className="mob-topbar-av"
-          onClick={e => { e.stopPropagation(); setMobMenuOpen(p => !p) }}
-        >
-          {initials}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ThemeToggleBtn />
+          <button
+            className="mob-topbar-av"
+            onClick={e => { e.stopPropagation(); setMobMenuOpen(p => !p) }}
+          >
+            {initials}
+          </button>
+        </div>
       </div>
 
       {/* Mobile profile dropdown */}
@@ -364,8 +368,13 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
         </div>
 
         <div className="sidebar-footer">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, padding: '8px 8px 10px', marginBottom: 2 }} title="Keyboard shortcuts">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 10px', marginBottom: 2 }}>
+            <span style={{ fontSize: 11, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 600 }}>Theme</span>
+            <ThemeToggleBtn />
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, padding: '0 8px 10px', marginBottom: 2 }} title="Keyboard shortcuts">
             <span style={{ fontSize: 10, color: 'var(--t3)', width: '100%', letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 3 }}>Shortcuts</span>
+
             <kbd style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 4, padding: '2px 6px', color: 'var(--t3)' }}>N</kbd>
             <span style={{ fontSize: 10, color: 'var(--t3)', marginRight: 6 }}>New invoice</span>
             <kbd style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 4, padding: '2px 6px', color: 'var(--t3)' }}>I</kbd>
