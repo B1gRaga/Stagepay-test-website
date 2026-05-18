@@ -45,6 +45,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
         <link rel="manifest" href="/manifest.json"/>
         <meta name="theme-color" content="#10B981"/>
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-BX4B6LZRYY"></script>
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-BX4B6LZRYY');
+        `}} />
       </head>
       <body>
         {children}
