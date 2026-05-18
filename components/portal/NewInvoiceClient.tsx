@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 type LineItem = { desc: string; qty: number; rate: number }
 type Client   = { id: string; name: string; email: string | null; phone: string | null }
 type Profile  = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string }
+type AiPreview = { clientName: string; project: string; items: LineItem[]; vatRate: number; subtotal: number; vat: number; total: number; currency: string; dueDays: number | null; matchedClient: boolean }
 
 const CHIP_PROMPTS: Record<string, string> = {
   consulting:    'Consulting retainer for [Client] — 20 hours at [Rate]/hr, 30-day payment terms',
@@ -320,6 +321,7 @@ export default function NewInvoiceClient({
   const [prompt,    setPrompt]    = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult,  setAiResult]  = useState<string | null>(null)
+  const [aiPreview, setAiPreview] = useState<AiPreview | null>(null)
 
   // UI
   const [advOpen,  setAdvOpen]  = useState(false)
@@ -393,7 +395,7 @@ export default function NewInvoiceClient({
     setDiscountOn(false); setDiscountAmt(0)
     setIsRecurring(false); setRecurInterval('monthly')
     setNotes(''); setTc(''); setTerms('30')
-    setPrompt(''); setAiResult(null)
+    setPrompt(''); setAiResult(null); setAiPreview(null)
   }
 
   function selectClient(c: Client) {
@@ -421,6 +423,7 @@ export default function NewInvoiceClient({
     if (!prompt.trim() || aiLoading) return
     setAiLoading(true)
     setAiResult(null)
+    setAiPreview(null)
     try {
       const res  = await fetch('/api/ai/generate', {
         method: 'POST', credentials: 'include',
@@ -433,6 +436,20 @@ export default function NewInvoiceClient({
       if (inv.client_name)  setClientName(inv.client_name)
       if (inv.client_email) setClientEmail(inv.client_email)
       if (inv.client_phone) setClientPhone(inv.client_phone)
+      // Auto-match extracted name against existing clients
+      let matchedClient = false
+      if (inv.client_name && clients.length > 0) {
+        const nameLower = inv.client_name.toLowerCase()
+        const match = clients.find(c =>
+          c.name.toLowerCase().includes(nameLower) || nameLower.includes(c.name.toLowerCase())
+        )
+        if (match) {
+          setSelectedClientId(match.id)
+          if (!inv.client_email && match.email) setClientEmail(match.email)
+          if (!inv.client_phone && match.phone) setClientPhone(match.phone)
+          matchedClient = true
+        }
+      }
       if (inv.project)      setProject(inv.project)
       if (inv.currency)     setCurrency(inv.currency)
       if (inv.vat_rate != null) setVatRate(Number(inv.vat_rate))
@@ -447,14 +464,26 @@ export default function NewInvoiceClient({
         setDepositPct(pct)
       }
       setAdvOpen(true)
-      const lines = [
-        inv.client_name && `Client: ${inv.client_name}`,
-        inv.project && `Project: ${inv.project}`,
-        inv.items?.length && `${inv.items.length} line item${inv.items.length !== 1 ? 's' : ''} detected`,
-        inv.vat_rate != null && `VAT: ${inv.vat_rate}%`,
-        inv.due_days && `Payment terms: ${inv.due_days} days`,
-      ].filter(Boolean)
-      setAiResult(lines.join(' · ') || 'Invoice details extracted')
+      const previewItems: LineItem[] = (inv.items || []).map((it: any) => ({
+        desc: it.description || '',
+        qty:  Number(it.quantity) || 1,
+        rate: Number(it.unit_price) || 0,
+      }))
+      const previewSub     = previewItems.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0)
+      const previewVatRate = Number(inv.vat_rate ?? vatRate)
+      const previewVat     = previewSub * (previewVatRate / 100)
+      setAiPreview({
+        clientName:    inv.client_name || '',
+        project:       inv.project || '',
+        items:         previewItems,
+        vatRate:       previewVatRate,
+        subtotal:      previewSub,
+        vat:           previewVat,
+        total:         previewSub + previewVat,
+        currency:      inv.currency || currency,
+        dueDays:       inv.due_days ? Number(inv.due_days) : null,
+        matchedClient,
+      })
     } catch (e: any) {
       setAiResult('Could not parse: ' + (e.message || 'AI error'))
     } finally {
@@ -673,16 +702,58 @@ export default function NewInvoiceClient({
             </div>
 
             {/* AI Result */}
-            {aiResult && (
+            {(aiPreview || aiResult) && (
               <div className="ai-result">
                 <div className="ai-result-header">
                   <div className="ai-result-title">
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
-                    Invoice generated
+                    {aiPreview ? 'Invoice ready — scroll down to edit' : 'Generation failed'}
                   </div>
-                  <button onClick={() => setAiResult(null)} style={{ background: 'transparent', border: 'none', color: 'var(--t3)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+                  <button onClick={() => { setAiPreview(null); setAiResult(null) }} style={{ background: 'transparent', border: 'none', color: 'var(--t3)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
-                <div className="ai-result-body">{aiResult}</div>
+                {aiPreview ? (
+                  <div style={{ marginTop: 6 }}>
+                    {aiPreview.clientName && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>{aiPreview.clientName}</div>
+                          {aiPreview.project && <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>{aiPreview.project}</div>}
+                        </div>
+                        {aiPreview.matchedClient && (
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--g)', background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 4, padding: '2px 7px' }}>Matched</div>
+                        )}
+                      </div>
+                    )}
+                    {aiPreview.items.length > 0 && (
+                      <div style={{ borderTop: '1px solid rgba(16,185,129,.15)', paddingTop: 8 }}>
+                        {aiPreview.items.map((it, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,.04)', fontSize: 12, color: 'var(--t2)' }}>
+                            <span style={{ flex: 1, marginRight: 8 }}>{it.desc}</span>
+                            <span style={{ fontSize: 11, color: 'var(--t3)', marginRight: 10, whiteSpace: 'nowrap' }}>{it.qty} × {fmtAmt(it.rate, aiPreview.currency)}</span>
+                            <span style={{ fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap' }}>{fmtAmt((it.qty || 0) * (it.rate || 0), aiPreview.currency)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8, borderTop: '1px solid rgba(16,185,129,.15)', paddingTop: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--t3)', marginBottom: 3 }}>
+                        <span>Subtotal</span><span>{fmtAmt(aiPreview.subtotal, aiPreview.currency)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--t3)', marginBottom: 7 }}>
+                        <span>VAT ({aiPreview.vatRate}%)</span><span>{fmtAmt(aiPreview.vat, aiPreview.currency)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--g)', borderRadius: 6, padding: '8px 10px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,.85)' }}>Total Due</span>
+                        <span style={{ fontFamily: 'var(--font-bebas),sans-serif', fontSize: 18, color: '#fff', letterSpacing: 1 }}>{fmtAmt(aiPreview.total, aiPreview.currency)}</span>
+                      </div>
+                      {aiPreview.dueDays !== null && (
+                        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>Payment due in {aiPreview.dueDays} days</div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="ai-result-body">{aiResult}</div>
+                )}
               </div>
             )}
 
