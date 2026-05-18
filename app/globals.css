@@ -385,3 +385,99 @@ footer{border-top:1px solid var(--line);padding:36px clamp(16px,4vw,48px);}
 .flex-btns{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .text-center{text-align:center;}
 .mx-auto{margin-left:auto;margin-right:auto;}
+
+/* ── LANDING PAGE LIGHT MODE ── */
+html:not(.dark) .announce{color:rgba(26,26,26,.6);}
+html:not(.dark) .hero-h1{color:#1a1a1a;}
+html:not(.dark) .pain-hook{color:rgba(26,26,26,.55);}
+html:not(.dark) .hero-sub{color:rgba(26,26,26,.65);}
+html:not(.dark) .signup-box{background:#e6dfd5;border-color:rgba(26,26,26,.12);}
+html:not(.dark) .form-input{background:#f3ede1;border-color:rgba(26,26,26,.18);color:#1a1a1a;}
+html:not(.dark) .form-input::placeholder{color:rgba(26,26,26,.35);}
+html:not(.dark) .form-trust{color:rgba(26,26,26,.45);}
+html:not(.dark) .social-text{color:rgba(26,26,26,.65);}
+html:not(.dark) .social-text strong{color:#1a1a1a;}
+html:not(.dark) .mock-wrap{background:#e6dfd5;border-color:rgba(26,26,26,.15);}
+html:not(.dark) .mock-bar{background:rgba(26,26,26,.04);border-bottom-color:rgba(26,26,26,.10);}
+html:not(.dark) .mock-url{background:rgba(26,26,26,.06);border-color:rgba(26,26,26,.10);color:rgba(26,26,26,.4);}
+html:not(.dark) .mock-brand{color:#1a1a1a;}
+html:not(.dark) .mock-nm{color:#1a1a1a;}
+html:not(.dark) .mock-meta{color:rgba(26,26,26,.45);}
+html:not(.dark) .mock-detail{color:rgba(26,26,26,.45);}
+html:not(.dark) .mock-tbl th{color:rgba(26,26,26,.45);}
+html:not(.dark) .mock-tbl td{color:rgba(26,26,26,.65);}
+html:not(.dark) .mock-sub-row{color:rgba(26,26,26,.5);}
+html:not(.dark) .ticker{border-color:rgba(26,26,26,.08);}
+html:not(.dark) .tick-item{color:rgba(26,26,26,.5);}
+html:not(.dark) .proof-cell{background:#e6dfd5;}
+html:not(.dark) .proof-grid{background:rgba(26,26,26,.08);border-color:rgba(26,26,26,.10);}
+html:not(.dark) .proof-label{color:rgba(26,26,26,.45);}
+html:not(.dark) .sec-h2{color:#1a1a1a;}
+html:not(.dark) .sec-p{color:rgba(26,26,26,.65);}
+html:not(.dark) .how-bg{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .how-grid{background:rgba(26,26,26,.08);border-color:rgba(26,26,26,.10);}
+html:not(.dark) .how-step{background:#f0e9df;}
+html:not(.dark) .how-title{color:#1a1a1a;}
+html:not(.dark) .how-desc{color:rgba(26,26,26,.65);}
+html:not(.dark) .pain-item{background:#e6dfd5;border-color:rgba(26,26,26,.10);color:rgba(26,26,26,.7);}
+html:not(.dark) .val-cta-box p{color:rgba(26,26,26,.65);}
+html:not(.dark) .feat-bg{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .feat-card{background:#f0e9df;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .feat-card:hover{background:linear-gradient(160deg,rgba(16,185,129,.06),#f0e9df);border-color:rgba(16,185,129,.2);}
+html:not(.dark) .feat-title{color:#1a1a1a;}
+html:not(.dark) .feat-desc{color:rgba(26,26,26,.65);}
+html:not(.dark) .testi-card{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .testi-quote{color:rgba(26,26,26,.65);}
+html:not(.dark) .testi-quote em{color:#1a1a1a;}
+html:not(.dark) .testi-name{color:#1a1a1a;}
+html:not(.dark) .testi-role{color:rgba(26,26,26,.45);}
+html:not(.dark) .obj-card{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .obj-q{color:#1a1a1a;}
+html:not(.dark) .obj-a{color:rgba(26,26,26,.65);}
+html:not(.dark) .who-tile{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .who-tile-title{color:#1a1a1a;}
+html:not(.dark) .who-tile-desc{color:rgba(26,26,26,.45);}
+html:not(.dark) .price-card{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .price-card.pop{border-color:rgba(16,185,129,.3);}
+html:not(.dark) .price-tier{color:rgba(26,26,26,.45);}
+html:not(.dark) .price-amt{color:#1a1a1a;}
+html:not(.dark) .price-amt span{color:rgba(26,26,26,.4);}
+html:not(.dark) .price-bill{color:rgba(26,26,26,.45);}
+html:not(.dark) .price-divider{background:rgba(26,26,26,.10);}
+html:not(.dark) .pf{color:rgba(26,26,26,.65);}
+html:not(.dark) .pf.off{color:rgba(26,26,26,.35);}
+html:not(.dark) .price-btn-out{color:rgba(26,26,26,.65);border-color:rgba(26,26,26,.20);}
+html:not(.dark) .compare-item{color:rgba(26,26,26,.65);}
+html:not(.dark) .aha-input-box{background:#e6dfd5;border-color:rgba(26,26,26,.12);}
+html:not(.dark) .aha-result-box{background:#e6dfd5;border-color:rgba(26,26,26,.12);}
+html:not(.dark) .aha-box-label{color:rgba(26,26,26,.45);}
+html:not(.dark) .aha-prompt{background:#f3ede1;border-color:rgba(26,26,26,.10);color:#1a1a1a;}
+html:not(.dark) .aha-arrow-label{color:rgba(26,26,26,.45);}
+html:not(.dark) .aha-mini-invoice{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .aha-inv-head{border-bottom-color:rgba(26,26,26,.10);}
+html:not(.dark) .aha-inv-brand{color:#1a1a1a;}
+html:not(.dark) .aha-inv-row{color:rgba(26,26,26,.55);}
+html:not(.dark) .aha-inv-total{border-top-color:rgba(26,26,26,.10);}
+html:not(.dark) .aha-inv-footer{color:rgba(26,26,26,.35);}
+html:not(.dark) section.trust{background:#e6dfd5;border-color:rgba(26,26,26,.10);}
+html:not(.dark) .trust-h{color:#1a1a1a;}
+html:not(.dark) .trust-list li{color:rgba(26,26,26,.65);}
+html:not(.dark) .pre-cta-hook{color:rgba(26,26,26,.65);}
+html:not(.dark) .final-cta{background:#e6dfd5;border-top-color:rgba(26,26,26,.10);}
+html:not(.dark) .final-cta-h{color:#1a1a1a;}
+html:not(.dark) .final-cta-p{color:rgba(26,26,26,.65);}
+html:not(.dark) .final-form-input{background:#f3ede1;border-color:rgba(26,26,26,.18);color:#1a1a1a;}
+html:not(.dark) .final-form-input::placeholder{color:rgba(26,26,26,.35);}
+html:not(.dark) .final-trust{color:rgba(26,26,26,.45);}
+html:not(.dark) .foot-wordmark{color:rgba(26,26,26,.55);}
+html:not(.dark) .foot-links a{color:rgba(26,26,26,.45);}
+html:not(.dark) .foot-links a:hover{color:#1a1a1a;}
+html:not(.dark) .foot-copy{color:rgba(26,26,26,.35);}
+html:not(.dark) .sticky-bar{background:rgba(243,237,225,.97);}
+html:not(.dark) .sticky-bar-label{color:#1a1a1a;}
+html:not(.dark) .sticky-bar-sub{color:rgba(26,26,26,.45);}
+html:not(.dark) .sticky-input{background:#e6dfd5;border-color:rgba(26,26,26,.18);color:#1a1a1a;}
+html:not(.dark) .sticky-input::placeholder{color:rgba(26,26,26,.35);}
+html:not(.dark) .ai-bubble{background:#e6dfd5;}
+html:not(.dark) .ai-bubble-text{color:rgba(26,26,26,.65);}
+html:not(.dark) .ai-bubble-tag{color:rgba(26,26,26,.4);}

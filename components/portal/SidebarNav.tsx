@@ -45,15 +45,16 @@ const CSS = `
     font-size:10px;letter-spacing:.12em;text-transform:uppercase;
     color:var(--t3);font-weight:500;margin-top:2px;
   }
-  .desk-nav{display:flex;flex-direction:column;flex:1;overflow-y:auto;}
+  .desk-nav{display:flex;flex-direction:column;flex:1;overflow-y:auto;scrollbar-width:none;}
+  .desk-nav::-webkit-scrollbar{display:none;}
   .nav-section{
-    padding:18px 14px 6px;font-size:10px;
+    padding:10px 14px 3px;font-size:10px;
     letter-spacing:.14em;text-transform:uppercase;
     color:var(--t3);font-weight:600;
   }
   .nav-item{
     display:flex;align-items:center;gap:10px;
-    padding:9px 12px;border-radius:6px;margin:1px 8px;
+    padding:7px 12px;border-radius:6px;margin:1px 8px;
     font-size:13px;color:var(--t2);cursor:pointer;
     transition:all .15s;position:relative;
     text-decoration:none;background:transparent;border:none;
@@ -371,16 +372,6 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 10px', marginBottom: 2 }}>
             <span style={{ fontSize: 11, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 600 }}>Theme</span>
             <ThemeToggleBtn />
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, padding: '0 8px 10px', marginBottom: 2 }} title="Keyboard shortcuts">
-            <span style={{ fontSize: 10, color: 'var(--t3)', width: '100%', letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 3 }}>Shortcuts</span>
-
-            <kbd style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 4, padding: '2px 6px', color: 'var(--t3)' }}>N</kbd>
-            <span style={{ fontSize: 10, color: 'var(--t3)', marginRight: 6 }}>New invoice</span>
-            <kbd style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 4, padding: '2px 6px', color: 'var(--t3)' }}>I</kbd>
-            <span style={{ fontSize: 10, color: 'var(--t3)', marginRight: 6 }}>Invoices</span>
-            <kbd style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 4, padding: '2px 6px', color: 'var(--t3)' }}>R</kbd>
-            <span style={{ fontSize: 10, color: 'var(--t3)', marginRight: 6 }}>Reminders</span>
           </div>
           <div className="user-pill" onClick={() => setPopupOpen(p => !p)}>
             {popupOpen && (
