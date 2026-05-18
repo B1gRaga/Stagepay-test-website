@@ -628,7 +628,7 @@ export default function NewInvoicePage() {
             <div className="ai-hero">
               <div className="ai-hero-header">
                 <div className="ai-hero-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M2 8l5 5 7-7"/><circle cx="8" cy="8" r="7" strokeOpacity=".3"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="1.7"><path d="M2 12.5V14h1.5l7.1-7.1-1.5-1.5L2 12.5zM13.7 3.3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0L9.4 1.6l3 3 1.3-1.3z"/></svg>
                 </div>
                 <div>
                   <div className="ai-hero-title">Describe your work</div>
@@ -793,39 +793,6 @@ export default function NewInvoicePage() {
                     </select>
                   </div>
 
-                  {/* Discount */}
-                  <div className="form-group full">
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      Discount
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{discountOn ? 'On' : 'Off'}</span>
-                        <div className={`toggle-sw${discountOn ? ' on' : ''}`} onClick={() => setDiscountOn(p => !p)}/>
-                      </span>
-                    </label>
-                    {discountOn && (
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
-                        <div style={{ flex: 1, minWidth: 120 }}>
-                          <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Amount ({currency})</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input className="form-input" type="number" min={0} value={discountAmt} onChange={e => setDiscountAmt(Number(e.target.value))} style={{ width: 100, padding: '7px 10px' }}/>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              {[5, 10, 15, 20].map(p => (
-                                <button key={p} className={`deposit-preset${Math.round(effectiveDiscount / (subtotal || 1) * 100) === p ? ' active' : ''}`}
-                                  onClick={() => setDiscountAmt(Math.round(subtotal * p / 100))}>{p}%</button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        {effectiveDiscount > 0 && (
-                          <div style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--danger)', marginBottom: 2 }}>Discount</div>
-                            <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: 'var(--danger)' }}>−{fmtAmt(effectiveDiscount, currency)}</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
                   {/* Deposit */}
                   <div className="form-group full">
                     <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -852,29 +819,6 @@ export default function NewInvoicePage() {
                         <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit due</div>
                           <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recurring */}
-                  <div className="form-group full">
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      Recurring invoice
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{isRecurring ? 'On' : 'Off'}</span>
-                        <div className={`toggle-sw${isRecurring ? ' on' : ''}`} onClick={() => setIsRecurring(p => !p)}/>
-                      </span>
-                    </label>
-                    {isRecurring && (
-                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <select className="form-select" value={recurInterval} onChange={e => setRecurInterval(e.target.value as any)} style={{ flex: 1, minWidth: 140 }}>
-                          <option value="monthly">Monthly</option>
-                          <option value="quarterly">Quarterly (every 3 months)</option>
-                          <option value="yearly">Yearly</option>
-                        </select>
-                        <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
-                          A new draft invoice will be auto-generated each period.
                         </div>
                       </div>
                     )}

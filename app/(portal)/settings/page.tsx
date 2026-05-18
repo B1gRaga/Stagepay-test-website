@@ -553,11 +553,12 @@ export default function SettingsPage() {
     }
   }
 
-  function onVatCountryChange(val: string) {
+  async function onVatCountryChange(val: string) {
     const all = VAT_COUNTRIES.flatMap(g => g.opts)
     const match = all.find(o => o.v === val)
     if (!match) return
-    setInv(p => ({ ...p, default_vat_rate: String(match.rate) }))
+    setInv(p => ({ ...p, default_vat_rate: String(match.rate), default_currency: match.sym }))
+    await save({ default_vat_rate: match.rate, default_currency: match.sym }, 'invoice')
   }
 
   if (loading) return (
