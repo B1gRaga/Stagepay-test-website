@@ -45,6 +45,7 @@ const CSS = `
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
   .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
@@ -188,6 +189,12 @@ const CSS = `
   .inv-card-client{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .inv-card-meta{font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .inv-card-amount{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:.5px;color:#10B981;}
+
+  .load-more-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--line);background:var(--surface);}
+  .load-more-count{font-size:12px;color:var(--t3);}
+  .load-more-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);background:transparent;color:var(--t2);font-family:var(--font-archivo),sans-serif;}
+  .load-more-btn:hover:not(:disabled){border-color:var(--g);color:var(--g);}
+  .load-more-btn:disabled{opacity:.5;cursor:not-allowed;}
 `
 
 const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | null }> = {
@@ -201,7 +208,7 @@ const EMPTY_MSGS: Record<string, { title: string; sub: string; cta: string | nul
 
 type ForwardModalState = { inv: Invoice; channel: 'email' | 'whatsapp'; email: string; phone: string; sending: boolean; sent: boolean; err: string }
 
-export default function InvoicesTable({ initialInvoices }: { initialInvoices: Invoice[] }) {
+export default function InvoicesTable({ initialInvoices, totalCount }: { initialInvoices: Invoice[], totalCount: number }) {
   const router = useRouter()
   const [invoices, setInvoices]   = useState<Invoice[]>(initialInvoices)
   const [filter, setFilter]       = useState<string>('all')
@@ -212,6 +219,29 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
   const [deleting, setDeleting]   = useState(false)
   const [detailInv, setDetailInv] = useState<Invoice | null>(null)
   const [markingPaid, setMarkingPaid] = useState(false)
+  const [nextPage, setNextPage]   = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [serverTotal, setServerTotal] = useState(totalCount)
+
+  async function loadMore() {
+    setLoadingMore(true)
+    try {
+      const res = await fetch(`/api/invoices?page=${nextPage}`, { credentials: 'include' })
+      const data = await res.json()
+      if (res.ok && data.invoices?.length) {
+        const mapped: Invoice[] = data.invoices.map((inv: any) => ({
+          id: inv.id, invoice_number: inv.invoice_number, client_name: inv.client_name,
+          client_email: inv.client_email, client_phone: inv.client_phone, project: inv.project,
+          issue_date: inv.issue_date, total: inv.total, status: inv.status, currency: inv.currency,
+        }))
+        setInvoices(prev => [...prev, ...mapped])
+        setNextPage(p => p + 1)
+        if (data.total != null) setServerTotal(data.total)
+      }
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   async function markAsPaid(inv: Invoice) {
     setMarkingPaid(true)
@@ -442,6 +472,21 @@ export default function InvoicesTable({ initialInvoices }: { initialInvoices: In
             )
           })}
         </div>
+
+        {/* ── Load more bar ── */}
+        {invoices.length < serverTotal && (
+          <div className="load-more-bar">
+            <span className="load-more-count">Showing {invoices.length} of {serverTotal} invoices</span>
+            <button className="load-more-btn" onClick={loadMore} disabled={loadingMore}>
+              {loadingMore ? (
+                <>
+                  <span style={{ width:12, height:12, borderRadius:'50%', border:'2px solid var(--line2)', borderTopColor:'var(--g)', display:'inline-block', animation:'spin .7s linear infinite' }}/>
+                  Loading…
+                </>
+              ) : 'Load more'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Invoice detail popup */}

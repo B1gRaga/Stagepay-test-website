@@ -7,12 +7,12 @@ export default async function InvoicesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: invoices } = await (supabase as any)
+  const { data: invoices, count } = await (supabase as any)
     .from('invoices')
-    .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, total, status, currency')
+    .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, total, status, currency', { count: 'exact' })
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(200)
+    .range(0, 49)
 
-  return <InvoicesTable initialInvoices={invoices ?? []} />
+  return <InvoicesTable initialInvoices={invoices ?? []} totalCount={count ?? 0} />
 }
