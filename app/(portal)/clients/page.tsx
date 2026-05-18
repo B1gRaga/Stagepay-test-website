@@ -18,7 +18,8 @@ export default async function ClientsPage() {
     (supabase as any)
       .from('invoices')
       .select('client_id, client_name, total, currency')
-      .eq('user_id', user.id),
+      .eq('user_id', user.id)
+      .limit(1000),
   ])
 
   // Build a lookup from lowercase name → client id for fallback matching
