@@ -13,10 +13,10 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#F8FAFC;--bg2:#FFFFFF;--surface:#F1F5F9;--surface2:#E8EEF5;
-    --line:rgba(15,23,42,0.08);--line2:rgba(15,23,42,0.14);
-    --t1:#0F172A;--t2:rgba(15,23,42,0.65);--t3:rgba(15,23,42,0.38);
-    --g-dim:rgba(16,185,129,0.08);
+    --bg:#EDF1F7;--bg2:#FFFFFF;--surface:#F4F7FC;--surface2:#E4ECF8;
+    --line:rgba(15,23,42,0.10);--line2:rgba(15,23,42,0.18);
+    --t1:#0F172A;--t2:rgba(15,23,42,0.68);--t3:rgba(15,23,42,0.52);
+    --g-dim:rgba(16,185,129,0.14);
   }
 
   /* ── DESKTOP SIDEBAR ── */
