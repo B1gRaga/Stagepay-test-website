@@ -399,14 +399,32 @@ export default function RemindersClient({
           if (!schedule[rule.day]) continue
           const sendAt = new Date(base)
           sendAt.setDate(sendAt.getDate() + parseInt(rule.day))
-          // If the date is already past (overdue invoice), fire on the next cron run
-          const now = new Date()
-          const scheduledAt = sendAt <= now ? new Date(now.getTime() + 2 * 60 * 1000) : sendAt
-          const res = await fetch('/api/reminders', {
-            method: 'POST', credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invoice_id: inv.id, channel: ch, send_at: scheduledAt.toISOString(), days_after_due: parseInt(rule.day) }),
-          })
+          const isPast = sendAt <= new Date()
+
+          const commonPayload = {
+            invoice_id:      inv.id,
+            channel:         ch,
+            days_after_due:  parseInt(rule.day),
+            recipient_email: ch === 'email'     ? inv.client_email  : undefined,
+            recipient_phone: ch === 'whatsapp'  ? inv.client_phone  : undefined,
+          }
+
+          let res: Response
+          if (isPast) {
+            // Overdue invoice: send immediately — no cron wait
+            res = await fetch('/api/reminders/send-now', {
+              method: 'POST', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(commonPayload),
+            })
+          } else {
+            res = await fetch('/api/reminders', {
+              method: 'POST', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...commonPayload, send_at: sendAt.toISOString() }),
+            })
+          }
+
           if (res.ok) { const { reminder } = await res.json(); created.push(reminder) }
         }
       }
@@ -414,7 +432,7 @@ export default function RemindersClient({
         setReminders(prev => [...prev, ...created])
         setAutoOn(p => ({ ...p, [inv.id]: true }))
       } else {
-        setRemError('Could not schedule reminders — check that the invoice has a client email or phone.')
+        setRemError('Could not send reminders — check that the invoice has a client email or phone.')
         setTimeout(() => setRemError(null), 3500)
       }
     }
