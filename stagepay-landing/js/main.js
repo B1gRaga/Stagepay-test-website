@@ -23,6 +23,7 @@ function handleSignup(inputId) {
   }
   // In production, POST to your backend here
   console.log('Signup:', email);
+  gtag('event', 'sign_up', { method: 'landing_page', email_domain: email.split('@')[1] });
   showToast();
   if (input) { input.value = ''; }
   // Redirect to app after short delay
