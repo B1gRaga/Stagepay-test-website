@@ -42,6 +42,8 @@ export default function ThemeToggleBtn() {
     pointerEvents:   'none',
   }
 
+  const curtainLogoVisible = phase === 'falling'
+
   return (
     <>
       <style>{`
@@ -61,6 +63,23 @@ export default function ThemeToggleBtn() {
         }
       `}</style>
       <div aria-hidden="true" style={curtainStyle} />
+      {phase !== 'idle' && (
+        <div aria-hidden="true" style={{
+          position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 10, opacity: curtainLogoVisible ? 1 : 0, transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
+        }}>
+          <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+            <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
+            <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+            <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+          </svg>
+          <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontSize: 22, letterSpacing: 4, color: '#10B981' }}>
+            STAGEPAY
+          </div>
+        </div>
+      )}
       <button
         onClick={toggle}
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}

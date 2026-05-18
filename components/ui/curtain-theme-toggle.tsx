@@ -133,11 +133,13 @@ export function ThemeToggle({
   const t                     = TOKENS[theme];
 
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      const isDark = document.documentElement.classList.contains("dark");
-      if (isDark && theme !== "dark") setTheme("dark");
-      else if (!isDark && theme !== "light") setTheme("light");
-    }
+    if (typeof document === "undefined") return;
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("stagepay-landing-theme"); } catch {}
+    const resolved: Theme = (saved === "dark" || saved === "light") ? saved : defaultTheme;
+    setTheme(resolved);
+    if (resolved === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
   }, []);
 
   const toggle = useCallback(() => {
@@ -153,6 +155,7 @@ export function ThemeToggle({
         if (next === "dark") document.documentElement.classList.add("dark");
         else document.documentElement.classList.remove("dark");
       }
+      try { localStorage.setItem("stagepay-landing-theme", next); } catch {}
       setPhase("rising");
       setTimeout(() => setPhase("idle"), duration + 60);
     }, duration);
@@ -220,16 +223,45 @@ export function ThemeToggle({
     pointerEvents: "none",
   };
 
+  const curtainLogoStyle: CSSProperties = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9998,
+    pointerEvents: "none",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    opacity: phase === "falling" ? 1 : 0,
+    transition: `opacity ${Math.round(duration * 0.25)}ms ease`,
+  };
+
   const appBarSectionStyle: CSSProperties = {
     display: "flex",
     alignItems: "center",
     gap: "12px",
   };
 
+  const curtainLogo = phase !== "idle" ? (
+    <div aria-hidden="true" style={curtainLogoStyle}>
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+        <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
+        <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+        <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+      </svg>
+      <div style={{ fontFamily: "var(--font-bebas, sans-serif)", fontSize: 22, letterSpacing: 4, color: "#10B981" }}>
+        STAGEPAY
+      </div>
+    </div>
+  ) : null;
+
   if (isIcon) {
     return (
       <>
         <div aria-hidden="true" style={curtainStyle} />
+        {curtainLogo}
         <button
           style={btnStyle}
           onClick={toggle}
@@ -249,6 +281,7 @@ export function ThemeToggle({
   return (
     <div style={pageStyle}>
       <div aria-hidden="true" style={curtainStyle} />
+      {curtainLogo}
 
       <div style={barStyle}>
         {isAppBar && (
