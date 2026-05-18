@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { ThemeToggle } from '@/components/ui/curtain-theme-toggle'
 
 export default function Home() {
   useEffect(() => {
@@ -57,37 +58,47 @@ export default function Home() {
   const ck = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
   const xk = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
 
+  const stagepayLogo = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+          <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+          <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
+          <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+          <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+        </svg>
+        <span style={{ fontFamily: 'var(--font-bebas), sans-serif', fontSize: '22px', letterSpacing: '3px', color: 'inherit' }}>
+          Stage<span style={{ color: '#10B981' }}>Pay</span>
+        </span>
+      </a>
+      <div className="nav-links" style={{ marginLeft: 0 }}>
+        <a href="#how" style={{ color: 'inherit', opacity: 0.6 }}>How it works</a>
+        <a href="#features" style={{ color: 'inherit', opacity: 0.6 }}>Features</a>
+        <a href="#pricing" style={{ color: 'inherit', opacity: 0.6 }}>Pricing</a>
+      </div>
+    </div>
+  )
+
+  const navRight = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <a href="/auth/login" style={{ fontSize: '13px', color: 'inherit', opacity: 0.6, textDecoration: 'none' }} className="nav-sign-in">Sign in</a>
+      <a href="/auth/signup" style={{ padding: '8px 20px', borderRadius: '8px', background: '#10B981', color: '#060A12', fontSize: '13px', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>Try it free →</a>
+    </div>
+  )
+
   return (
-    <>
+    <ThemeToggle
+      variant="appbar"
+      defaultTheme="dark"
+      barHeight={60}
+      duration={600}
+      appBarProps={{ logo: stagepayLogo, userAvatar: navRight }}
+    >
       {/* ANNOUNCE BAR */}
       <div className="announce">
         <span className="announce-dot"></span>
         <strong>Early Access:</strong> First 100 users get <strong>1 month of Pro free</strong> — no credit card needed.
       </div>
-
-      {/* NAV */}
-      <nav>
-        <div className="nav-inner">
-          <a href="#" className="nav-logo">
-            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-              <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
-              <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
-              <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
-            </svg>
-            <span className="nav-wordmark">Stage<em>Pay</em></span>
-          </a>
-          <div className="nav-links">
-            <a href="#how">How it works</a>
-            <a href="#features">Features</a>
-            <a href="#pricing">Pricing</a>
-          </div>
-          <div className="nav-right">
-            <a href="/auth/login" className="nav-sign-in">Sign in</a>
-            <a href="/auth/signup" className="nav-cta">Try it free →</a>
-          </div>
-        </div>
-      </nav>
 
       {/* HERO */}
       <section className="hero">
@@ -629,6 +640,6 @@ export default function Home() {
       <div id="toast" style={{position:'fixed',bottom:'80px',left:'50%',transform:'translateX(-50%) translateY(20px)',background:'#131B2E',border:'1px solid rgba(16,185,129,.3)',color:'#F0F4F8',padding:'14px 24px',borderRadius:'10px',fontSize:'14px',fontWeight:600,boxShadow:'0 8px 32px rgba(0,0,0,.4)',opacity:0,transition:'opacity .3s,transform .3s',zIndex:400,whiteSpace:'nowrap',pointerEvents:'none'}}>
         ✓ You&apos;re on the list! Redirecting to the app…
       </div>
-    </>
+    </ThemeToggle>
   )
 }
