@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Bebas_Neue, Archivo, Instrument_Serif } from 'next/font/google'
+import Script from 'next/script'
 import "./globals.css"
 
 const bebasNeue = Bebas_Neue({
@@ -45,19 +46,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
         <link rel="manifest" href="/manifest.json"/>
         <meta name="theme-color" content="#10B981"/>
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-BX4B6LZRYY"></script>
-        <script dangerouslySetInnerHTML={{ __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-BX4B6LZRYY');
-        `}} />
       </head>
       <body>
         {children}
         <Analytics />
         <SpeedInsights />
+        <Script strategy="afterInteractive" src="https://www.googletagmanager.com/gtag/js?id=G-BX4B6LZRYY" />
+        <Script id="ga4-init" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-BX4B6LZRYY');
+        `}} />
       </body>
     </html>
   )
