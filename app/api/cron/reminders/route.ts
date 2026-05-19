@@ -95,7 +95,7 @@ async function sendReminderEmail(reminder: any, invoice: any, senderName: string
   if (!apiKey) throw new Error('Email not configured')
 
   const resend = new Resend(apiKey)
-  const from   = (process.env.RESEND_FROM_EMAIL || 'invoices@stagepay.co.bw').replace(/\.$/, '')
+  const from   = (process.env.RESEND_FROM_EMAIL || 'invoices@getstagepay.co').replace(/\.$/, '')
   const body   = reminder.message_preview ||
     `This is a friendly reminder that invoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. If you have already paid, please disregard this message.\n\nThank you.`
 
