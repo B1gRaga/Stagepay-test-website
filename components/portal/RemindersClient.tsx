@@ -394,6 +394,7 @@ export default function RemindersClient({
       }
       const base = inv.due_date ? new Date(inv.due_date) : new Date()
       const created: Reminder[] = []
+      let lastErrMsg = ''
       for (const ch of channels) {
         for (const rule of SCHEDULE_RULES) {
           if (!schedule[rule.day]) continue
@@ -425,15 +426,25 @@ export default function RemindersClient({
             })
           }
 
-          if (res.ok) { const { reminder } = await res.json(); created.push(reminder) }
+          if (res.ok) {
+            const { reminder } = await res.json()
+            created.push(reminder)
+          } else {
+            try {
+              const errData = await res.json()
+              lastErrMsg = errData.error || `HTTP ${res.status}`
+            } catch { lastErrMsg = `HTTP ${res.status}` }
+          }
         }
       }
       if (created.length > 0) {
         setReminders(prev => [...prev, ...created])
         setAutoOn(p => ({ ...p, [inv.id]: true }))
       } else {
-        setRemError('Could not send reminders — check that the invoice has a client email or phone.')
-        setTimeout(() => setRemError(null), 3500)
+        setRemError(lastErrMsg
+          ? `Could not schedule reminders: ${lastErrMsg}`
+          : 'Could not schedule reminders — check that the invoice has a client email or phone.')
+        setTimeout(() => setRemError(null), 5000)
       }
     }
     setToggling(p => ({ ...p, [inv.id]: false }))

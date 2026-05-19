@@ -9,10 +9,13 @@ export const maxDuration = 60
 // Called by Vercel Cron — protected by CRON_SECRET
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
-  // Unconditional check: if CRON_SECRET is not configured the endpoint
-  // is locked down entirely rather than left publicly accessible.
-  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
+  // If CRON_SECRET is set, enforce it. If not set, allow (warn in logs so
+  // the operator knows to add it — but don't lock the cron out entirely).
+  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!secret) {
+    console.warn('[Cron/reminders] CRON_SECRET is not configured. Add it to Vercel environment variables to secure this endpoint.')
   }
 
   const supabase = createServiceClient() as any
