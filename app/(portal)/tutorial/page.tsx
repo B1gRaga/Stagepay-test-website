@@ -62,7 +62,7 @@ const CSS = `
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
   }
   .hero-title{font-family:var(--font-bebas),sans-serif;font-size:32px;letter-spacing:2px;color:var(--t1);line-height:1.1;margin-bottom:8px;}
-  .hero-sub{font-size:14px;color:var(--t2);line-height:1.6;max-width:480px;}
+  .tut-hero-sub{font-size:14px;color:var(--t1);opacity:.7;line-height:1.6;max-width:480px;}
 
   /* progress bar */
   .progress-wrap{margin-bottom:28px;}
@@ -430,7 +430,7 @@ export default function TutorialPage() {
           </div>
           <div>
             <div className="hero-title">Welcome to StagePay</div>
-            <div className="hero-sub">
+            <div className="tut-hero-sub">
               Follow these 6 steps to go from sign-up to getting paid — in under 5 minutes.
               StagePay handles the invoicing so you can focus on the work.
             </div>
