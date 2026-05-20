@@ -25,8 +25,6 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <>
-      {/* Restores theme before first paint — prevents flash */}
-      <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('stagepay-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})()` }} />
       <style>{`
         .portal-main{flex:1;min-width:0;overflow-y:auto;padding-bottom:0;overscroll-behavior-y:contain;}
         @media(max-width:768px){
