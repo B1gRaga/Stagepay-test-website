@@ -5,48 +5,51 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic()
 
-// Static — never interpolated, so the API caches this block across all users.
-// User-specific values (currency, VAT) travel in the user message instead.
 const STATIC_SYSTEM_PROMPT = `You are an invoice generation assistant for StagePay, a global invoicing platform for professionals.
 
-Extract structured invoice data from the user's plain-English description and return it as JSON.
+Extract structured invoice data from the user's plain-English description and call the create_invoice tool.
 
 Rules:
 - Use the currency, VAT rate, and tax label supplied in the "User preferences" block
 - deposit_amount is the amount already paid, not a percentage; if a percentage is mentioned (e.g. "50% deposit paid") calculate the actual amount from the subtotal
-- due_days is the payment term in days (e.g. "Net 30" → 30, "due in 7 days" → 7)
+- due_days is the payment term in days (e.g. "Net 30" → 30, "due in 14 days" → 14)
 - Break compound work into separate line items where logical
-- quantities should reflect hours, units, visits, etc — not always 1
-- Return null for optional fields that are not mentioned`
+- quantities should reflect hours, units, visits, sessions, subjects, etc — not always 1
+- Return null for optional fields that are not mentioned
+- Always populate items — never return an empty items array`
 
-const INVOICE_JSON_SCHEMA = {
-  type: 'object',
-  properties: {
-    client_name:    { type: 'string' },
-    client_email:   { type: ['string', 'null'] },
-    client_phone:   { type: ['string', 'null'] },
-    project:        { type: 'string' },
-    items: {
-      type: 'array',
+const INVOICE_TOOL: Anthropic.Tool = {
+  name: 'create_invoice',
+  description: 'Create a structured invoice from the user description',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      client_name:    { type: 'string' },
+      client_email:   { type: ['string', 'null'] },
+      client_phone:   { type: ['string', 'null'] },
+      project:        { type: 'string' },
       items: {
-        type: 'object',
-        properties: {
-          description: { type: 'string' },
-          quantity:    { type: 'number' },
-          unit_price:  { type: 'number' },
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            description: { type: 'string' },
+            quantity:    { type: 'number' },
+            unit_price:  { type: 'number' },
+          },
+          required: ['description', 'quantity', 'unit_price'],
+          additionalProperties: false,
         },
-        required: ['description', 'quantity', 'unit_price'],
-        additionalProperties: false,
       },
+      vat_rate:        { type: 'number' },
+      deposit_amount:  { type: 'number' },
+      due_days:        { type: ['number', 'null'] },
+      notes:           { type: ['string', 'null'] },
+      currency:        { type: 'string' },
     },
-    vat_rate:        { type: 'number' },
-    deposit_amount:  { type: 'number' },
-    due_days:        { type: ['number', 'null'] },
-    notes:           { type: ['string', 'null'] },
-    currency:        { type: 'string' },
+    required: ['client_name', 'project', 'items', 'vat_rate', 'deposit_amount', 'currency'],
+    additionalProperties: false,
   },
-  required: ['client_name', 'project', 'items', 'vat_rate', 'deposit_amount', 'currency'],
-  additionalProperties: false,
 }
 
 export async function POST(req: NextRequest) {
@@ -77,34 +80,25 @@ export async function POST(req: NextRequest) {
   const taxLabel = String(profile?.tax_label        ?? 'VAT')
   const vatRate  = Number(profile?.default_vat_rate  ?? 14)
 
-  // User-specific values go here so the system prompt stays fully static (cacheable)
   const userMessage =
     `User preferences: currency=${currency}, default ${taxLabel} rate=${vatRate}%\n\n${prompt}`
 
   try {
-    const response = await (client.messages.create as any)(
-      {
-        model:      'claude-haiku-4-5',
-        max_tokens: 1024,
-        system: [
-          {
-            type: 'text',
-            text: STATIC_SYSTEM_PROMPT,
-            cache_control: { type: 'ephemeral' },
-          },
-        ],
-        messages: [{ role: 'user', content: userMessage }],
-      },
-      {
-        headers: { 'anthropic-beta': 'prompt-caching-2024-07-31' },
-      }
-    )
+    const response = await client.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system:     STATIC_SYSTEM_PROMPT,
+      tools:      [INVOICE_TOOL],
+      tool_choice: { type: 'tool', name: 'create_invoice' },
+      messages:   [{ role: 'user', content: userMessage }],
+    })
 
-    const text = (response.content?.[0]?.text ?? '').trim()
-    // Strip markdown code fences if the model wraps the JSON
-    const jsonText = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    const invoice = JSON.parse(jsonText)
-    return NextResponse.json({ invoice })
+    const toolBlock = response.content.find(b => b.type === 'tool_use')
+    if (!toolBlock || toolBlock.type !== 'tool_use') {
+      throw new Error('Model did not return invoice data')
+    }
+
+    return NextResponse.json({ invoice: toolBlock.input })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI error'
     return NextResponse.json({ error: message }, { status: 500 })
