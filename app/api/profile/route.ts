@@ -6,13 +6,14 @@ const ALLOWED = [
   'name', 'firm_name', 'phone', 'address', 'city', 'country',
   'vat_number', 'default_currency', 'tax_label', 'default_vat_rate',
   'invoice_theme', 'brand_color_primary', 'brand_color_header',
-  'whatsapp_reminders_enabled', 'business_type',
+  'whatsapp_reminders_enabled', 'business_type', 'paper_size',
 ] as const
 
 const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
 
-const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
-const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-emerald'])
+const HEX_COLOR_RE   = /^#[0-9a-f]{6}$/i
+const VALID_THEMES   = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-emerald'])
+const VALID_SIZES    = new Set(['A4', 'A5', 'LETTER', 'LEGAL'])
 
 export async function GET() {
   const supabase = await createClient() as any
@@ -21,7 +22,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type')
+    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type, paper_size')
     .eq('id', user.id)
     .single()
 
@@ -63,6 +64,10 @@ export async function PATCH(req: NextRequest) {
       if (body[key] === null) { updates[key] = null; continue }
       const v = String(body[key])
       if (!VALID_BUSINESS_TYPES.has(v)) return NextResponse.json({ error: 'Invalid business_type' }, { status: 400 })
+      updates[key] = v
+    } else if (key === 'paper_size') {
+      const v = String(body[key] ?? 'A4')
+      if (!VALID_SIZES.has(v)) return NextResponse.json({ error: 'Invalid paper_size' }, { status: 400 })
       updates[key] = v
     } else {
       updates[key] = body[key] === null ? null : stripTags(body[key])

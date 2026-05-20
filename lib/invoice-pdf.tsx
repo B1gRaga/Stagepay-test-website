@@ -111,12 +111,13 @@ function AddressCard({ label, name, line1, line2, t }: {
 }
 
 // ─── Main invoice component ───────────────────────────────────────────────────
-function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
+function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t, pageSize }: {
   invoice:        Record<string, any>
   items:          Record<string, any>[]
   profile:        Record<string, any>
   showPaidStamp?: boolean
   theme:          InvoiceTheme
+  pageSize:       string
 }) {
   const sym = invoice.currency || 'P'
   const fmt = (n: number) => `${sym}${Number(n ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
@@ -142,7 +143,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
   return (
     <Document>
       <Page
-        size="A4"
+        size={pageSize as any}
         style={{
           fontFamily: 'Helvetica',
           fontSize: 10,
@@ -379,6 +380,8 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
 }
 
 // ─── Public export — signature unchanged ─────────────────────────────────────
+const VALID_PAGE_SIZES = new Set(['A4', 'A5', 'LETTER', 'LEGAL'])
+
 export async function generateInvoicePDF(
   invoice:  Record<string, any>,
   items:    Record<string, any>[],
@@ -388,6 +391,7 @@ export async function generateInvoicePDF(
     theme?:          string | null
     primaryColor?:   string | null
     headerColor?:    string | null
+    paperSize?:      string | null
   }
 ): Promise<Buffer> {
   const theme = resolveTheme(
@@ -395,6 +399,8 @@ export async function generateInvoicePDF(
     options?.primaryColor ?? profile.brand_color_primary,
     options?.headerColor  ?? profile.brand_color_header,
   )
+  const rawSize  = options?.paperSize ?? profile.paper_size ?? 'A4'
+  const pageSize = VALID_PAGE_SIZES.has(rawSize) ? rawSize : 'A4'
   return renderToBuffer(
     <InvoicePDF
       invoice={invoice}
@@ -402,6 +408,7 @@ export async function generateInvoicePDF(
       profile={profile}
       showPaidStamp={options?.showPaidStamp}
       theme={theme}
+      pageSize={pageSize}
     />
   )
 }

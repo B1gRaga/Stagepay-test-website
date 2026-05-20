@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   try {
-    const buffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {}, { showPaidStamp })
+    const buffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {}, { showPaidStamp, paperSize: profile?.paper_size ?? 'A4' })
     const disposition = inline
       ? `inline; filename="${invoice.invoice_number}.pdf"`
       : `attachment; filename="${invoice.invoice_number}.pdf"`

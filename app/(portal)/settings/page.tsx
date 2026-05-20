@@ -28,6 +28,7 @@ type Profile = {
   invoice_theme: string | null
   brand_color_primary: string | null
   brand_color_header: string | null
+  paper_size: string | null
 }
 
 type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'security'
@@ -399,7 +400,7 @@ export default function SettingsPage() {
   const billingPlan   = searchParams.get('plan')
 
   // Branding state
-  const [branding, setBranding] = useState({ invoice_theme: 'dark-modern', brand_color_primary: '', brand_color_header: '' })
+  const [branding, setBranding] = useState({ invoice_theme: 'dark-modern', brand_color_primary: '', brand_color_header: '', paper_size: 'A4' })
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoError,     setLogoError]     = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -423,6 +424,7 @@ export default function SettingsPage() {
           invoice_theme:       p.invoice_theme       ?? 'dark-modern',
           brand_color_primary: p.brand_color_primary ?? '',
           brand_color_header:  p.brand_color_header  ?? '',
+          paper_size:          p.paper_size          ?? 'A4',
         })
         setFirm({
           name:       p.name       ?? '',
@@ -719,6 +721,35 @@ export default function SettingsPage() {
                 />
               </div>
 
+              {/* Paper size */}
+              <div style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600, marginBottom: 10, marginTop: 18 }}>
+                Paper size <span style={{ fontWeight: 400, color: 'var(--t3)' }}>— applies to all downloaded PDFs</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+                {([
+                  { id: 'A4',     label: 'A4',     sub: '210 × 297 mm' },
+                  { id: 'LETTER', label: 'Letter', sub: '8.5 × 11 in'  },
+                  { id: 'LEGAL',  label: 'Legal',  sub: '8.5 × 14 in'  },
+                  { id: 'A5',     label: 'A5',     sub: '148 × 210 mm' },
+                ] as const).map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => setBranding(p => ({ ...p, paper_size: s.id }))}
+                    style={{
+                      cursor: 'pointer', borderRadius: 8, padding: '8px 14px',
+                      border: `1.5px solid ${branding.paper_size === s.id ? 'var(--g)' : 'var(--line2)'}`,
+                      background: branding.paper_size === s.id ? 'var(--g-dim)' : 'var(--surface)',
+                      transition: 'all .15s',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: branding.paper_size === s.id ? 'var(--g)' : 'var(--t1)' }}>
+                      {s.label}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--t3)', marginTop: 2 }}>{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+
               {/* Live preview */}
               <div className="preview-label">Live preview</div>
               <div className="preview-wrap">
@@ -740,6 +771,7 @@ export default function SettingsPage() {
                     invoice_theme:       branding.invoice_theme,
                     brand_color_primary: branding.brand_color_primary || null,
                     brand_color_header:  branding.brand_color_header  || null,
+                    paper_size:          branding.paper_size,
                   }, 'brand')}
                 >
                   {saving ? 'Saving…' : 'Save branding'}
