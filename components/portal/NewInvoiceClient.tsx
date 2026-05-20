@@ -152,9 +152,10 @@ const CSS = `
   .form-input,.form-select,.form-textarea{
     background:rgba(16,185,129,.1) !important;border:1px solid rgba(16,185,129,.25) !important;
     border-radius:7px;padding:10px 12px;
-    font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);
+    font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1) !important;
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
   }
+  .form-input::placeholder,.form-textarea::placeholder{color:var(--t3) !important;}
   .form-input:focus,.form-select:focus,.form-textarea:focus{
     border-color:rgba(16,185,129,.45);box-shadow:0 0 0 3px rgba(16,185,129,.07);
   }
