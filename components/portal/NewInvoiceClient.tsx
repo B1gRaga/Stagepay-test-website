@@ -150,7 +150,7 @@ const CSS = `
   .form-group.full{grid-column:1/-1;}
   .form-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;}
   .form-input,.form-select,.form-textarea{
-    background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+    background:rgba(16,185,129,.1) !important;border:1px solid rgba(16,185,129,.25) !important;
     border-radius:7px;padding:10px 12px;
     font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
