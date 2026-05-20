@@ -849,9 +849,9 @@ export default function NewInvoiceClient({
                   </div>
                   {items.map((item, i) => (
                     <div key={i} className="line-item-row">
-                      <input className="form-input" value={item.desc} onChange={e => updateItem(i, 'desc', e.target.value)} placeholder="Service description" style={{ padding: '7px 10px', background: 'var(--g-dim)', borderColor: 'rgba(16,185,129,.2)', color: 'var(--t1)' }}/>
-                      <input className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px', background: 'var(--g-dim)', borderColor: 'rgba(16,185,129,.2)', color: 'var(--t1)' }}/>
-                      <input className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px', background: 'var(--g-dim)', borderColor: 'rgba(16,185,129,.2)', color: 'var(--t1)' }}/>
+                      <input className="form-input" value={item.desc} onChange={e => updateItem(i, 'desc', e.target.value)} placeholder="Service description" style={{ padding: '7px 10px', background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.35)', color: 'inherit' }}/>
+                      <input className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px', background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.35)', color: 'inherit' }}/>
+                      <input className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px', background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.35)', color: 'inherit' }}/>
                       <div className="li-amt">{fmtAmt((item.qty || 0) * (item.rate || 0), currency)}</div>
                       <button className="li-del" onClick={() => removeItem(i)}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v6M10 7v6M3 4l1 10h8l1-10"/></svg>
