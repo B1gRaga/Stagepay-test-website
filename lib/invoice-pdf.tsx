@@ -197,7 +197,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
         </View>
 
         {/* ── META ROW ───────────────────────────────────────────────────────── */}
-        <View style={{ flexDirection: 'row', gap: 5, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 5, marginBottom: 14 }}>
           <MetaCard label="Issue Date"    value={invoice.issue_date  ?? '—'}          t={t} />
           <MetaCard label="Due Date"      value={invoice.due_date    ?? 'On Receipt'} t={t} />
           <MetaCard label="Payment Terms" value={terms}                               t={t} />
@@ -205,7 +205,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
         </View>
 
         {/* ── FROM / BILL TO ─────────────────────────────────────────────────── */}
-        <View style={{ flexDirection: 'row', gap: 5, marginBottom: 10 }}>
+        <View style={{ flexDirection: 'row', gap: 5, marginBottom: 16 }}>
           <AddressCard
             label="From"
             name={firmName}
@@ -227,8 +227,8 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
           flexDirection: 'row',
           backgroundColor: t.tableHeadBg,
           borderRadius: 4,
-          padding: '5pt 8pt',
-          marginBottom: 2,
+          padding: '7pt 10pt',
+          marginBottom: 4,
         }}>
           <Text style={{ flex: 4,   fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, textTransform: 'uppercase', letterSpacing: 0.5 }}>Description</Text>
           <Text style={{ flex: 1,   fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.tableHeadText, textAlign: 'center',  letterSpacing: 0.5 }}>Qty</Text>
@@ -242,8 +242,8 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
             flexDirection: 'row', alignItems: 'center',
             backgroundColor: i % 2 === 0 ? t.tableRowAltBg : 'transparent',
             borderRadius: 3,
-            paddingVertical: 3, paddingHorizontal: 8,
-            marginBottom: 1,
+            paddingVertical: 8, paddingHorizontal: 10,
+            marginBottom: 2,
           }}>
             <Text style={{ flex: 4,   fontSize: 8.5, color: t.bodyText }}>
               {item.description}
@@ -261,7 +261,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
         ))}
 
         {/* ── SUBTOTALS ──────────────────────────────────────────────────────── */}
-        <View style={{ alignSelf: 'flex-end', width: '56%', marginTop: 8 }}>
+        <View style={{ alignSelf: 'flex-end', width: '56%', marginTop: 16 }}>
           {/* Thin rule */}
           <View style={{ height: 1, backgroundColor: t.lineColor, marginBottom: 6 }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 }}>
