@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 const MAX_BYTES = 2 * 1024 * 1024 // 2 MB
 
@@ -18,8 +18,7 @@ const MAGIC: Record<string, (b: Uint8Array) => boolean> = {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase    = await createClient() as any
-  const storage     = createServiceClient() as any
+  const supabase = await createClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -44,13 +43,13 @@ export async function POST(req: NextRequest) {
   const ext = file.name.split('.').pop() ?? 'png'
   const path = `${user.id}/logo.${ext}`
 
-  const { error: uploadErr } = await storage.storage
+  const { error: uploadErr } = await supabase.storage
     .from('logos')
     .upload(path, bytes, { contentType: file.type, upsert: true })
 
   if (uploadErr) return NextResponse.json({ error: uploadErr.message }, { status: 500 })
 
-  const { data: { publicUrl } } = storage.storage.from('logos').getPublicUrl(path)
+  const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path)
 
   const { error: dbErr } = await supabase
     .from('profiles')
@@ -63,7 +62,6 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE() {
   const supabase = await createClient() as any
-  const storage  = createServiceClient() as any
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -75,7 +73,7 @@ export async function DELETE() {
 
   if (profile?.logo_url) {
     const path = profile.logo_url.split('/logos/').pop()
-    if (path) await storage.storage.from('logos').remove([path])
+    if (path) await supabase.storage.from('logos').remove([path])
   }
 
   await supabase.from('profiles').update({ logo_url: null }).eq('id', user.id)

@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data: profile } = await supabaseAny
     .from('profiles')
-    .select('firm_name, name, email, address, city, country, vat_number, paper_size')
+    .select('firm_name, name, email, address, city, country, vat_number')
     .eq('id', invoice.user_id)
     .single()
 
@@ -58,7 +58,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const buffer = await renderToBuffer(
     <Document>
-      <Page size={(profile?.paper_size ?? 'A4') as any} style={styles.page}>
+      <Page size="A4" style={styles.page}>
         <View style={styles.row}>
           <View>
             <Text style={styles.logo}>{senderName}</Text>
