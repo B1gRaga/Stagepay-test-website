@@ -462,7 +462,11 @@ export default function NewInvoiceClient({
       if (inv.project)      setProject(inv.project)
       if (inv.currency)     setCurrency(inv.currency)
       if (inv.vat_rate != null) setVatRate(Number(inv.vat_rate))
-      if (inv.due_days)     setDueDate(addDays(today(), Number(inv.due_days)))
+      if (inv.due_days) {
+        setDueDate(addDays(today(), Number(inv.due_days)))
+        const d = String(Number(inv.due_days))
+        if (['0','7','14','30'].includes(d)) setTerms(d)
+      }
       if (inv.notes)        setNotes(inv.notes)
       if (inv.items?.length) {
         setItems(inv.items.map((it: any) => ({ desc: it.description || '', qty: Number(it.quantity) || 1, rate: Number(it.unit_price) || 0 })))
