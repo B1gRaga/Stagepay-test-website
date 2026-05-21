@@ -8,7 +8,7 @@ export default async function InvoicesPage() {
   const supabase = await createClient()
   const { data: invoices, count } = await (supabase as any)
     .from('invoices')
-    .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, total, status, currency', { count: 'exact' })
+    .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, total, status, currency', { count: 'estimated' })
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .range(0, 49)

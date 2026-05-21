@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import RemindersClient from '@/components/portal/RemindersClient'
 
 export default async function RemindersPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) redirect('/auth/login')
 
+  const supabase = await createClient()
   const [{ data: invoices }, { data: reminders }, { data: profile }] = await Promise.all([
     (supabase as any)
       .from('invoices')

@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import ClientsGrid from '@/components/portal/ClientsGrid'
 import type { ClientStats } from '@/components/portal/ClientsGrid'
 
 export default async function ClientsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) redirect('/auth/login')
 
+  const supabase = await createClient()
   const [{ data: clients }, { data: invSummaries }] = await Promise.all([
     (supabase as any)
       .from('clients')

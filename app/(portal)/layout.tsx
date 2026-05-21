@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { getCachedUser, getCachedProfile } from '@/lib/supabase/server'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
 import PullToRefresh from '@/components/portal/PullToRefresh'
@@ -8,12 +8,7 @@ export default async function PortalLayout({ children }: { children: React.React
   const user = await getCachedUser()
   if (!user) redirect('/auth/login')
 
-  const supabase = await createClient()
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('name, firm_name, plan, business_type')
-    .eq('id', user.id)
-    .single()
+  const profile = await getCachedProfile(user.id)
 
   const displayName = profile?.firm_name || profile?.name || user.email!.split('@')[0]
 

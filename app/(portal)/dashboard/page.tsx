@@ -1,5 +1,5 @@
 ﻿import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 const AVATAR_COLOR = '#10B981'
@@ -123,10 +123,10 @@ function statusPill(status: string) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) redirect('/auth/login')
 
+  const supabase = await createClient()
   const supabaseAny = supabase as any
 
   const now = new Date()
