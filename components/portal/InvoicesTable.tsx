@@ -38,7 +38,7 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ede7db;--surface:#e6dfd5;--surface2:#ddd6ca;
+    --bg:#f0eeeb;--bg2:#ffffff;--surface:#e9e3da;--surface2:#dfd8ce;
     --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
     --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
     --g-dim:rgba(16,185,129,.12);
@@ -77,7 +77,8 @@ const CSS = `
   }
   .filter-btn:hover,.filter-btn.active{border-color:var(--g);color:var(--g);background:var(--g-dim);}
 
-  .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:box-shadow .2s;}
+  html[data-theme="light"] .inv-table-wrap{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
   .inv-table-head{
     display:grid;grid-template-columns:28px 90px 1fr 140px 110px 110px 180px;
     gap:12px;padding:11px 20px;border-bottom:1px solid var(--line);background:var(--surface);

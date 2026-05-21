@@ -102,7 +102,7 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ede7db;--surface:#e6dfd5;--surface2:#ddd6ca;
+    --bg:#f0eeeb;--bg2:#ffffff;--surface:#e9e3da;--surface2:#dfd8ce;
     --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
     --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
     --g-dim:rgba(16,185,129,.12);

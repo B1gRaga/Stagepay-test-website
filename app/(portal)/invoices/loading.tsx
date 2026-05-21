@@ -1,4 +1,4 @@
-export default function Loading() {
+﻿export default function Loading() {
   return (
     <>
       <style>{`
@@ -7,7 +7,7 @@ export default function Loading() {
         html[data-theme="light"] .sk{background:rgba(15,23,42,0.08);}
 
         .sk-topbar{height:56px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2,#1E293B);}
-        html[data-theme="light"] .sk-topbar{background:#ede7db;border-color:rgba(26,26,26,0.08);}
+        html[data-theme="light"] .sk-topbar{background:#ffffff;border-color:rgba(26,26,26,0.08);}
 
         .sk-content{padding:24px 28px;}
         .sk-filter{display:flex;gap:10px;margin-bottom:14px;}
@@ -15,7 +15,7 @@ export default function Loading() {
         .sk-pill{height:28px;width:60px;border-radius:6px;}
 
         .sk-table{background:var(--bg2,#1E293B);border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;}
-        html[data-theme="light"] .sk-table{background:#e6dfd5;border-color:rgba(26,26,26,0.08);}
+        html[data-theme="light"] .sk-table{background:#e9e3da;border-color:rgba(26,26,26,0.08);}
         .sk-thead{display:grid;grid-template-columns:28px 90px 1fr 140px 110px 110px 180px;gap:12px;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);}
         html[data-theme="light"] .sk-thead{background:rgba(26,26,26,0.03);border-color:rgba(26,26,26,0.08);}
         .sk-th{height:10px;border-radius:3px;}
@@ -29,7 +29,7 @@ export default function Loading() {
           .sk-content{padding:12px 16px;}
           .sk-thead,.sk-row{display:none;}
           .sk-cards{background:var(--bg2,#1E293B);border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;}
-          html[data-theme="light"] .sk-cards{background:#e6dfd5;border-color:rgba(26,26,26,0.08);}
+          html[data-theme="light"] .sk-cards{background:#e9e3da;border-color:rgba(26,26,26,0.08);}
           .sk-card{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.06);}
           html[data-theme="light"] .sk-card{border-color:rgba(26,26,26,0.07);}
           .sk-card:last-child{border-bottom:none;}

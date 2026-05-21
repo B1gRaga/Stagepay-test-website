@@ -145,32 +145,32 @@ export default function Home() {
                 <div className="mock-dot" style={{background:'#EF4444'}}></div>
                 <div className="mock-dot" style={{background:'#F59E0B'}}></div>
                 <div className="mock-dot" style={{background:'#10B981'}}></div>
-                <span className="mock-url">stagepay.co.bw/invoice/INV-042</span>
+                <span className="mock-url">stagepay.co.bw/invoice/INV-202605-015</span>
               </div>
               <div className="mock-body">
                 <div className="mock-head">
                   <div>
                     <div className="mock-brand">
                       <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
-                      Kgosi Engineering
+                      Bright Stars Tuition
                     </div>
-                    <div className="mock-meta">Gaborone, Botswana · VAT Reg: BW123456</div>
+                    <div className="mock-meta">Gaborone, Botswana · VAT Reg: BW201856</div>
                   </div>
                   <div style={{textAlign:'right'}}>
                     <div className="mock-inv-badge">INVOICE</div>
-                    <div className="mock-meta" style={{marginTop:'6px'}}>INV-042 · 30 Apr 2026</div>
+                    <div className="mock-meta" style={{marginTop:'6px'}}>INV-202605-015 · 01 May 2026</div>
                   </div>
                 </div>
                 <div className="mock-parties">
                   <div>
                     <div className="mock-lbl">Bill to</div>
-                    <div className="mock-nm">Molapo Tower Ltd.</div>
-                    <div className="mock-detail">Gaborone CBD<br/>VAT: BW789012</div>
+                    <div className="mock-nm">Kefilwe Mokobi</div>
+                    <div className="mock-detail">Parent · Gaborone</div>
                   </div>
                   <div>
-                    <div className="mock-lbl">Project</div>
-                    <div className="mock-nm">Phase 2 — Structural Review</div>
-                    <div className="mock-detail">Due: 30 May 2026<br/>Net 30 days</div>
+                    <div className="mock-lbl">Period</div>
+                    <div className="mock-nm">May Tuition 2026</div>
+                    <div className="mock-detail">Due: 07 May 2026</div>
                   </div>
                 </div>
                 <table className="mock-tbl">
@@ -184,37 +184,26 @@ export default function Home() {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Structural engineering review</td>
-                      <td style={{textAlign:'right'}}>40h</td>
-                      <td style={{textAlign:'right'}}>P950</td>
-                      <td style={{textAlign:'right'}}>P38,000</td>
+                      <td>Grade 10 Mathematics tuition</td>
+                      <td style={{textAlign:'right'}}>8</td>
+                      <td style={{textAlign:'right'}}>P125</td>
+                      <td style={{textAlign:'right'}}>P1,000</td>
                     </tr>
                     <tr>
-                      <td>Site inspection (3 visits)</td>
-                      <td style={{textAlign:'right'}}>3</td>
-                      <td style={{textAlign:'right'}}>P800</td>
-                      <td style={{textAlign:'right'}}>P2,400</td>
-                    </tr>
-                    <tr>
-                      <td>Technical report &amp; drawings</td>
+                      <td>Study materials &amp; worksheets</td>
                       <td style={{textAlign:'right'}}>1</td>
-                      <td style={{textAlign:'right'}}>P5,600</td>
-                      <td style={{textAlign:'right'}}>P5,600</td>
-                    </tr>
-                    <tr>
-                      <td style={{color:'#F59E0B'}}>Deposit paid (50%)</td>
-                      <td></td><td></td>
-                      <td style={{textAlign:'right',color:'#F59E0B'}}>−P23,000</td>
+                      <td style={{textAlign:'right'}}>P250</td>
+                      <td style={{textAlign:'right'}}>P250</td>
                     </tr>
                   </tbody>
                 </table>
                 <div className="mock-subtotals">
-                  <div className="mock-sub-row"><span>Subtotal</span><span>P46,000</span></div>
-                  <div className="mock-sub-row vat"><span>VAT (14%)</span><span>P6,440</span></div>
+                  <div className="mock-sub-row"><span>Subtotal</span><span>P1,250</span></div>
+                  <div className="mock-sub-row vat"><span>VAT (14%)</span><span>P175</span></div>
                 </div>
                 <div className="mock-total-bar">
-                  <span className="mock-total-lbl">Balance Due</span>
-                  <span className="mock-total-val">P29,440</span>
+                  <span className="mock-total-lbl">Total Due</span>
+                  <span className="mock-total-val">P1,425</span>
                 </div>
                 <div className="mock-actions">
                   <div className="mock-btn">
@@ -230,7 +219,7 @@ export default function Home() {
             </div>
             <div className="ai-bubble">
               <div className="ai-bubble-label">AI Prompt Used</div>
-              <div className="ai-bubble-text">&quot;Invoice Molapo Tower for 40h structural review at P950/h plus 3 site visits and a technical report. 50% deposit already paid.&quot;</div>
+              <div className="ai-bubble-text">&quot;Invoice Kefilwe Mokobi for Tumelo&apos;s May tuition — 8 maths sessions at P125 each and study materials P250.&quot;</div>
               <div className="ai-bubble-tag">
                 <span className="ai-status"></span>
                 Generated in 4 seconds
@@ -285,7 +274,7 @@ export default function Home() {
             <div className="aha-input-box">
               <div className="aha-box-label">You type</div>
               <div className="aha-prompt">
-                &quot;Logo design for TelePower, P1,500. Due in 7 days. 50% deposit already paid.&quot;
+                &quot;Invoice Naledi Dube for Amogelang&apos;s June tuition — 10 English sessions at P110 each. Due in 5 days.&quot;
               </div>
               <div className="aha-time">⚡ StagePay processes in under 5 seconds</div>
             </div>
@@ -307,24 +296,24 @@ export default function Home() {
                     <div>
                       <div className="mock-brand">
                         <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
-                        Your Business
+                        Bright Stars Tuition
                       </div>
-                      <div className="mock-meta">Your City · VAT Registered</div>
+                      <div className="mock-meta">Gaborone · VAT Registered</div>
                     </div>
                     <div style={{textAlign:'right'}}>
                       <div className="mock-inv-badge">INVOICE</div>
-                      <div className="mock-meta" style={{marginTop:'6px'}}>INV-043 · 01 May 2026</div>
+                      <div className="mock-meta" style={{marginTop:'6px'}}>INV-202606-001 · 01 Jun 2026</div>
                     </div>
                   </div>
                   <div className="mock-parties">
                     <div>
                       <div className="mock-lbl">Bill to</div>
-                      <div className="mock-nm">TelePower</div>
+                      <div className="mock-nm">Naledi Dube</div>
                     </div>
                     <div>
                       <div className="mock-lbl">Due</div>
-                      <div className="mock-nm">08 May 2026</div>
-                      <div className="mock-detail">Net 7 days</div>
+                      <div className="mock-nm">06 Jun 2026</div>
+                      <div className="mock-detail">Net 5 days</div>
                     </div>
                   </div>
                   <table className="mock-tbl">
@@ -338,25 +327,20 @@ export default function Home() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>Logo design</td>
-                        <td style={{textAlign:'right'}}>1</td>
-                        <td style={{textAlign:'right'}}>P1,500</td>
-                        <td style={{textAlign:'right'}}>P1,500</td>
-                      </tr>
-                      <tr>
-                        <td style={{color:'#F59E0B'}}>Deposit paid (50%)</td>
-                        <td></td><td></td>
-                        <td style={{textAlign:'right',color:'#F59E0B'}}>−P750</td>
+                        <td>Grade 9 English tuition</td>
+                        <td style={{textAlign:'right'}}>10</td>
+                        <td style={{textAlign:'right'}}>P110</td>
+                        <td style={{textAlign:'right'}}>P1,100</td>
                       </tr>
                     </tbody>
                   </table>
                   <div className="mock-subtotals">
-                    <div className="mock-sub-row"><span>Subtotal</span><span>P1,500</span></div>
-                    <div className="mock-sub-row vat"><span>VAT (14%)</span><span>P210</span></div>
+                    <div className="mock-sub-row"><span>Subtotal</span><span>P1,100</span></div>
+                    <div className="mock-sub-row vat"><span>VAT (14%)</span><span>P154</span></div>
                   </div>
                   <div className="mock-total-bar">
-                    <span className="mock-total-lbl">Balance Due</span>
-                    <span className="mock-total-val">P960</span>
+                    <span className="mock-total-lbl">Total Due</span>
+                    <span className="mock-total-val">P1,254</span>
                   </div>
                   <div className="mock-actions">
                     <div className="mock-btn">
@@ -415,8 +399,14 @@ export default function Home() {
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M2 9h6"/></svg></div>
-                <div className="feat-title">Deposit Billing</div>
-                <div className="feat-desc">25%, 50% or a custom deposit — shown as a clear row on the invoice. Perfect for projects and retainers.</div>
+                <div className="feat-title">Deposit &amp; Discount Billing</div>
+                <div className="feat-desc">25%, 50% or custom deposit. Add a flat or percentage discount — all shown as clear rows on the invoice.</div>
+              </div>
+              <div className="feat-card">
+                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
+                <div className="feat-title">Recurring Invoices</div>
+                <div className="feat-desc">Monthly, quarterly or yearly billing on autopilot. Set it once — StagePay generates the next invoice automatically.</div>
+                <span className="feat-tag">New</span>
               </div>
             </div>
           </div>
@@ -485,6 +475,7 @@ export default function Home() {
                 {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>, title:'Freelancers', desc:'Quick invoices, no admin overhead'},
                 {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-3 3z"/><path d="M5 22v-5l9-9"/></svg>, title:'Contractors', desc:'Labour, materials, milestones, retainers'},
                 {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, title:'Small Businesses', desc:'Professional invoices for every job'},
+                {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.6"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>, title:'Tuition Centres', desc:'Monthly tuition fees, session tracking, recurring invoices'},
               ].map((w, i) => (
                 <div key={i} className="who-tile">
                   <div className="who-tile-icon">{w.icon}</div>

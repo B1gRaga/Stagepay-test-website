@@ -25,7 +25,7 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ede7db;--surface:#e6dfd5;
+    --bg:#f0eeeb;--bg2:#ffffff;--surface:#e9e3da;
     --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
     --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
     --g-dim:rgba(16,185,129,.12);
@@ -71,8 +71,10 @@ const CSS = `
   .card{
     background:var(--bg2);border:1px solid var(--line);
     border-radius:12px;overflow:hidden;
-    transition:border-color .2s;
+    transition:border-color .2s,box-shadow .2s;
   }
+  html[data-theme="light"] .card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
+  html[data-theme="light"] .card:hover{box-shadow:0 3px 8px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);}
   .stat-inner{padding:20px 24px;animation:cardIn .5s ease both;}
   .stat-label-sm{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
   .stat-val-big{font-family:var(--font-bebas),sans-serif;font-size:40px;letter-spacing:1px;line-height:1;}
