@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import NewInvoiceClient from '@/components/portal/NewInvoiceClient'
 
 export default async function NewInvoicePage({
@@ -7,9 +7,10 @@ export default async function NewInvoicePage({
 }: {
   searchParams: Promise<{ edit?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) redirect('/auth/login')
+
+  const supabase = await createClient()
 
   const { edit: editId } = await searchParams
 

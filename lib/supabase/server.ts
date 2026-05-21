@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createJsClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import type { Database } from './types'
@@ -25,8 +25,18 @@ export async function createClient() {
   )
 }
 
-// Per-request cached user lookup — deduplicates across layout + page in the same render
+// Per-request cached user lookup.
+// When middleware has verified the session it forwards the identity via
+// x-user-id / x-user-email headers — we read those directly (no Supabase
+// round-trip). Falls back to auth.getUser() for routes not covered by middleware
+// (e.g. API routes that call this directly).
 export const getCachedUser = cache(async () => {
+  const h = await headers()
+  const userId = h.get('x-user-id')
+  const userEmail = h.get('x-user-email')
+  if (userId) {
+    return { id: userId, email: userEmail ?? undefined } as { id: string; email?: string }
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user

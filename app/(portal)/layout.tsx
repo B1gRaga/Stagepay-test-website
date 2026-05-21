@@ -1,16 +1,21 @@
 import { redirect } from 'next/navigation'
-import { getCachedUser, getCachedProfile } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { getCachedProfile } from '@/lib/supabase/server'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
 import PullToRefresh from '@/components/portal/PullToRefresh'
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCachedUser()
-  if (!user) redirect('/auth/login')
+  // Middleware has already verified auth and forwarded the identity.
+  // Reading from headers is synchronous (no network call).
+  const h = await headers()
+  const userId = h.get('x-user-id')
+  const userEmail = h.get('x-user-email') ?? ''
+  if (!userId) redirect('/auth/login')
 
-  const profile = await getCachedProfile(user.id)
+  const profile = await getCachedProfile(userId)
 
-  const displayName = profile?.firm_name || profile?.name || user.email!.split('@')[0]
+  const displayName = profile?.firm_name || profile?.name || userEmail.split('@')[0]
 
   // First-time users: send to onboarding to pick business type.
   // /onboarding is outside the (portal) group so there is no redirect loop.
@@ -100,7 +105,7 @@ export default async function PortalLayout({ children }: { children: React.React
       <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},520);}try{if(!sessionStorage.getItem('sp-splash')){sessionStorage.setItem('sp-splash','1');setTimeout(hide,1750);}else{var el=document.getElementById('sp-splash');if(el)el.style.display='none';}}catch(e){setTimeout(hide,1750);}})()` }} />
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflow: 'hidden' }}>
-        <SidebarNav displayName={displayName} userEmail={user.email!} plan={profile?.plan ?? 'free'} />
+        <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} />
         <PullToRefresh>{children}</PullToRefresh>
       </div>
       <SupportBtn />

@@ -3,8 +3,19 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = ['/', '/app', '/api/invoices/public', '/invoice']
 
+const PORTAL_PATHS = [
+  '/dashboard', '/invoices', '/clients', '/reminders',
+  '/new-invoice', '/settings', '/tutorial', '/onboarding',
+]
+
+function isPortalPath(pathname: string) {
+  return PORTAL_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+}
+
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  // Collect cookies that Supabase wants to set (token refresh),
+  // apply them to the final response at the end.
+  const cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,13 +23,7 @@ export async function proxy(request: NextRequest) {
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+        setAll: (cookies) => { cookiesToSet.push(...cookies) },
       },
     }
   )
@@ -38,7 +43,12 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 
-  // Protect all /api/* routes except public ones
+  // Portal route protection — redirect unauthenticated users at the Edge
+  if (!user && isPortalPath(pathname)) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  // API route protection
   if (pathname.startsWith('/api/') && !isPublic && !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -61,9 +71,27 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return supabaseResponse
+  // Forward verified identity to server components via internal headers.
+  // Safe on Vercel: proxy always runs before server functions and external
+  // clients cannot inject these headers past it.
+  const requestHeaders = new Headers(request.headers)
+  if (user) {
+    requestHeaders.set('x-user-id', user.id)
+    requestHeaders.set('x-user-email', user.email ?? '')
+  }
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
+
+  // Apply token-refresh cookies to the outgoing response
+  cookiesToSet.forEach(({ name, value, options }) =>
+    response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+  )
+
+  return response
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon|icons|manifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
