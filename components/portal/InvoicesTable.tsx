@@ -72,10 +72,22 @@ const CSS = `
   .filter-btn{
     padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;
     letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
-    border:1px solid var(--line2);background:transparent;color:var(--t3);
+    border:1px solid var(--line2);background:var(--bg2);color:var(--t2);
     transition:all .15s;font-family:var(--font-archivo),sans-serif;
   }
+  html[data-theme="light"] .filter-btn{
+    background:#ffffff;border-color:rgba(26,26,26,.18);color:rgba(26,26,26,.6);
+    box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  }
+  html[data-theme="light"] .filter-btn:hover{
+    background:#faf7f2;border-color:rgba(26,26,26,.28);color:rgba(26,26,26,.8);
+    box-shadow:0 2px 6px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.06);
+  }
   .filter-btn:hover,.filter-btn.active{border-color:var(--g);color:var(--g);background:var(--g-dim);}
+  html[data-theme="light"] .filter-btn.active{
+    background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.45);color:#059669;
+    box-shadow:0 1px 4px rgba(16,185,129,.15),0 1px 2px rgba(16,185,129,.1);
+  }
 
   .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:box-shadow .2s;}
   html[data-theme="light"] .inv-table-wrap{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
