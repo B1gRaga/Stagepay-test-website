@@ -15,7 +15,7 @@ export default function ThemeToggleBtn() {
   const toggle = useCallback(() => {
     if (phase !== 'idle') return
     const next = isDark ? 'light' : 'dark'
-    curtainColor.current = next === 'light' ? '#EDF1F7' : '#0F172A'
+    curtainColor.current = next === 'light' ? '#f3ede1' : '#0F172A'
     setPhase('falling')
 
     setTimeout(() => {

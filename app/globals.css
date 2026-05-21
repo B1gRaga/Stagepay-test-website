@@ -7,11 +7,6 @@
   --warn:#F59E0B;
   --r:12px;
 }
-html[data-theme="light"]{
-  --bg:#f3ede1;--bg2:#ede7db;--surface:#e6dfd5;--surface2:#ddd6ca;
-  --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
-  --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
-}
 html{scroll-behavior:smooth;overflow-x:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 ::selection{background:rgba(16,185,129,.3);color:#fff;}
