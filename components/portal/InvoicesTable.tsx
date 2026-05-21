@@ -79,6 +79,8 @@ const CSS = `
 
   .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:box-shadow .2s;}
   html[data-theme="light"] .inv-table-wrap{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
+  html[data-theme="light"] .inv-table-head{background:rgba(26,26,26,.03);}
+  html[data-theme="light"] .load-more-bar{background:var(--bg2);}
   .inv-table-head{
     display:grid;grid-template-columns:28px 90px 1fr 140px 110px 110px 180px;
     gap:12px;padding:11px 20px;border-bottom:1px solid var(--line);background:var(--surface);

@@ -8,12 +8,13 @@ const CSS = `
     --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
-  [data-theme="light"]{
-    --bg:#EDF1F7;--bg2:#FFFFFF;--surface:#F4F7FC;--surface2:#E4ECF8;
-    --line:rgba(15,23,42,0.10);--line2:rgba(15,23,42,0.18);
-    --t1:#0F172A;--t2:rgba(15,23,42,0.68);--t3:rgba(15,23,42,0.52);
-    --g-dim:rgba(16,185,129,0.14);
+  html[data-theme="light"]{
+    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;--surface2:#dfd8ce;
+    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
+    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
+    --g-dim:rgba(16,185,129,.12);
   }
+  html[data-theme="light"] .hero{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
 

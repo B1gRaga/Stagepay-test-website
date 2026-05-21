@@ -123,6 +123,9 @@ const CSS = `
   .rem-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;}
 
   .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+  html[data-theme="light"] .inv-table-wrap{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
+  html[data-theme="light"] .inv-table-head{background:rgba(26,26,26,.03);}
+  html[data-theme="light"] .sched-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
   .inv-table-head{
     display:grid;grid-template-columns:36px 1fr 110px 100px 110px 130px;
     gap:12px;padding:11px 20px;border-bottom:1px solid var(--line);background:var(--surface);

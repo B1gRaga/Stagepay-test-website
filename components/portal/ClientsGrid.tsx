@@ -97,6 +97,8 @@ body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(-
 }
 .client-card:hover{border-color:rgba(16,185,129,.25);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2);}
 .client-card:hover::before{opacity:1;}
+html[data-theme="light"] .client-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
+html[data-theme="light"] .client-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);}
 
 .card-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
 .card-av{
@@ -121,6 +123,8 @@ body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(-
 
 /* ── LIST VIEW ── */
 .clients-list{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+html[data-theme="light"] .clients-list{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
+html[data-theme="light"] .list-head{background:rgba(26,26,26,.03);}
 .list-head{
   display:grid;grid-template-columns:44px 1fr 160px 100px 120px 36px;
   gap:12px;padding:10px 20px;
