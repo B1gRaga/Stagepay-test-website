@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createJsClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 import type { Database } from './types'
 
 export async function createClient() {
@@ -22,6 +23,13 @@ export async function createClient() {
     }
   )
 }
+
+// Per-request cached user lookup — deduplicates across layout + page in the same render
+export const getCachedUser = cache(async () => {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+})
 
 // Dual-auth context: works with both cookie sessions (Next.js pages) and
 // Bearer tokens (app.html vanilla client). Returns a supabase client and

@@ -1,12 +1,11 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import InvoicesTable from '@/components/portal/InvoicesTable'
 
 export default async function InvoicesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const user = await getCachedUser()
+  if (!user) return null
 
+  const supabase = await createClient()
   const { data: invoices, count } = await (supabase as any)
     .from('invoices')
     .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, total, status, currency', { count: 'exact' })
