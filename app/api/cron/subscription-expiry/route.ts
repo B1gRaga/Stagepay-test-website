@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { log, logError, cronitorPing } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -11,8 +12,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createServiceClient() as any
-
+  const start = Date.now()
+  await cronitorPing('subscription-expiry', 'run')
+  const supabase = createServiceClient() 
   // Find all non-free users whose subscription has expired
   const { data: expired, error } = await supabase
     .from('profiles')
@@ -21,11 +23,14 @@ export async function GET(req: NextRequest) {
     .lt('subscription_expires_at', new Date().toISOString())
 
   if (error) {
-    console.error('[Cron] Failed to fetch expired subscriptions:', error.message)
+    logError('cron.subscription_expiry.fetch_failed', error)
+    await cronitorPing('subscription-expiry', 'fail')
     return NextResponse.json({ error: 'DB error' }, { status: 500 })
   }
 
   if (!expired?.length) {
+    log('cron.subscription_expiry.none_expired')
+    await cronitorPing('subscription-expiry', 'complete')
     return NextResponse.json({ downgraded: 0, message: 'No expired subscriptions' })
   }
 
@@ -37,10 +42,12 @@ export async function GET(req: NextRequest) {
     .in('id', ids)
 
   if (updateErr) {
-    console.error('[Cron] Failed to downgrade expired subscriptions:', updateErr.message)
+    logError('cron.subscription_expiry.downgrade_failed', updateErr, { count: ids.length })
+    await cronitorPing('subscription-expiry', 'fail')
     return NextResponse.json({ error: 'Failed to downgrade' }, { status: 500 })
   }
 
-  console.log(`[Cron] Downgraded ${ids.length} expired subscription(s) to free`)
+  log('cron.subscription_expiry.complete', { downgraded: ids.length, durationMs: Date.now() - start })
+  await cronitorPing('subscription-expiry', 'complete')
   return NextResponse.json({ downgraded: ids.length })
 }

@@ -5,7 +5,7 @@ const VALID_CHANNELS = ['whatsapp', 'email'] as const
 
 // GET /api/reminders?invoice_id=xxx
 export async function GET(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/reminders — schedule a reminder
 export async function POST(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const { data: invoice } = await supabase
     .from('invoices')
     .select('id, client_phone, client_email, due_date')
-    .eq('id', body.invoice_id)
+    .eq('id', body.invoice_id as string)
     .eq('user_id', user.id)
     .single()
 
@@ -85,14 +85,14 @@ export async function POST(req: NextRequest) {
     .from('reminders')
     .insert({
       user_id:         user.id,
-      invoice_id:      body.invoice_id,
-      send_at:         body.send_at,
-      days_after_due:  body.days_after_due ?? null,
-      channel,
-      recipient_phone,
-      recipient_email,
-      status:          'scheduled',
-      message_preview: body.message_preview ?? null,
+      invoice_id:      body.invoice_id as string,
+      send_at:         body.send_at as string,
+      days_after_due:  (body.days_after_due as number | null | undefined) ?? null,
+      channel:         channel as import('@/lib/supabase/types').ReminderChannel,
+      recipient_phone: recipient_phone ?? null,
+      recipient_email: recipient_email ?? null,
+      status:          'scheduled' as import('@/lib/supabase/types').ReminderStatus,
+      message_preview: (body.message_preview as string | null | undefined) ?? null,
     })
     .select()
     .single()

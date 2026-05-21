@@ -10,8 +10,7 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024 // 10 MB
 export async function POST(req: NextRequest) {
   const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = _supabase as any
-
+  const supabase = _supabase 
   if (!(await rateLimit(user.id, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }

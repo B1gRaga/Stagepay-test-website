@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { log, logError, cronitorPing } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -11,7 +12,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createServiceClient() as any
+  const start = Date.now()
+  await cronitorPing('recurring-invoices', 'run')
+  const supabase = createServiceClient()
   const today    = new Date().toISOString().split('T')[0]
 
   // Find all recurring invoice templates that are due for generation
@@ -23,11 +26,14 @@ export async function GET(req: NextRequest) {
     .limit(100)
 
   if (error) {
-    console.error('[Cron/Recurring] Failed to fetch templates:', error.message)
+    logError('cron.recurring.fetch_failed', error)
+    await cronitorPing('recurring-invoices', 'fail')
     return NextResponse.json({ error: 'DB error' }, { status: 500 })
   }
 
   if (!templates?.length) {
+    log('cron.recurring.none_due')
+    await cronitorPing('recurring-invoices', 'complete')
     return NextResponse.json({ generated: 0, message: 'No recurring invoices due' })
   }
 
@@ -53,7 +59,7 @@ export async function GET(req: NextRequest) {
       dueDate.setDate(dueDate.getDate() + termsDays)
 
       // Advance the template's next_recurring_date by the interval
-      const nextBase = new Date(tmpl.next_recurring_date)
+      const nextBase = new Date(tmpl.next_recurring_date!)
       if (tmpl.recurrence_interval === 'monthly')        nextBase.setMonth(nextBase.getMonth() + 1)
       else if (tmpl.recurrence_interval === 'quarterly') nextBase.setMonth(nextBase.getMonth() + 3)
       else                                               nextBase.setFullYear(nextBase.getFullYear() + 1)
@@ -111,11 +117,12 @@ export async function GET(req: NextRequest) {
 
       generated++
     } catch (err: any) {
-      console.error(`[Cron/Recurring] Template ${tmpl.id} failed:`, err.message)
+      logError('cron.recurring.template_failed', err, { templateId: tmpl.id })
       failed++
     }
   }
 
-  console.log(`[Cron/Recurring] Generated: ${generated}, Failed: ${failed}`)
+  log('cron.recurring.complete', { generated, failed, durationMs: Date.now() - start })
+  await cronitorPing('recurring-invoices', failed > 0 && generated === 0 ? 'fail' : 'complete')
   return NextResponse.json({ generated, failed })
 }

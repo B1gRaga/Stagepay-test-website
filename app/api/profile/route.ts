@@ -15,7 +15,7 @@ const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
 const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-emerald'])
 
 export async function GET() {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -30,7 +30,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
+    .update(updates as import('@/lib/supabase/types').ProfileUpdate)
     .eq('id', user.id)
     .select()
     .single()

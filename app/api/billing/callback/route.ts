@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   await serviceClient
     .from('profiles')
     .update({
-      plan:                    profile.pending_plan,
+      plan:                    profile.pending_plan as import('@/lib/supabase/types').Plan,
       subscription_expires_at: expiresAt,
       pending_plan:            null,
     })

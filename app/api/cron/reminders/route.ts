@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { log, logError, logWarn, cronitorPing } from '@/lib/logger'
 import { Resend } from 'resend'
 import twilio from 'twilio'
 
@@ -15,11 +16,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   if (!secret) {
-    console.warn('[Cron/reminders] CRON_SECRET is not configured. Add it to Vercel environment variables to secure this endpoint.')
+    logWarn('cron.reminders.no_secret', { hint: 'Add CRON_SECRET to Vercel env vars' })
   }
 
-  const supabase = createServiceClient() as any
-
+  const start = Date.now()
+  await cronitorPing('reminders', 'run')
+  const supabase = createServiceClient() 
   // Fetch all reminders that are due and not yet sent
   const { data: reminders, error } = await supabase
     .from('reminders')
@@ -35,11 +37,14 @@ export async function GET(req: NextRequest) {
     .limit(50)
 
   if (error) {
-    console.error('[Cron] Failed to fetch reminders:', error.message)
+    logError('cron.reminders.fetch_failed', error)
+    await cronitorPing('reminders', 'fail')
     return NextResponse.json({ error: 'DB error' }, { status: 500 })
   }
 
   if (!reminders?.length) {
+    log('cron.reminders.none_due')
+    await cronitorPing('reminders', 'complete')
     return NextResponse.json({ sent: 0, message: 'No reminders due' })
   }
 
@@ -48,7 +53,8 @@ export async function GET(req: NextRequest) {
   const sent   = results.filter(r => r.status === 'fulfilled').length
   const failed = results.filter(r => r.status === 'rejected').length
 
-  console.log(`[Cron] Reminders processed: ${sent} sent, ${failed} failed`)
+  log('cron.reminders.complete', { sent, failed, durationMs: Date.now() - start })
+  await cronitorPing('reminders', failed > 0 && sent === 0 ? 'fail' : 'complete')
   return NextResponse.json({ sent, failed })
 }
 
@@ -86,6 +92,7 @@ async function processReminder(supabase: any, reminder: any) {
       .from('reminders')
       .update({ status: 'failed', error_message: err.message?.slice(0, 500) })
       .eq('id', reminder.id)
+    logError('cron.reminders.send_failed', err, { reminderId: reminder.id, channel: reminder.channel })
     throw err
   }
 }

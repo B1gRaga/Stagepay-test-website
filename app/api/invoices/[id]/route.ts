@@ -24,7 +24,7 @@ const ALLOWED_FIELDS = [
 // GET /api/invoices/[id]
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -42,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // PATCH /api/invoices/[id]
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -152,7 +152,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (Object.keys(fields).length > 0) {
     const { data, error } = await supabase
       .from('invoices')
-      .update(fields)
+      .update(fields as import('@/lib/supabase/types').InvoiceUpdate)
       .eq('id', id)
       .eq('user_id', user.id)
       .select('*, invoice_items(*)')
@@ -177,7 +177,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/invoices/[id]
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

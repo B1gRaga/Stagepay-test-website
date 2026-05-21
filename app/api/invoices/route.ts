@@ -6,7 +6,7 @@ const PAGE_SIZE = 50
 
 // GET /api/invoices — list invoices for the authenticated user (paginated)
 export async function GET(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
 
-  if (status) query = query.eq('status', status)
+  if (status) query = query.eq('status', status as import('@/lib/supabase/types').InvoiceStatus)
 
   const { data, error, count } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/invoices — create a new invoice with its line items
 export async function POST(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
   // Atomically generate invoice number via service-role client.
   // next_invoice_number is revoked from authenticated; only service_role may call it.
-  const svcClient = createServiceClient() as any
+  const svcClient = createServiceClient()
   const { data: invoiceNumber, error: numErr } = await svcClient.rpc('next_invoice_number', { p_user_id: user.id })
   if (numErr || !invoiceNumber) {
     return NextResponse.json({ error: 'Failed to generate invoice number' }, { status: 500 })
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       user_id:              user.id,
       invoice_number:       invoiceNumber,
       status:               'draft',
-      client_id:            body.client_id ?? null,
+      client_id:            (body.client_id as string | null | undefined) ?? null,
       client_name:          stripTags(body.client_name),
       client_email:         stripTagsOrNull(body.client_email),
       client_phone:         stripTagsOrNull(body.client_phone),
@@ -123,17 +123,17 @@ export async function POST(req: NextRequest) {
       client_vat:           stripTagsOrNull(body.client_vat),
       project:              stripTagsOrNull(body.project),
       notes:                stripTagsOrNull(body.notes),
-      issue_date:           body.issue_date ?? new Date().toISOString().split('T')[0],
-      due_date:             body.due_date ?? null,
+      issue_date:           (body.issue_date as string | undefined) ?? new Date().toISOString().split('T')[0],
+      due_date:             (body.due_date as string | null | undefined) ?? null,
       subtotal,
       vat_rate,
       vat_amount,
       discount_amount,
       deposit_amount,
       total,
-      currency:             body.currency ?? 'P',
+      currency:             (body.currency as string | undefined) ?? 'P',
       is_recurring,
-      recurrence_interval:  is_recurring ? recurrence_interval : null,
+      recurrence_interval:  (is_recurring ? recurrence_interval : null) as import('@/lib/supabase/types').RecurrenceInterval | null,
       next_recurring_date,
     })
     .select()

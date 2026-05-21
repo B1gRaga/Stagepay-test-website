@@ -36,8 +36,8 @@ export default function Home() {
       }
       return
     }
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'sign_up', { method: 'landing_page', email_domain: email.split('@')[1] })
+    if (typeof window !== 'undefined' && typeof (window as unknown as Window & { gtag?: Function }).gtag === 'function') {
+      (window as unknown as Window & { gtag: Function }).gtag('event', 'sign_up', { method: 'landing_page', email_domain: email.split('@')[1] })
     }
     showToast()
     if (input) input.value = ''

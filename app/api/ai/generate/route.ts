@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   if (!prompt?.trim()) return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from('profiles')
     .select('default_currency, tax_label, default_vat_rate')
     .eq('id', user.id)

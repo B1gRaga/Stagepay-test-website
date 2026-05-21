@@ -7,7 +7,7 @@ type ClientField = typeof ALLOWED_FIELDS[number]
 
 // GET /api/clients — returns only non-deleted clients
 export async function GET() {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -24,7 +24,7 @@ export async function GET() {
 
 // POST /api/clients
 export async function POST(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('clients')
-    .insert({ ...safe, user_id: user.id })
+    .insert({ ...(safe as Record<string, string>), user_id: user.id } as import('@/lib/supabase/types').ClientInsert)
     .select()
     .single()
 

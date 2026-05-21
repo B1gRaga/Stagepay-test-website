@@ -15,12 +15,12 @@ export default async function NewInvoicePage({
   const { edit: editId } = await searchParams
 
   const [{ data: profile }, { data: clients }] = await Promise.all([
-    (supabase as any)
+    (supabase )
       .from('profiles')
       .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label')
       .eq('id', user.id)
       .single(),
-    (supabase as any)
+    (supabase )
       .from('clients')
       .select('id, name, email, phone')
       .eq('user_id', user.id)

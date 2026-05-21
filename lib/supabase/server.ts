@@ -2,7 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createJsClient } from '@supabase/supabase-js'
 import { cookies, headers } from 'next/headers'
 import { cache } from 'react'
-import { unstable_cache } from 'next/cache'
 import type { Database } from './types'
 
 export async function createClient() {
@@ -42,23 +41,18 @@ export const getCachedUser = cache(async () => {
   return user
 })
 
-// Cross-request cached profile — avoids a DB round-trip on every navigation.
-// Keyed by userId, revalidates every 30s. Safe because we only cache non-sensitive
-// display fields; auth is verified separately by getCachedUser.
-export const getCachedProfile = (userId: string) =>
-  unstable_cache(
-    async () => {
-      const supabase = await createClient()
-      const { data } = await (supabase as any)
-        .from('profiles')
-        .select('name, firm_name, plan, business_type')
-        .eq('id', userId)
-        .single()
-      return data as { name: string; firm_name: string; plan: string; business_type: string } | null
-    },
-    ['profile', userId],
-    { revalidate: 30, tags: [`profile-${userId}`] }
-  )()
+// Per-request cached profile — deduplicates across layout + page within the same render.
+// Uses React cache() instead of unstable_cache because createClient() calls cookies(),
+// which is a request-scoped API that unstable_cache forbids.
+export const getCachedProfile = cache(async (userId: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('name, firm_name, plan, business_type')
+    .eq('id', userId)
+    .single()
+  return data
+})
 
 // Dual-auth context: works with both cookie sessions (Next.js pages) and
 // Bearer tokens (app.html vanilla client). Returns a supabase client and
@@ -82,7 +76,7 @@ export async function getAuthContext(req: { headers: { get(name: string): string
 
 // Service role client — bypasses RLS, only use in trusted server code
 export function createServiceClient() {
-  return createJsClient(
+  return createJsClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )

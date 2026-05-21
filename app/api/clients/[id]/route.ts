@@ -9,7 +9,7 @@ const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'note
 // PATCH /api/clients/[id]
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -30,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('clients')
-    .update(safe)
+    .update(safe as import('@/lib/supabase/types').ClientUpdate)
     .eq('id', id)
     .eq('user_id', user.id)
     .is('deleted_at', null)
@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/clients/[id] — soft delete: sets deleted_at, preserves invoice history
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

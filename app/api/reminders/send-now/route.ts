@@ -7,7 +7,7 @@ import twilio from 'twilio'
 // Sends a reminder immediately (bypasses cron) and logs it as status='sent'.
 // Used when toggling auto-reminders on an already-overdue invoice.
 export async function POST(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { invoice_id, channel, recipient_email, recipient_phone, days_after_due } = body as any
+  const { invoice_id, channel, recipient_email, recipient_phone, days_after_due } = body as {
+    invoice_id?: string; channel?: string; recipient_email?: string; recipient_phone?: string; days_after_due?: number
+  }
 
   if (!invoice_id) return NextResponse.json({ error: 'invoice_id is required' }, { status: 400 })
   if (channel !== 'email' && channel !== 'whatsapp') {
@@ -52,9 +54,9 @@ export async function POST(req: NextRequest) {
 
   try {
     if (channel === 'email') {
-      await sendEmail(invoice, senderName, amount, recipient_email)
+      await sendEmail(invoice, senderName, amount, recipient_email!)
     } else {
-      await sendWhatsApp(invoice, senderName, amount, recipient_phone)
+      await sendWhatsApp(invoice, senderName, amount, recipient_phone!)
     }
 
     // Log the sent reminder
@@ -65,10 +67,10 @@ export async function POST(req: NextRequest) {
         invoice_id,
         send_at:         now,
         days_after_due:  days_after_due ?? null,
-        channel,
-        recipient_email: channel === 'email'     ? recipient_email : null,
-        recipient_phone: channel === 'whatsapp'  ? recipient_phone : null,
-        status:          'sent',
+        channel:         channel as import('@/lib/supabase/types').ReminderChannel,
+        recipient_email: channel === 'email'     ? (recipient_email ?? null) : null,
+        recipient_phone: channel === 'whatsapp'  ? (recipient_phone ?? null) : null,
+        status:          'sent' as import('@/lib/supabase/types').ReminderStatus,
         sent_at:         now,
       })
       .select()

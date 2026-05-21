@@ -127,8 +127,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
 
   const supabase = await createClient()
-  const supabaseAny = supabase as any
-
+  const supabaseAny = supabase 
   const now = new Date()
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const hour = now.getHours()

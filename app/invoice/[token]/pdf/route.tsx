@@ -36,8 +36,7 @@ function fmt(n: number, sym: string) {
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { token } = await params
-  const supabaseAny = createServiceClient() as any
-
+  const supabaseAny = createServiceClient() 
   const { data: invoice } = await supabaseAny
     .from('invoices')
     .select('*, invoice_items(*)')

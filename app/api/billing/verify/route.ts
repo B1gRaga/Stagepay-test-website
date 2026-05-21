@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=no_token`)
   }
 
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.redirect(`${APP_URL}/auth/login`)
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=no_pending_plan`)
   }
 
-  const plan = profile.pending_plan
+  const plan = profile.pending_plan as import('@/lib/supabase/types').Plan
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
   await serviceClient

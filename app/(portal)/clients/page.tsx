@@ -9,13 +9,13 @@ export default async function ClientsPage() {
 
   const supabase = await createClient()
   const [{ data: clients }, { data: invSummaries }] = await Promise.all([
-    (supabase as any)
+    (supabase )
       .from('clients')
       .select('id, name, email, phone, address, vat_number, notes, created_at')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .order('name'),
-    (supabase as any)
+    (supabase )
       .from('invoices')
       .select('client_id, client_name, total, currency')
       .eq('user_id', user.id)

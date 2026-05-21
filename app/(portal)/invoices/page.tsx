@@ -6,7 +6,7 @@ export default async function InvoicesPage() {
   if (!user) return null
 
   const supabase = await createClient()
-  const { data: invoices, count } = await (supabase as any)
+  const { data: invoices, count } = await (supabase )
     .from('invoices')
     .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, total, status, currency', { count: 'estimated' })
     .eq('user_id', user.id)

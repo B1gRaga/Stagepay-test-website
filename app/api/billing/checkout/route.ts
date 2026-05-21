@@ -6,7 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 const VALID_PLANS: DpoPlan[] = ['pro', 'business']
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient() as any
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const showPaidStamp = searchParams.get('paid') === 'true'
   const inline        = searchParams.get('view') === 'true'
 
-  const supabaseAny = supabase as any
+  const supabaseAny = supabase
   const [{ data: invoice }, { data: profile }] = await Promise.all([
     supabaseAny.from('invoices').select('*, invoice_items(*)').eq('id', id).eq('user_id', user.id).single(),
     supabaseAny.from('profiles').select('*').eq('id', user.id).single(),
