@@ -102,7 +102,7 @@ export default async function PortalLayout({ children }: { children: React.React
         </div>
         <div className="sp-progress"><div className="sp-progress-fill"/></div>
       </div>
-      <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},520);}try{if(!sessionStorage.getItem('sp-splash')){sessionStorage.setItem('sp-splash','1');setTimeout(hide,1750);}else{var el=document.getElementById('sp-splash');if(el)el.style.display='none';}}catch(e){setTimeout(hide,1750);}})()` }} />
+      <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},520);}setTimeout(hide,1750);})()` }} />
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflow: 'hidden' }}>
         <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} />

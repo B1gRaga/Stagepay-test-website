@@ -31,43 +31,64 @@ export default function ThemeToggleBtn() {
     }, DURATION)
   }, [phase, isDark])
 
-  const curtainStyle: React.CSSProperties = {
-    position:        'fixed',
-    inset:           0,
-    background:      curtainColor.current,
-    transformOrigin: 'top',
-    transform:       phase === 'falling' ? 'scaleY(1)' : 'scaleY(0)',
-    transition:      phase !== 'idle' ? `transform ${DURATION}ms ${EASING}` : 'none',
-    zIndex:          9997,
-    pointerEvents:   'none',
-  }
-
-  const curtainLogoVisible = phase === 'falling'
+  const curtainClass =
+    phase === 'falling' ? 'sp-curtain-fall' :
+    phase === 'rising'  ? 'sp-curtain-rise' : ''
 
   return (
     <>
       <style>{`
-        .theme-toggle-btn{
-          border:1px solid rgba(255,255,255,0.14);
-          background:transparent;
-          color:rgba(248,250,252,0.55);
+        @keyframes spCurtainFall {
+          from { transform: scaleY(0); }
+          to   { transform: scaleY(1); }
         }
-        .theme-toggle-btn:hover{
-          border-color:#10B981 !important;
-          color:#10B981 !important;
+        @keyframes spCurtainRise {
+          from { transform: scaleY(1); }
+          to   { transform: scaleY(0); }
         }
-        html[data-theme="light"] .theme-toggle-btn{
-          border:1px solid rgba(15,23,42,0.18);
-          color:rgba(15,23,42,0.55);
-          background:transparent;
+        .sp-curtain-fall {
+          animation: spCurtainFall ${DURATION}ms ${EASING} both;
+        }
+        .sp-curtain-rise {
+          animation: spCurtainRise ${DURATION}ms ${EASING} both;
+        }
+        .theme-toggle-btn {
+          border: 1px solid rgba(255,255,255,0.14);
+          background: transparent;
+          color: rgba(248,250,252,0.55);
+        }
+        .theme-toggle-btn:hover {
+          border-color: #10B981 !important;
+          color: #10B981 !important;
+        }
+        html[data-theme="light"] .theme-toggle-btn {
+          border: 1px solid rgba(15,23,42,0.18);
+          color: rgba(15,23,42,0.55);
+          background: transparent;
         }
       `}</style>
-      <div aria-hidden="true" style={curtainStyle} />
+
+      <div
+        aria-hidden="true"
+        className={curtainClass}
+        style={{
+          position:        'fixed',
+          inset:           0,
+          background:      curtainColor.current,
+          transformOrigin: 'top',
+          transform:       phase === 'idle' ? 'scaleY(0)' : undefined,
+          zIndex:          9997,
+          pointerEvents:   'none',
+        }}
+      />
+
       {phase !== 'idle' && (
         <div aria-hidden="true" style={{
           position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 10, opacity: curtainLogoVisible ? 1 : 0, transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
+          gap: 10,
+          opacity: phase === 'falling' ? 1 : 0,
+          transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
         }}>
           <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
             <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
@@ -80,11 +101,16 @@ export default function ThemeToggleBtn() {
           </div>
         </div>
       )}
+
       <button
         onClick={toggle}
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         className="theme-toggle-btn"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 8, cursor: 'pointer', flexShrink: 0, transition: 'border-color .15s, color .15s' }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 34, height: 34, borderRadius: 8, cursor: 'pointer',
+          flexShrink: 0, transition: 'border-color .15s, color .15s',
+        }}
       >
         {isDark ? (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
