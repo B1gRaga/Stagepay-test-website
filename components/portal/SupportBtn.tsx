@@ -66,16 +66,16 @@ const CSS = `
   .support-option-desc{font-size:11px;color:var(--t3,rgba(248,250,252,0.3));margin-top:1px;}
 
   html[data-theme="light"] .support-panel{
-    background:#FFFFFF;
-    border-color:rgba(15,23,42,0.14);
+    background:#e6dfd5;
+    border-color:rgba(26,26,26,0.14);
   }
-  html[data-theme="light"] .support-panel-header{border-color:rgba(15,23,42,0.08);}
-  html[data-theme="light"] .support-option{border-color:rgba(15,23,42,0.08);}
-  html[data-theme="light"] .support-option:hover{background:#F1F5F9;}
-  html[data-theme="light"] .support-option-label{color:#0F172A;}
-  html[data-theme="light"] .support-option-desc{color:rgba(15,23,42,0.38);}
-  html[data-theme="light"] .support-panel-title{color:#0F172A;}
-  html[data-theme="light"] .support-panel-sub{color:rgba(15,23,42,0.38);}
+  html[data-theme="light"] .support-panel-header{border-color:rgba(26,26,26,0.08);}
+  html[data-theme="light"] .support-option{border-color:rgba(26,26,26,0.08);}
+  html[data-theme="light"] .support-option:hover{background:#ddd6ca;}
+  html[data-theme="light"] .support-option-label{color:#1a1a1a;}
+  html[data-theme="light"] .support-option-desc{color:rgba(26,26,26,0.45);}
+  html[data-theme="light"] .support-panel-title{color:#1a1a1a;}
+  html[data-theme="light"] .support-panel-sub{color:rgba(26,26,26,0.45);}
 `
 
 export default function SupportBtn() {

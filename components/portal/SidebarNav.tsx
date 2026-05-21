@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
@@ -14,10 +14,10 @@ const CSS = `
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#EDF1F7;--bg2:#FFFFFF;--surface:#F4F7FC;--surface2:#E4ECF8;
-    --line:rgba(15,23,42,0.10);--line2:rgba(15,23,42,0.18);
-    --t1:#0F172A;--t2:rgba(15,23,42,0.68);--t3:rgba(15,23,42,0.52);
-    --g-dim:rgba(16,185,129,0.14);
+    --bg:#f3ede1;--bg2:#ede7db;--surface:#e6dfd5;--surface2:#ddd6ca;
+    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
+    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
+    --g-dim:rgba(16,185,129,.12);
   }
 
   /* ── DESKTOP SIDEBAR ── */
@@ -113,7 +113,7 @@ const CSS = `
       backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
       border-bottom:1px solid var(--line);
     }
-    html[data-theme="light"] .mob-topbar{background:rgba(255,255,255,0.98);border-bottom-color:rgba(15,23,42,0.10);}
+    html[data-theme="light"] .mob-topbar{background:rgba(243,237,225,0.97);border-bottom-color:rgba(26,26,26,0.08);}
     html[data-theme="light"] .mob-topbar-logo{color:var(--t1);}
     html[data-theme="light"] .mob-tab{color:rgba(15,23,42,.38);}
     html[data-theme="light"] .mob-tab.active{color:var(--g);}
@@ -154,7 +154,7 @@ const CSS = `
       backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
       padding-bottom:env(safe-area-inset-bottom,0px);
     }
-    html[data-theme="light"] .sidebar{background:rgba(255,255,255,0.98);border-top-color:rgba(15,23,42,0.10);}
+    html[data-theme="light"] .sidebar{background:rgba(237,231,219,0.97);border-top-color:rgba(15,23,42,0.10);}
     .sidebar::before{display:none;}
     .sidebar-logo{display:none;}
     .desk-nav{display:none;}

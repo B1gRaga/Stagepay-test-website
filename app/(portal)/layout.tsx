@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
 import PullToRefresh from '@/components/portal/PullToRefresh'
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) redirect('/auth/login')
 
+  const supabase = await createClient()
   const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('name, firm_name, plan, business_type')
@@ -43,7 +43,7 @@ export default async function PortalLayout({ children }: { children: React.React
           display:flex;align-items:center;justify-content:center;flex-direction:column;
           transition:opacity .5s ease,visibility .5s;
         }
-        html[data-theme="light"] #sp-splash{background:#F1F5F9;}
+        html[data-theme="light"] #sp-splash{background:#f3ede1;}
         #sp-splash.sp-out{opacity:0;visibility:hidden;}
         .sp-inner{display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:-20px;}
         /* Bars — start reversed (descending L→R), settle to ascending L→R */
