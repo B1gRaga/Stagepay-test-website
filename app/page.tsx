@@ -115,7 +115,7 @@ export default function Home() {
               Describe your work.<br/>We send the invoice<br/>on <em>WhatsApp</em>.
             </h1>
             <p className="hero-sub">
-              AI generates a professional invoice in seconds, delivers it to your client&apos;s WhatsApp, and sends automatic reminders until you&apos;re paid.
+              AI builds a professional invoice from plain text, sends it to your client&apos;s WhatsApp, and follows up automatically until you&apos;re paid.
             </p>
             <div className="signup-box">
               <div className="signup-box-label">
@@ -274,103 +274,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* TYPE → INVOICE DEMO */}
-      <div className="sec">
-        <div className="sec-inner">
-          <div className="sec-head reveal text-center mx-auto">
-            <div className="sec-tag">See it in action</div>
-            <h2 className="sec-h2">Just <em>describe it.</em><br/>We handle the rest.</h2>
-            <p className="sec-p">No forms. No templates. Type like you&apos;re texting a colleague.</p>
-          </div>
-          <div className="aha-demo-grid reveal" style={{alignItems:'start'}}>
-            <div className="aha-input-box">
-              <div className="aha-box-label">You type</div>
-              <div className="aha-prompt">
-                &quot;Invoice Naledi Dube for Amogelang&apos;s June tuition — 10 English sessions at P110 each. Due in 5 days.&quot;
-              </div>
-              <div className="aha-time">⚡ StagePay processes in under 5 seconds</div>
-            </div>
-            <div className="aha-arrow-wrap">
-              <div className="aha-arrow">→</div>
-              <div className="aha-arrow-label">Instant</div>
-            </div>
-            <div className="aha-result-box" style={{padding:0,overflow:'hidden'}}>
-              <div className="aha-box-label" style={{padding:'16px 20px 10px'}}>You get</div>
-              <div className="mock-wrap" style={{borderRadius:0,boxShadow:'none',border:'none',borderTop:'1px solid var(--line)'}}>
-                <div className="mock-bar">
-                  <div className="mock-dot" style={{background:'#EF4444'}}></div>
-                  <div className="mock-dot" style={{background:'#F59E0B'}}></div>
-                  <div className="mock-dot" style={{background:'#10B981'}}></div>
-                  <span className="mock-url">stagepay.co.bw/invoice/INV-043</span>
-                </div>
-                <div className="mock-body">
-                  <div className="mock-head">
-                    <div>
-                      <div className="mock-brand">
-                        <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
-                        Bright Stars Tuition
-                      </div>
-                      <div className="mock-meta">Gaborone · VAT Registered</div>
-                    </div>
-                    <div style={{textAlign:'right'}}>
-                      <div className="mock-inv-badge">INVOICE</div>
-                      <div className="mock-meta" style={{marginTop:'6px'}}>INV-202606-001 · 01 Jun 2026</div>
-                    </div>
-                  </div>
-                  <div className="mock-parties">
-                    <div>
-                      <div className="mock-lbl">Bill to</div>
-                      <div className="mock-nm">Naledi Dube</div>
-                    </div>
-                    <div>
-                      <div className="mock-lbl">Due</div>
-                      <div className="mock-nm">06 Jun 2026</div>
-                      <div className="mock-detail">Net 5 days</div>
-                    </div>
-                  </div>
-                  <table className="mock-tbl">
-                    <thead>
-                      <tr>
-                        <th>Description</th>
-                        <th style={{textAlign:'right'}}>Qty</th>
-                        <th style={{textAlign:'right'}}>Rate</th>
-                        <th style={{textAlign:'right'}}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Grade 9 English tuition</td>
-                        <td style={{textAlign:'right'}}>10</td>
-                        <td style={{textAlign:'right'}}>P110</td>
-                        <td style={{textAlign:'right'}}>P1,100</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <div className="mock-subtotals">
-                    <div className="mock-sub-row"><span>Subtotal</span><span>P1,100</span></div>
-                    <div className="mock-sub-row vat"><span>VAT (14%)</span><span>P154</span></div>
-                  </div>
-                  <div className="mock-total-bar">
-                    <span className="mock-total-lbl">Total Due</span>
-                    <span className="mock-total-val">P1,254</span>
-                  </div>
-                  <div className="mock-actions">
-                    <div className="mock-btn">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                      Download PDF
-                    </div>
-                    <div className="mock-btn mock-btn-wa">
-                      <svg width="10" height="10" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
-                      Send via WhatsApp
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* FEATURES */}
       <div className="feat-bg" id="features">
         <div className="sec">
@@ -384,90 +287,36 @@ export default function Home() {
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M12 2l-2 7H3l6 4-2 7 5-4 5 4-2-7 6-4h-7z"/></svg></div>
                 <div className="feat-title">AI Invoice Generation</div>
-                <div className="feat-desc">Describe your work in plain language. AI extracts client, line items, rates and VAT automatically.</div>
+                <div className="feat-desc">Describe the job in plain language — AI extracts client, items and VAT in seconds.</div>
                 <span className="feat-tag">Core feature</span>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="#10B981" opacity=".9"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg></div>
                 <div className="feat-title">WhatsApp Delivery</div>
-                <div className="feat-desc">Invoices land in your client&apos;s WhatsApp. They open them. They read them. They pay them.</div>
+                <div className="feat-desc">Invoices land in your client&apos;s WhatsApp. They open them. They pay them.</div>
                 <span className="feat-tag">The differentiator</span>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
                 <div className="feat-title">Automatic Reminders</div>
-                <div className="feat-desc">Smart follow-ups at 3, 7, 14 and 30 days — you never have to chase a client awkwardly again.</div>
-                <span className="feat-tag">WhatsApp</span>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
-                <div className="feat-title">Client Address Book</div>
-                <div className="feat-desc">Save client details once. Name, contact, and VAT number are pre-filled every time after.</div>
+                <div className="feat-desc">Follow-ups at 3, 7, 14 and 30 days via WhatsApp — you never have to chase again.</div>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
                 <div className="feat-title">PDF Export</div>
-                <div className="feat-desc">One-click branded PDF with your firm name, bank details and payment terms — ready to share anywhere.</div>
+                <div className="feat-desc">Branded PDF with your firm name, bank details and payment terms — one click.</div>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M2 9h6"/></svg></div>
                 <div className="feat-title">Deposit &amp; Discount Billing</div>
-                <div className="feat-desc">25%, 50% or custom deposit. Add a flat or percentage discount — all shown as clear rows on the invoice.</div>
+                <div className="feat-desc">Partial deposits and discounts shown as clear line items on every invoice.</div>
               </div>
               <div className="feat-card">
                 <div className="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
                 <div className="feat-title">Recurring Invoices</div>
-                <div className="feat-desc">Monthly, quarterly or yearly billing on autopilot. Set it once — StagePay generates the next invoice automatically.</div>
+                <div className="feat-desc">Set it once — StagePay generates monthly, quarterly or yearly invoices automatically.</div>
                 <span className="feat-tag">New</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* BEFORE / AFTER */}
-      <div className="sec">
-        <div className="sec-inner">
-          <div className="sec-head reveal">
-            <div className="sec-tag">The difference</div>
-            <h2 className="sec-h2">Stop spending hours<br/>on <em>admin.</em></h2>
-            <p className="sec-p">Professionals waste 3–5 hours a week on invoicing. StagePay cuts that to minutes.</p>
-          </div>
-          <div className="compare-grid reveal">
-            <div className="compare-card compare-before">
-              <div className="compare-label compare-label-before">Before StagePay</div>
-              <div className="compare-items">
-                <div className="compare-item">
-                  <div className="compare-dot compare-dot-red"></div>
-                  <span>Open Word, rebuild last month&apos;s template, calculate VAT manually — 45 min per invoice</span>
-                </div>
-                <div className="compare-item">
-                  <div className="compare-dot compare-dot-red"></div>
-                  <span>Wrong VAT rate, wrong client name — send a corrected copy, lose credibility</span>
-                </div>
-                <div className="compare-item">
-                  <div className="compare-dot compare-dot-red"></div>
-                  <span>Chase payments manually via WhatsApp. Feel awkward. Money sits unpaid for months</span>
-                </div>
-              </div>
-            </div>
-            <div className="compare-card compare-after">
-              <div className="compare-label compare-label-after">With StagePay</div>
-              <div className="compare-items">
-                <div className="compare-item">
-                  <div className="compare-dot compare-dot-green"></div>
-                  <span>Describe the job. Professional invoice in 30 seconds — correct VAT, branded, sent via WhatsApp</span>
-                </div>
-                <div className="compare-item">
-                  <div className="compare-dot compare-dot-green"></div>
-                  <span>Smart reminders go out automatically at 3, 7, 14 and 30 days — you never chase again</span>
-                </div>
-                <div className="compare-item">
-                  <div className="compare-dot compare-dot-green"></div>
-                  <span>Every client saved once. Invoice them again in seconds — all details pre-filled</span>
-                </div>
-              </div>
-              <a href="/auth/signup" className="compare-cta">Start for free →</a>
             </div>
           </div>
         </div>
@@ -561,32 +410,6 @@ export default function Home() {
                 <div className="pf">{ck}API access</div>
               </div>
               <button className="price-btn price-btn-out" style={{opacity:0.5,cursor:'not-allowed'}} disabled>Coming soon</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* FAQ */}
-      <div className="how-bg">
-        <div className="sec">
-          <div className="sec-inner">
-            <div className="sec-head reveal">
-              <div className="sec-tag">Common questions</div>
-              <h2 className="sec-h2">A few things<br/>people <em>ask first.</em></h2>
-            </div>
-            <div className="obj-grid reveal">
-              <div className="obj-card">
-                <div className="obj-q">&quot;I already use Word or Excel.&quot;</div>
-                <div className="obj-a">That works — until you miss a VAT rate or spend 40 minutes rebuilding last month&apos;s template. <strong>StagePay does it in 30 seconds.</strong></div>
-              </div>
-              <div className="obj-card">
-                <div className="obj-q">&quot;Is my data safe?&quot;</div>
-                <div className="obj-a">Stored encrypted, at rest and in transit. We use Supabase (SOC 2 compliant). <strong>We never sell your data — export everything anytime.</strong></div>
-              </div>
-              <div className="obj-card">
-                <div className="obj-q">&quot;Can I edit before sending?&quot;</div>
-                <div className="obj-a">Every field is editable after AI generation — logo, payment terms, bank details, line items. <strong>Full control, zero friction.</strong></div>
-              </div>
             </div>
           </div>
         </div>
