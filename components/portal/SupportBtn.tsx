@@ -104,7 +104,7 @@ export default function SupportBtn() {
             </div>
 
             <a
-              href="mailto:support@stagepay.co.bw?subject=StagePay Support Request"
+              href="mailto:nkwebindeke@gmail.com?subject=StagePay Support Request"
               className="support-option"
               onClick={() => setOpen(false)}
             >
@@ -115,12 +115,12 @@ export default function SupportBtn() {
               </div>
               <div>
                 <div className="support-option-label">Email support</div>
-                <div className="support-option-desc">support@stagepay.co.bw</div>
+                <div className="support-option-desc">nkwebindeke@gmail.com</div>
               </div>
             </a>
 
             <a
-              href="https://wa.me/26771234567?text=Hi%2C%20I%20need%20help%20with%20StagePay"
+              href="https://wa.me/26775406331?text=Hi%2C%20I%20need%20help%20with%20StagePay"
               target="_blank"
               rel="noopener noreferrer"
               className="support-option"
