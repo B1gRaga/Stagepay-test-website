@@ -152,25 +152,25 @@ export default function Home() {
                   <div>
                     <div className="mock-brand">
                       <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
-                      Bright Stars Tuition
+                      Yugen Studios
                     </div>
-                    <div className="mock-meta">Gaborone, Botswana · VAT Reg: BW201856</div>
+                    <div className="mock-meta">Maun, Botswana · Professional Services</div>
                   </div>
                   <div style={{textAlign:'right'}}>
                     <div className="mock-inv-badge">INVOICE</div>
-                    <div className="mock-meta" style={{marginTop:'6px'}}>INV-202605-015 · 01 May 2026</div>
+                    <div className="mock-meta" style={{marginTop:'6px'}}>INV-202605-015 · 20 May 2026</div>
                   </div>
                 </div>
                 <div className="mock-parties">
                   <div>
                     <div className="mock-lbl">Bill to</div>
                     <div className="mock-nm">Kefilwe Mokobi</div>
-                    <div className="mock-detail">Parent · Gaborone</div>
+                    <div className="mock-detail">May tuition fees</div>
                   </div>
                   <div>
-                    <div className="mock-lbl">Period</div>
-                    <div className="mock-nm">May Tuition 2026</div>
-                    <div className="mock-detail">Due: 07 May 2026</div>
+                    <div className="mock-lbl">Due date</div>
+                    <div className="mock-nm">03 Jun 2026</div>
+                    <div className="mock-detail">Due on Receipt</div>
                   </div>
                 </div>
                 <table className="mock-tbl">
@@ -184,16 +184,28 @@ export default function Home() {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Grade 10 Mathematics tuition</td>
-                      <td style={{textAlign:'right'}}>8</td>
-                      <td style={{textAlign:'right'}}>P125</td>
-                      <td style={{textAlign:'right'}}>P1,000</td>
+                      <td>Mathematics</td>
+                      <td style={{textAlign:'right'}}>1</td>
+                      <td style={{textAlign:'right'}}>P300</td>
+                      <td style={{textAlign:'right'}}>P300</td>
                     </tr>
                     <tr>
-                      <td>Study materials &amp; worksheets</td>
+                      <td>Science Double Award</td>
                       <td style={{textAlign:'right'}}>1</td>
-                      <td style={{textAlign:'right'}}>P250</td>
-                      <td style={{textAlign:'right'}}>P250</td>
+                      <td style={{textAlign:'right'}}>P500</td>
+                      <td style={{textAlign:'right'}}>P500</td>
+                    </tr>
+                    <tr>
+                      <td>English</td>
+                      <td style={{textAlign:'right'}}>1</td>
+                      <td style={{textAlign:'right'}}>P300</td>
+                      <td style={{textAlign:'right'}}>P300</td>
+                    </tr>
+                    <tr>
+                      <td>Registration fee</td>
+                      <td style={{textAlign:'right'}}>1</td>
+                      <td style={{textAlign:'right'}}>P150</td>
+                      <td style={{textAlign:'right'}}>P150</td>
                     </tr>
                   </tbody>
                 </table>
@@ -219,7 +231,7 @@ export default function Home() {
             </div>
             <div className="ai-bubble">
               <div className="ai-bubble-label">AI Prompt Used</div>
-              <div className="ai-bubble-text">&quot;Invoice Kefilwe Mokobi for Tumelo&apos;s May tuition — 8 maths sessions at P125 each and study materials P250.&quot;</div>
+              <div className="ai-bubble-text">&quot;Invoice Kefilwe Mokobi for May tuition — Maths P300, Science Double Award P500, English P300, and registration fee P150.&quot;</div>
               <div className="ai-bubble-tag">
                 <span className="ai-status"></span>
                 Generated in 4 seconds

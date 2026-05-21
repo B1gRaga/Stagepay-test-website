@@ -66,12 +66,12 @@ const CSS = `
   .support-option-desc{font-size:11px;color:var(--t3,rgba(248,250,252,0.3));margin-top:1px;}
 
   html[data-theme="light"] .support-panel{
-    background:#e9e3da;
+    background:#e8e1d5;
     border-color:rgba(26,26,26,0.14);
   }
   html[data-theme="light"] .support-panel-header{border-color:rgba(26,26,26,0.08);}
   html[data-theme="light"] .support-option{border-color:rgba(26,26,26,0.08);}
-  html[data-theme="light"] .support-option:hover{background:#f0eeeb;}
+  html[data-theme="light"] .support-option:hover{background:#f3ede1;}
   html[data-theme="light"] .support-option-label{color:#1a1a1a;}
   html[data-theme="light"] .support-option-desc{color:rgba(26,26,26,0.45);}
   html[data-theme="light"] .support-panel-title{color:#1a1a1a;}
