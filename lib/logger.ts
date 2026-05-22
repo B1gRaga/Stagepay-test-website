@@ -9,11 +9,15 @@ export function log(event: string, data: LogData = {}) {
 export function logError(event: string, error: unknown, data: LogData = {}) {
   const message = error instanceof Error ? error.message : String(error)
   console.error(JSON.stringify({ event, error: message, ...data, ts: Date.now() }))
-  Sentry.captureException(error, { extra: { event, ...data } })
+  Sentry.captureException(error instanceof Error ? error : new Error(message), {
+    tags:  { event },
+    extra: data,
+  })
 }
 
 export function logWarn(event: string, data: LogData = {}) {
   console.warn(JSON.stringify({ event, ...data, ts: Date.now() }))
+  Sentry.captureMessage(event, { level: 'warning', extra: data })
 }
 
 // Pings a Cronitor monitor so you get alerted if the cron stops running.

@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  try {
   const start = Date.now()
   await cronitorPing('recurring-invoices', 'run')
   const supabase = createServiceClient()
@@ -126,4 +127,9 @@ export async function GET(req: NextRequest) {
   log('cron.recurring.complete', { generated, failed, durationMs: Date.now() - start })
   await cronitorPing('recurring-invoices', failed > 0 && generated === 0 ? 'fail' : 'complete')
   return NextResponse.json({ generated, failed })
+  } catch (err: any) {
+    logError('cron.recurring.unhandled', err)
+    await cronitorPing('recurring-invoices', 'fail')
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
+  }
 }

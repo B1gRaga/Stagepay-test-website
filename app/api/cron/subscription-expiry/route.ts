@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  try {
   const start = Date.now()
   await cronitorPing('subscription-expiry', 'run')
   const supabase = createServiceClient() 
@@ -50,4 +51,9 @@ export async function GET(req: NextRequest) {
   log('cron.subscription_expiry.complete', { downgraded: ids.length, durationMs: Date.now() - start })
   await cronitorPing('subscription-expiry', 'complete')
   return NextResponse.json({ downgraded: ids.length })
+  } catch (err: any) {
+    logError('cron.subscription_expiry.unhandled', err)
+    await cronitorPing('subscription-expiry', 'fail')
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
+  }
 }

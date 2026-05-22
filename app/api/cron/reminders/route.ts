@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  try {
   const start = Date.now()
   await cronitorPing('reminders', 'run')
   const supabase = createServiceClient() 
@@ -51,6 +52,11 @@ export async function GET(req: NextRequest) {
   log('cron.reminders.complete', { sent, failed, durationMs: Date.now() - start })
   await cronitorPing('reminders', failed > 0 && sent === 0 ? 'fail' : 'complete')
   return NextResponse.json({ sent, failed })
+  } catch (err: any) {
+    logError('cron.reminders.unhandled', err)
+    await cronitorPing('reminders', 'fail')
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
+  }
 }
 
 async function processReminder(supabase: any, reminder: any) {
