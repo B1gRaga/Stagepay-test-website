@@ -41,7 +41,7 @@ export default function Home() {
     }
     showToast()
     if (input) input.value = ''
-    setTimeout(() => { window.location.href = '/auth/signup' }, 1800)
+    setTimeout(() => { window.location.href = '/auth/signup?email=' + encodeURIComponent(email) }, 1800)
   }
 
   function showToast() {

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
@@ -139,6 +139,12 @@ export default function SignupPage() {
   const [name, setName]                 = useState('')
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const pre = params.get('email')
+    if (pre) setEmail(pre)
+  }, [])
   const [businessType, setBusinessType] = useState('')
   const [showPw, setShowPw]             = useState(false)
   const [error, setError]               = useState('')
