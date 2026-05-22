@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 import twilio from 'twilio'
 
@@ -7,9 +7,9 @@ import twilio from 'twilio'
 // Sends a reminder immediately (bypasses cron) and logs it as status='sent'.
 // Used when toggling auto-reminders on an already-overdue invoice.
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await createClient()
 
   let body: Record<string, unknown>
   try { body = await req.json() } catch {

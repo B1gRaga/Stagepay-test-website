@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, getCachedUser } from '@/lib/supabase/server'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 
 const PAGE_SIZE = 50
 
 // GET /api/invoices — list invoices for the authenticated user (paginated)
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await createClient()
 
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
@@ -31,9 +31,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/invoices — create a new invoice with its line items
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await createClient()
 
   let body: Record<string, unknown>
   try {

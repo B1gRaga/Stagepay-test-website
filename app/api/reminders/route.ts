@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 
 const VALID_CHANNELS = ['whatsapp', 'email'] as const
 
 // GET /api/reminders?invoice_id=xxx
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await createClient()
 
   const { searchParams } = new URL(req.url)
   const invoice_id = searchParams.get('invoice_id')
@@ -27,9 +27,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/reminders — schedule a reminder
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await createClient()
 
   let body: Record<string, unknown>
   try {

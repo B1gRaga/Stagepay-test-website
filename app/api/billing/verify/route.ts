@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { getCachedUser, createServiceClient } from '@/lib/supabase/server'
 import { verifyPaymentToken } from '@/lib/dpo'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -14,8 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=no_token`)
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCachedUser()
   if (!user) {
     return NextResponse.redirect(`${APP_URL}/auth/login`)
   }
