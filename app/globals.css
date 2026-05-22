@@ -258,7 +258,7 @@ nav{
 .pf{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--t2);}
 .pf.off{color:var(--t3);text-decoration:line-through;}
 .pf svg{flex-shrink:0;}
-.price-btn{width:100%;padding:13px;border-radius:9px;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;border:none;text-align:center;}
+.price-btn{display:block;width:100%;padding:13px;border-radius:9px;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;border:none;text-align:center;text-decoration:none;}
 .price-btn-main{background:var(--g);color:#060A12;}
 .price-btn-main:hover{background:var(--g2);transform:translateY(-1px);}
 .price-btn-out{background:transparent;color:var(--t2);border:1px solid var(--line2);}

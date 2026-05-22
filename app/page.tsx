@@ -1,91 +1,39 @@
-'use client'
-
-import { useEffect } from 'react'
 import { ThemeToggle } from '@/components/ui/curtain-theme-toggle'
+import { SignupInput } from '@/components/landing/SignupInput'
+import { RevealObserver } from '@/components/landing/RevealObserver'
+
+const ck = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
+const xk = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+
+const stagepayLogo = (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+    <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+        <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+        <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
+        <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+        <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+      </svg>
+      <span style={{ fontFamily: 'var(--font-bebas), sans-serif', fontSize: '22px', letterSpacing: '3px', color: 'inherit' }}>
+        Stage<span style={{ color: '#10B981' }}>Pay</span>
+      </span>
+    </a>
+    <div className="nav-links" style={{ marginLeft: 0 }}>
+      <a href="#how" style={{ color: 'inherit', opacity: 0.6 }}>How it works</a>
+      <a href="#features" style={{ color: 'inherit', opacity: 0.6 }}>Features</a>
+      <a href="#pricing" style={{ color: 'inherit', opacity: 0.6 }}>Pricing</a>
+    </div>
+  </div>
+)
+
+const navRight = (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <a href="/auth/login" style={{ fontSize: '13px', color: 'inherit', opacity: 0.6, textDecoration: 'none' }} className="nav-sign-in">Sign in</a>
+    <a href="/auth/signup" style={{ padding: '8px 20px', borderRadius: '8px', background: '#10B981', color: '#060A12', fontSize: '13px', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>Try it free →</a>
+  </div>
+)
 
 export default function Home() {
-  useEffect(() => {
-    const reveals = document.querySelectorAll<HTMLElement>('.reveal')
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target) }
-      })
-    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
-    reveals.forEach(el => obs.observe(el))
-
-    const inputs = document.querySelectorAll<HTMLInputElement>('input[type=email]')
-    const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') handleSignup((e.target as HTMLInputElement).id)
-    }
-    inputs.forEach(inp => inp.addEventListener('keydown', onKeydown))
-
-    return () => {
-      obs.disconnect()
-      inputs.forEach(inp => inp.removeEventListener('keydown', onKeydown))
-    }
-  }, [])
-
-  function handleSignup(inputId: string) {
-    const input = document.getElementById(inputId) as HTMLInputElement | null
-    const email = input ? input.value.trim() : ''
-    if (!email || !email.includes('@')) {
-      if (input) {
-        input.focus()
-        input.style.borderColor = '#EF4444'
-        setTimeout(() => { input.style.borderColor = '' }, 1500)
-      }
-      return
-    }
-    if (typeof window !== 'undefined' && typeof (window as unknown as Window & { gtag?: Function }).gtag === 'function') {
-      (window as unknown as Window & { gtag: Function }).gtag('event', 'sign_up', { method: 'landing_page', email_domain: email.split('@')[1] })
-    }
-    showToast()
-    if (input) input.value = ''
-    setTimeout(() => { window.location.href = '/auth/signup?email=' + encodeURIComponent(email) }, 1800)
-  }
-
-  function showToast() {
-    const t = document.getElementById('toast') as HTMLElement | null
-    if (!t) return
-    t.style.opacity = '1'
-    t.style.transform = 'translateX(-50%) translateY(0)'
-    setTimeout(() => {
-      t.style.opacity = '0'
-      t.style.transform = 'translateX(-50%) translateY(20px)'
-    }, 3000)
-  }
-
-  const ck = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
-  const xk = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
-
-  const stagepayLogo = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
-      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
-        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-          <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
-          <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
-          <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-          <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
-        </svg>
-        <span style={{ fontFamily: 'var(--font-bebas), sans-serif', fontSize: '22px', letterSpacing: '3px', color: 'inherit' }}>
-          Stage<span style={{ color: '#10B981' }}>Pay</span>
-        </span>
-      </a>
-      <div className="nav-links" style={{ marginLeft: 0 }}>
-        <a href="#how" style={{ color: 'inherit', opacity: 0.6 }}>How it works</a>
-        <a href="#features" style={{ color: 'inherit', opacity: 0.6 }}>Features</a>
-        <a href="#pricing" style={{ color: 'inherit', opacity: 0.6 }}>Pricing</a>
-      </div>
-    </div>
-  )
-
-  const navRight = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <a href="/auth/login" style={{ fontSize: '13px', color: 'inherit', opacity: 0.6, textDecoration: 'none' }} className="nav-sign-in">Sign in</a>
-      <a href="/auth/signup" style={{ padding: '8px 20px', borderRadius: '8px', background: '#10B981', color: '#060A12', fontSize: '13px', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>Try it free →</a>
-    </div>
-  )
-
   return (
     <ThemeToggle
       variant="appbar"
@@ -94,6 +42,8 @@ export default function Home() {
       duration={600}
       appBarProps={{ logo: stagepayLogo, userAvatar: navRight }}
     >
+      <RevealObserver />
+
       {/* ANNOUNCE BAR */}
       <div className="announce">
         <span className="announce-dot"></span>
@@ -117,26 +67,7 @@ export default function Home() {
             <p className="hero-sub">
               AI builds a professional invoice from plain text, sends it to your client&apos;s WhatsApp, and follows up automatically until you&apos;re paid.
             </p>
-            <div className="signup-box">
-              <div className="signup-box-label">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
-                First 100 users get Pro free for 1 month
-              </div>
-              <div className="form-row">
-                <input type="email" id="heroEmail" className="form-input" placeholder="your@email.com"/>
-                <button className="btn-signup" onClick={() => handleSignup('heroEmail')}>
-                  Get started free
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-                </button>
-              </div>
-              <div className="form-trust">
-                <span>✓ No credit card</span>
-                <span className="form-trust-div">·</span>
-                <span>✓ No setup needed</span>
-                <span className="form-trust-div">·</span>
-                <span>✓ Your data stays private</span>
-              </div>
-            </div>
+            <SignupInput variant="hero" />
           </div>
 
           <div className="hero-right">
@@ -371,7 +302,7 @@ export default function Home() {
                 <div className="pf off">{xk}Auto-reminders</div>
                 <div className="pf off">{xk}WhatsApp delivery</div>
               </div>
-              <button className="price-btn price-btn-out" onClick={() => window.location.href='/auth/signup'}>Create my first invoice</button>
+              <a href="/auth/signup" className="price-btn price-btn-out">Create my first invoice</a>
             </div>
             <div className="price-card pop">
               <div className="pop-badge">Most Popular</div>
@@ -388,7 +319,7 @@ export default function Home() {
                 <div className="pf">{ck}Deposit billing</div>
                 <div className="pf">{ck}Custom branding</div>
               </div>
-              <button className="price-btn price-btn-main" onClick={() => window.location.href='/auth/signup'}>Start invoicing in seconds</button>
+              <a href="/auth/signup" className="price-btn price-btn-main">Start invoicing in seconds</a>
             </div>
             <div className="price-card" style={{opacity:0.7}}>
               <div className="pop-badge" style={{background:'rgba(100,116,139,0.15)',color:'#94A3B8',border:'1px solid rgba(100,116,139,0.3)'}}>Coming Soon</div>
@@ -425,10 +356,7 @@ export default function Home() {
           </div>
           <h2 className="final-cta-h">The modern way<br/>to get <em>paid.</em></h2>
           <p className="final-cta-p">First 100 users get <strong>Pro free for 1 month</strong> — no credit card needed.</p>
-          <div className="final-form">
-            <input type="email" id="finalEmail" className="final-form-input" placeholder="your@email.com"/>
-            <button className="btn-signup" onClick={() => handleSignup('finalEmail')}>Get started free →</button>
-          </div>
+          <SignupInput variant="final" />
           <div className="final-trust">
             <span>✓ First 100 get Pro free</span>
             <span>·</span>
@@ -461,11 +389,6 @@ export default function Home() {
           <div className="foot-copy">© 2026 StagePay · Built for African professionals</div>
         </div>
       </footer>
-
-      {/* TOAST */}
-      <div id="toast" style={{position:'fixed',bottom:'80px',left:'50%',transform:'translateX(-50%) translateY(20px)',background:'#131B2E',border:'1px solid rgba(16,185,129,.3)',color:'#F0F4F8',padding:'14px 24px',borderRadius:'10px',fontSize:'14px',fontWeight:600,boxShadow:'0 8px 32px rgba(0,0,0,.4)',opacity:0,transition:'opacity .3s,transform .3s',zIndex:400,whiteSpace:'nowrap',pointerEvents:'none'}}>
-        ✓ You&apos;re on the list! Redirecting to the app…
-      </div>
     </ThemeToggle>
   )
 }
