@@ -223,14 +223,14 @@ interface Props {
   displayName: string
   userEmail: string
   plan?: string
+  overdueCt?: number
 }
 
-export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Props) {
+export default function SidebarNav({ displayName, userEmail, plan = 'free', overdueCt = 0 }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const [popupOpen, setPopupOpen] = useState(false)
   const [mobMenuOpen, setMobMenuOpen] = useState(false)
-  const [overdueCt, setOverdueCt] = useState(0)
 
   useEffect(() => {
     if (!mobMenuOpen) return
@@ -238,13 +238,6 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free' }: Pr
     document.addEventListener('click', close)
     return () => document.removeEventListener('click', close)
   }, [mobMenuOpen])
-
-  useEffect(() => {
-    fetch('/api/invoices?status=overdue&page=0')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.total) setOverdueCt(d.total) })
-      .catch(() => {})
-  }, [])
 
   const initials = displayName
     .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || '??'
