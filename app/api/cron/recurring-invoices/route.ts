@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
 
       // Copy line items
       if (tmpl.invoice_items?.length) {
-        await supabase.from('invoice_items').insert(
+        const { error: itemsErr } = await supabase.from('invoice_items').insert(
           tmpl.invoice_items.map((it: any) => ({
             invoice_id:  newInv.id,
             user_id:     tmpl.user_id,
@@ -107,6 +107,7 @@ export async function GET(req: NextRequest) {
             sort_order:  it.sort_order,
           }))
         )
+        if (itemsErr) throw new Error('Failed to copy line items: ' + itemsErr.message)
       }
 
       // Advance the template's schedule

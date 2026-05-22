@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { log, logError, logWarn, cronitorPing } from '@/lib/logger'
+import { log, logError, cronitorPing } from '@/lib/logger'
 import { Resend } from 'resend'
 import twilio from 'twilio'
 
@@ -10,13 +10,8 @@ export const maxDuration = 60
 // Called by Vercel Cron — protected by CRON_SECRET
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
-  // If CRON_SECRET is set, enforce it. If not set, allow (warn in logs so
-  // the operator knows to add it — but don't lock the cron out entirely).
-  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
+  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  if (!secret) {
-    logWarn('cron.reminders.no_secret', { hint: 'Add CRON_SECRET to Vercel env vars' })
   }
 
   const start = Date.now()
