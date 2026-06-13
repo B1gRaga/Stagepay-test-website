@@ -75,6 +75,8 @@ export async function proxy(request: NextRequest) {
   // Safe on Vercel: proxy always runs before server functions and external
   // clients cannot inject these headers past it.
   const requestHeaders = new Headers(request.headers)
+  requestHeaders.delete('x-user-id')
+  requestHeaders.delete('x-user-email')
   if (user) {
     requestHeaders.set('x-user-id', user.id)
     requestHeaders.set('x-user-email', user.email ?? '')

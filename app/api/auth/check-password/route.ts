@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'crypto'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // k-anonymity: only the first 5 hex chars of the SHA-1 hash are sent to
 // HaveIBeenPwned. The real password never leaves this server.
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  if (!(await checkRateLimit(`hibp:${ip}`, 10, 60_000))) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   let body: { password?: unknown }
   try {
     body = await req.json()
