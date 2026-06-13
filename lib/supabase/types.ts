@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
-export type InvoiceStatus      = 'draft' | 'pending' | 'sent' | 'overdue' | 'paid'
+export type InvoiceStatus      = 'draft' | 'pending' | 'sent' | 'overdue' | 'paid' | 'cancelled'
 export type ReminderStatus     = 'scheduled' | 'sent' | 'failed' | 'cancelled'
 export type ReminderChannel    = 'whatsapp' | 'email'
 export type Plan               = 'free' | 'pro' | 'business'

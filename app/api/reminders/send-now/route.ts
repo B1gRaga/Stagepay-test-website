@@ -34,12 +34,15 @@ export async function POST(req: NextRequest) {
   // Verify invoice ownership
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, total, currency, due_date, user_id')
+    .select('id, invoice_number, client_name, total, currency, due_date, status, user_id')
     .eq('id', invoice_id)
     .eq('user_id', user.id)
     .single()
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+  if (invoice.status === 'paid' || invoice.status === 'cancelled') {
+    return NextResponse.json({ error: 'Cannot send reminder for a paid or cancelled invoice' }, { status: 400 })
+  }
 
   const { data: profile } = await supabase
     .from('profiles')

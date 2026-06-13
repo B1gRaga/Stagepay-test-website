@@ -149,9 +149,25 @@ export function resolveTheme(
   headerColor?:  string | null,
 ): InvoiceTheme {
   const base = THEME_PRESETS[themeKey ?? 'dark-modern'] ?? THEME_PRESETS['dark-modern']
-  return {
-    ...base,
-    ...(primaryColor ? { accentColor: primaryColor, grandRowBg: primaryColor } : {}),
-    ...(headerColor  ? { headerBg:    headerColor  } : {}),
+  if (!primaryColor && !headerColor) return base
+
+  const result = { ...base } as Record<string, string>
+
+  if (primaryColor && /^#[0-9a-f]{6}$/i.test(primaryColor)) {
+    const defaultAccent = base.accentColor
+    // Replace every colour field that was using the theme's default accent colour
+    for (const key of Object.keys(result)) {
+      if (result[key] === defaultAccent) result[key] = primaryColor
+    }
+    // Always override core brand-expression fields regardless of their base value
+    result.accentColor      = primaryColor
+    result.grandRowBg       = primaryColor
+    result.footerBrandColor = primaryColor
   }
+
+  if (headerColor && /^#[0-9a-f]{6}$/i.test(headerColor)) {
+    result.headerBg = headerColor
+  }
+
+  return result as unknown as InvoiceTheme
 }

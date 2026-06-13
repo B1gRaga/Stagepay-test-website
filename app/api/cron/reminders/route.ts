@@ -63,6 +63,13 @@ async function processReminder(supabase: any, reminder: any) {
   const invoice = reminder.invoices
   if (!invoice) throw new Error(`No invoice for reminder ${reminder.id}`)
 
+  // Skip reminders for invoices that are already paid or cancelled
+  if (invoice.status === 'paid' || invoice.status === 'cancelled') {
+    await supabase.from('reminders').update({ status: 'cancelled' }).eq('id', reminder.id)
+    log('cron.reminders.skipped', { reminderId: reminder.id, invoiceStatus: invoice.status })
+    return
+  }
+
   // Fetch the sender profile
   const { data: profile } = await supabase
     .from('profiles')
