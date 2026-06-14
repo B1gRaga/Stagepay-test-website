@@ -223,7 +223,7 @@ export default function LoginPage() {
   return (
     <>
       <style>{CSS}</style>
-      <RippleBackground className="p-5">
+      <RippleBackground className="flex items-center justify-center p-5">
         <div className="auth-wrap" style={{position:'relative',zIndex:1}}>
 
           {/* Left branding panel */}
