@@ -17,94 +17,90 @@ const FEATURES = [
 
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:var(--font-archivo),sans-serif;background:#ede6d8}
+  body{font-family:var(--font-archivo),sans-serif;background:#060A12}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(24px,-18px) scale(1.06)}70%{transform:translate(-12px,14px) scale(.96)}}
   @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-20px,22px) scale(1.04)}66%{transform:translate(16px,-10px) scale(.97)}}
-  @keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   @keyframes featIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
   @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 
   .auth-page{
     min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
-    background:linear-gradient(145deg,#f3ede1 0%,#ede5d4 55%,#e2d8c6 100%);
-    position:relative;overflow:hidden;
+    background:#060A12;position:relative;overflow:hidden;
   }
-  /* Warm dot grid on page */
   .auth-page::before{
     content:'';position:absolute;inset:0;
-    background-image:radial-gradient(circle,rgba(26,20,10,.07) 1px,transparent 1px);
-    background-size:32px 32px;pointer-events:none;z-index:0;
+    background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:28px 28px;pointer-events:none;z-index:0;
   }
-
-  /* Large decorative STAGEPAY watermark on the page itself */
-  .auth-page::after{
-    content:'STAGEPAY';
-    position:absolute;bottom:-40px;right:-20px;
-    font-family:var(--font-bebas),sans-serif;font-size:180px;letter-spacing:8px;
-    color:rgba(26,20,10,.04);pointer-events:none;user-select:none;line-height:1;z-index:0;
-  }
-
-  /* Warm ambient glows on page */
   .porb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;}
   .porb-1{
-    width:700px;height:700px;top:-200px;left:-200px;
-    background:radial-gradient(circle,rgba(16,185,129,.09) 0%,transparent 65%);
-    filter:blur(80px);
+    width:700px;height:700px;top:-180px;left:-180px;
+    background:radial-gradient(circle,rgba(16,185,129,.14) 0%,transparent 65%);
+    filter:blur(72px);animation:porb1 28s ease-in-out infinite;
   }
   .porb-2{
-    width:500px;height:500px;bottom:-100px;right:10%;
-    background:radial-gradient(circle,rgba(180,140,80,.1) 0%,transparent 65%);
-    filter:blur(70px);
+    width:580px;height:580px;bottom:-140px;right:-140px;
+    background:radial-gradient(circle,rgba(59,130,246,.1) 0%,transparent 65%);
+    filter:blur(64px);animation:porb2 22s ease-in-out infinite;animation-delay:-8s;
   }
+  .porb-3{
+    width:360px;height:360px;top:55%;left:55%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(16,185,129,.07) 0%,transparent 65%);
+    filter:blur(55px);animation:porb3 35s ease-in-out infinite;animation-delay:-14s;
+  }
+  @keyframes porb1{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(50px,35px) scale(1.06)}70%{transform:translate(-25px,55px) scale(.96)}}
+  @keyframes porb2{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(-45px,-30px) scale(1.08)}75%{transform:translate(30px,-55px) scale(.94)}}
+  @keyframes porb3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-53%) scale(1.12)}}
 
   .auth-wrap{
     display:grid;grid-template-columns:1fr 1fr;
-    width:100%;max-width:980px;height:610px;
-    border-radius:22px;overflow:hidden;
-    box-shadow:0 40px 100px rgba(26,18,8,.22),0 0 0 1px rgba(26,18,8,.08),0 2px 0 rgba(255,255,255,.5) inset;
-    position:relative;z-index:1;
+    width:100%;max-width:960px;height:600px;
+    border:1px solid rgba(16,185,129,.12);border-radius:20px;overflow:hidden;
+    box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 0 1px rgba(16,185,129,.04);
   }
-  @media(max-width:768px){.auth-wrap{grid-template-columns:1fr;height:auto;min-height:100vh;border-radius:0;box-shadow:none;}}
+  @media(max-width:768px){.auth-wrap{grid-template-columns:1fr;height:auto;min-height:100vh;border-radius:0;border:none;box-shadow:none;}}
 
-  /* ── LEFT PANEL — dark, dramatic ── */
+  /* ── LEFT PANEL ── */
   .auth-left{
-    background:linear-gradient(155deg,#0a1a2e 0%,#0F172A 48%,#071610 100%);
+    background:linear-gradient(155deg,#0b1d3a 0%,#0F172A 45%,#071812 100%);
     padding:48px 44px;
     display:flex;flex-direction:column;justify-content:space-between;
-    border-right:1px solid rgba(255,255,255,.04);
+    border-right:1px solid rgba(16,185,129,.1);
     position:relative;overflow:hidden;
   }
   @media(max-width:768px){.auth-left{display:none;}}
 
-  /* Animated ambient orbs in left panel */
+  /* Animated ambient orbs */
   .orb{position:absolute;border-radius:50%;filter:blur(55px);pointer-events:none;}
   .orb-1{
-    width:340px;height:340px;top:-100px;right:-100px;
-    background:radial-gradient(circle,rgba(16,185,129,.2) 0%,transparent 65%);
+    width:320px;height:320px;top:-80px;right:-80px;
+    background:radial-gradient(circle,rgba(16,185,129,.18) 0%,transparent 65%);
     animation:orbFloat1 12s ease-in-out infinite;
   }
   .orb-2{
-    width:240px;height:240px;bottom:50px;left:-70px;
-    background:radial-gradient(circle,rgba(243,237,225,.06) 0%,transparent 65%);
+    width:220px;height:220px;bottom:60px;left:-60px;
+    background:radial-gradient(circle,rgba(59,130,246,.12) 0%,transparent 65%);
     animation:orbFloat2 9s ease-in-out infinite;animation-delay:-4s;
   }
 
-  /* Subtle dark grid on left panel */
+  /* Subtle grid */
   .auth-grid{
     position:absolute;inset:0;
     background-image:
-      repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 48px),
-      repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 48px);
+      repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0,rgba(255,255,255,.016) 1px,transparent 1px,transparent 48px),
+      repeating-linear-gradient(90deg,rgba(255,255,255,.016) 0,rgba(255,255,255,.016) 1px,transparent 1px,transparent 48px);
     pointer-events:none;
   }
 
-  /* Large watermark inside left panel */
+  /* Big watermark */
   .auth-left::before{
     content:'STAGEPAY';
-    position:absolute;bottom:-14px;left:-6px;
-    font-family:var(--font-bebas),sans-serif;font-size:120px;letter-spacing:5px;
-    color:rgba(16,185,129,.06);pointer-events:none;user-select:none;line-height:1;
+    position:absolute;bottom:-18px;left:-8px;
+    font-family:var(--font-bebas),sans-serif;font-size:128px;letter-spacing:6px;
+    color:rgba(16,185,129,.05);pointer-events:none;user-select:none;line-height:1;
   }
 
   .auth-logo{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
@@ -113,69 +109,70 @@ const CSS = `
   .auth-tagline{font-family:var(--font-instrument),serif;font-style:italic;font-size:30px;line-height:1.2;color:#F8FAFC;}
   .auth-tagline strong{color:#10B981;font-style:normal;font-family:var(--font-bebas),sans-serif;letter-spacing:2px;font-size:36px;display:block;}
 
-  /* Invoice card */
+  /* Invoice card — floats gently */
   .auth-card{
-    background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);
+    background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);
     border-radius:14px;padding:20px 22px;position:relative;z-index:1;
     backdrop-filter:blur(8px);
-    box-shadow:0 14px 36px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);
+    box-shadow:0 12px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);
     animation:cardFloat 5s ease-in-out infinite;
   }
   .auth-badge{display:inline-block;background:rgba(16,185,129,.2);color:#10B981;font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
 
   .auth-feats{display:flex;flex-direction:column;gap:10px;position:relative;z-index:1;}
-  .auth-feat{display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(248,250,252,.45);}
+  .auth-feat{display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(248,250,252,.5);}
   .auth-feat:nth-child(1){animation:featIn .5s .05s both;}
   .auth-feat:nth-child(2){animation:featIn .5s .12s both;}
   .auth-feat:nth-child(3){animation:featIn .5s .19s both;}
   .auth-feat:nth-child(4){animation:featIn .5s .26s both;}
   .auth-dot{width:5px;height:5px;border-radius:50%;background:#10B981;flex-shrink:0;box-shadow:0 0 6px rgba(16,185,129,.5);}
 
-  /* ── RIGHT PANEL — warm cream ── */
+  /* ── RIGHT PANEL ── */
   .auth-right{
-    background:#faf7f2;
+    background:rgba(13,20,35,.98);
     padding:44px 48px;display:flex;flex-direction:column;overflow-y:auto;
   }
-  @media(max-width:480px){.auth-right{padding:32px 24px;background:#f3ede1;}}
+  @media(max-width:480px){.auth-right{padding:32px 24px;}}
 
-  .auth-tabs{display:flex;gap:4px;margin-bottom:30px;background:rgba(26,20,10,.06);border:1px solid rgba(26,20,10,.1);border-radius:10px;padding:4px;}
+  .auth-tabs{display:flex;gap:4px;margin-bottom:30px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:4px;}
   .auth-tab{
     flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;
     letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .18s;
-    color:rgba(26,20,10,.35);background:transparent;border:none;border-radius:7px;
+    color:rgba(248,250,252,.35);background:transparent;border:none;border-radius:7px;
     font-family:var(--font-archivo),sans-serif;text-decoration:none;display:block;
   }
-  .auth-tab.active{background:linear-gradient(135deg,#10B981,#059669);color:#fff;box-shadow:0 2px 12px rgba(16,185,129,.3);}
-  .auth-tab:not(.active):hover{color:rgba(26,20,10,.7);background:rgba(26,20,10,.05);}
+  .auth-tab.active{background:linear-gradient(135deg,#10B981,#059669);color:#000;box-shadow:0 2px 12px rgba(16,185,129,.35);}
+  .auth-tab:not(.active):hover{color:rgba(248,250,252,.7);background:rgba(255,255,255,.05);}
 
-  .auth-title{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:2.5px;color:#1a1a1a;margin-bottom:3px;}
-  .auth-sub{font-size:12px;color:rgba(26,20,10,.4);margin-bottom:10px;}
+  .auth-title{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:2.5px;color:#F8FAFC;margin-bottom:3px;}
+  .auth-sub{font-size:12px;color:rgba(248,250,252,.35);margin-bottom:10px;}
 
-  .auth-divider{height:1px;background:rgba(26,20,10,.08);margin:0 0 18px;}
+  .auth-divider{height:1px;background:rgba(255,255,255,.06);margin:0 0 18px;}
 
   .auth-group{display:flex;flex-direction:column;gap:6px;}
-  .auth-group label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:rgba(26,20,10,.45);font-weight:600;}
+  .auth-group label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:rgba(248,250,252,.4);font-weight:600;}
 
   .auth-input{
-    background:#fff;
-    border:1px solid rgba(26,20,10,.14);
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
     border-radius:8px;padding:12px 15px;
-    font-family:var(--font-archivo),sans-serif;font-size:13px;color:#1a1a1a;
-    outline:none;transition:border-color .2s,box-shadow .2s;width:100%;
+    font-family:var(--font-archivo),sans-serif;font-size:13px;color:#F8FAFC;
+    outline:none;transition:border-color .2s,box-shadow .2s,background .2s;width:100%;
   }
   .auth-input:focus{
-    border-color:rgba(16,185,129,.5);
-    box-shadow:0 0 0 3px rgba(16,185,129,.1);
+    background:rgba(255,255,255,.06);
+    border-color:rgba(16,185,129,.45);
+    box-shadow:0 0 0 3px rgba(16,185,129,.08),inset 0 1px 0 rgba(255,255,255,.03);
   }
-  .auth-input::placeholder{color:rgba(26,20,10,.28);}
+  .auth-input::placeholder{color:rgba(248,250,252,.22);}
 
   .auth-pw-row{display:flex;justify-content:space-between;align-items:center;}
-  .auth-forgot{font-size:11px;color:#059669;text-decoration:none;transition:color .15s;}
+  .auth-forgot{font-size:11px;color:rgba(16,185,129,.7);text-decoration:none;transition:color .15s;}
   .auth-forgot:hover{color:#10B981;}
 
   .auth-btn{
     background:linear-gradient(135deg,#10B981,#059669);
-    color:#fff;padding:13px;border-radius:8px;border:none;
+    color:#000;padding:13px;border-radius:8px;border:none;
     font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
     cursor:pointer;transition:all .2s;margin-top:4px;
     display:flex;align-items:center;justify-content:center;gap:8px;
@@ -185,21 +182,17 @@ const CSS = `
   }
   .auth-btn::after{
     content:'';position:absolute;inset:0;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
     transform:translateX(-100%);transition:transform .5s;
   }
   .auth-btn:hover:not(:disabled)::after{transform:translateX(100%);}
   .auth-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(16,185,129,.4);}
   .auth-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-  .auth-error{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:10px 14px;font-size:12px;color:#dc2626;margin-bottom:4px;}
-  .auth-footer{font-size:12px;color:rgba(26,20,10,.35);text-align:center;margin-top:auto;padding-top:20px;}
-  .auth-footer a{color:#059669;text-decoration:none;}
+  .auth-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#F87171;margin-bottom:4px;}
+  .auth-footer{font-size:12px;color:rgba(248,250,252,.3);text-align:center;margin-top:auto;padding-top:20px;}
+  .auth-footer a{color:#10B981;text-decoration:none;}
   .auth-footer a:hover{text-decoration:underline;}
-
-  /* Eye icon in password field */
-  .auth-eye-btn{color:rgba(26,20,10,.3);}
-  .auth-eye-btn:hover{color:rgba(26,20,10,.6);}
 `
 
 export default function LoginPage() {
@@ -306,7 +299,7 @@ export default function LoginPage() {
                     value={password} onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••" style={{paddingRight:44}}/>
                   <button type="button" onClick={() => setShowPw(p => !p)}
-                    className="auth-eye-btn" style={{position:'absolute',right:13,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center'}}>
+                    style={{position:'absolute',right:13,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',padding:0,color:'rgba(248,250,252,.3)',display:'flex',alignItems:'center'}}>
                     {showPw
                       ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 2l12 12M6.5 6.6A2 2 0 0010.4 9.5M4.1 4.2A7 7 0 001 8s2.4 5 7 5a6.8 6.8 0 003.9-1.2M6 3.1A6.8 6.8 0 0115 8s-.9 2-2.4 3.3"/></svg>
                       : <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M1 8s2.4-5 7-5 7 5 7 5-2.4 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
