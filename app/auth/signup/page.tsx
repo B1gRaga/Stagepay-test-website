@@ -24,6 +24,10 @@ const CSS = `
   @keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   @keyframes featIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
   @keyframes successPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes slowSpin{to{transform:rotate(360deg)}}
+  @keyframes slowSpinR{to{transform:rotate(-360deg)}}
+  @keyframes floatDiamond{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(-14px)}}
+  @keyframes pulseDot{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
 
   .auth-page{
     min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
@@ -32,8 +36,11 @@ const CSS = `
   }
   .auth-page::before{
     content:'';position:absolute;inset:0;
-    background-image:radial-gradient(circle,rgba(26,20,10,.07) 1px,transparent 1px);
-    background-size:32px 32px;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(circle,rgba(26,20,10,.065) 1px,transparent 1px),
+      repeating-linear-gradient(45deg,rgba(15,23,42,.03) 0,rgba(15,23,42,.03) 1px,transparent 1px,transparent 30px);
+    background-size:32px 32px,30px 30px;
+    pointer-events:none;z-index:0;
   }
   .auth-page::after{
     content:'STAGEPAY';
@@ -41,6 +48,18 @@ const CSS = `
     font-family:var(--font-bebas),sans-serif;font-size:180px;letter-spacing:8px;
     color:rgba(26,20,10,.04);pointer-events:none;user-select:none;line-height:1;z-index:0;
   }
+  .deco-ring-1{position:absolute;width:340px;height:340px;border-radius:50%;z-index:0;border:1px solid rgba(16,185,129,.18);top:-60px;right:22%;animation:slowSpin 40s linear infinite;}
+  .deco-ring-1-inner{position:absolute;width:220px;height:220px;border-radius:50%;z-index:0;border:1px dashed rgba(16,185,129,.1);top:0px;right:22%;margin-top:60px;margin-right:60px;animation:slowSpinR 28s linear infinite;}
+  .deco-ring-2{position:absolute;width:200px;height:200px;border-radius:50%;z-index:0;border:1px solid rgba(15,23,42,.1);bottom:40px;left:8%;animation:slowSpinR 32s linear infinite;}
+  .deco-diamond{position:absolute;width:44px;height:44px;z-index:0;border:1.5px solid rgba(16,185,129,.28);bottom:22%;right:8%;animation:floatDiamond 5s ease-in-out infinite;}
+  .deco-dots{position:absolute;top:18%;right:15%;display:flex;flex-direction:column;gap:8px;z-index:0;}
+  .deco-dot{width:4px;height:4px;border-radius:50%;background:rgba(16,185,129,.3);}
+  .deco-dot:nth-child(1){animation:pulseDot 2.4s ease-in-out infinite;}
+  .deco-dot:nth-child(2){animation:pulseDot 2.4s ease-in-out .4s infinite;}
+  .deco-dot:nth-child(3){animation:pulseDot 2.4s ease-in-out .8s infinite;}
+  .deco-cross{position:absolute;z-index:0;color:rgba(15,23,42,.12);font-size:18px;line-height:1;user-select:none;pointer-events:none;font-weight:300;}
+  .deco-cross-1{top:12%;left:6%;}
+  .deco-cross-2{bottom:15%;right:6%;color:rgba(16,185,129,.2);}
   .auth-wrap{
     display:grid;grid-template-columns:1fr 1fr;
     width:100%;max-width:980px;height:610px;
@@ -222,6 +241,12 @@ export default function SignupPage() {
       <>
         <style>{CSS}</style>
         <div className="auth-page">
+          <div className="deco-ring-1"/><div className="deco-ring-1-inner"/>
+          <div className="deco-ring-2"/>
+          <div className="deco-diamond"/>
+          <div className="deco-dots"><div className="deco-dot"/><div className="deco-dot"/><div className="deco-dot"/></div>
+          <div className="deco-cross deco-cross-1">+</div>
+          <div className="deco-cross deco-cross-2">+</div>
           <div className="auth-wrap">
             <LeftPanel/>
             <div className="auth-right" style={{alignItems:'center',justifyContent:'center',textAlign:'center',gap:16}}>
@@ -248,6 +273,12 @@ export default function SignupPage() {
     <>
       <style>{CSS}</style>
       <div className="auth-page">
+        <div className="deco-ring-1"/><div className="deco-ring-1-inner"/>
+        <div className="deco-ring-2"/>
+        <div className="deco-diamond"/>
+        <div className="deco-dots"><div className="deco-dot"/><div className="deco-dot"/><div className="deco-dot"/></div>
+        <div className="deco-cross deco-cross-1">+</div>
+        <div className="deco-cross deco-cross-2">+</div>
         <div className="auth-wrap">
           <LeftPanel/>
           <div className="auth-right">
@@ -283,7 +314,7 @@ export default function SignupPage() {
                       value={password} onChange={e => setPassword(e.target.value)}
                       placeholder="Min. 8 characters" style={{paddingRight:44}}/>
                     <button type="button" onClick={() => setShowPw(p => !p)}
-                      style={{position:'absolute',right:13,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',padding:0,color:'rgba(248,250,252,.3)',display:'flex',alignItems:'center'}}>
+                      style={{position:'absolute',right:13,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',padding:0,color:'rgba(26,20,10,.3)',display:'flex',alignItems:'center'}}>
                       {showPw
                         ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 2l12 12M6.5 6.6A2 2 0 0010.4 9.5M4.1 4.2A7 7 0 001 8s2.4 5 7 5a6.8 6.8 0 003.9-1.2M6 3.1A6.8 6.8 0 0115 8s-.9 2-2.4 3.3"/></svg>
                         : <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M1 8s2.4-5 7-5 7 5 7 5-2.4 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>

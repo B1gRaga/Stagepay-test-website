@@ -24,20 +24,27 @@ const CSS = `
   @keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes featIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
   @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  @keyframes slowSpin{to{transform:rotate(360deg)}}
+  @keyframes slowSpinR{to{transform:rotate(-360deg)}}
+  @keyframes floatDiamond{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(-14px)}}
+  @keyframes pulseDot{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
 
   .auth-page{
     min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
     background:linear-gradient(145deg,#f3ede1 0%,#ede5d4 55%,#e2d8c6 100%);
     position:relative;overflow:hidden;
   }
-  /* Warm dot grid on page */
+  /* Dot grid + diagonal lines layered */
   .auth-page::before{
     content:'';position:absolute;inset:0;
-    background-image:radial-gradient(circle,rgba(26,20,10,.07) 1px,transparent 1px);
-    background-size:32px 32px;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(circle,rgba(26,20,10,.065) 1px,transparent 1px),
+      repeating-linear-gradient(45deg,rgba(15,23,42,.03) 0,rgba(15,23,42,.03) 1px,transparent 1px,transparent 30px);
+    background-size:32px 32px,30px 30px;
+    pointer-events:none;z-index:0;
   }
 
-  /* Large decorative STAGEPAY watermark on the page itself */
+  /* Large STAGEPAY watermark */
   .auth-page::after{
     content:'STAGEPAY';
     position:absolute;bottom:-40px;right:-20px;
@@ -45,7 +52,7 @@ const CSS = `
     color:rgba(26,20,10,.04);pointer-events:none;user-select:none;line-height:1;z-index:0;
   }
 
-  /* Warm ambient glows on page */
+  /* Warm ambient glows */
   .porb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;}
   .porb-1{
     width:700px;height:700px;top:-200px;left:-200px;
@@ -57,6 +64,51 @@ const CSS = `
     background:radial-gradient(circle,rgba(180,140,80,.1) 0%,transparent 65%);
     filter:blur(70px);
   }
+
+  /* ── Geometric decorations on the beige page ── */
+  /* Large rotating ring — green, top-right area */
+  .deco-ring-1{
+    position:absolute;width:340px;height:340px;border-radius:50%;z-index:0;
+    border:1px solid rgba(16,185,129,.18);
+    top:-60px;right:22%;
+    animation:slowSpin 40s linear infinite;
+  }
+  /* Dashed inner ring — sits inside ring-1 */
+  .deco-ring-1-inner{
+    position:absolute;width:220px;height:220px;border-radius:50%;z-index:0;
+    border:1px dashed rgba(16,185,129,.1);
+    top:0px;right:22%;
+    margin-top:60px;margin-right:60px;
+    animation:slowSpinR 28s linear infinite;
+  }
+  /* Medium ring — navy, bottom-left */
+  .deco-ring-2{
+    position:absolute;width:200px;height:200px;border-radius:50%;z-index:0;
+    border:1px solid rgba(15,23,42,.1);
+    bottom:40px;left:8%;
+    animation:slowSpinR 32s linear infinite;
+  }
+  /* Small floating diamond — green */
+  .deco-diamond{
+    position:absolute;width:44px;height:44px;z-index:0;
+    border:1.5px solid rgba(16,185,129,.28);
+    bottom:22%;right:8%;
+    animation:floatDiamond 5s ease-in-out infinite;
+  }
+  /* Tiny accent dot cluster — top-left of right half */
+  .deco-dots{position:absolute;top:18%;right:15%;display:flex;flex-direction:column;gap:8px;z-index:0;}
+  .deco-dot{width:4px;height:4px;border-radius:50%;background:rgba(16,185,129,.3);}
+  .deco-dot:nth-child(1){animation:pulseDot 2.4s ease-in-out infinite;}
+  .deco-dot:nth-child(2){animation:pulseDot 2.4s ease-in-out .4s infinite;}
+  .deco-dot:nth-child(3){animation:pulseDot 2.4s ease-in-out .8s infinite;}
+  /* Corner cross marks */
+  .deco-cross{
+    position:absolute;z-index:0;color:rgba(15,23,42,.12);
+    font-size:18px;line-height:1;user-select:none;pointer-events:none;
+    font-weight:300;
+  }
+  .deco-cross-1{top:12%;left:6%;}
+  .deco-cross-2{bottom:15%;right:6%;color:rgba(16,185,129,.2);}
 
   .auth-wrap{
     display:grid;grid-template-columns:1fr 1fr;
@@ -233,6 +285,18 @@ export default function LoginPage() {
         <div className="porb porb-1"/>
         <div className="porb porb-2"/>
         <div className="porb porb-3"/>
+
+        {/* Geometric accents on the beige background */}
+        <div className="deco-ring-1"/>
+        <div className="deco-ring-1-inner"/>
+        <div className="deco-ring-2"/>
+        <div className="deco-diamond"/>
+        <div className="deco-dots">
+          <div className="deco-dot"/><div className="deco-dot"/><div className="deco-dot"/>
+        </div>
+        <div className="deco-cross deco-cross-1">+</div>
+        <div className="deco-cross deco-cross-2">+</div>
+
         <div className="auth-wrap" style={{position:'relative',zIndex:1}}>
 
           {/* Left branding panel */}
