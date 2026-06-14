@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
-import { RippleBackground } from '@/components/ui/interactive-ripple-background'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -223,7 +222,10 @@ export default function LoginPage() {
   return (
     <>
       <style>{CSS}</style>
-      <RippleBackground className="flex items-center justify-center p-5">
+      <div className="auth-page">
+        <div className="porb porb-1"/>
+        <div className="porb porb-2"/>
+        <div className="porb porb-3"/>
         <div className="auth-wrap" style={{position:'relative',zIndex:1}}>
 
           {/* Left branding panel */}
@@ -318,7 +320,7 @@ export default function LoginPage() {
           </div>
 
         </div>
-      </RippleBackground>
+      </div>
     </>
   )
 }

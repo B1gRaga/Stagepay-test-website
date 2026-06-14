@@ -56,15 +56,6 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      keyframes: {
-        ripple: {
-          '0%':   { width: '0px', height: '0px', opacity: '1' },
-          '100%': { width: '500px', height: '500px', opacity: '0' },
-        },
-      },
-      animation: {
-        ripple: 'ripple 2s ease-out forwards',
-      },
     },
   },
   plugins: [],
