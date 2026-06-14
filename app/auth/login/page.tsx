@@ -32,28 +32,34 @@ const CSS = `
   }
   .auth-page::before{
     content:'';position:absolute;inset:0;
-    background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-image:radial-gradient(circle,rgba(255,255,255,.022) 1px,transparent 1px);
     background-size:28px 28px;pointer-events:none;z-index:0;
   }
   .porb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;}
   .porb-1{
-    width:700px;height:700px;top:-180px;left:-180px;
-    background:radial-gradient(circle,rgba(16,185,129,.14) 0%,transparent 65%);
-    filter:blur(72px);animation:porb1 28s ease-in-out infinite;
+    width:900px;height:900px;top:-280px;right:-180px;
+    background:radial-gradient(circle,rgba(16,185,129,.24) 0%,transparent 60%);
+    filter:blur(88px);animation:porb1 34s ease-in-out infinite;
   }
   .porb-2{
-    width:580px;height:580px;bottom:-140px;right:-140px;
-    background:radial-gradient(circle,rgba(59,130,246,.1) 0%,transparent 65%);
-    filter:blur(64px);animation:porb2 22s ease-in-out infinite;animation-delay:-8s;
+    width:720px;height:720px;bottom:-220px;left:-180px;
+    background:radial-gradient(circle,rgba(59,130,246,.14) 0%,transparent 60%);
+    filter:blur(78px);animation:porb2 26s ease-in-out infinite;animation-delay:-9s;
   }
   .porb-3{
-    width:360px;height:360px;top:55%;left:55%;transform:translate(-50%,-50%);
-    background:radial-gradient(circle,rgba(16,185,129,.07) 0%,transparent 65%);
-    filter:blur(55px);animation:porb3 35s ease-in-out infinite;animation-delay:-14s;
+    width:500px;height:500px;top:50%;left:45%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(16,185,129,.10) 0%,transparent 60%);
+    filter:blur(66px);animation:porb3 40s ease-in-out infinite;animation-delay:-18s;
   }
-  @keyframes porb1{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(50px,35px) scale(1.06)}70%{transform:translate(-25px,55px) scale(.96)}}
-  @keyframes porb2{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(-45px,-30px) scale(1.08)}75%{transform:translate(30px,-55px) scale(.94)}}
-  @keyframes porb3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-53%) scale(1.12)}}
+  .porb-4{
+    width:580px;height:580px;bottom:-120px;right:-120px;
+    background:radial-gradient(circle,rgba(5,150,105,.14) 0%,transparent 60%);
+    filter:blur(72px);animation:porb4 30s ease-in-out infinite;animation-delay:-13s;
+  }
+  @keyframes porb1{0%,100%{transform:translate(0,0)}35%{transform:translate(-70px,55px)}70%{transform:translate(35px,-65px)}}
+  @keyframes porb2{0%,100%{transform:translate(0,0)}40%{transform:translate(65px,-45px)}75%{transform:translate(-45px,60px)}}
+  @keyframes porb3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-52%,-48%)}}
+  @keyframes porb4{0%,100%{transform:translate(0,0)}45%{transform:translate(-55px,-35px)}80%{transform:translate(40px,45px)}}
 
   .auth-wrap{
     display:grid;grid-template-columns:1fr 1fr;
@@ -226,6 +232,7 @@ export default function LoginPage() {
         <div className="porb porb-1"/>
         <div className="porb porb-2"/>
         <div className="porb porb-3"/>
+        <div className="porb porb-4"/>
         <div className="auth-wrap" style={{position:'relative',zIndex:1}}>
 
           {/* Left branding panel */}

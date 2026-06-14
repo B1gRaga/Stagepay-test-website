@@ -25,7 +25,17 @@ const CSS = `
   @keyframes featIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
   @keyframes successPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 
-  .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#060A12}
+  .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#060A12;position:relative;overflow:hidden;}
+  .auth-page::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.022) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
+  .porb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;}
+  .porb-1{width:900px;height:900px;top:-280px;right:-180px;background:radial-gradient(circle,rgba(16,185,129,.24) 0%,transparent 60%);filter:blur(88px);animation:porb1 34s ease-in-out infinite;}
+  .porb-2{width:720px;height:720px;bottom:-220px;left:-180px;background:radial-gradient(circle,rgba(59,130,246,.14) 0%,transparent 60%);filter:blur(78px);animation:porb2 26s ease-in-out infinite;animation-delay:-9s;}
+  .porb-3{width:500px;height:500px;top:50%;left:45%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(16,185,129,.10) 0%,transparent 60%);filter:blur(66px);animation:porb3 40s ease-in-out infinite;animation-delay:-18s;}
+  .porb-4{width:580px;height:580px;bottom:-120px;right:-120px;background:radial-gradient(circle,rgba(5,150,105,.14) 0%,transparent 60%);filter:blur(72px);animation:porb4 30s ease-in-out infinite;animation-delay:-13s;}
+  @keyframes porb1{0%,100%{transform:translate(0,0)}35%{transform:translate(-70px,55px)}70%{transform:translate(35px,-65px)}}
+  @keyframes porb2{0%,100%{transform:translate(0,0)}40%{transform:translate(65px,-45px)}75%{transform:translate(-45px,60px)}}
+  @keyframes porb3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-52%,-48%)}}
+  @keyframes porb4{0%,100%{transform:translate(0,0)}45%{transform:translate(-55px,-35px)}80%{transform:translate(40px,45px)}}
   .auth-wrap{
     display:grid;grid-template-columns:1fr 1fr;
     width:100%;max-width:960px;height:min(560px,calc(100vh - 48px));
@@ -194,7 +204,11 @@ export default function SignupPage() {
       <>
         <style>{CSS}</style>
         <div className="auth-page">
-          <div className="auth-wrap">
+          <div className="porb porb-1"/>
+          <div className="porb porb-2"/>
+          <div className="porb porb-3"/>
+          <div className="porb porb-4"/>
+          <div className="auth-wrap" style={{position:'relative',zIndex:1}}>
             <LeftPanel/>
             <div className="auth-right" style={{alignItems:'center',justifyContent:'center',textAlign:'center',gap:16}}>
               <div style={{width:68,height:68,borderRadius:'50%',background:'linear-gradient(135deg,#10B981,#059669)',display:'flex',alignItems:'center',justifyContent:'center',animation:'successPop .4s cubic-bezier(.34,1.56,.64,1) both',boxShadow:'0 8px 24px rgba(16,185,129,.35)'}}>
@@ -220,7 +234,11 @@ export default function SignupPage() {
     <>
       <style>{CSS}</style>
       <div className="auth-page">
-        <div className="auth-wrap">
+        <div className="porb porb-1"/>
+        <div className="porb porb-2"/>
+        <div className="porb porb-3"/>
+        <div className="porb porb-4"/>
+        <div className="auth-wrap" style={{position:'relative',zIndex:1}}>
           <LeftPanel/>
           <div className="auth-right">
             <div className="auth-tabs">
