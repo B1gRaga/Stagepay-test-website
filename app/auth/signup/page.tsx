@@ -194,7 +194,7 @@ export default function SignupPage() {
     return (
       <>
         <style>{CSS}</style>
-        <RippleBackground className="flex items-center justify-center p-5">
+        <RippleBackground className="p-5">
           <div className="auth-wrap">
             <LeftPanel/>
             <div className="auth-right" style={{alignItems:'center',justifyContent:'center',textAlign:'center',gap:16}}>
@@ -220,7 +220,7 @@ export default function SignupPage() {
   return (
     <>
       <style>{CSS}</style>
-      <RippleBackground className="flex items-center justify-center p-5">
+      <RippleBackground className="p-5">
         <div className="auth-wrap">
           <LeftPanel/>
           <div className="auth-right">
