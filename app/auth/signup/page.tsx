@@ -48,7 +48,15 @@ const CSS = `
     border:1px solid rgba(0,0,0,.07);border-radius:20px;overflow:hidden;
     box-shadow:0 24px 70px rgba(0,0,0,.18),0 6px 20px rgba(0,0,0,.10);
   }
-  @media(max-width:768px){.auth-wrap{grid-template-columns:1fr;height:auto;min-height:100vh;border-radius:0;border:none;box-shadow:none;}}
+  @media(max-width:768px){
+    .auth-wrap{
+      grid-template-columns:1fr;
+      height:auto;min-height:unset;
+      max-width:440px;width:100%;
+      border-radius:18px;
+      box-shadow:0 16px 48px rgba(0,0,0,.14),0 4px 12px rgba(0,0,0,.08);
+    }
+  }
 
   .auth-left{
     background:linear-gradient(160deg,#EDE8DF 0%,#EAF2ED 100%);
@@ -76,7 +84,8 @@ const CSS = `
   .auth-dot{width:5px;height:5px;border-radius:50%;background:#10B981;flex-shrink:0;box-shadow:0 0 6px rgba(16,185,129,.4);}
 
   .auth-right{background:#FFFFFF;padding:32px 48px;display:flex;flex-direction:column;overflow-y:auto;}
-  @media(max-width:480px){.auth-right{padding:32px 24px;}}
+  @media(max-width:768px){.auth-right{padding:28px 24px;}}
+  @media(max-width:480px){.auth-right{padding:24px 20px;}}
 
   .auth-tabs{display:flex;gap:4px;margin-bottom:20px;background:rgba(15,23,42,.05);border:1px solid rgba(15,23,42,.07);border-radius:10px;padding:4px;}
   .auth-tab{flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .18s;color:rgba(15,23,42,.35);background:transparent;border:none;border-radius:7px;font-family:var(--font-archivo),sans-serif;text-decoration:none;display:block;}
