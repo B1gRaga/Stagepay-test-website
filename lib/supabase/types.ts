@@ -6,6 +6,7 @@ export type ReminderChannel    = 'whatsapp' | 'email'
 export type Plan               = 'free' | 'pro' | 'business'
 export type RecurrenceInterval = 'monthly' | 'quarterly' | 'yearly'
 export type BusinessType       = 'tuition_centre' | 'contractor' | 'freelancer' | 'salon' | 'agency' | 'other'
+export type TeamMemberStatus   = 'pending' | 'active'
 
 export interface Database {
   public: {
@@ -38,6 +39,7 @@ export interface Database {
           default_vat_rate: number
           pending_plan: string | null
           business_type: BusinessType | null
+          team_id: string | null
           created_at: string
           updated_at: string
         }
@@ -68,6 +70,7 @@ export interface Database {
           default_vat_rate?: number
           pending_plan?: string | null
           business_type?: BusinessType | null
+          team_id?: string | null
         }
         Update: {
           email?: string | null
@@ -95,6 +98,7 @@ export interface Database {
           default_vat_rate?: number
           pending_plan?: string | null
           business_type?: BusinessType | null
+          team_id?: string | null
         }
         Relationships: []
       }
@@ -343,6 +347,69 @@ export interface Database {
           }
         ]
       }
+      teams: {
+        Row: {
+          id: string
+          owner_id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          owner_id: string
+          name?: string
+          id?: string
+        }
+        Update: {
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'teams_owner_id_fkey'
+            columns: ['owner_id']
+            isOneToOne: true
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          team_id: string
+          user_id: string | null
+          email: string
+          status: TeamMemberStatus
+          invite_token: string | null
+          invited_at: string
+          joined_at: string | null
+        }
+        Insert: {
+          team_id: string
+          email: string
+          user_id?: string | null
+          status?: TeamMemberStatus
+          invite_token?: string | null
+          invited_at?: string
+          joined_at?: string | null
+          id?: string
+        }
+        Update: {
+          user_id?: string | null
+          status?: TeamMemberStatus
+          invite_token?: string | null
+          invited_at?: string
+          joined_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'team_members_team_id_fkey'
+            columns: ['team_id']
+            isOneToOne: false
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -383,3 +450,6 @@ export type ReminderUpdate  = Database['public']['Tables']['reminders']['Update'
 
 // Join types for queries that embed related rows
 export type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] }
+
+export type TeamRow       = Database['public']['Tables']['teams']['Row']
+export type TeamMemberRow = Database['public']['Tables']['team_members']['Row']
