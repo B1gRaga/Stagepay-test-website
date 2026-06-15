@@ -2,7 +2,7 @@
 -- Migration 001: Server-side plan limit enforcement
 --
 -- Adds an INSERT CHECK policy on the invoices table so that
--- free-plan users are limited to 2 invoices per calendar month.
+-- free-plan users are limited to 5 invoices per calendar month.
 -- This is the authoritative enforcement; client-side checks are
 -- UX-only and cannot be trusted.
 --
@@ -24,7 +24,7 @@ WITH CHECK (
 
   OR
 
-  -- Free plan: at most 2 invoices created in the current calendar month.
+  -- Free plan: at most 5 invoices created in the current calendar month.
   -- Uses created_at (server timestamp) so the user cannot backdate to bypass.
   (
     SELECT COUNT(*)

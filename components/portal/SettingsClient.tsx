@@ -977,7 +977,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               </div>
               <div>
                 <div className="settings-panel-hero-title">Plan &amp; billing</div>
-                <div className="settings-panel-hero-sub">{profile?.plan === 'pro' ? 'Pro plan' : profile?.plan === 'business' ? 'Business plan' : 'Starter · Free · 2 invoices/month'}</div>
+                <div className="settings-panel-hero-sub">{profile?.plan === 'pro' ? 'Pro plan' : profile?.plan === 'business' ? 'Business plan' : 'Starter · Free · 5 invoices/month'}</div>
               </div>
               <span className="settings-panel-hero-badge" style={{ background: 'var(--g)', color: 'var(--bg)', fontWeight: 700 }}>{(profile?.plan ?? 'free').toUpperCase()}</span>
             </div>
@@ -1043,7 +1043,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   {
                     id: 'free', name: 'Starter', highlight: false,
                     monthly: 0, yearly: 0,
-                    features: ['2 invoices/month', 'PDF export', 'WhatsApp send'],
+                    features: ['5 invoices/month', 'PDF export', 'WhatsApp send'],
                   },
                   {
                     id: 'pro', name: 'Pro', highlight: true,
