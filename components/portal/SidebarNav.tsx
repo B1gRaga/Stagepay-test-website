@@ -120,7 +120,8 @@ const CSS = `
     html[data-theme="light"] .mob-tab svg{stroke:#3d3830;}
     html[data-theme="light"] .mob-tab.active svg{stroke:var(--g);}
     html[data-theme="light"] .mob-tab.active::before{background:var(--g);}
-    html[data-theme="light"] .mob-tab span{color:inherit;}
+    html[data-theme="light"] .mob-tab span{color:#3d3830;}
+    html[data-theme="light"] .mob-tab.active span{color:var(--g);font-weight:600;}
     .mob-topbar-logo{
       display:flex;align-items:center;gap:8px;text-decoration:none;
       font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2px;color:var(--t1);
@@ -179,6 +180,7 @@ const CSS = `
       -webkit-tap-highlight-color:transparent;
     }
     .mob-tab.active{color:var(--g);}
+    .mob-tab.active span{color:var(--g);font-weight:600;}
     .mob-tab.active::before{
       content:'';position:absolute;
       top:0;left:50%;transform:translateX(-50%);
