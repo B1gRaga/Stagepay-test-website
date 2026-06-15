@@ -1389,7 +1389,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
       {/* ── 2FA enroll modal ── */}
       {mfaModal === 'enroll' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: 'var(--bg2)', border: '1px solid var(--line2)', borderRadius: 16, padding: 32, maxWidth: 420, width: '100%' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 6 }}>Set up authenticator</div>
             <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 20 }}>Scan this QR code with Google Authenticator, Authy, or 1Password, then enter the 6-digit code to confirm.</div>
@@ -1424,7 +1424,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
       {/* ── 2FA unenroll confirm ── */}
       {mfaModal === 'unenroll' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: 'var(--bg2)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 16, padding: 32, maxWidth: 380, width: '100%' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 8 }}>Remove two-factor authentication?</div>
             <div style={{ fontSize: 13, color: 'var(--t3)', marginBottom: 24 }}>Your account will only be protected by your password. You can re-enable 2FA at any time.</div>

@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 const CSS = `
   .support-fab{
-    position:fixed;bottom:24px;right:24px;z-index:900;
+    position:fixed;bottom:24px;right:24px;z-index:1100;
     width:48px;height:48px;border-radius:50%;
     background:#10B981;color:#0F172A;
     border:none;cursor:pointer;
@@ -20,7 +20,7 @@ const CSS = `
   }
 
   .support-panel{
-    position:fixed;bottom:82px;right:24px;z-index:900;
+    position:fixed;bottom:82px;right:24px;z-index:1100;
     width:290px;
     background:var(--bg2,#1E293B);
     border:1px solid var(--line2,rgba(255,255,255,0.11));
@@ -88,7 +88,7 @@ export default function SupportBtn() {
       {open && (
         <>
           {/* Click-away overlay */}
-          <div style={{ position: 'fixed', inset: 0, zIndex: 899 }} onClick={() => setOpen(false)} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1099 }} onClick={() => setOpen(false)} />
 
           <div className="support-panel">
             <div className="support-panel-header">

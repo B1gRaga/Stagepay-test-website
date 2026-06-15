@@ -268,7 +268,7 @@ const CSS = `
   html[data-theme="light"] .pill-draft{color:rgba(15,23,42,.5);background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25);}
 
   /* Send Modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;}
   .modal-box{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:480px;overflow:hidden;animation:modalIn .2s ease;}
   .modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
   .modal-title{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
@@ -810,34 +810,34 @@ export default function NewInvoiceClient({
 
                 <div className="form-grid">
                   <div className="form-group">
-                    <label className="form-label">Client name</label>
-                    <input className="form-input" value={clientName} onChange={e => { setClientName(e.target.value); setSelectedClientId(null) }} placeholder="e.g. Molapo Tower Ltd."/>
+                    <label className="form-label" htmlFor="ni-client-name">Client name</label>
+                    <input id="ni-client-name" name="client_name" className="form-input" value={clientName} onChange={e => { setClientName(e.target.value); setSelectedClientId(null) }} placeholder="e.g. Molapo Tower Ltd."/>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Client email</label>
-                    <input className="form-input" type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="client@company.co.bw"/>
+                    <label className="form-label" htmlFor="ni-client-email">Client email</label>
+                    <input id="ni-client-email" name="client_email" className="form-input" type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="client@company.co.bw"/>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Client phone (WhatsApp)</label>
-                    <input className="form-input" type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="+267 71 234 567"/>
+                    <label className="form-label" htmlFor="ni-client-phone">Client phone (WhatsApp)</label>
+                    <input id="ni-client-phone" name="client_phone" className="form-input" type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="+267 71 234 567"/>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Currency</label>
-                    <select className="form-select" value={currency} onChange={e => setCurrency(e.target.value)}>
+                    <label className="form-label" htmlFor="ni-currency">Currency</label>
+                    <select id="ni-currency" name="currency" className="form-select" value={currency} onChange={e => setCurrency(e.target.value)}>
                       {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Issue date</label>
-                    <input className="form-input" type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)}/>
+                    <label className="form-label" htmlFor="ni-issue-date">Issue date</label>
+                    <input id="ni-issue-date" name="issue_date" className="form-input" type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)}/>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Due date</label>
-                    <input className="form-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}/>
+                    <label className="form-label" htmlFor="ni-due-date">Due date</label>
+                    <input id="ni-due-date" name="due_date" className="form-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}/>
                   </div>
                   <div className="form-group full">
-                    <label className="form-label">Project description</label>
-                    <input className="form-input" value={project} onChange={e => setProject(e.target.value)} placeholder="e.g. Molapo Tower — Phase 2 Structural Review"/>
+                    <label className="form-label" htmlFor="ni-project">Project description</label>
+                    <input id="ni-project" name="project" className="form-input" value={project} onChange={e => setProject(e.target.value)} placeholder="e.g. Molapo Tower — Phase 2 Structural Review"/>
                   </div>
                 </div>
 
@@ -853,9 +853,9 @@ export default function NewInvoiceClient({
                   </div>
                   {items.map((item, i) => (
                     <div key={i} className="line-item-row">
-                      <input className="form-input" value={item.desc} onChange={e => updateItem(i, 'desc', e.target.value)} placeholder="Service description" style={{ padding: '7px 10px' }}/>
-                      <input className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px' }}/>
-                      <input className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px' }}/>
+                      <input id={`ni-desc-${i}`} name={`item_desc_${i}`} className="form-input" value={item.desc} onChange={e => updateItem(i, 'desc', e.target.value)} placeholder="Service description" style={{ padding: '7px 10px' }}/>
+                      <input id={`ni-qty-${i}`} name={`item_qty_${i}`} className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px' }}/>
+                      <input id={`ni-rate-${i}`} name={`item_rate_${i}`} className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px' }}/>
                       <div className="li-amt">{fmtAmt((item.qty || 0) * (item.rate || 0), currency)}</div>
                       <button className="li-del" onClick={() => removeItem(i)}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v6M10 7v6M3 4l1 10h8l1-10"/></svg>
@@ -870,12 +870,12 @@ export default function NewInvoiceClient({
 
                 <div className="form-grid" style={{ marginTop: 14 }}>
                   <div className="form-group">
-                    <label className="form-label">VAT rate (%)</label>
-                    <input className="form-input" type="number" value={vatRate} min={0} max={100} step="0.1" onChange={e => setVatRate(parseFloat(e.target.value) || 0)}/>
+                    <label className="form-label" htmlFor="ni-vat-rate">VAT rate (%)</label>
+                    <input id="ni-vat-rate" name="vat_rate" className="form-input" type="number" value={vatRate} min={0} max={100} step="0.1" onChange={e => setVatRate(parseFloat(e.target.value) || 0)}/>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Payment terms</label>
-                    <select className="form-select" value={terms} onChange={e => setTerms(e.target.value)}>
+                    <label className="form-label" htmlFor="ni-payment-terms">Payment terms</label>
+                    <select id="ni-payment-terms" name="payment_terms" className="form-select" value={terms} onChange={e => setTerms(e.target.value)}>
                       <option value="30">30 days</option>
                       <option value="14">14 days</option>
                       <option value="7">7 days</option>
@@ -885,19 +885,19 @@ export default function NewInvoiceClient({
 
                   {/* Deposit */}
                   <div className="form-group full">
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       Deposit required
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 11, color: 'var(--t3)' }}>{depositOn ? 'On' : 'Off'}</span>
                         <div className={`toggle-sw${depositOn ? ' on' : ''}`} onClick={() => setDepositOn(p => !p)}/>
                       </span>
-                    </label>
+                    </div>
                     {depositOn && (
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                         <div style={{ flex: 1, minWidth: 120 }}>
                           <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Deposit %</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input className="form-input" type="number" min={1} max={100} value={depositPct} onChange={e => setDepositPct(Number(e.target.value))} style={{ width: 80, padding: '7px 10px' }}/>
+                            <input id="ni-deposit-pct" name="deposit_pct" className="form-input" type="number" min={1} max={100} value={depositPct} onChange={e => setDepositPct(Number(e.target.value))} style={{ width: 80, padding: '7px 10px' }}/>
                             <span style={{ fontSize: 13, color: 'var(--t3)' }}>%</span>
                             <div style={{ display: 'flex', gap: 4 }}>
                               {[25, 50, 100].map(p => (
@@ -916,19 +916,19 @@ export default function NewInvoiceClient({
 
                   {/* Discount */}
                   <div className="form-group full">
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       Discount
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 11, color: 'var(--t3)' }}>{discountOn ? 'On' : 'Off'}</span>
                         <div className={`toggle-sw${discountOn ? ' on' : ''}`} onClick={() => setDiscountOn(p => !p)}/>
                       </span>
-                    </label>
+                    </div>
                     {discountOn && (
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                         <div style={{ flex: 1, minWidth: 120 }}>
                           <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Discount amount</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input className="form-input" type="number" min={0} max={subtotal} value={discountAmt} onChange={e => setDiscountAmt(Number(e.target.value) || 0)} style={{ width: 100, padding: '7px 10px' }}/>
+                            <input id="ni-discount-amt" name="discount_amt" className="form-input" type="number" min={0} max={subtotal} value={discountAmt} onChange={e => setDiscountAmt(Number(e.target.value) || 0)} style={{ width: 100, padding: '7px 10px' }}/>
                             <div style={{ display: 'flex', gap: 4 }}>
                               {[5, 10, 15, 20].map(p => {
                                 const amt = Math.round(subtotal * p / 100 * 100) / 100
@@ -951,16 +951,16 @@ export default function NewInvoiceClient({
 
                   {/* Recurring */}
                   <div className="form-group full">
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       Recurring invoice
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 11, color: 'var(--t3)' }}>{isRecurring ? 'On' : 'Off'}</span>
                         <div className={`toggle-sw${isRecurring ? ' on' : ''}`} onClick={() => setIsRecurring(p => !p)}/>
                       </span>
-                    </label>
+                    </div>
                     {isRecurring && (
                       <div style={{ marginTop: 8, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <select className="form-select" value={recurInterval} onChange={e => setRecurInterval(e.target.value as any)} style={{ width: 160 }}>
+                        <select id="ni-recur-interval" name="recur_interval" className="form-select" value={recurInterval} onChange={e => setRecurInterval(e.target.value as any)} style={{ width: 160 }}>
                           <option value="monthly">Monthly</option>
                           <option value="quarterly">Quarterly</option>
                           <option value="yearly">Yearly</option>
@@ -973,13 +973,13 @@ export default function NewInvoiceClient({
                   </div>
 
                   <div className="form-group full">
-                    <label className="form-label">Notes (optional)</label>
-                    <input className="form-input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Bank: FNB Botswana, Acc: 62123456789"/>
+                    <label className="form-label" htmlFor="ni-notes">Notes (optional)</label>
+                    <input id="ni-notes" name="notes" className="form-input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Bank: FNB Botswana, Acc: 62123456789"/>
                   </div>
 
                   <div className="form-group full">
-                    <label className="form-label">Terms &amp; conditions (optional)</label>
-                    <textarea className="form-textarea" value={tc} onChange={e => setTc(e.target.value)} rows={3} placeholder="e.g. Payment is due within 30 days. Late payments incur 2% interest per month."/>
+                    <label className="form-label" htmlFor="ni-tc">Terms &amp; conditions (optional)</label>
+                    <textarea id="ni-tc" name="tc" className="form-textarea" value={tc} onChange={e => setTc(e.target.value)} rows={3} placeholder="e.g. Payment is due within 30 days. Late payments incur 2% interest per month."/>
                   </div>
                 </div>
 
@@ -1157,13 +1157,13 @@ export default function NewInvoiceClient({
 
                   {channel === 'email' ? (
                     <div className="form-group">
-                      <label className="form-label">Send to email</label>
-                      <input className="form-input" type="email" value={sendEmail} onChange={e => setSendEmail(e.target.value)} placeholder="client@email.com" autoFocus/>
+                      <label className="form-label" htmlFor="ni-send-email">Send to email</label>
+                      <input id="ni-send-email" name="send_email" className="form-input" type="email" value={sendEmail} onChange={e => setSendEmail(e.target.value)} placeholder="client@email.com" autoFocus/>
                     </div>
                   ) : (
                     <div className="form-group">
-                      <label className="form-label">Send to WhatsApp number</label>
-                      <input className="form-input" type="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" autoFocus/>
+                      <label className="form-label" htmlFor="ni-send-phone">Send to WhatsApp number</label>
+                      <input id="ni-send-phone" name="send_phone" className="form-input" type="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" autoFocus/>
                       <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 4 }}>Include country code, e.g. +267 for Botswana</div>
                     </div>
                   )}

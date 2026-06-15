@@ -184,7 +184,7 @@ const CSS = `
   .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;}
 
   /* Compose modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;}
   .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);max-height:90vh;display:flex;flex-direction:column;}
   .modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--line);flex-shrink:0;}
   .modal-title{font-size:15px;font-weight:600;color:var(--t1);display:flex;align-items:center;justify-content:space-between;gap:10px;}

@@ -106,7 +106,7 @@ const CSS = `
     /* Mobile top bar */
     .mob-topbar{
       display:flex;align-items:center;justify-content:space-between;
-      position:fixed;top:0;left:0;right:0;z-index:199;
+      position:fixed;top:0;left:0;right:0;z-index:999;
       height:calc(44px + env(safe-area-inset-top,0px));
       padding:env(safe-area-inset-top,0px) 16px 0;
       background:rgba(15,23,42,0.94);
@@ -139,7 +139,7 @@ const CSS = `
       background:var(--bg2);border:1px solid var(--line2);
       border-radius:0 0 10px 10px;
       box-shadow:0 8px 24px rgba(0,0,0,.3);
-      z-index:300;
+      z-index:1001;
       animation:popupIn .15s ease both;
     }
 
@@ -149,7 +149,7 @@ const CSS = `
       flex-direction:column;
       border-right:none;border-top:1px solid var(--line);
       position:fixed;bottom:0;left:0;right:0;top:auto;
-      z-index:200;
+      z-index:1000;
       background:rgba(15,23,42,0.94);
       backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
       padding-bottom:env(safe-area-inset-bottom,0px);
