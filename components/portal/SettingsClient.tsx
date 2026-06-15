@@ -30,15 +30,16 @@ type Profile = {
   brand_color_header: string | null
 }
 
-type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'security'
+type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'team' | 'security'
 
-const PANELS: { id: Panel; label: string; dot: string; dotStyle?: object }[] = [
+const PANELS: { id: Panel; label: string; dot: string; businessOnly?: boolean }[] = [
   { id: 'brand',    label: 'Branding',          dot: '#10B981' },
   { id: 'firm',     label: 'Firm details',       dot: '#3B82F6' },
   { id: 'invoice',  label: 'Invoice defaults',   dot: '#F59E0B' },
   { id: 'payment',  label: 'Payment & banking',  dot: '#10B981' },
   { id: 'notifs',   label: 'Notifications',      dot: '#8B5CF6' },
   { id: 'plan',     label: 'Plan & billing',     dot: '#10B981' },
+  { id: 'team',     label: 'Team members',       dot: '#10B981', businessOnly: true },
   { id: 'security', label: 'Security',           dot: '#EF4444' },
 ]
 
@@ -393,6 +394,17 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
   const [upgrading, setUpgrading] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
+  // Team state
+  type TeamMember = { id: string; email: string; status: 'pending' | 'active'; invited_at: string; joined_at: string | null; invite_token: string | null }
+  const [teamMembers, setTeamMembers]     = useState<TeamMember[]>([])
+  const [teamLoaded,  setTeamLoaded]      = useState(false)
+  const [inviteEmail, setInviteEmail]     = useState('')
+  const [inviteLink,  setInviteLink]      = useState<string | null>(null)
+  const [inviting,    setInviting]        = useState(false)
+  const [inviteError, setInviteError]     = useState('')
+  const [removingId,  setRemovingId]      = useState<string | null>(null)
+  const [copiedId,    setCopiedId]        = useState<string | null>(null)
+
   // 2FA enroll modal state
   const [mfaModal,   setMfaModal]   = useState<null | 'enroll' | 'unenroll'>(null)
   const [mfaQr,      setMfaQr]      = useState('')
@@ -534,6 +546,54 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
     }
   }
 
+  async function fetchTeamMembers() {
+    const res = await fetch('/api/team/members', { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      setTeamMembers(data.members ?? [])
+    }
+    setTeamLoaded(true)
+  }
+
+  async function sendInvite() {
+    if (!inviteEmail.trim()) return
+    setInviting(true); setInviteError(''); setInviteLink(null)
+    const res = await fetch('/api/team/invite', {
+      method: 'POST', credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: inviteEmail.trim() }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setInviteLink(data.inviteUrl)
+      setInviteEmail('')
+      fetchTeamMembers()
+    } else {
+      setInviteError(data.error ?? 'Failed to create invite')
+    }
+    setInviting(false)
+  }
+
+  async function removeMember(memberId: string) {
+    setRemovingId(memberId)
+    const res = await fetch('/api/team/remove', {
+      method: 'POST', credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ memberId }),
+    })
+    if (res.ok) {
+      setTeamMembers(prev => prev.filter(m => m.id !== memberId))
+    }
+    setRemovingId(null)
+  }
+
+  function copyLink(text: string, id: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 2000)
+    })
+  }
+
   async function startEnroll2FA() {
     setMfaError(''); setMfaBusy(true)
     try {
@@ -607,11 +667,14 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
         <div className="settings-layout">
           {/* Left nav */}
           <div className="settings-nav">
-            {PANELS.map(p => (
+            {PANELS.filter(p => !p.businessOnly || profile?.plan === 'business').map(p => (
               <div
                 key={p.id}
                 className={`settings-nav-item${panel === p.id ? ' active' : ''}`}
-                onClick={() => setPanel(p.id)}
+                onClick={() => {
+                  setPanel(p.id)
+                  if (p.id === 'team' && !teamLoaded) fetchTeamMembers()
+                }}
               >
                 <span style={{ width: 8, height: 8, borderRadius: p.id === 'plan' ? 2 : '50%', background: p.dot, flexShrink: 0, display: 'inline-block', transform: p.id === 'plan' ? 'rotate(45deg)' : undefined, opacity: p.id === 'payment' ? .7 : 1 }}/>
                 {p.label}
@@ -1109,6 +1172,138 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   <button className="topbar-btn" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,.25)', flexShrink: 0 }}>Cancel</button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ── TEAM MEMBERS ── */}
+          <div className={`settings-panel${panel === 'team' ? ' active' : ''}`}>
+            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
+              <div className="settings-panel-hero-icon" style={{ background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.25)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
+              <div>
+                <div className="settings-panel-hero-title">Team members</div>
+                <div className="settings-panel-hero-sub">{teamMembers.length + 1} / 5 seats used (you + {teamMembers.length} {teamMembers.length === 1 ? 'member' : 'members'})</div>
+              </div>
+              <span className="settings-panel-hero-badge" style={{ background: 'var(--g)', color: 'var(--bg)', fontWeight: 700 }}>BUSINESS</span>
+            </div>
+
+            {/* Invite form */}
+            <div className="settings-section">
+              <div className="settings-section-title">Invite a team member</div>
+              <div className="settings-section-desc">They'll receive a link to join your team. Each member gets full Business plan access at no extra cost (max 5 total).</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <input
+                  type="email"
+                  placeholder="colleague@email.com"
+                  value={inviteEmail}
+                  onChange={e => { setInviteEmail(e.target.value); setInviteError(''); setInviteLink(null) }}
+                  onKeyDown={e => e.key === 'Enter' && sendInvite()}
+                  disabled={inviting || teamMembers.length >= 4}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 7, fontSize: 13,
+                    background: 'var(--surface)', border: '1px solid var(--line2)',
+                    color: 'var(--t1)', fontFamily: 'var(--font-archivo),sans-serif',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  className="topbar-btn btn-primary"
+                  onClick={sendInvite}
+                  disabled={inviting || !inviteEmail.trim() || teamMembers.length >= 4}
+                  style={{ flexShrink: 0, padding: '8px 16px', fontSize: 13 }}
+                >
+                  {inviting ? 'Sending…' : 'Generate link'}
+                </button>
+              </div>
+              {inviteError && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 7 }}>{inviteError}</p>}
+              {teamMembers.length >= 4 && <p style={{ fontSize: 12, color: 'var(--t3)', marginTop: 7 }}>Team is full (5/5 seats used).</p>}
+
+              {/* Generated invite link */}
+              {inviteLink && (
+                <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 8 }}>
+                  <p style={{ fontSize: 11, color: '#10B981', fontWeight: 600, marginBottom: 6 }}>Invite link generated — share this with your team member:</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <code style={{ flex: 1, fontSize: 11, color: 'var(--t2)', wordBreak: 'break-all', background: 'var(--surface)', padding: '6px 10px', borderRadius: 5, border: '1px solid var(--line2)' }}>{inviteLink}</code>
+                    <button
+                      className="topbar-btn"
+                      onClick={() => copyLink(inviteLink, 'new')}
+                      style={{ flexShrink: 0, fontSize: 11, padding: '5px 10px' }}
+                    >
+                      {copiedId === 'new' ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Member list */}
+            <div className="settings-section">
+              <div className="settings-section-title">Current members</div>
+              {!teamLoaded ? (
+                <p style={{ fontSize: 13, color: 'var(--t3)', marginTop: 8 }}>Loading…</p>
+              ) : (
+                <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', marginTop: 10 }}>
+                  {/* Owner row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: teamMembers.length > 0 ? '1px solid var(--line)' : undefined }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#10B981', flexShrink: 0 }}>
+                        {(profile?.name ?? 'O')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{profile?.name ?? 'You'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>Account owner</div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', padding: '3px 8px', background: 'rgba(16,185,129,.1)', borderRadius: 4 }}>Owner</span>
+                  </div>
+
+                  {/* Member rows */}
+                  {teamMembers.map((m, i) => (
+                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: i < teamMembers.length - 1 ? '1px solid var(--line)' : undefined }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--t2)', flexShrink: 0 }}>
+                          {m.email[0].toUpperCase()}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, color: 'var(--t1)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3,
+                              background: m.status === 'active' ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.1)',
+                              color: m.status === 'active' ? '#10B981' : '#F59E0B',
+                            }}>
+                              {m.status === 'active' ? 'Active' : 'Pending'}
+                            </span>
+                            {m.status === 'pending' && (
+                              <button
+                                style={{ fontSize: 10, color: 'var(--t3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                                onClick={() => copyLink(`${window.location.origin}/join/${m.invite_token}`, m.id)}
+                              >
+                                {copiedId === m.id ? 'Copied!' : 'Copy invite link'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        className="topbar-btn"
+                        onClick={() => removeMember(m.id)}
+                        disabled={removingId === m.id}
+                        style={{ fontSize: 11, color: 'var(--danger)', borderColor: 'rgba(239,68,68,.25)', flexShrink: 0, padding: '4px 10px' }}
+                      >
+                        {removingId === m.id ? 'Removing…' : 'Remove'}
+                      </button>
+                    </div>
+                  ))}
+
+                  {teamMembers.length === 0 && (
+                    <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--t3)', fontSize: 13 }}>
+                      No team members yet. Invite someone above.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
