@@ -253,19 +253,19 @@ export default function SignupPage() {
             {step === 1 ? (
               <form onSubmit={handleStepOne} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
                 <div className="auth-group">
-                  <label>Full name</label>
+                  <label htmlFor="name">Full name</label>
                   <input className="auth-input" id="name" name="name" type="text" required autoComplete="name"
                     value={name} onChange={e => setName(e.target.value)}
                     placeholder="e.g. Jane Smith"/>
                 </div>
                 <div className="auth-group">
-                  <label>Email address</label>
+                  <label htmlFor="email">Email address</label>
                   <input className="auth-input" id="email" name="email" type="email" required autoComplete="email"
                     value={email} onChange={e => setEmail(e.target.value)}
                     placeholder="you@yourfirm.co.bw"/>
                 </div>
                 <div className="auth-group">
-                  <label>Password</label>
+                  <label htmlFor="password">Password</label>
                   <div style={{position:'relative'}}>
                     <input className="auth-input" id="password" name="password" type={showPw ? 'text' : 'password'} required autoComplete="new-password"
                       value={password} onChange={e => setPassword(e.target.value)}

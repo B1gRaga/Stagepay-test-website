@@ -262,14 +262,14 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:16,flex:1}}>
               <div className="auth-group">
-                <label>Email address</label>
+                <label htmlFor="email">Email address</label>
                 <input className="auth-input" id="email" name="email" type="email" required autoComplete="email"
                   value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="you@yourfirm.co.bw"/>
               </div>
               <div className="auth-group">
                 <div className="auth-pw-row">
-                  <label>Password</label>
+                  <label htmlFor="password">Password</label>
                   <Link href="/auth/forgot-password" className="auth-forgot">Forgot password?</Link>
                 </div>
                 <div style={{position:'relative'}}>

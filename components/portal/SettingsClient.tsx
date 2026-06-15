@@ -855,28 +855,28 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               <div className="settings-section-desc">This information appears on every invoice you send.</div>
               <div className="form-grid" style={{ maxWidth: 520 }}>
                 <div className="form-group full">
-                  <label className="form-label">Business / Firm name</label>
-                  <input className="form-input" value={firm.firm_name} onChange={e => setFirm(p => ({ ...p, firm_name: e.target.value }))} placeholder="Your business name"/>
+                  <label className="form-label" htmlFor="s-firm-name">Business / Firm name</label>
+                  <input id="s-firm-name" name="firm_name" className="form-input" value={firm.firm_name} onChange={e => setFirm(p => ({ ...p, firm_name: e.target.value }))} placeholder="Your business name"/>
                 </div>
                 <div className="form-group full">
-                  <label className="form-label">Your full name</label>
-                  <input className="form-input" value={firm.name} onChange={e => setFirm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"/>
+                  <label className="form-label" htmlFor="s-name">Your full name</label>
+                  <input id="s-name" name="name" className="form-input" value={firm.name} onChange={e => setFirm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"/>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Phone number</label>
-                  <input className="form-input" value={firm.phone} onChange={e => setFirm(p => ({ ...p, phone: e.target.value }))} placeholder="e.g. +267 71 234 567"/>
+                  <label className="form-label" htmlFor="s-phone">Phone number</label>
+                  <input id="s-phone" name="phone" className="form-input" value={firm.phone} onChange={e => setFirm(p => ({ ...p, phone: e.target.value }))} placeholder="e.g. +267 71 234 567"/>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">VAT / TIN number</label>
-                  <input className="form-input" value={firm.vat_number} onChange={e => setFirm(p => ({ ...p, vat_number: e.target.value }))} placeholder="e.g. P03812345W"/>
+                  <label className="form-label" htmlFor="s-vat">VAT / TIN number</label>
+                  <input id="s-vat" name="vat_number" className="form-input" value={firm.vat_number} onChange={e => setFirm(p => ({ ...p, vat_number: e.target.value }))} placeholder="e.g. P03812345W"/>
                 </div>
                 <div className="form-group full">
-                  <label className="form-label">Physical address</label>
-                  <input className="form-input" value={firm.address} onChange={e => setFirm(p => ({ ...p, address: e.target.value }))} placeholder="Your business address"/>
+                  <label className="form-label" htmlFor="s-address">Physical address</label>
+                  <input id="s-address" name="address" className="form-input" value={firm.address} onChange={e => setFirm(p => ({ ...p, address: e.target.value }))} placeholder="Your business address"/>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">City</label>
-                  <input className="form-input" value={firm.city} onChange={e => setFirm(p => ({ ...p, city: e.target.value }))} placeholder="e.g. Gaborone"/>
+                  <label className="form-label" htmlFor="s-city">City</label>
+                  <input id="s-city" name="city" className="form-input" value={firm.city} onChange={e => setFirm(p => ({ ...p, city: e.target.value }))} placeholder="e.g. Gaborone"/>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Country</label>
@@ -943,12 +943,12 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Default VAT / tax rate (%)</label>
-                  <input className="form-input" type="number" min="0" max="100" step="0.1" value={inv.default_vat_rate} onChange={e => setInv(p => ({ ...p, default_vat_rate: e.target.value }))}/>
+                  <label className="form-label" htmlFor="s-vat-rate">Default VAT / tax rate (%)</label>
+                  <input id="s-vat-rate" name="default_vat_rate" className="form-input" type="number" min="0" max="100" step="0.1" value={inv.default_vat_rate} onChange={e => setInv(p => ({ ...p, default_vat_rate: e.target.value }))}/>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Tax label</label>
-                  <input className="form-input" value={inv.tax_label} onChange={e => setInv(p => ({ ...p, tax_label: e.target.value }))} placeholder="VAT, GST, IVA…"/>
+                  <label className="form-label" htmlFor="s-tax-label">Tax label</label>
+                  <input id="s-tax-label" name="tax_label" className="form-input" value={inv.tax_label} onChange={e => setInv(p => ({ ...p, tax_label: e.target.value }))} placeholder="VAT, GST, IVA…"/>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Default payment terms</label>
