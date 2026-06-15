@@ -1048,12 +1048,12 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   {
                     id: 'pro', name: 'Pro', highlight: true,
                     monthly: 200, yearly: 180,
-                    features: ['Unlimited invoices', 'Email delivery', 'Auto-reminders', 'AI generation'],
+                    features: ['Unlimited invoices', 'Recurring invoices', 'Email delivery', 'Auto-reminders', 'AI generation'],
                   },
                   {
                     id: 'business', name: 'Business', highlight: false,
                     monthly: 500, yearly: 450,
-                    features: ['Everything in Pro', 'Multi-user', 'API access', 'Priority support'],
+                    features: ['Everything in Pro', 'Multi-user', 'Advanced reporting', 'Priority support'],
                   },
                 ].map(plan => {
                   const isCurrent = plan.id === (profile?.plan ?? 'free')
