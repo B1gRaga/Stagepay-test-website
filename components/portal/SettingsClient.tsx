@@ -391,6 +391,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
   const [saving,    setSaving]    = useState(false)
   const [saved,     setSaved]     = useState<Panel | null>(null)
   const [upgrading, setUpgrading] = useState<string | null>(null)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
   // 2FA enroll modal state
   const [mfaModal,   setMfaModal]   = useState<null | 'enroll' | 'unenroll'>(null)
@@ -516,10 +517,10 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
     }
   }
 
-  async function upgradePlan(plan: 'pro' | 'business') {
+  async function upgradePlan(plan: 'pro' | 'business', cycle: 'monthly' | 'yearly' = 'monthly') {
     setUpgrading(plan)
     try {
-      const res  = await fetch('/api/billing/checkout', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan }) })
+      const res  = await fetch('/api/billing/checkout', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan, cycle }) })
       const data = await res.json()
       if (res.ok && data.paymentUrl) {
         window.location.href = data.paymentUrl
@@ -995,20 +996,80 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               </div>
             )}
             <div className="settings-section">
-              <div className="settings-section-title">Your plan</div>
-              <div className="settings-section-desc">You are on the <strong style={{ color: 'var(--t2)' }}>{profile?.plan ?? 'free'}</strong> plan. Subscriptions renew every 30 days.</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div className="settings-section-title">Your plan</div>
+                  <div className="settings-section-desc">You are on the <strong style={{ color: 'var(--t2)' }}>{profile?.plan ?? 'free'}</strong> plan.</div>
+                </div>
+                {/* Billing cycle toggle */}
+                <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--line2)', padding: 3, gap: 2, flexShrink: 0 }}>
+                  <button
+                    onClick={() => setBillingCycle('monthly')}
+                    style={{
+                      padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      fontFamily: 'var(--font-archivo),sans-serif',
+                      background: billingCycle === 'monthly' ? 'var(--bg2)' : 'transparent',
+                      color: billingCycle === 'monthly' ? 'var(--t1)' : 'var(--t3)',
+                      border: billingCycle === 'monthly' ? '1px solid var(--line2)' : '1px solid transparent',
+                      cursor: 'pointer', transition: 'all .15s',
+                    }}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => setBillingCycle('yearly')}
+                    style={{
+                      padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      fontFamily: 'var(--font-archivo),sans-serif',
+                      background: billingCycle === 'yearly' ? 'var(--bg2)' : 'transparent',
+                      color: billingCycle === 'yearly' ? 'var(--t1)' : 'var(--t3)',
+                      border: billingCycle === 'yearly' ? '1px solid var(--line2)' : '1px solid transparent',
+                      cursor: 'pointer', transition: 'all .15s',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    Yearly
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                      background: '#10B981', color: '#000',
+                    }}>
+                      -10%
+                    </span>
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 12 }}>
                 {[
-                  { id: 'free',     name: 'Starter',  price: 'Free',     features: ['2 invoices/month', 'PDF export', 'WhatsApp send'],                               highlight: false },
-                  { id: 'pro',      name: 'Pro',       price: 'P200/mo',  features: ['Unlimited invoices', 'Email delivery', 'Auto-reminders', 'AI generation'],      highlight: true  },
-                  { id: 'business', name: 'Business',  price: 'P500/mo',  features: ['Everything in Pro', 'Multi-user', 'API access', 'Priority support'],            highlight: false },
+                  {
+                    id: 'free', name: 'Starter', highlight: false,
+                    monthly: 0, yearly: 0,
+                    features: ['2 invoices/month', 'PDF export', 'WhatsApp send'],
+                  },
+                  {
+                    id: 'pro', name: 'Pro', highlight: true,
+                    monthly: 200, yearly: 180,
+                    features: ['Unlimited invoices', 'Email delivery', 'Auto-reminders', 'AI generation'],
+                  },
+                  {
+                    id: 'business', name: 'Business', highlight: false,
+                    monthly: 500, yearly: 450,
+                    features: ['Everything in Pro', 'Multi-user', 'API access', 'Priority support'],
+                  },
                 ].map(plan => {
                   const isCurrent = plan.id === (profile?.plan ?? 'free')
                   const canUpgrade = !isCurrent && plan.id !== 'free'
+                  const price = billingCycle === 'yearly' ? plan.yearly : plan.monthly
+                  const priceLabel = price === 0 ? 'Free' : `P${price}/mo`
+                  const yearlyNote = billingCycle === 'yearly' && price > 0 ? `P${price * 12}/yr` : null
                   return (
                     <div key={plan.name} className="plan-card" style={{ border: isCurrent ? '1px solid rgba(16,185,129,.4)' : undefined, gap: 8 }}>
                       <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 18, letterSpacing: 1.5, color: plan.highlight ? 'var(--g)' : 'var(--t1)' }}>{plan.name}</div>
-                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 22, color: 'var(--t1)' }}>{plan.price}</div>
+                      <div>
+                        <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 22, color: 'var(--t1)' }}>{priceLabel}</span>
+                        {yearlyNote && (
+                          <span style={{ fontSize: 10, color: 'var(--t3)', marginLeft: 5 }}>billed as {yearlyNote}</span>
+                        )}
+                      </div>
                       {plan.features.map(f => <div key={f} style={{ fontSize: 11, color: 'var(--t3)', display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: 'var(--g)', fontSize: 10 }}>✓</span>{f}</div>)}
                       <div style={{ marginTop: 4 }}>
                         {isCurrent ? (
@@ -1018,7 +1079,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                             className="topbar-btn btn-primary"
                             style={{ fontSize: 11, padding: '5px 12px', width: '100%', justifyContent: 'center' }}
                             disabled={!!upgrading}
-                            onClick={() => upgradePlan(plan.id as 'pro' | 'business')}
+                            onClick={() => upgradePlan(plan.id as 'pro' | 'business', billingCycle)}
                           >
                             {upgrading === plan.id ? 'Redirecting…' : `Upgrade to ${plan.name}`}
                           </button>
