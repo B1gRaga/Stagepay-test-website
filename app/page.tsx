@@ -1,4 +1,3 @@
-import { ThemeToggle } from '@/components/ui/curtain-theme-toggle'
 import { SignupInput } from '@/components/landing/SignupInput'
 import { RevealObserver } from '@/components/landing/RevealObserver'
 
@@ -35,13 +34,19 @@ const navRight = (
 
 export default function Home() {
   return (
-    <ThemeToggle
-      variant="appbar"
-      defaultTheme="dark"
-      barHeight={60}
-      duration={600}
-      appBarProps={{ logo: stagepayLogo, userAvatar: navRight }}
-    >
+    <>
+      <nav style={{
+        position:'fixed',top:0,left:0,right:0,height:60,
+        background:'#1a1a1a',color:'#ffffff',
+        borderBottom:'1px solid rgba(255,255,255,0.07)',
+        zIndex:9998,display:'flex',alignItems:'center',
+        justifyContent:'space-between',padding:'0 24px',
+      }}>
+        {stagepayLogo}
+        {navRight}
+      </nav>
+
+      <div style={{paddingTop:60}}>
       <RevealObserver />
 
       {/* ANNOUNCE BAR */}
@@ -389,6 +394,7 @@ export default function Home() {
           <div className="foot-copy">© 2026 StagePay · Built for African professionals</div>
         </div>
       </footer>
-    </ThemeToggle>
+      </div>
+    </>
   )
 }
