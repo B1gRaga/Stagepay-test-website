@@ -282,6 +282,8 @@ function BrandingColorField({
       <div className="color-field-label">{label}</div>
       <div className="color-field-row">
         <input
+          id={`cf-swatch-${label.replace(/\s+/g,'').toLowerCase()}`}
+          name={`cf_swatch_${label.replace(/\s+/g,'').toLowerCase()}`}
           type="color"
           value={swatchColor}
           onChange={e => onChange(e.target.value)}
@@ -289,6 +291,8 @@ function BrandingColorField({
           title="Pick a colour"
         />
         <input
+          id={`cf-hex-${label.replace(/\s+/g,'').toLowerCase()}`}
+          name={`cf_hex_${label.replace(/\s+/g,'').toLowerCase()}`}
           type="text"
           className="color-field-hex"
           value={value}
@@ -986,11 +990,11 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                 <span style={{ fontSize: 12, color: 'var(--t2)' }}>Your bank details are included automatically in every PDF export and client email.</span>
               </div>
               <div className="form-grid" style={{ maxWidth: 520 }}>
-                <div className="form-group full"><label className="form-label">Bank name</label><input className="form-input" placeholder="e.g. First National Bank Botswana"/></div>
-                <div className="form-group"><label className="form-label">Account name</label><input className="form-input" placeholder="e.g. Acme Corp Pty Ltd"/></div>
-                <div className="form-group"><label className="form-label">Account number</label><input className="form-input" placeholder="e.g. 62123456789"/></div>
-                <div className="form-group"><label className="form-label">Branch code</label><input className="form-input" placeholder="e.g. 282672"/></div>
-                <div className="form-group"><label className="form-label">Swift / BIC (international)</label><input className="form-input" placeholder="e.g. FIRNBWGX"/></div>
+                <div className="form-group full"><label className="form-label" htmlFor="s-bank-name">Bank name</label><input id="s-bank-name" name="bank_name" className="form-input" placeholder="e.g. First National Bank Botswana"/></div>
+                <div className="form-group"><label className="form-label" htmlFor="s-account-name">Account name</label><input id="s-account-name" name="account_name" className="form-input" placeholder="e.g. Acme Corp Pty Ltd"/></div>
+                <div className="form-group"><label className="form-label" htmlFor="s-account-number">Account number</label><input id="s-account-number" name="account_number" className="form-input" placeholder="e.g. 62123456789"/></div>
+                <div className="form-group"><label className="form-label" htmlFor="s-branch-code">Branch code</label><input id="s-branch-code" name="branch_code" className="form-input" placeholder="e.g. 282672"/></div>
+                <div className="form-group"><label className="form-label" htmlFor="s-swift">Swift / BIC (international)</label><input id="s-swift" name="swift_bic" className="form-input" placeholder="e.g. FIRNBWGX"/></div>
               </div>
               <div style={{ marginTop: 20 }} className="settings-section-desc">
                 <strong style={{ color: 'var(--t2)' }}>Online payments</strong> — Stripe, PayFast and other payment gateway integrations are available on the Business plan.
@@ -1404,6 +1408,8 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
             </div>
             {mfaError && <div style={{ fontSize: 12, color: 'var(--danger)', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>{mfaError}</div>}
             <input
+              id="s-mfa-code"
+              name="mfa_code"
               type="text"
               inputMode="numeric"
               maxLength={6}

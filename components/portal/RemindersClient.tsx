@@ -604,13 +604,13 @@ export default function RemindersClient({
               </div>
               <div className="modal-field">
                 <div className="modal-label">Email</div>
-                <input className="modal-input" type="email" placeholder="client@example.com"
+                <input id="rm-contact-email" name="contact_email" className="modal-input" type="email" placeholder="client@example.com"
                   value={contactModal.email}
                   onChange={e => setContactModal(p => p ? { ...p, email: e.target.value } : null)} />
               </div>
               <div className="modal-field">
                 <div className="modal-label">Phone (with country code)</div>
-                <input className="modal-input" type="tel" placeholder="+267 71 234 567"
+                <input id="rm-contact-phone" name="contact_phone" className="modal-input" type="tel" placeholder="+267 71 234 567"
                   value={contactModal.phone}
                   onChange={e => setContactModal(p => p ? { ...p, phone: e.target.value } : null)} />
               </div>
@@ -664,7 +664,7 @@ export default function RemindersClient({
                     <>
                       <div className="modal-field">
                         <div className="modal-label">To</div>
-                        <input className="modal-input" type="email" placeholder="client@example.com"
+                        <input id="rm-compose-email" name="compose_email" className="modal-input" type="email" placeholder="client@example.com"
                           value={compose.emailTo} onChange={e => setCompose(p => p ? { ...p, emailTo: e.target.value } : null)} />
                       </div>
                       <div className="modal-field">
@@ -672,7 +672,7 @@ export default function RemindersClient({
                           <span>Message</span>
                           <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0 }}>Edit before sending</span>
                         </div>
-                        <textarea className="modal-textarea" value={compose.emailBody}
+                        <textarea id="rm-email-body" name="email_body" className="modal-textarea" value={compose.emailBody}
                           onChange={e => setCompose(p => p ? { ...p, emailBody: e.target.value } : null)} />
                       </div>
                       {compose.err && <div style={{ fontSize:12, color:'var(--danger)', marginBottom:10 }}>{compose.err}</div>}
@@ -688,7 +688,7 @@ export default function RemindersClient({
                           <span>Message</span>
                           <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0 }}>Edit if needed</span>
                         </div>
-                        <textarea className="modal-textarea" value={compose.waBody}
+                        <textarea id="rm-wa-body" name="wa_body" className="modal-textarea" value={compose.waBody}
                           onChange={e => setCompose(p => p ? { ...p, waBody: e.target.value } : null)} />
                       </div>
                       {compose.inv.client_phone && (

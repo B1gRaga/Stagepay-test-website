@@ -396,7 +396,7 @@ export default function InvoicesTable({ initialInvoices, totalCount }: { initial
         <div className="inv-table-wrap">
           <div className="inv-table-head">
             <div>
-              <input type="checkbox" style={{ cursor: 'pointer', accentColor: 'var(--g)' }}
+              <input id="it-select-all" name="select_all" type="checkbox" style={{ cursor: 'pointer', accentColor: 'var(--g)' }}
                 checked={selected.size === filtered.length && filtered.length > 0}
                 onChange={e => toggleAll(e.target.checked)} />
             </div>
@@ -430,7 +430,7 @@ export default function InvoicesTable({ initialInvoices, totalCount }: { initial
               return (
                 <div key={inv.id} className="inv-table-row" style={{ color: 'inherit', cursor: 'pointer' }} onClick={() => setDetailInv(inv)}>
                   <div onClick={e => e.stopPropagation()}>
-                    <input type="checkbox" style={{ cursor: 'pointer', accentColor: 'var(--g)' }}
+                    <input id={`it-row-${inv.id}`} name={`row_${inv.id}`} type="checkbox" style={{ cursor: 'pointer', accentColor: 'var(--g)' }}
                       checked={selected.has(inv.id)} onChange={e => toggleOne(inv.id, e.target.checked)} />
                   </div>
                   <div className="inv-td-num">{inv.invoice_number || '—'}</div>
