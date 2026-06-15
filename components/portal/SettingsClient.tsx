@@ -1194,6 +1194,8 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               <div className="settings-section-desc">They'll receive a link to join your team. Each member gets full Business plan access at no extra cost (max 5 total).</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <input
+                  id="invite-email"
+                  name="invite-email"
                   type="email"
                   placeholder="colleague@email.com"
                   value={inviteEmail}
