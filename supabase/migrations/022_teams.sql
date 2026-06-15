@@ -18,19 +18,11 @@ CREATE TABLE IF NOT EXISTS public.teams (
 
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 
+-- Owner-only policy (no reference to team_members, safe to create now)
 CREATE POLICY "teams_owner_all" ON public.teams
   FOR ALL TO authenticated
   USING (owner_id = auth.uid())
   WITH CHECK (owner_id = auth.uid());
-
-CREATE POLICY "teams_member_read" ON public.teams
-  FOR SELECT TO authenticated
-  USING (
-    id IN (
-      SELECT team_id FROM public.team_members
-      WHERE user_id = auth.uid() AND status = 'active'
-    )
-  );
 
 -- ── TEAM MEMBERS ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.team_members (
@@ -62,6 +54,16 @@ CREATE POLICY "team_members_self_read" ON public.team_members
 CREATE POLICY "team_members_token_lookup" ON public.team_members
   FOR SELECT TO anon, authenticated
   USING (status = 'pending' AND invite_token IS NOT NULL);
+
+-- Now safe to add — team_members table exists at this point
+CREATE POLICY "teams_member_read" ON public.teams
+  FOR SELECT TO authenticated
+  USING (
+    id IN (
+      SELECT team_id FROM public.team_members
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+  );
 
 -- ── ADD team_id TO PROFILES ───────────────────────────────────────────────────
 ALTER TABLE public.profiles
