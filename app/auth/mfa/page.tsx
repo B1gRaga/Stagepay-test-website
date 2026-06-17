@@ -10,7 +10,7 @@ const supabase = createBrowserClient(
 const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font-archivo),sans-serif;background:#060A12;color:#F8FAFC}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
   .mfa-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#060A12;position:relative;overflow:hidden}
   .mfa-page::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
   .mfa-orb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,transparent 65%);filter:blur(60px);width:500px;height:500px;top:-100px;left:-100px}
@@ -106,7 +106,7 @@ export default function MfaPage() {
               <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
               <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
               <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+              <rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
             Stage<em>Pay</em>
           </div>
@@ -134,7 +134,7 @@ export default function MfaPage() {
 
           <button className="mfa-btn" disabled={code.length !== 6 || loading} onClick={verify}>
             {loading
-              ? <><span style={{width:14,height:14,borderRadius:'50%',border:'2px solid rgba(0,0,0,.25)',borderTopColor:'#000',animation:'spin .6s linear infinite',display:'inline-block'}}/> Verifying…</>
+              ? <><span aria-hidden="true" style={{display:'inline-flex',alignItems:'flex-end',gap:'2px',height:'13px',verticalAlign:'middle',marginRight:2}}>{[0,150,300,150].map((d,i)=><span key={i} style={{width:'3px',height:'100%',borderRadius:'1px',background:'#000',opacity:[1,.82,.65,.48][i],animation:`barLoad .75s ${d}ms ease-in-out infinite`,transformOrigin:'bottom',display:'inline-block'}}/>)}</span> Verifying…</>
               : 'Verify code'}
           </button>
 

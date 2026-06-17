@@ -18,7 +18,7 @@ const FEATURES = [
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font-archivo),sans-serif;background:#F7F3EE}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
   @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(24px,-18px) scale(1.06)}70%{transform:translate(-12px,14px) scale(.96)}}
   @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-20px,22px) scale(1.04)}66%{transform:translate(16px,-10px) scale(.97)}}
   @keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
@@ -121,7 +121,7 @@ const LeftPanel = () => (
         <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
         <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
         <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-        <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+        <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
       </svg>
       Stage<em>Pay</em>
     </div>
@@ -324,7 +324,7 @@ export default function SignupPage() {
                 </div>
                 <button type="submit" disabled={loading || !businessType} className="auth-btn" style={{marginTop:'auto'}}>
                   {loading
-                    ? <><span style={{width:14,height:14,borderRadius:'50%',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',animation:'spin .6s linear infinite',display:'inline-block'}}/> Creating account…</>
+                    ? <><span aria-hidden="true" style={{display:'inline-flex',alignItems:'flex-end',gap:'2px',height:'13px',verticalAlign:'middle',marginRight:2}}>{[0,150,300,150].map((d,i)=><span key={i} style={{width:'3px',height:'100%',borderRadius:'1px',background:'#fff',opacity:[1,.82,.65,.48][i],animation:`barLoad .75s ${d}ms ease-in-out infinite`,transformOrigin:'bottom',display:'inline-block'}}/>)}</span> Creating account…</>
                     : <>Create free account <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></>}
                 </button>
               </form>

@@ -13,7 +13,7 @@ const BUSINESS_TYPES = [
 
 const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   .ob-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0F172A;}
   .ob-card{width:100%;max-width:480px;background:rgba(13,20,35,.98);border:1px solid rgba(16,185,129,.12);border-radius:18px;padding:40px 36px;animation:fadeUp .35s ease both;}
@@ -80,7 +80,7 @@ export default function OnboardingPage() {
               <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
               <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
               <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+              <rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
             Stage<em>Pay</em>
           </div>
@@ -105,7 +105,7 @@ export default function OnboardingPage() {
 
           <button className="ob-btn" disabled={!selected || loading} onClick={handleSave}>
             {loading
-              ? <><span style={{width:14,height:14,borderRadius:'50%',border:'2px solid rgba(0,0,0,.25)',borderTopColor:'#000',animation:'spin .6s linear infinite',display:'inline-block'}}/> Saving…</>
+              ? <><span aria-hidden="true" style={{display:'inline-flex',alignItems:'flex-end',gap:'2px',height:'13px',verticalAlign:'middle',marginRight:2}}>{[0,150,300,150].map((d,i)=><span key={i} style={{width:'3px',height:'100%',borderRadius:'1px',background:'#fff',opacity:[1,.82,.65,.48][i],animation:`barLoad .75s ${d}ms ease-in-out infinite`,transformOrigin:'bottom',display:'inline-block'}}/>)}</span> Saving…</>
               : <>Continue to dashboard <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></>
             }
           </button>

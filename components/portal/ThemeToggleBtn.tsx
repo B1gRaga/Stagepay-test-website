@@ -1,18 +1,20 @@
-﻿'use client'
+'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 const DURATION = 550
 const EASING   = 'cubic-bezier(0.76, 0, 0.24, 1)'
 
 export default function ThemeToggleBtn() {
-  // Always start dark (matches server render), then correct after hydration
-  const [isDark, setIsDark] = useState(true)
+  const [isDark,   setIsDark]   = useState(true)
+  const [mounted,  setMounted]  = useState(false)
+  const [phase,    setPhase]    = useState<'idle' | 'falling' | 'rising'>('idle')
+  const curtainColor = useRef('')
 
   useEffect(() => {
     setIsDark(document.documentElement.getAttribute('data-theme') !== 'light')
+    setMounted(true)
   }, [])
-  const [phase, setPhase] = useState<'idle' | 'falling' | 'rising'>('idle')
-  const curtainColor = useRef('')
 
   const toggle = useCallback(() => {
     if (phase !== 'idle') return
@@ -36,6 +38,45 @@ export default function ThemeToggleBtn() {
   const curtainClass =
     phase === 'falling' ? 'sp-curtain-fall' :
     phase === 'rising'  ? 'sp-curtain-rise' : ''
+
+  // Portal escapes backdrop-filter containing block on .mob-topbar
+  const curtainPortal = mounted ? createPortal(
+    <>
+      <div
+        aria-hidden="true"
+        className={curtainClass}
+        style={{
+          position:        'fixed',
+          inset:           0,
+          background:      curtainColor.current,
+          transformOrigin: 'top',
+          transform:       phase === 'idle' ? 'scaleY(0)' : undefined,
+          zIndex:          9997,
+          pointerEvents:   'none',
+        }}
+      />
+      {phase !== 'idle' && (
+        <div aria-hidden="true" style={{
+          position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 10,
+          opacity: phase === 'falling' ? 1 : 0,
+          transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
+        }}>
+          <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
+            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+          </svg>
+          <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontSize: 22, letterSpacing: 4, color: '#10B981' }}>
+            STAGEPAY
+          </div>
+        </div>
+      )}
+    </>,
+    document.body
+  ) : null
 
   return (
     <>
@@ -70,39 +111,7 @@ export default function ThemeToggleBtn() {
         }
       `}</style>
 
-      <div
-        aria-hidden="true"
-        className={curtainClass}
-        style={{
-          position:        'fixed',
-          inset:           0,
-          background:      curtainColor.current,
-          transformOrigin: 'top',
-          transform:       phase === 'idle' ? 'scaleY(0)' : undefined,
-          zIndex:          9997,
-          pointerEvents:   'none',
-        }}
-      />
-
-      {phase !== 'idle' && (
-        <div aria-hidden="true" style={{
-          position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 10,
-          opacity: phase === 'falling' ? 1 : 0,
-          transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
-        }}>
-          <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
-            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
-          </svg>
-          <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontSize: 22, letterSpacing: 4, color: '#10B981' }}>
-            STAGEPAY
-          </div>
-        </div>
-      )}
+      {curtainPortal}
 
       <button
         onClick={toggle}

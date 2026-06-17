@@ -1012,7 +1012,7 @@ export default function NewInvoiceClient({
                         <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
                         <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
                         <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-                        <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+                        <rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/>
                       </svg>
                       <div className="prev-brand">{firmName.toUpperCase()}</div>
                     </div>
@@ -1096,7 +1096,7 @@ export default function NewInvoiceClient({
 
                   <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--t3)' }}>StagePay</span>
                     </div>
                     {dueDate && <span style={{ fontSize: 9, color: 'var(--t3)' }}>Due {fmtDate(dueDate)}</span>}

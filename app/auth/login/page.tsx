@@ -18,7 +18,7 @@ const FEATURES = [
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font-archivo),sans-serif;background:#F7F3EE}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
   @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(24px,-18px) scale(1.06)}70%{transform:translate(-12px,14px) scale(.96)}}
   @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-20px,22px) scale(1.04)}66%{transform:translate(16px,-10px) scale(.97)}}
   @keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
@@ -125,6 +125,11 @@ const CSS = `
   @media(max-width:768px){.auth-right{padding:28px 24px;}}
   @media(max-width:480px){.auth-right{padding:24px 20px;}}
 
+  .auth-mobile-logo{display:none;}
+  @media(max-width:768px){
+    .auth-mobile-logo{display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--font-bebas),sans-serif;font-size:22px;letter-spacing:3px;color:#0F172A;padding-bottom:16px;margin-bottom:4px;border-bottom:1px solid rgba(15,23,42,.07);}
+    .auth-mobile-logo em{color:#10B981;font-style:normal;}
+  }
   .auth-tabs{display:flex;gap:4px;margin-bottom:20px;background:rgba(15,23,42,.05);border:1px solid rgba(15,23,42,.07);border-radius:10px;padding:4px;}
   .auth-tab{
     flex:1;padding:9px;text-align:center;font-size:12px;font-weight:700;
@@ -226,7 +231,7 @@ export default function LoginPage() {
                 <rect x="1"  y="17" width="6" height="15" rx="2" fill="#10B981"/>
                 <rect x="9"  y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
                 <rect x="17" y="6"  width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-                <rect x="27" y="0"  width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
+                <rect x="25" y="0"  width="6" height="32" rx="2" fill="#10B981" opacity=".48"/>
               </svg>
               Stage<em>Pay</em>
             </div>
@@ -258,6 +263,15 @@ export default function LoginPage() {
 
           {/* Right form panel */}
           <div className="auth-right">
+            <div className="auth-mobile-logo">
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+                <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
+                <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+                <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+              </svg>
+              Stage<em>Pay</em>
+            </div>
             <div className="auth-tabs">
               <span className="auth-tab active">Log in</span>
               <Link href="/auth/signup" className="auth-tab">Create account</Link>
@@ -296,7 +310,7 @@ export default function LoginPage() {
               </div>
               <button type="submit" disabled={loading} className="auth-btn">
                 {loading
-                  ? <><span style={{width:14,height:14,borderRadius:'50%',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',animation:'spin .6s linear infinite',display:'inline-block'}}/> Signing in…</>
+                  ? <><span aria-hidden="true" style={{display:'inline-flex',alignItems:'flex-end',gap:'2px',height:'13px',verticalAlign:'middle',marginRight:2}}>{[0,150,300,150].map((d,i)=><span key={i} style={{width:'3px',height:'100%',borderRadius:'1px',background:'#fff',opacity:[1,.82,.65,.48][i],animation:`barLoad .75s ${d}ms ease-in-out infinite`,transformOrigin:'bottom',display:'inline-block'}}/>)}</span> Signing in…</>
                   : <>Sign in <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></>}
               </button>
             </form>
