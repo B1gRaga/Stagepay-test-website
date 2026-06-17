@@ -274,10 +274,10 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
       <div className="mob-topbar">
         <Link href="/dashboard" className="mob-topbar-logo">
           <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
             <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-            <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-            <rect x="26" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
           </svg>
           <span>STAGE<em>PAY</em></span>
         </Link>
@@ -320,10 +320,10 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
         <div className="sidebar-logo">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="28" height="28" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+              <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
               <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-              <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="26" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+              <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+              <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
             <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 26, letterSpacing: 3 }}>
               Stage<em>Pay</em>

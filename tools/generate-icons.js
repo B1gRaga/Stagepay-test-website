@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Generates PWA icons from the Stagepay bars SVG.
  *
  * "any"      → transparent background, logo centred at 65% canvas size
@@ -23,10 +23,10 @@ function barsSvg(size, withBackground) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
     ${withBackground ? `<rect width="${size}" height="${size}" fill="${DARK}"/>` : ''}
     <g transform="translate(${offset},${offset}) scale(${scale})">
-      <rect x="0"  y="17" width="6"  height="15" rx="2" fill="${GREEN}"/>
+      <rect x="1"  y="17" width="6"  height="15" rx="2" fill="${GREEN}"/>
       <rect x="9"  y="12" width="6"  height="20" rx="2" fill="${GREEN}" opacity=".82"/>
-      <rect x="18" y="6"  width="6"  height="26" rx="2" fill="${GREEN}" opacity=".65"/>
-      <rect x="26" y="0"  width="6"  height="32" rx="2" fill="${GREEN}" opacity=".48"/>
+      <rect x="17" y="6"  width="6"  height="26" rx="2" fill="${GREEN}" opacity=".65"/>
+      <rect x="25" y="0"  width="6"  height="32" rx="2" fill="${GREEN}" opacity=".48"/>
     </g>
   </svg>`
 }

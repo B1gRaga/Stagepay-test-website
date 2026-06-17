@@ -1,4 +1,4 @@
-import { SignupInput } from '@/components/landing/SignupInput'
+﻿import { SignupInput } from '@/components/landing/SignupInput'
 import { RevealObserver } from '@/components/landing/RevealObserver'
 
 const ck = <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
@@ -8,9 +8,9 @@ const stagepayLogo = (
   <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
     <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
       <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-        <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+        <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
         <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
-        <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+        <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
         <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
       </svg>
       <span style={{ fontFamily: 'var(--font-bebas), sans-serif', fontSize: '22px', letterSpacing: '3px', color: 'inherit' }}>
@@ -87,7 +87,7 @@ export default function Home() {
                 <div className="mock-head">
                   <div>
                     <div className="mock-brand">
-                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
                       Yugen Studios
                     </div>
                     <div className="mock-meta">Maun, Botswana · Professional Services</div>
@@ -377,9 +377,9 @@ export default function Home() {
         <div className="foot-inner">
           <a href="#" className="foot-logo">
             <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-              <rect x="0" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+              <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
               <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
-              <rect x="18" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+              <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
               <rect x="27" y="0" width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
             <span className="foot-wordmark">Stage<em>Pay</em></span>

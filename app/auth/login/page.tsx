@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
@@ -223,9 +223,9 @@ export default function LoginPage() {
 
             <div className="auth-logo">
               <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                <rect x="0"  y="17" width="6" height="15" rx="2" fill="#10B981"/>
+                <rect x="1"  y="17" width="6" height="15" rx="2" fill="#10B981"/>
                 <rect x="9"  y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
-                <rect x="18" y="6"  width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+                <rect x="17" y="6"  width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
                 <rect x="27" y="0"  width="5" height="32" rx="2" fill="#10B981" opacity=".48"/>
               </svg>
               Stage<em>Pay</em>

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 const DURATION = 550
@@ -93,10 +93,10 @@ export default function ThemeToggleBtn() {
           transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
         }}>
           <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-            <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
+            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
             <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-            <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-            <rect x="26" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
+            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
           </svg>
           <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontSize: 22, letterSpacing: 4, color: '#10B981' }}>
             STAGEPAY
