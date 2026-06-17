@@ -161,10 +161,16 @@ const CSS = `
     .desk-nav{display:none;}
     .sidebar-footer{display:none;}
 
-    /* Tab bar */
+    /* Tab bar — reset every property that globals.css nav{} sets */
     .mob-tabbar{
       display:flex;flex-direction:row;
       align-items:stretch;height:56px;
+      background:transparent;
+      position:static;
+      padding:0;
+      border:none;
+      backdrop-filter:none;
+      -webkit-backdrop-filter:none;
     }
 
     /* Regular tab */
@@ -271,7 +277,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
             <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
             <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
             <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-            <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+            <rect x="26" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
           </svg>
           <span>STAGE<em>PAY</em></span>
         </Link>
@@ -317,7 +323,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
               <rect x="0"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
               <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
               <rect x="18" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="27" y="0"  width="5"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+              <rect x="26" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
             <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 26, letterSpacing: 3 }}>
               Stage<em>Pay</em>

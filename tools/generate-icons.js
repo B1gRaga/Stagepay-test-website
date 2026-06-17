@@ -14,8 +14,9 @@ const GREEN    = '#10B981'
 const DARK     = '#0F172A'
 
 function barsSvg(size, withBackground) {
-  // Bars source: 32×32 viewBox. Scale to 65% of canvas, centred.
-  const logoSize = size * 0.65
+  // Bars occupy a 32×32 viewBox but bar 4 ends at x=32 (x=26+6).
+  // Content is 32 wide × 32 tall. Scale to 50% of canvas, centred.
+  const logoSize = size * 0.50
   const scale    = logoSize / 32
   const offset   = (size - logoSize) / 2
 
@@ -25,7 +26,7 @@ function barsSvg(size, withBackground) {
       <rect x="0"  y="17" width="6"  height="15" rx="2" fill="${GREEN}"/>
       <rect x="9"  y="12" width="6"  height="20" rx="2" fill="${GREEN}" opacity=".82"/>
       <rect x="18" y="6"  width="6"  height="26" rx="2" fill="${GREEN}" opacity=".65"/>
-      <rect x="27" y="0"  width="5"  height="32" rx="2" fill="${GREEN}" opacity=".48"/>
+      <rect x="26" y="0"  width="6"  height="32" rx="2" fill="${GREEN}" opacity=".48"/>
     </g>
   </svg>`
 }
