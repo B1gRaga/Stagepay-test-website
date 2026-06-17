@@ -117,11 +117,11 @@ const CSS = `
     html[data-theme="light"] .mob-topbar-logo{color:var(--t1);}
     html[data-theme="light"] .mob-tab{color:#3d3830;}
     html[data-theme="light"] .mob-tab.active{color:var(--g);}
-    html[data-theme="light"] .mob-tab svg{stroke:#3d3830;}
-    html[data-theme="light"] .mob-tab.active svg{stroke:var(--g);}
+    html[data-theme="light"] .mob-tab svg{stroke:#3d3830 !important;}
+    html[data-theme="light"] .mob-tab.active svg{stroke:#10B981 !important;}
     html[data-theme="light"] .mob-tab.active::before{background:var(--g);}
-    html[data-theme="light"] .mob-tab span{color:#3d3830;}
-    html[data-theme="light"] .mob-tab.active span{color:var(--g);font-weight:600;}
+    html[data-theme="light"] .mob-tab span{color:#3d3830 !important;}
+    html[data-theme="light"] .mob-tab.active span{color:#10B981 !important;font-weight:700;}
     .mob-topbar-logo{
       display:flex;align-items:center;gap:8px;text-decoration:none;
       font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2px;color:var(--t1);
@@ -180,7 +180,7 @@ const CSS = `
       -webkit-tap-highlight-color:transparent;
     }
     .mob-tab.active{color:var(--g);}
-    .mob-tab.active span{color:var(--g);font-weight:600;}
+    .mob-tab.active span{color:#10B981 !important;font-weight:700;}
     .mob-tab.active::before{
       content:'';position:absolute;
       top:0;left:50%;transform:translateX(-50%);
@@ -188,7 +188,7 @@ const CSS = `
       background:var(--g);border-radius:0 0 3px 3px;
     }
     .mob-tab svg{width:20px;height:20px;transition:stroke .15s;}
-    .mob-tab.active svg{stroke:var(--g);}
+    .mob-tab.active svg{stroke:#10B981 !important;}
 
     /* Overdue badge on invoices tab */
     .mob-overdue{
