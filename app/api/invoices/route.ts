@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ invoices: data, total: count, page, page_size: PAGE_SIZE }, {
-    headers: { 'Cache-Control': 'private, max-age=60' },
+    headers: { 'Cache-Control': 'private, max-age=10' },
   })
 }
 

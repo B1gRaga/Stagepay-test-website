@@ -27,7 +27,7 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
   return NextResponse.json({ profile: data }, {
-    headers: { 'Cache-Control': 'private, max-age=60' },
+    headers: { 'Cache-Control': 'private, max-age=10' },
   })
 }
 

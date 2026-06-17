@@ -15,22 +15,28 @@ export default async function ClientsPage() {
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .order('name'),
-    // Only fetch invoices that are linked to a client — drops the 1000-row
-    // full-table scan and eliminates the O(n) name-matching fallback loop.
     supabase
       .from('invoices')
-      .select('client_id, total, currency')
+      .select('client_id, client_name, total, currency')
       .eq('user_id', user.id)
-      .not('client_id', 'is', null),
+      .limit(1000),
   ])
+
+  // Build a lookup from lowercase name → client id for invoices that were
+  // created without being linked to a client record (client_id is null).
+  const nameToId: Record<string, string> = {}
+  for (const c of (clients || [])) {
+    nameToId[c.name.toLowerCase()] = c.id
+  }
 
   const statsMap: Record<string, ClientStats> = {}
   for (const inv of (invSummaries || [])) {
-    if (!inv.client_id) continue
-    const s = statsMap[inv.client_id] ?? { count: 0, total: 0, currency: inv.currency || 'P' }
+    const clientId = inv.client_id ?? nameToId[(inv.client_name || '').toLowerCase()]
+    if (!clientId) continue
+    const s = statsMap[clientId] ?? { count: 0, total: 0, currency: inv.currency || 'P' }
     s.count++
     s.total += Number(inv.total || 0)
-    statsMap[inv.client_id] = s
+    statsMap[clientId] = s
   }
 
   return <ClientsGrid clients={clients ?? []} statsMap={statsMap} />
