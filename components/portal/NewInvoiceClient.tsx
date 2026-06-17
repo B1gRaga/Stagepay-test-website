@@ -289,6 +289,18 @@ const CSS = `
   @media(max-width:600px){
     .gen-wrap{padding:12px 16px;}
     .form-grid{grid-template-columns:1fr;}
+    .form-input,.form-select,.form-textarea{font-size:12px !important;}
+    .form-input::placeholder,.form-textarea::placeholder{font-size:12px !important;}
+    .ai-big-textarea{font-size:12px;}
+    .ai-big-textarea::placeholder{font-size:12px;}
+    .line-items-header{display:none;}
+    .line-item-row{
+      grid-template-columns:1fr 1fr auto 28px;
+      grid-template-rows:auto auto;
+      gap:6px 8px;
+      padding:10px 0;
+    }
+    .line-item-row>*:nth-child(1){grid-column:1/-1;}
   }
 `
 
@@ -849,8 +861,8 @@ export default function NewInvoiceClient({
                   {items.map((item, i) => (
                     <div key={i} className="line-item-row">
                       <input id={`ni-desc-${i}`} name={`item_desc_${i}`} className="form-input" value={item.desc} onChange={e => updateItem(i, 'desc', e.target.value)} placeholder="Service description" style={{ padding: '7px 10px' }}/>
-                      <input id={`ni-qty-${i}`} name={`item_qty_${i}`} className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px' }}/>
-                      <input id={`ni-rate-${i}`} name={`item_rate_${i}`} className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} style={{ padding: '7px 10px' }}/>
+                      <input id={`ni-qty-${i}`} name={`item_qty_${i}`} className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} placeholder="Qty" style={{ padding: '7px 10px' }}/>
+                      <input id={`ni-rate-${i}`} name={`item_rate_${i}`} className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} placeholder="Rate" style={{ padding: '7px 10px' }}/>
                       <div className="li-amt">{fmtAmt((item.qty || 0) * (item.rate || 0), currency)}</div>
                       <button className="li-del" onClick={() => removeItem(i)}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v6M10 7v6M3 4l1 10h8l1-10"/></svg>
