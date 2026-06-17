@@ -9,34 +9,28 @@ export default async function ClientsPage() {
 
   const supabase = await createClient()
   const [{ data: clients }, { data: invSummaries }] = await Promise.all([
-    (supabase )
+    supabase
       .from('clients')
       .select('id, name, email, phone, address, vat_number, notes, created_at')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .order('name'),
-    (supabase )
+    // Only fetch invoices that are linked to a client — drops the 1000-row
+    // full-table scan and eliminates the O(n) name-matching fallback loop.
+    supabase
       .from('invoices')
-      .select('client_id, client_name, total, currency')
+      .select('client_id, total, currency')
       .eq('user_id', user.id)
-      .limit(1000),
+      .not('client_id', 'is', null),
   ])
-
-  // Build a lookup from lowercase name → client id for fallback matching
-  const nameToId: Record<string, string> = {}
-  for (const c of (clients || [])) {
-    nameToId[c.name.toLowerCase()] = c.id
-  }
 
   const statsMap: Record<string, ClientStats> = {}
   for (const inv of (invSummaries || [])) {
-    // Match by client_id if set, otherwise fall back to client_name match
-    const clientId = inv.client_id ?? nameToId[(inv.client_name || '').toLowerCase()]
-    if (!clientId) continue
-    const s = statsMap[clientId] ?? { count: 0, total: 0, currency: inv.currency || 'P' }
+    if (!inv.client_id) continue
+    const s = statsMap[inv.client_id] ?? { count: 0, total: 0, currency: inv.currency || 'P' }
     s.count++
     s.total += Number(inv.total || 0)
-    statsMap[clientId] = s
+    statsMap[inv.client_id] = s
   }
 
   return <ClientsGrid clients={clients ?? []} statsMap={statsMap} />

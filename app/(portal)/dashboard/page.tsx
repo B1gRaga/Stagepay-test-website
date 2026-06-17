@@ -1,5 +1,5 @@
 ﻿import { redirect } from 'next/navigation'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient, getCachedUser, getCachedProfile } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 const AVATAR_COLOR = '#10B981'
@@ -127,45 +127,42 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
 
   const supabase = await createClient()
-  const supabaseAny = supabase 
   const now = new Date()
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const hour = now.getHours()
 
+  // getCachedProfile is already called by layout.tsx — React cache() returns the
+  // memoized result here at zero DB cost. Profile query removed from Promise.all.
   const [
     { data: recent },
     { count: unpaidCount },
     { count: overdueCount },
     { count: paidMonthCount },
-    { data: profile },
+    profile,
   ] = await Promise.all([
-    supabaseAny
+    supabase
       .from('invoices')
       .select('id, invoice_number, client_name, project, total, status, issue_date, currency')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5),
-    supabaseAny
+    supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .in('status', ['pending', 'sent']),
-    supabaseAny
+    supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('status', 'overdue'),
-    supabaseAny
+    supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('status', 'paid')
       .gte('issue_date', thisMonthStart),
-    supabaseAny
-      .from('profiles')
-      .select('name, firm_name, default_currency')
-      .eq('id', user.id)
-      .single(),
+    getCachedProfile(user.id),
   ])
 
   const sym = profile?.default_currency || 'P'

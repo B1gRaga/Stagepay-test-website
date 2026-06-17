@@ -297,10 +297,12 @@ export default function NewInvoiceClient({
   initialProfile,
   initialClients,
   editId,
+  initialInvoice = null,
 }: {
   initialProfile: Profile | null
   initialClients: Client[]
   editId: string | null
+  initialInvoice?: Record<string, any> | null
 }) {
   const router = useRouter()
 
@@ -359,33 +361,26 @@ export default function NewInvoiceClient({
     }
   }, [])
 
-  // Only fetch when editing an existing invoice
+  // Populate form from server-pre-fetched invoice (edit mode)
   useEffect(() => {
-    if (!editId) return
-    fetch(`/api/invoices/${editId}`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(editData => {
-      const p = initialProfile
-      if (editId && editData?.invoice) {
-        const inv = editData.invoice
-        setClientName(inv.client_name || '')
-        setClientEmail(inv.client_email || '')
-        setClientPhone(inv.client_phone || '')
-        setProject(inv.project || '')
-        setCurrency(inv.currency || p?.default_currency || 'P')
-        setIssueDate(inv.issue_date || today())
-        setDueDate(inv.due_date || addDays(today(), 30))
-        setVatRate(inv.vat_rate ?? 14)
-        setNotes(inv.notes || '')
-        if (inv.deposit_amount > 0) setDepositOn(true)
-        if (inv.invoice_items?.length) {
-          setItems(inv.invoice_items
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
-            .map((it: any) => ({ desc: it.description, qty: it.quantity, rate: it.unit_price })))
-        }
-      }
-    })
-  }, [editId])
+    if (!editId || !initialInvoice) return
+    const inv = initialInvoice
+    setClientName(inv.client_name || '')
+    setClientEmail(inv.client_email || '')
+    setClientPhone(inv.client_phone || '')
+    setProject(inv.project || '')
+    setCurrency(inv.currency || initialProfile?.default_currency || 'P')
+    setIssueDate(inv.issue_date || today())
+    setDueDate(inv.due_date || addDays(today(), 30))
+    setVatRate(inv.vat_rate ?? 14)
+    setNotes(inv.notes || '')
+    if (inv.deposit_amount > 0) setDepositOn(true)
+    if (inv.invoice_items?.length) {
+      setItems(inv.invoice_items
+        .sort((a: any, b: any) => a.sort_order - b.sort_order)
+        .map((it: any) => ({ desc: it.description, qty: it.quantity, rate: it.unit_price })))
+    }
+  }, [])
 
   // ── Computed totals ──
   const subtotal       = useMemo(() => items.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0), [items])
@@ -418,17 +413,17 @@ export default function NewInvoiceClient({
     if (!advOpen) setAdvOpen(true)
   }
 
-  function updateItem(i: number, field: keyof LineItem, val: string | number) {
+  const updateItem = useCallback((i: number, field: keyof LineItem, val: string | number) => {
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it))
-  }
+  }, [])
 
-  function addItem() {
+  const addItem = useCallback(() => {
     setItems(prev => [...prev, { desc: '', qty: 1, rate: 0 }])
-  }
+  }, [])
 
-  function removeItem(i: number) {
+  const removeItem = useCallback((i: number) => {
     setItems(prev => prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i))
-  }
+  }, [])
 
   // ── AI generation ──
   async function generateInvoice() {

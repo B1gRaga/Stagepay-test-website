@@ -323,6 +323,20 @@ export default function InvoicesTable({ initialInvoices, totalCount }: { initial
 
   function openForwardPaid(inv: Invoice) {
     setFwdModal({ inv, channel: 'email', email: inv.client_email || '', phone: inv.client_phone || '', sending: false, sent: false, err: '' })
+    // If contact fields weren't in the initial load, fetch them on demand
+    if (inv.client_email === undefined || inv.client_phone === undefined) {
+      fetch(`/api/invoices/${inv.id}`, { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d?.invoice) return
+          setFwdModal(prev => prev ? {
+            ...prev,
+            email: prev.email || d.invoice.client_email || '',
+            phone: prev.phone || d.invoice.client_phone || '',
+          } : null)
+        })
+        .catch(() => {})
+    }
   }
 
   async function sendForwardPaid() {

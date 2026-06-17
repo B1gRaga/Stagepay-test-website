@@ -13,13 +13,15 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('clients')
-    .select('*')
+    .select('id, name, email, phone, address, vat_number, notes, created_at')
     .eq('user_id', user.id)
     .is('deleted_at', null)
     .order('name')
 
   if (error) return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 })
-  return NextResponse.json({ clients: data })
+  return NextResponse.json({ clients: data }, {
+    headers: { 'Cache-Control': 'private, max-age=60' },
+  })
 }
 
 // POST /api/clients

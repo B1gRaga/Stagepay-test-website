@@ -14,18 +14,26 @@ export default async function NewInvoicePage({
 
   const { edit: editId } = await searchParams
 
-  const [{ data: profile }, { data: clients }] = await Promise.all([
-    (supabase )
+  const [{ data: profile }, { data: clients }, { data: initialInvoice }] = await Promise.all([
+    supabase
       .from('profiles')
       .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label')
       .eq('id', user.id)
       .single(),
-    (supabase )
+    supabase
       .from('clients')
       .select('id, name, email, phone')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .order('name'),
+    editId
+      ? supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('id', editId)
+          .eq('user_id', user.id)
+          .single()
+      : Promise.resolve({ data: null, error: null }),
   ])
 
   return (
@@ -33,6 +41,7 @@ export default async function NewInvoicePage({
       initialProfile={profile ?? null}
       initialClients={clients ?? []}
       editId={editId ?? null}
+      initialInvoice={initialInvoice ?? null}
     />
   )
 }
