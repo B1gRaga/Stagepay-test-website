@@ -415,21 +415,23 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
 
           {/* Dashboard */}
           <Link href="/dashboard" className={`mob-tab${is('/dashboard') ? ' active' : ''}`}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+              style={is('/dashboard') ? { stroke: '#10B981' } : undefined}>
               <rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/>
               <rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/>
             </svg>
-            <span>Home</span>
+            <span style={is('/dashboard') ? { color: '#10B981', fontWeight: 700 } : undefined}>Home</span>
           </Link>
 
           {/* Invoices (with overdue badge) */}
           <Link href="/invoices" className={`mob-tab${is('/invoices') ? ' active' : ''}`}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+              style={is('/invoices') ? { stroke: '#10B981' } : undefined}>
               <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
               <path d="M5 6h6M5 9h4"/>
             </svg>
             {overdueCt > 0 && <span className="mob-overdue">{overdueCt}</span>}
-            <span>Invoices</span>
+            <span style={is('/invoices') ? { color: '#10B981', fontWeight: 700 } : undefined}>Invoices</span>
           </Link>
 
           {/* FAB — New Invoice */}
@@ -443,20 +445,22 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
 
           {/* Clients */}
           <Link href="/clients" className={`mob-tab${is('/clients') ? ' active' : ''}`}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+              style={is('/clients') ? { stroke: '#10B981' } : undefined}>
               <circle cx="8" cy="5" r="3"/>
               <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5"/>
             </svg>
-            <span>Clients</span>
+            <span style={is('/clients') ? { color: '#10B981', fontWeight: 700 } : undefined}>Clients</span>
           </Link>
 
           {/* Settings */}
           <Link href="/settings" className={`mob-tab${is('/settings') ? ' active' : ''}`}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+              style={is('/settings') ? { stroke: '#10B981' } : undefined}>
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
-            <span>Settings</span>
+            <span style={is('/settings') ? { color: '#10B981', fontWeight: 700 } : undefined}>Settings</span>
           </Link>
 
         </nav>
