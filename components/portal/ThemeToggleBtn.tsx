@@ -1,14 +1,16 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 const DURATION = 550
 const EASING   = 'cubic-bezier(0.76, 0, 0.24, 1)'
 
 export default function ThemeToggleBtn() {
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof document === 'undefined') return true
-    return document.documentElement.getAttribute('data-theme') !== 'light'
-  })
+  // Always start dark (matches server render), then correct after hydration
+  const [isDark, setIsDark] = useState(true)
+
+  useEffect(() => {
+    setIsDark(document.documentElement.getAttribute('data-theme') !== 'light')
+  }, [])
   const [phase, setPhase] = useState<'idle' | 'falling' | 'rising'>('idle')
   const curtainColor = useRef('')
 

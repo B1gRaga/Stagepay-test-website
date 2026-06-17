@@ -31,7 +31,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
       if (el.scrollTop > 2) { active.current = false; setRatio(0); return }
       const dy = e.touches[0].clientY - startY.current
       if (dy <= 0) { pullPx.current = 0; setRatio(0); return }
-      e.preventDefault()
+      if (e.cancelable) e.preventDefault()
       pullPx.current = Math.min(dy / RESIST, MAX)
       setRatio(pullPx.current / THRESHOLD)
     }
