@@ -22,7 +22,6 @@ export interface Database {
           city: string | null
           country: string
           vat_number: string | null
-          currency: string
           logo_url: string | null
           plan: Plan
           invoice_theme: string | null
@@ -53,7 +52,6 @@ export interface Database {
           city?: string | null
           country?: string
           vat_number?: string | null
-          currency?: string
           logo_url?: string | null
           plan?: Plan
           invoice_theme?: string | null
@@ -81,7 +79,6 @@ export interface Database {
           city?: string | null
           country?: string
           vat_number?: string | null
-          currency?: string
           logo_url?: string | null
           plan?: Plan
           invoice_theme?: string | null
@@ -177,8 +174,6 @@ export interface Database {
           next_recurring_date: string | null
           total: number
           currency: string
-          whatsapp_sent_at: string | null
-          whatsapp_to: string | null
           email_sent_at: string | null
           email_to: string | null
           public_token: string | null
@@ -209,8 +204,6 @@ export interface Database {
           due_date?: string | null
           recurrence_interval?: RecurrenceInterval | null
           next_recurring_date?: string | null
-          whatsapp_sent_at?: string | null
-          whatsapp_to?: string | null
           email_sent_at?: string | null
           email_to?: string | null
         }
@@ -236,8 +229,6 @@ export interface Database {
           next_recurring_date?: string | null
           total?: number
           currency?: string
-          whatsapp_sent_at?: string | null
-          whatsapp_to?: string | null
           email_sent_at?: string | null
           email_to?: string | null
         }
