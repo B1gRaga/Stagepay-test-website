@@ -31,8 +31,8 @@ export interface Database {
           whatsapp_reminders_enabled: boolean
           subscription_expires_at: string | null
           dpo_transaction_ref: string | null
+          dpo_token_created_at: string | null
           two_fa_enabled: boolean
-          totp_secret: string | null
           deleted_at: string | null
           default_currency: string
           tax_label: string
@@ -62,8 +62,8 @@ export interface Database {
           whatsapp_reminders_enabled?: boolean
           subscription_expires_at?: string | null
           dpo_transaction_ref?: string | null
+          dpo_token_created_at?: string | null
           two_fa_enabled?: boolean
-          totp_secret?: string | null
           deleted_at?: string | null
           default_currency?: string
           tax_label?: string
@@ -90,8 +90,8 @@ export interface Database {
           whatsapp_reminders_enabled?: boolean
           subscription_expires_at?: string | null
           dpo_transaction_ref?: string | null
+          dpo_token_created_at?: string | null
           two_fa_enabled?: boolean
-          totp_secret?: string | null
           deleted_at?: string | null
           default_currency?: string
           tax_label?: string

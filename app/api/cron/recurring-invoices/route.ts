@@ -14,34 +14,39 @@ export async function GET(req: NextRequest) {
 
   try {
   const start = Date.now()
+  const DEADLINE_MS = 50_000 // leave a buffer under maxDuration=60
+  const BATCH_SIZE  = 100
   await cronitorPing('recurring-invoices', 'run')
   const supabase = createServiceClient()
-  const today    = new Date().toISOString().split('T')[0]
-
-  // Find all recurring invoice templates that are due for generation
-  const { data: templates, error } = await supabase
-    .from('invoices')
-    .select('*, invoice_items(description, quantity, unit_price, sort_order)')
-    .eq('is_recurring', true)
-    .lte('next_recurring_date', today)
-    .limit(100)
-
-  if (error) {
-    logError('cron.recurring.fetch_failed', error)
-    await cronitorPing('recurring-invoices', 'fail')
-    return NextResponse.json({ error: 'DB error' }, { status: 500 })
-  }
-
-  if (!templates?.length) {
-    log('cron.recurring.none_due')
-    await cronitorPing('recurring-invoices', 'complete')
-    return NextResponse.json({ generated: 0, message: 'No recurring invoices due' })
-  }
 
   let generated = 0
   let failed    = 0
 
-  for (const tmpl of templates) {
+  // Loop until the queue is drained or we run out of time budget — a single
+  // capped batch would silently strand any templates beyond BATCH_SIZE.
+  while (Date.now() - start < DEADLINE_MS) {
+    const today = new Date().toISOString().split('T')[0]
+
+    // Find recurring invoice templates that are due for generation
+    const { data: templates, error } = await supabase
+      .from('invoices')
+      .select('*, invoice_items(description, quantity, unit_price, sort_order)')
+      .eq('is_recurring', true)
+      .lte('next_recurring_date', today)
+      .limit(BATCH_SIZE)
+
+    if (error) {
+      logError('cron.recurring.fetch_failed', error)
+      await cronitorPing('recurring-invoices', 'fail')
+      return NextResponse.json({ error: 'DB error' }, { status: 500 })
+    }
+
+    if (!templates?.length) {
+      if (generated === 0 && failed === 0) log('cron.recurring.none_due')
+      break
+    }
+
+    for (const tmpl of templates) {
     try {
       // Generate invoice number via service-role RPC
       const { data: invoiceNumber, error: numErr } = await supabase
@@ -122,6 +127,9 @@ export async function GET(req: NextRequest) {
       logError('cron.recurring.template_failed', err, { templateId: tmpl.id })
       failed++
     }
+    }
+
+    if (templates.length < BATCH_SIZE) break // queue drained
   }
 
   log('cron.recurring.complete', { generated, failed, durationMs: Date.now() - start })

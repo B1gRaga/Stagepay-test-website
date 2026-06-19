@@ -3,6 +3,7 @@ import { getAuthContext } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { generateInvoicePDF } from '@/lib/invoice-pdf'
+import { withRetry } from '@/lib/retry'
 
 export const runtime = 'nodejs'
 
@@ -115,13 +116,13 @@ export async function POST(req: NextRequest) {
     const pdfBuffer = await generateInvoicePDF(invoice, invoice.invoice_items || [], profile || {}, { showPaidStamp: paid_stamp })
 
     const resend = new Resend(apiKey)
-    await resend.emails.send({
+    await withRetry(() => resend.emails.send({
       from:    `${senderName} via StagePay <${fromAddress}>`,
       to:      [to_email],
       subject,
       html,
       attachments: [{ filename: `${invoiceNum}.pdf`, content: pdfBuffer }],
-    })
+    }))
 
     const { error: statusErr } = await supabase
       .from('invoices')

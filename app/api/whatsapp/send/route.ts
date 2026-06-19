@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext, createServiceClient } from '@/lib/supabase/server'
 import twilio from 'twilio'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
+import { withRetry, NonRetryableError } from '@/lib/retry'
 
 export const runtime = 'nodejs'
 
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  let invoice_id: string, to_phone: string, pdf_base64: string | undefined, filename: string | undefined
+  let invoice_id: string, to_phone: string, pdf_base64: string | undefined
   let invoice_number: string | undefined, client_name: string | undefined
   let total_amount: number | undefined, currency: string | undefined, due_date: string | undefined
   let custom_body: string | undefined
@@ -24,7 +25,6 @@ export async function POST(req: NextRequest) {
     invoice_id     = body.invoice_id
     to_phone       = body.to_phone
     pdf_base64     = body.pdf_base64
-    filename       = body.filename
     invoice_number = body.invoice_number
     client_name    = body.client_name
     total_amount   = body.total_amount
@@ -79,10 +79,10 @@ export async function POST(req: NextRequest) {
       if (pdfBuffer.length > MAX_PDF_BYTES) {
         return NextResponse.json({ error: 'PDF exceeds 10 MB limit' }, { status: 400 })
       }
-      // Strip any path separators from the filename to prevent path traversal
-      const rawName = filename || `${invoice_id}_${Date.now()}.pdf`
-      const safeName = rawName.replace(/[/\\]/g, '_')
-      const storagePath = `${user.id}/${safeName}`
+      // Storage key is always server-generated — never derived from the
+      // client-supplied filename, so there's no attacker-controlled input
+      // anywhere near the storage path.
+      const storagePath = `${user.id}/${invoice_id}_${Date.now()}.pdf`
 
       const { error: uploadErr } = await serviceClient.storage
         .from('invoice-pdfs')
@@ -147,7 +147,14 @@ export async function POST(req: NextRequest) {
       if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
     }
 
-    await client.messages.create(msgParams)
+    // Only retry transient failures (network errors, 5xx, rate limits) —
+    // a 4xx (e.g. invalid number) will never succeed on retry.
+    await withRetry(() => client.messages.create(msgParams).catch((err: any) => {
+      if (err?.status >= 400 && err.status < 500 && err.status !== 429) {
+        throw new NonRetryableError(err.message)
+      }
+      throw err
+    }))
 
     // Record the send on the invoice
     const { error: statusErr } = await supabase

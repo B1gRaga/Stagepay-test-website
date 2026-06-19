@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
     const serviceClient = createServiceClient()
     await serviceClient
       .from('profiles')
-      .update({ dpo_transaction_ref: token, pending_plan: plan })
+      .update({
+        dpo_transaction_ref: token,
+        pending_plan: plan,
+        dpo_token_created_at: new Date().toISOString(),
+      })
       .eq('id', user.id)
 
     return NextResponse.json({ paymentUrl })

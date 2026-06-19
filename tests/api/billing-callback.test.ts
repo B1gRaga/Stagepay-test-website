@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 const mockVerifyPaymentToken = vi.fn()
+const mockConfirmPlanUpgrade = vi.fn()
 const mockSingle = vi.fn()
 const mockUpdate = vi.fn()
 const mockEq = vi.fn()
@@ -26,6 +27,7 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('@/lib/dpo', () => ({
   verifyPaymentToken: (...args: unknown[]) => mockVerifyPaymentToken(...args),
+  confirmPlanUpgrade: (...args: unknown[]) => mockConfirmPlanUpgrade(...args),
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────────────

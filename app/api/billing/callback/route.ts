@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { verifyPaymentToken } from '@/lib/dpo'
+import { verifyPaymentToken, confirmPlanUpgrade, type DpoPlan } from '@/lib/dpo'
 
 // DPO Pay calls this URL server-to-server after a successful payment.
 // We verify the token with DPO, then upgrade the user's plan.
@@ -40,16 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown transaction' }, { status: 400 })
   }
 
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-
-  await serviceClient
-    .from('profiles')
-    .update({
-      plan:                    profile.pending_plan as import('@/lib/supabase/types').Plan,
-      subscription_expires_at: expiresAt,
-      pending_plan:            null,
-    })
-    .eq('id', profile.id)
+  await confirmPlanUpgrade(serviceClient, profile.id, profile.pending_plan as DpoPlan)
 
   return NextResponse.json({ ok: true })
 }

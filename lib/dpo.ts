@@ -1,3 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/types'
+
 const DPO_API = 'https://secure.3gdirectpay.com/API/v6/'
 const DPO_PAY = 'https://secure.3gdirectpay.com/payv2.php'
 
@@ -95,4 +98,23 @@ export async function verifyPaymentToken(
   const ref = extractTag(response, 'TransactionRef')
 
   return { success: result === '000', ref, result }
+}
+
+// Shared by /api/billing/verify, /api/billing/callback, and the
+// billing-reconcile cron — all three confirm a DPO payment the same way.
+export async function confirmPlanUpgrade(
+  serviceClient: SupabaseClient<Database>,
+  userId: string,
+  plan: DpoPlan,
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  await serviceClient
+    .from('profiles')
+    .update({
+      plan,
+      subscription_expires_at: expiresAt,
+      pending_plan: null,
+    })
+    .eq('id', userId)
 }

@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { log, logError, cronitorPing } from '@/lib/logger'
 import { Resend } from 'resend'
 import twilio from 'twilio'
+import { withRetry, NonRetryableError } from '@/lib/retry'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -16,38 +17,51 @@ export async function GET(req: NextRequest) {
 
   try {
   const start = Date.now()
+  const DEADLINE_MS  = 50_000 // leave a buffer under maxDuration=60
+  const BATCH_SIZE   = 50
+  const CHUNK_SIZE    = 10 // bound concurrent Supabase/Twilio/Resend calls per wave
   await cronitorPing('reminders', 'run')
-  const supabase = createServiceClient() 
-  // Fetch all reminders that are due and not yet sent
-  const { data: reminders, error } = await supabase
-    .from('reminders')
-    .select(`
-      *,
-      invoices (
-        id, invoice_number, client_name, total, currency, due_date, status, user_id,
-        invoice_items (description, quantity, unit_price)
-      )
-    `)
-    .eq('status', 'scheduled')
-    .lte('send_at', new Date().toISOString())
-    .limit(50)
+  const supabase = createServiceClient()
 
-  if (error) {
-    logError('cron.reminders.fetch_failed', error)
-    await cronitorPing('reminders', 'fail')
-    return NextResponse.json({ error: 'DB error' }, { status: 500 })
+  let sent   = 0
+  let failed = 0
+
+  // Loop until the queue is drained or we run out of time budget — a single
+  // capped batch would silently strand any reminders beyond BATCH_SIZE.
+  while (Date.now() - start < DEADLINE_MS) {
+    const { data: reminders, error } = await supabase
+      .from('reminders')
+      .select(`
+        *,
+        invoices (
+          id, invoice_number, client_name, total, currency, due_date, status, user_id,
+          invoice_items (description, quantity, unit_price)
+        )
+      `)
+      .eq('status', 'scheduled')
+      .lte('send_at', new Date().toISOString())
+      .limit(BATCH_SIZE)
+
+    if (error) {
+      logError('cron.reminders.fetch_failed', error)
+      await cronitorPing('reminders', 'fail')
+      return NextResponse.json({ error: 'DB error' }, { status: 500 })
+    }
+
+    if (!reminders?.length) {
+      if (sent === 0 && failed === 0) log('cron.reminders.none_due')
+      break
+    }
+
+    for (let i = 0; i < reminders.length; i += CHUNK_SIZE) {
+      const chunk   = reminders.slice(i, i + CHUNK_SIZE)
+      const results = await Promise.allSettled(chunk.map((r: any) => processReminder(supabase, r)))
+      sent   += results.filter(r => r.status === 'fulfilled').length
+      failed += results.filter(r => r.status === 'rejected').length
+    }
+
+    if (reminders.length < BATCH_SIZE) break // queue drained
   }
-
-  if (!reminders?.length) {
-    log('cron.reminders.none_due')
-    await cronitorPing('reminders', 'complete')
-    return NextResponse.json({ sent: 0, message: 'No reminders due' })
-  }
-
-  const results = await Promise.allSettled(reminders.map((r: any) => processReminder(supabase, r)))
-
-  const sent   = results.filter(r => r.status === 'fulfilled').length
-  const failed = results.filter(r => r.status === 'rejected').length
 
   log('cron.reminders.complete', { sent, failed, durationMs: Date.now() - start })
   await cronitorPing('reminders', failed > 0 && sent === 0 ? 'fail' : 'complete')
@@ -114,7 +128,7 @@ async function sendReminderEmail(reminder: any, invoice: any, senderName: string
   const body   = reminder.message_preview ||
     `This is a friendly reminder that invoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. If you have already paid, please disregard this message.\n\nThank you.`
 
-  await resend.emails.send({
+  await withRetry(() => resend.emails.send({
     from:    `${senderName} via StagePay <${from}>`,
     to:      [reminder.recipient_email],
     subject: `Payment reminder: Invoice ${invoice.invoice_number}`,
@@ -123,7 +137,7 @@ async function sendReminderEmail(reminder: any, invoice: any, senderName: string
       <div style="white-space:pre-wrap;line-height:1.6">${body.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
       <p style="margin-top:24px;font-size:12px;color:#aaa">Sent via StagePay</p>
     </body></html>`,
-  })
+  }))
 }
 
 async function sendReminderWhatsApp(reminder: any, invoice: any, senderName: string, amount: string) {
@@ -145,5 +159,10 @@ async function sendReminderWhatsApp(reminder: any, invoice: any, senderName: str
   msgParams.body = reminder.message_preview ||
     `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`
 
-  await client.messages.create(msgParams)
+  await withRetry(() => client.messages.create(msgParams).catch((err: any) => {
+    if (err?.status >= 400 && err.status < 500 && err.status !== 429) {
+      throw new NonRetryableError(err.message)
+    }
+    throw err
+  }))
 }

@@ -77,6 +77,11 @@ export async function POST(req: NextRequest) {
     if (memberErr?.code === '23505') {
       return NextResponse.json({ error: 'This email is already a team member' }, { status: 409 })
     }
+    // P0001 = RAISE EXCEPTION from the team_members_size_guard trigger —
+    // the DB-level backstop for the race the count check above can miss.
+    if (memberErr?.code === 'P0001') {
+      return NextResponse.json({ error: `Team is full (max ${MAX_TEAM_SIZE} members including owner)` }, { status: 400 })
+    }
     return NextResponse.json({ error: 'Failed to create invite' }, { status: 500 })
   }
 

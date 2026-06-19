@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedUser, createServiceClient } from '@/lib/supabase/server'
-import { verifyPaymentToken } from '@/lib/dpo'
+import { verifyPaymentToken, confirmPlanUpgrade, type DpoPlan } from '@/lib/dpo'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
@@ -38,17 +38,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=no_pending_plan`)
   }
 
-  const plan = profile.pending_plan as import('@/lib/supabase/types').Plan
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-
-  await serviceClient
-    .from('profiles')
-    .update({
-      plan,
-      subscription_expires_at: expiresAt,
-      pending_plan:            null,
-    })
-    .eq('id', user.id)
+  const plan = profile.pending_plan as DpoPlan
+  await confirmPlanUpgrade(serviceClient, user.id, plan)
 
   return NextResponse.redirect(`${APP_URL}/settings?billing=success&plan=${plan}`)
 }

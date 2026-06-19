@@ -11,6 +11,23 @@
     {
       "path": "/api/cron/recurring-invoices",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/billing-reconcile",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/subscription-renewal-reminder",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/archive-deleted",
+      "schedule": "0 3 * * 0"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/whatsapp/send/route.ts": { "memory": 1024 },
+    "app/api/email/send/route.ts": { "memory": 1024 },
+    "app/api/cron/recurring-invoices/route.ts": { "memory": 1024 }
+  }
 }
