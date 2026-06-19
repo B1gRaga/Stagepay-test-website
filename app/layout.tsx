@@ -30,7 +30,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "StagePay — Turn your work into an invoice in 30 seconds",
-  description: "AI-powered invoicing for freelancers and small businesses in Botswana. Describe your work, AI builds the invoice in 30 seconds.",
+  description: "AI-powered invoicing for freelancers and small businesses. Describe your work, AI builds the invoice in 30 seconds.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
