@@ -15,35 +15,35 @@ const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-  .ob-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#18213A;}
-  .ob-card{width:100%;max-width:480px;background:rgba(31,42,68,.98);border:1px solid rgba(242,169,0,.12);border-radius:18px;padding:40px 36px;animation:fadeUp .35s ease both;}
+  .ob-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0F172A;}
+  .ob-card{width:100%;max-width:480px;background:rgba(13,20,35,.98);border:1px solid rgba(16,185,129,.12);border-radius:18px;padding:40px 36px;animation:fadeUp .35s ease both;}
   @media(max-width:480px){.ob-card{padding:28px 20px;border-radius:12px;}}
-  .ob-logo{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:3px;color:#FAF7F0;display:flex;align-items:center;gap:8px;margin-bottom:32px;}
-  .ob-logo em{color:#F2A900;font-style:normal;}
-  .ob-heading{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:26px;letter-spacing:2px;color:#FAF7F0;margin-bottom:8px;}
-  .ob-sub{font-size:13px;color:rgba(250,247,240,.4);line-height:1.6;margin-bottom:28px;}
+  .ob-logo{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:3px;color:#F8FAFC;display:flex;align-items:center;gap:8px;margin-bottom:32px;}
+  .ob-logo em{color:#10B981;font-style:normal;}
+  .ob-heading{font-family:var(--font-bebas),sans-serif;font-size:26px;letter-spacing:2px;color:#F8FAFC;margin-bottom:8px;}
+  .ob-sub{font-size:13px;color:rgba(248,250,252,.4);line-height:1.6;margin-bottom:28px;}
   .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;}
   @media(max-width:360px){.ob-grid{grid-template-columns:1fr;}}
   .ob-tile{
     padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.08);
     background:rgba(255,255,255,.03);cursor:pointer;transition:all .15s;
     font-family:var(--font-archivo),sans-serif;font-size:13px;font-weight:600;
-    color:rgba(250,247,240,.55);text-align:left;display:flex;align-items:center;gap:10px;
+    color:rgba(248,250,252,.55);text-align:left;display:flex;align-items:center;gap:10px;
   }
-  .ob-tile:hover{border-color:rgba(242,169,0,.4);color:rgba(250,247,240,.85);}
-  .ob-tile.selected{border-color:#F2A900;background:rgba(242,169,0,.1);color:#F2A900;}
+  .ob-tile:hover{border-color:rgba(16,185,129,.4);color:rgba(248,250,252,.85);}
+  .ob-tile.selected{border-color:#10B981;background:rgba(16,185,129,.1);color:#10B981;}
   .ob-tile-icon{font-size:18px;flex-shrink:0;}
   .ob-btn{
-    width:100%;background:linear-gradient(135deg,#F2A900,#C98C00);color:#1F2A44;
+    width:100%;background:linear-gradient(135deg,#10B981,#059669);color:#000;
     padding:13px;border-radius:8px;border:none;font-size:13px;font-weight:700;
     letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .2s;
     display:flex;align-items:center;justify-content:center;gap:8px;
-    font-family:var(--font-archivo),sans-serif;box-shadow:0 4px 20px rgba(242,169,0,.3);
+    font-family:var(--font-archivo),sans-serif;box-shadow:0 4px 20px rgba(16,185,129,.3);
   }
   .ob-btn:disabled{opacity:.45;cursor:not-allowed;}
-  .ob-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(242,169,0,.4);}
-  .ob-skip{display:block;text-align:center;margin-top:14px;font-size:12px;color:rgba(250,247,240,.25);cursor:pointer;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-weight:700;}
-  .ob-skip:hover{color:rgba(250,247,240,.5);}
+  .ob-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(16,185,129,.4);}
+  .ob-skip{display:block;text-align:center;margin-top:14px;font-size:12px;color:rgba(248,250,252,.25);cursor:pointer;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;}
+  .ob-skip:hover{color:rgba(248,250,252,.5);}
   .ob-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#F87171;margin-bottom:16px;}
 `
 
@@ -77,10 +77,10 @@ export default function OnboardingPage() {
         <div className="ob-card">
           <div className="ob-logo">
             <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-              <rect x="1" y="17" width="6" height="15" rx="2" fill="#F2A900"/>
-              <rect x="9" y="12" width="6" height="20" rx="2" fill="#F2A900" opacity=".82"/>
-              <rect x="17" y="6" width="6" height="26" rx="2" fill="#F2A900" opacity=".65"/>
-              <rect x="25" y="0" width="6" height="32" rx="2" fill="#F2A900" opacity=".48"/>
+              <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
+              <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
+              <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
+              <rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/>
             </svg>
             Stage<em>Pay</em>
           </div>

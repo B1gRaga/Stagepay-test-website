@@ -1,20 +1,8 @@
 ﻿import { redirect } from 'next/navigation'
 import { createClient, getCachedUser, getCachedProfile } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { PeriodSelect, PERIODS, type PeriodId } from '@/components/portal/PeriodSelect'
 
-function periodSince(period: PeriodId, now: Date): string | null {
-  const d = new Date(now)
-  switch (period) {
-    case '7d': d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0]
-    case '30d': d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0]
-    case '90d': d.setDate(d.getDate() - 90); return d.toISOString().split('T')[0]
-    case 'year': return `${now.getFullYear()}-01-01`
-    case 'all': return null
-  }
-}
-
-const AVATAR_COLOR = '#F2A900'
+const AVATAR_COLOR = '#10B981'
 
 function avatarColor(_name: string, _index: number): string {
   return AVATAR_COLOR
@@ -30,17 +18,17 @@ function fmt(n: number, sym: string) {
 
 const CSS = `
 :root{
-    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
-    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;
+    --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
+    --bg:#0F172A;--bg2:#1E293B;--surface:#263244;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
+    --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
     --danger:#EF4444;--warn:#F59E0B;
   }
   html[data-theme="light"]{
-    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;
-    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
-    --g-dim:rgba(242,169,0,.12);
+    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;
+    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
+    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
+    --g-dim:rgba(16,185,129,.12);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
@@ -55,7 +43,7 @@ const CSS = `
     padding:0 28px;background:var(--bg2);
   }
   .page-title{
-    font-family:var(--font-bebas),sans-serif;font-weight:700;
+    font-family:var(--font-bebas),sans-serif;
     font-size:20px;letter-spacing:2.5px;color:var(--t1);
   }
   .topbar-right{display:flex;align-items:center;gap:10px;}
@@ -65,8 +53,8 @@ const CSS = `
     cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;
     text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;
   }
-  .btn-primary{background:var(--g);color:#1F2A44;box-shadow:0 0 14px rgba(242,169,0,.4),0 2px 8px rgba(242,169,0,.2);}
-  .btn-primary:hover{background:#C98C00;transform:translateY(-1px);box-shadow:0 0 24px rgba(242,169,0,.6),0 4px 16px rgba(242,169,0,.3);}
+  .btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.4),0 2px 8px rgba(16,185,129,.2);}
+  .btn-primary:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 0 24px rgba(16,185,129,.6),0 4px 16px rgba(16,185,129,.3);}
   .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);}
   .btn-outline:hover{border-color:var(--g);color:var(--g);}
 
@@ -89,7 +77,7 @@ const CSS = `
   html[data-theme="light"] .card:hover{box-shadow:0 3px 8px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);}
   .stat-inner{padding:20px 24px;animation:cardIn .5s ease both;}
   .stat-label-sm{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
-  .stat-val-big{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:40px;letter-spacing:1px;line-height:1;}
+  .stat-val-big{font-family:var(--font-bebas),sans-serif;font-size:40px;letter-spacing:1px;line-height:1;}
   .stat-sub-sm{font-size:12px;color:var(--t3);margin-top:4px;}
 
   /* recent invoices card */
@@ -110,18 +98,18 @@ const CSS = `
   .inv-avatar{
     width:36px;height:36px;border-radius:8px;
     display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:14px;flex-shrink:0;
+    font-family:var(--font-bebas),sans-serif;font-size:14px;flex-shrink:0;
   }
   .inv-info{flex:1;min-width:0;}
   .inv-client-name{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .inv-num-small{font-size:11px;color:var(--t3);margin-top:1px;}
-  .inv-amount-text{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;}
+  .inv-amount-text{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:.5px;}
   .pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
-  .pill-paid{background:rgba(242,169,0,.12);color:#C98C00;border:1px solid rgba(242,169,0,.25);}
+  .pill-paid{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25);}
   .pill-pending{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
   .pill-sent{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.22);}
   .pill-overdue{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.22);}
-  .pill-draft{background:rgba(100,116,139,.12);color:rgba(250,247,240,.3);border:1px solid rgba(100,116,139,.2);}
+  .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.3);border:1px solid rgba(100,116,139,.2);}
 
   .empty-state{text-align:center;padding:36px 20px;}
   .empty-illustration{width:52px;height:52px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
@@ -134,21 +122,13 @@ function statusPill(status: string) {
   return <span className={`pill pill-${status}`}>{status}</span>
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ period?: string }>
-}) {
+export default async function DashboardPage() {
   const user = await getCachedUser()
   if (!user) redirect('/auth/login')
-
-  const { period: periodParam } = await searchParams
-  const period: PeriodId = PERIODS.some(p => p.id === periodParam) ? (periodParam as PeriodId) : '30d'
 
   const supabase = await createClient()
   const now = new Date()
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-  const since = periodSince(period, now)
   const hour = now.getHours()
 
   // getCachedProfile is already called by layout.tsx — React cache() returns the
@@ -160,14 +140,12 @@ export default async function DashboardPage({
     { count: paidMonthCount },
     profile,
   ] = await Promise.all([
-    (() => {
-      let q = supabase
-        .from('invoices')
-        .select('id, invoice_number, client_name, project, total, status, issue_date, currency')
-        .eq('user_id', user.id)
-      if (since) q = q.gte('issue_date', since)
-      return q.order('created_at', { ascending: false }).limit(50)
-    })(),
+    supabase
+      .from('invoices')
+      .select('id, invoice_number, client_name, project, total, status, issue_date, currency')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
     supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
@@ -252,22 +230,19 @@ export default async function DashboardPage({
         {/* Recent invoices */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Invoice history</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <PeriodSelect value={period} />
-              <Link href="/invoices" className="topbar-btn btn-outline" style={{ padding: '4px 12px', fontSize: 11, textDecoration: 'none' }}>
-                View all
-              </Link>
-            </div>
+            <span className="card-title">Recent invoices</span>
+            <Link href="/invoices" className="topbar-btn btn-outline" style={{ padding: '4px 12px', fontSize: 11, textDecoration: 'none' }}>
+              View all
+            </Link>
           </div>
-          <div className="card-body" style={{ maxHeight: 480, overflowY: 'auto' }}>
+          <div className="card-body">
             {(recent ?? []).length === 0 ? (
               <div className="empty-state">
                 <div className="empty-illustration">
                   <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#3B82F6" strokeWidth="1.8"><path d="M5 4h14l4 4v16H5V4z"/><path d="M19 4v4h4"/><path d="M9 13h10M9 17h6"/></svg>
                 </div>
                 <div className="empty-title">No invoices yet</div>
-                <div className="empty-sub">{period === 'all' ? 'Your invoices will appear here.' : 'No invoices in this period.'}</div>
+                <div className="empty-sub">Your recent invoices will appear here.</div>
                 <Link href="/new-invoice" className="empty-cta">Create first invoice</Link>
               </div>
             ) : (

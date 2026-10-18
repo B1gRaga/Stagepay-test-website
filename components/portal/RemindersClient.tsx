@@ -95,28 +95,28 @@ ${firmName}`
 
 const CSS = `
 :root{
-    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
-    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
+    --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
+    --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
+    --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
-    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
-    --g-dim:rgba(242,169,0,.12);
+    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;--surface2:#dfd8ce;
+    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
+    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
+    --g-dim:rgba(16,185,129,.12);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
   .topbar-right{display:flex;align-items:center;gap:10px;}
   .topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;background:transparent;color:var(--t2);}
   .topbar-btn:hover{border-color:var(--g);color:var(--g);}
-  .btn-primary{background:var(--g);color:#1F2A44;border:none;box-shadow:0 0 14px rgba(242,169,0,.4),0 2px 8px rgba(242,169,0,.2);}
-  .btn-primary:hover{background:#C98C00;transform:translateY(-1px);color:#1F2A44;box-shadow:0 0 24px rgba(242,169,0,.6),0 4px 16px rgba(242,169,0,.3);}
+  .btn-primary{background:var(--g);color:#0F172A;border:none;box-shadow:0 0 14px rgba(16,185,129,.4),0 2px 8px rgba(16,185,129,.2);}
+  .btn-primary:hover{background:#34d399;transform:translateY(-1px);color:#0F172A;box-shadow:0 0 24px rgba(16,185,129,.6),0 4px 16px rgba(16,185,129,.3);}
 
   .content{padding:24px 28px;}
 
@@ -124,7 +124,7 @@ const CSS = `
 
   .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
   html[data-theme="light"] .inv-table-wrap{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-  html[data-theme="light"] .inv-table-head{background:rgba(31,42,68,.03);}
+  html[data-theme="light"] .inv-table-head{background:rgba(26,26,26,.03);}
   html[data-theme="light"] .sched-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
   .inv-table-head{
     display:grid;grid-template-columns:36px 1fr 110px 100px 110px 130px;
@@ -141,7 +141,7 @@ const CSS = `
   .rem-urgency{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin:0 auto;}
   .rem-client{font-size:13px;font-weight:500;color:var(--t1);}
   .rem-inv{font-size:11px;color:var(--t3);margin-top:2px;}
-  .rem-amount{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;}
+  .rem-amount{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:.5px;}
   .rem-toggle{
     display:flex;align-items:center;gap:5px;
     background:var(--surface);border:1px solid var(--line2);
@@ -149,15 +149,15 @@ const CSS = `
     font-size:11px;font-weight:600;color:var(--t2);
     transition:all .15s;white-space:nowrap;font-family:var(--font-archivo),sans-serif;
   }
-  .rem-toggle.active{background:var(--g-dim);border-color:rgba(242,169,0,.3);color:var(--g);}
+  .rem-toggle.active{background:var(--g-dim);border-color:rgba(16,185,129,.3);color:var(--g);}
   .rem-toggle:hover:not(.active){border-color:var(--g);color:var(--g);}
   .compose-btn{
     display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;
     font-size:11px;font-weight:600;cursor:pointer;
-    background:var(--g-dim);border:1px solid rgba(242,169,0,.3);color:var(--g);
+    background:var(--g-dim);border:1px solid rgba(16,185,129,.3);color:var(--g);
     font-family:var(--font-archivo),sans-serif;transition:all .15s;
   }
-  .compose-btn:hover{background:rgba(242,169,0,.18);}
+  .compose-btn:hover{background:rgba(16,185,129,.18);}
 
   .sched-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:sticky;top:0;}
   .sched-header{padding:16px 20px;border-bottom:1px solid var(--line);}
@@ -166,7 +166,7 @@ const CSS = `
   .sched-rule{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);}
   .sched-rule:last-of-type{border-bottom:none;}
   .sched-rule-left{display:flex;align-items:center;gap:12px;}
-  .sched-day-badge{width:40px;height:40px;border-radius:8px;font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sched-day-badge{width:40px;height:40px;border-radius:8px;font-family:var(--font-bebas),sans-serif;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .sched-rule-name{font-size:13px;font-weight:500;color:var(--t1);}
   .sched-rule-desc{font-size:11px;color:var(--t3);margin-top:2px;}
   .toggle-sw{width:36px;height:20px;border-radius:10px;background:var(--surface);border:1px solid var(--line2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
@@ -181,7 +181,7 @@ const CSS = `
   .empty-illustration{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
   .empty-title{font-size:16px;color:var(--t1);margin-bottom:6px;}
   .empty-sub{font-size:12px;color:var(--t3);margin-bottom:18px;max-width:320px;margin-left:auto;margin-right:auto;}
-  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#1F2A44;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;}
+  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#0F172A;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;}
 
   /* Compose modal */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -199,13 +199,13 @@ const CSS = `
   .modal-footer{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;}
   .modal-field{margin-bottom:14px;}
   .modal-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
-  .modal-input{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:8px 12px;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
-  .modal-input:focus{border-color:rgba(242,169,0,.4);}
-  .modal-textarea{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:10px 12px;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:12.5px;color:var(--t2);outline:none;transition:border-color .15s;resize:vertical;min-height:160px;line-height:1.6;}
-  .modal-textarea:focus{border-color:rgba(242,169,0,.4);color:var(--t1);}
+  .modal-input{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:8px 12px;font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
+  .modal-input:focus{border-color:rgba(16,185,129,.4);}
+  .modal-textarea{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:10px 12px;font-family:var(--font-archivo),sans-serif;font-size:12.5px;color:var(--t2);outline:none;transition:border-color .15s;resize:vertical;min-height:160px;line-height:1.6;}
+  .modal-textarea:focus{border-color:rgba(16,185,129,.4);color:var(--t1);}
   .modal-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;}
-  .modal-btn-primary{background:var(--g);color:#1F2A44;box-shadow:0 0 14px rgba(242,169,0,.35);}
-  .modal-btn-primary:hover{background:#C98C00;box-shadow:0 0 22px rgba(242,169,0,.55);}
+  .modal-btn-primary{background:var(--g);color:#0F172A;box-shadow:0 0 14px rgba(16,185,129,.35);}
+  .modal-btn-primary:hover{background:#34d399;box-shadow:0 0 22px rgba(16,185,129,.55);}
   .modal-btn-secondary{background:transparent;color:var(--t2);border:1px solid var(--line2);}
   .modal-btn-secondary:hover{border-color:var(--t2);}
   .modal-btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -492,8 +492,8 @@ export default function RemindersClient({
 
               {pending.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-illustration" style={{ background: 'rgba(242,169,0,.1)', border: '1px solid rgba(242,169,0,.2)' }}>
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#F2A900" strokeWidth="1.8">
+                  <div className="empty-illustration" style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)' }}>
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#10B981" strokeWidth="1.8">
                       <circle cx="14" cy="14" r="10"/><path d="M8 14l4 4 8-8"/>
                     </svg>
                   </div>
@@ -734,7 +734,7 @@ export default function RemindersClient({
                       >
                         {compose.sending ? 'Sending…' : (
                           <>
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="#1F2A44"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="#0F172A"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
                             Send WhatsApp
                           </>
                         )}
@@ -746,8 +746,8 @@ export default function RemindersClient({
             ) : (
               <div className="modal-body">
                 <div className="modal-success">
-                  <div style={{ width:48, height:48, borderRadius:'50%', background:'rgba(242,169,0,.12)', border:'1px solid rgba(242,169,0,.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
+                  <div style={{ width:48, height:48, borderRadius:'50%', background:'rgba(16,185,129,.12)', border:'1px solid rgba(16,185,129,.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
+                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
                   </div>
                   <div style={{ fontSize:15, fontWeight:600, color:'var(--t1)', marginBottom:6 }}>Reminder sent!</div>
                   <div style={{ fontSize:12, color:'var(--t3)', marginBottom:16 }}>

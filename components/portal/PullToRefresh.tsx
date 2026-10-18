@@ -85,7 +85,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
             opacity:    Math.min(clamped * 1.6, 1),
             width:  36, height: 36,
             borderRadius: '50%',
-            background: 'var(--surface,#1F2A44)',
+            background: 'var(--surface,#263244)',
             border:     '1px solid rgba(255,255,255,0.1)',
             display:    'flex', alignItems: 'center', justifyContent: 'center',
             zIndex:     198,
@@ -97,7 +97,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
           {refreshing ? (
             <svg
               width="15" height="15" viewBox="0 0 16 16"
-              fill="none" stroke="#F2A900" strokeWidth="2.2" strokeLinecap="round"
+              fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round"
               style={{ animation: 'ptr-spin .7s linear infinite' }}
             >
               <path d="M14 8A6 6 0 112 8"/><path d="M14 4v4h-4"/>
@@ -105,7 +105,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
           ) : (
             <svg
               width="13" height="13" viewBox="0 0 16 16"
-              fill="none" stroke="#F2A900" strokeWidth="2.2" strokeLinecap="round"
+              fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round"
               style={{ transform: `rotate(${ready ? 180 : 0}deg)`, transition: 'transform .18s ease' }}
             >
               <path d="M8 3v10M4 9l4 4 4-4"/>

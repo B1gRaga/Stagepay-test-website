@@ -7,7 +7,7 @@ type Params = { params: Promise<{ token: string }> }
 const styles = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 10, padding: 48, color: '#1E293B', backgroundColor: '#ffffff' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  logo: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#F2A900', letterSpacing: 2 },
+  logo: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#10B981', letterSpacing: 2 },
   badge: { fontSize: 9, color: '#64748B', marginTop: 3 },
   divider: { borderBottom: '1pt solid #E2E8F0', marginVertical: 16 },
   label: { fontSize: 8, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 },
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   totalLabel: { color: '#64748B', fontSize: 10 },
   totalValue: { color: '#1E293B', fontSize: 10 },
-  grandTotal: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#F2A900', padding: '8pt 10pt', borderRadius: 4, marginTop: 8 },
+  grandTotal: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#10B981', padding: '8pt 10pt', borderRadius: 4, marginTop: 8 },
   grandLabel: { color: '#ffffff', fontFamily: 'Helvetica-Bold', fontSize: 11 },
   grandValue: { color: '#ffffff', fontFamily: 'Helvetica-Bold', fontSize: 11 },
   footer: { position: 'absolute', bottom: 32, left: 48, right: 48, borderTop: '1pt solid #E2E8F0', paddingTop: 10, flexDirection: 'row', justifyContent: 'space-between' },

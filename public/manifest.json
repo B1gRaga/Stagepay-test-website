@@ -1,13 +1,13 @@
 {
   "name": "StagePay",
   "short_name": "StagePay",
-  "description": "StagePay organises a professional invoice, sends it on WhatsApp and follows up until you're paid.",
+  "description": "AI-powered invoicing — describe your work, send the invoice on WhatsApp in 30 seconds.",
   "start_url": "/dashboard",
   "scope": "/",
   "id": "/",
   "display": "standalone",
-  "background_color": "#1F2A44",
-  "theme_color": "#1F2A44",
+  "background_color": "#0F172A",
+  "theme_color": "#10B981",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icons/icon-192.png",    "sizes": "192x192", "type": "image/png", "purpose": "any" },

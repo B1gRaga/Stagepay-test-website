@@ -5,15 +5,15 @@ const CSS = `
   .support-fab{
     position:fixed;bottom:24px;right:24px;z-index:1100;
     width:48px;height:48px;border-radius:50%;
-    background:#F2A900;color:#1F2A44;
+    background:#10B981;color:#0F172A;
     border:none;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 0 18px rgba(242,169,0,.45),0 4px 14px rgba(0,0,0,.25);
+    box-shadow:0 0 18px rgba(16,185,129,.45),0 4px 14px rgba(0,0,0,.25);
     transition:transform .15s,box-shadow .15s;
   }
   .support-fab:hover{
     transform:scale(1.08);
-    box-shadow:0 0 28px rgba(242,169,0,.65),0 6px 20px rgba(0,0,0,.3);
+    box-shadow:0 0 28px rgba(16,185,129,.65),0 6px 20px rgba(0,0,0,.3);
   }
   @media(max-width:768px){
     .support-fab{bottom:80px;right:16px;}
@@ -22,7 +22,7 @@ const CSS = `
   .support-panel{
     position:fixed;bottom:82px;right:24px;z-index:1100;
     width:290px;
-    background:var(--bg2,#1F2A44);
+    background:var(--bg2,#1E293B);
     border:1px solid var(--line2,rgba(255,255,255,0.11));
     border-radius:14px;
     box-shadow:0 16px 48px rgba(0,0,0,.35);
@@ -40,12 +40,12 @@ const CSS = `
   }
   .support-panel-title{
     font-size:13px;font-weight:600;
-    color:var(--t1,#FAF7F0);
+    color:var(--t1,#F8FAFC);
     font-family:var(--font-archivo),sans-serif;
   }
   .support-panel-sub{
-    font-size:11px;color:var(--t3,rgba(250,247,240,0.3));
-    margin-top:1px;font-family:var(--font-archivo),sans-serif;font-weight:700;
+    font-size:11px;color:var(--t3,rgba(248,250,252,0.3));
+    margin-top:1px;font-family:var(--font-archivo),sans-serif;
   }
   .support-option{
     display:flex;align-items:center;gap:12px;
@@ -54,28 +54,28 @@ const CSS = `
     cursor:pointer;background:transparent;border-left:none;border-right:none;border-top:none;
     width:100%;text-align:left;
     transition:background .12s;text-decoration:none;
-    font-family:var(--font-archivo),sans-serif;font-weight:700;
+    font-family:var(--font-archivo),sans-serif;
   }
   .support-option:last-child{border-bottom:none;}
-  .support-option:hover{background:var(--surface,#1F2A44);}
+  .support-option:hover{background:var(--surface,#263244);}
   .support-option-icon{
     width:34px;height:34px;border-radius:8px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
   }
-  .support-option-label{font-size:13px;font-weight:500;color:var(--t1,#FAF7F0);}
-  .support-option-desc{font-size:11px;color:var(--t3,rgba(250,247,240,0.3));margin-top:1px;}
+  .support-option-label{font-size:13px;font-weight:500;color:var(--t1,#F8FAFC);}
+  .support-option-desc{font-size:11px;color:var(--t3,rgba(248,250,252,0.3));margin-top:1px;}
 
   html[data-theme="light"] .support-panel{
-    background:#F1ECE1;
-    border-color:rgba(31,42,68,0.14);
+    background:#e8e1d5;
+    border-color:rgba(26,26,26,0.14);
   }
-  html[data-theme="light"] .support-panel-header{border-color:rgba(31,42,68,0.08);}
-  html[data-theme="light"] .support-option{border-color:rgba(31,42,68,0.08);}
-  html[data-theme="light"] .support-option:hover{background:#FAF7F0;}
-  html[data-theme="light"] .support-option-label{color:#1F2A44;}
-  html[data-theme="light"] .support-option-desc{color:rgba(31,42,68,0.45);}
-  html[data-theme="light"] .support-panel-title{color:#1F2A44;}
-  html[data-theme="light"] .support-panel-sub{color:rgba(31,42,68,0.45);}
+  html[data-theme="light"] .support-panel-header{border-color:rgba(26,26,26,0.08);}
+  html[data-theme="light"] .support-option{border-color:rgba(26,26,26,0.08);}
+  html[data-theme="light"] .support-option:hover{background:#f3ede1;}
+  html[data-theme="light"] .support-option-label{color:#1a1a1a;}
+  html[data-theme="light"] .support-option-desc{color:rgba(26,26,26,0.45);}
+  html[data-theme="light"] .support-panel-title{color:#1a1a1a;}
+  html[data-theme="light"] .support-panel-sub{color:rgba(26,26,26,0.45);}
 `
 
 export default function SupportBtn() {
@@ -92,9 +92,9 @@ export default function SupportBtn() {
 
           <div className="support-panel">
             <div className="support-panel-header">
-              <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(242,169,0,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="#F2A900"/>
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(16,185,129,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="#10B981"/>
                 </svg>
               </div>
               <div>

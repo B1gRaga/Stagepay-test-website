@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/app', '/api/invoices/public', '/invoice', '/api/waitlist']
+const PUBLIC_PATHS = ['/', '/app', '/api/invoices/public', '/invoice']
 
 const PORTAL_PATHS = [
   '/dashboard', '/invoices', '/clients', '/reminders',
