@@ -1,6 +1,18 @@
 ﻿import { redirect } from 'next/navigation'
 import { createClient, getCachedUser, getCachedProfile } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { PeriodSelect, PERIODS, type PeriodId } from '@/components/portal/PeriodSelect'
+
+function periodSince(period: PeriodId, now: Date): string | null {
+  const d = new Date(now)
+  switch (period) {
+    case '7d': d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0]
+    case '30d': d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0]
+    case '90d': d.setDate(d.getDate() - 90); return d.toISOString().split('T')[0]
+    case 'year': return `${now.getFullYear()}-01-01`
+    case 'all': return null
+  }
+}
 
 const AVATAR_COLOR = '#F2A900'
 
@@ -122,13 +134,21 @@ function statusPill(status: string) {
   return <span className={`pill pill-${status}`}>{status}</span>
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>
+}) {
   const user = await getCachedUser()
   if (!user) redirect('/auth/login')
+
+  const { period: periodParam } = await searchParams
+  const period: PeriodId = PERIODS.some(p => p.id === periodParam) ? (periodParam as PeriodId) : '30d'
 
   const supabase = await createClient()
   const now = new Date()
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const since = periodSince(period, now)
   const hour = now.getHours()
 
   // getCachedProfile is already called by layout.tsx — React cache() returns the
@@ -140,12 +160,14 @@ export default async function DashboardPage() {
     { count: paidMonthCount },
     profile,
   ] = await Promise.all([
-    supabase
-      .from('invoices')
-      .select('id, invoice_number, client_name, project, total, status, issue_date, currency')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5),
+    (() => {
+      let q = supabase
+        .from('invoices')
+        .select('id, invoice_number, client_name, project, total, status, issue_date, currency')
+        .eq('user_id', user.id)
+      if (since) q = q.gte('issue_date', since)
+      return q.order('created_at', { ascending: false }).limit(50)
+    })(),
     supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
@@ -230,19 +252,22 @@ export default async function DashboardPage() {
         {/* Recent invoices */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Recent invoices</span>
-            <Link href="/invoices" className="topbar-btn btn-outline" style={{ padding: '4px 12px', fontSize: 11, textDecoration: 'none' }}>
-              View all
-            </Link>
+            <span className="card-title">Invoice history</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PeriodSelect value={period} />
+              <Link href="/invoices" className="topbar-btn btn-outline" style={{ padding: '4px 12px', fontSize: 11, textDecoration: 'none' }}>
+                View all
+              </Link>
+            </div>
           </div>
-          <div className="card-body">
+          <div className="card-body" style={{ maxHeight: 480, overflowY: 'auto' }}>
             {(recent ?? []).length === 0 ? (
               <div className="empty-state">
                 <div className="empty-illustration">
                   <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#3B82F6" strokeWidth="1.8"><path d="M5 4h14l4 4v16H5V4z"/><path d="M19 4v4h4"/><path d="M9 13h10M9 17h6"/></svg>
                 </div>
                 <div className="empty-title">No invoices yet</div>
-                <div className="empty-sub">Your recent invoices will appear here.</div>
+                <div className="empty-sub">{period === 'all' ? 'Your invoices will appear here.' : 'No invoices in this period.'}</div>
                 <Link href="/new-invoice" className="empty-cta">Create first invoice</Link>
               </div>
             ) : (

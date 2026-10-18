@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { LogoIcon } from '@/components/Logo'
 
 const DURATION = 550
 const EASING   = 'cubic-bezier(0.76, 0, 0.24, 1)'
@@ -63,12 +64,9 @@ export default function ThemeToggleBtn() {
           opacity: phase === 'falling' ? 1 : 0,
           transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
         }}>
-          <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#F2A900"/>
-            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#F2A900" opacity=".82"/>
-            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#F2A900" opacity=".65"/>
-            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#F2A900" opacity=".48"/>
-          </svg>
+          <span style={{ display: 'inline-flex', width: 48, height: 48 }}>
+            <LogoIcon tone={curtainColor.current === '#18213A' ? 'on-ink' : 'default'} />
+          </span>
           <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: '#F2A900' }}>
             STAGEPAY
           </div>

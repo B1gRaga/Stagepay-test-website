@@ -7,8 +7,8 @@ const DPO_PAY = 'https://secure.3gdirectpay.com/payv2.php'
 export type DpoPlan = 'pro' | 'business'
 
 const PLAN_CONFIG: Record<DpoPlan, { amount: string; description: string }> = {
-  pro:      { amount: '200.00', description: 'Stagepay Pro Plan — Monthly Subscription' },
-  business: { amount: '500.00', description: 'Stagepay Business Plan — Monthly Subscription' },
+  pro:      { amount: '100.00', description: 'Stagepay Pro Plan — Monthly Subscription' },
+  business: { amount: '400.00', description: 'Stagepay Business Plan — Monthly Subscription' },
 }
 
 function companyToken() {

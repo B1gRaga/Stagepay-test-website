@@ -1,20 +1,12 @@
 ﻿'use client'
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { LogoIcon } from '@/components/Logo'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LineItem = { desc: string; qty: number; rate: number }
 type Client   = { id: string; name: string; email: string | null; phone: string | null }
 type Profile  = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string }
-type AiPreview = { clientName: string; project: string; items: LineItem[]; vatRate: number; subtotal: number; vat: number; total: number; currency: string; dueDays: number | null; matchedClient: boolean }
-
-const CHIP_PROMPTS: Record<string, string> = {
-  consulting:    'Consulting retainer for [Client] — 20 hours at [Rate]/hr, 30-day payment terms',
-  engineering:   'Structural engineering review for [Client] — site inspection plus 12 hours analysis at [Rate]/hr',
-  design:        'Brand design project for [Client] — logo, brand guidelines and social kit, flat fee [Amount]',
-  legal:         'Legal services for [Client] — contract drafting and review, 8 hours at [Rate]/hr',
-  construction:  'Construction phase 2 for [Client] — labour and materials, [Amount] total, 50% deposit',
-}
 
 const CURRENCIES = [
   { v: 'P',   l: 'BWP — Pula (P)' },
@@ -75,55 +67,6 @@ const CSS = `
   .gen-left{display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-right:2px;padding-bottom:16px;}
   .gen-right{background:var(--bg2);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;}
   html[data-theme="light"] .gen-right{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-
-  /* AI Hero */
-  .ai-hero{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;}
-  html[data-theme="light"] .ai-hero{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-  .ai-hero-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-  .ai-hero-icon{width:32px;height:32px;background:var(--g-dim);border:1px solid rgba(242,169,0,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .ai-hero-title{font-size:14px;font-weight:600;color:var(--t1);}
-  .ai-hero-sub{font-size:11px;color:var(--t3);margin-top:1px;}
-  .ai-big-textarea{
-    width:100%;background:var(--surface);border:1px solid var(--line2);
-    border-radius:8px;padding:14px;font-family:var(--font-archivo),sans-serif;font-weight:700;
-    font-size:14px;color:var(--t1);outline:none;resize:none;line-height:1.6;
-    transition:border-color .2s, box-shadow .2s;
-  }
-  .ai-big-textarea:focus{border-color:rgba(242,169,0,.5);box-shadow:0 0 0 3px rgba(242,169,0,.07);}
-  .ai-big-textarea::placeholder{color:var(--t3);font-size:14px;}
-  .ai-big-textarea.thinking{
-    background:linear-gradient(90deg,var(--surface) 25%,rgba(242,169,0,.06) 50%,var(--surface) 75%);
-    background-size:200% auto;animation:shimmer 1.4s linear infinite;
-  }
-  .prompt-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
-  .prompt-chip{
-    padding:5px 12px;border-radius:20px;border:1px solid var(--line2);
-    background:transparent;color:var(--t3);font-size:11px;font-weight:500;
-    cursor:pointer;transition:all .15s;font-family:var(--font-archivo),sans-serif;
-    letter-spacing:.03em;
-  }
-  .prompt-chip:hover{border-color:var(--g);color:var(--g);background:var(--g-dim);}
-  .ai-thinking{display:flex;align-items:center;gap:10px;margin-top:10px;}
-  .ai-dots{display:flex;gap:4px;}
-  .ai-dots span{width:6px;height:6px;border-radius:50%;background:var(--g);animation:dots 1.2s infinite;}
-  .ai-dots span:nth-child(2){animation-delay:.2s;}
-  .ai-dots span:nth-child(3){animation-delay:.4s;}
-  .ai-thinking-text{font-size:12px;color:var(--t3);}
-  .ai-generate-btn{
-    width:100%;background:var(--g);color:var(--bg);
-    border:none;border-radius:8px;padding:14px;
-    font-family:var(--font-archivo),sans-serif;font-size:13px;font-weight:700;
-    letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    transition:all .2s;box-shadow:0 3px 10px rgba(242,169,0,.2);margin-top:12px;
-  }
-  .ai-generate-btn:hover{background:#C98C00;transform:translateY(-1px);box-shadow:0 6px 20px rgba(242,169,0,.35);}
-  .ai-generate-btn:disabled{opacity:.5;transform:none;cursor:not-allowed;box-shadow:none;}
-
-  .ai-result{background:var(--g-dim);border:1px solid rgba(242,169,0,.25);border-radius:10px;padding:14px 16px;animation:fadeIn .3s ease;}
-  .ai-result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-  .ai-result-title{font-size:12px;font-weight:700;color:var(--g);letter-spacing:.04em;display:flex;align-items:center;gap:6px;}
-  .ai-result-body{font-size:12px;color:var(--t2);line-height:1.7;}
 
   /* Advanced / Edit details panel */
   .adv-toggle{
@@ -291,8 +234,6 @@ const CSS = `
     .form-grid{grid-template-columns:1fr;}
     .form-input,.form-select,.form-textarea{font-size:12px !important;}
     .form-input::placeholder,.form-textarea::placeholder{font-size:12px !important;}
-    .ai-big-textarea{font-size:12px;}
-    .ai-big-textarea::placeholder{font-size:12px;}
     .line-items-header{display:none;}
     .line-item-row{
       grid-template-columns:1fr 1fr auto 28px;
@@ -343,15 +284,8 @@ export default function NewInvoiceClient({
   const [tc,          setTc]          = useState('')
   const [terms,       setTerms]       = useState('30')
 
-  // AI
-  const [prompt,    setPrompt]    = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiResult,  setAiResult]  = useState<string | null>(null)
-  const [aiPreview, setAiPreview] = useState<AiPreview | null>(null)
-
   // UI
   const [advOpen,  setAdvOpen]  = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Save / send
   const [saving,         setSaving]         = useState(false)
@@ -414,7 +348,6 @@ export default function NewInvoiceClient({
     setDiscountOn(false); setDiscountAmt(0)
     setIsRecurring(false); setRecurInterval('monthly')
     setNotes(''); setTc(''); setTerms('30')
-    setPrompt(''); setAiResult(null); setAiPreview(null)
   }
 
   function selectClient(c: Client) {
@@ -436,83 +369,6 @@ export default function NewInvoiceClient({
   const removeItem = useCallback((i: number) => {
     setItems(prev => prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i))
   }, [])
-
-  // ── AI generation ──
-  async function generateInvoice() {
-    if (!prompt.trim() || aiLoading) return
-    setAiLoading(true)
-    setAiResult(null)
-    setAiPreview(null)
-    try {
-      const res  = await fetch('/api/ai/generate', {
-        method: 'POST', credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'AI error')
-      const inv = data.invoice
-      if (inv.client_name)  setClientName(inv.client_name)
-      if (inv.client_email) setClientEmail(inv.client_email)
-      if (inv.client_phone) setClientPhone(inv.client_phone)
-      // Auto-match extracted name against existing clients
-      let matchedClient = false
-      if (inv.client_name && clients.length > 0) {
-        const nameLower = inv.client_name.toLowerCase()
-        const match = clients.find(c =>
-          c.name.toLowerCase().includes(nameLower) || nameLower.includes(c.name.toLowerCase())
-        )
-        if (match) {
-          setSelectedClientId(match.id)
-          if (!inv.client_email && match.email) setClientEmail(match.email)
-          if (!inv.client_phone && match.phone) setClientPhone(match.phone)
-          matchedClient = true
-        }
-      }
-      if (inv.project)      setProject(inv.project)
-      if (inv.currency)     setCurrency(inv.currency)
-      if (inv.vat_rate != null) setVatRate(Number(inv.vat_rate))
-      if (inv.due_days) {
-        setDueDate(addDays(today(), Number(inv.due_days)))
-        const d = String(Number(inv.due_days))
-        if (['0','7','14','30'].includes(d)) setTerms(d)
-      }
-      if (inv.notes)        setNotes(inv.notes)
-      if (inv.items?.length) {
-        setItems(inv.items.map((it: any) => ({ desc: it.description || '', qty: Number(it.quantity) || 1, rate: Number(it.unit_price) || 0 })))
-      }
-      if (inv.deposit_amount > 0) {
-        setDepositOn(true)
-        const pct = total > 0 ? Math.round((inv.deposit_amount / total) * 100) : 50
-        setDepositPct(pct)
-      }
-      setAdvOpen(true)
-      const previewItems: LineItem[] = (inv.items || []).map((it: any) => ({
-        desc: it.description || '',
-        qty:  Number(it.quantity) || 1,
-        rate: Number(it.unit_price) || 0,
-      }))
-      const previewSub     = previewItems.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0)
-      const previewVatRate = Number(inv.vat_rate ?? vatRate)
-      const previewVat     = previewSub * (previewVatRate / 100)
-      setAiPreview({
-        clientName:    inv.client_name || '',
-        project:       inv.project || '',
-        items:         previewItems,
-        vatRate:       previewVatRate,
-        subtotal:      previewSub,
-        vat:           previewVat,
-        total:         previewSub + previewVat,
-        currency:      inv.currency || currency,
-        dueDays:       inv.due_days ? Number(inv.due_days) : null,
-        matchedClient,
-      })
-    } catch (e: any) {
-      setAiResult('Could not parse: ' + (e.message || 'AI error'))
-    } finally {
-      setAiLoading(false)
-    }
-  }
 
   // ── Save invoice ──
   async function saveInvoice(status: 'draft' | 'sent') {
@@ -584,8 +440,8 @@ export default function NewInvoiceClient({
 
   async function handleDraft() {
     try {
-      await saveInvoice('draft')
-      router.push('/invoices')
+      const inv = await saveInvoice('draft')
+      router.push(`/invoices/${inv.id}`)
     } catch (e: any) {
       alert(e.message)
     }
@@ -641,7 +497,7 @@ export default function NewInvoiceClient({
         if (!res.ok) throw new Error(d.error || 'Send failed')
       }
       setSendDone(true)
-      setTimeout(() => { setSendModalOpen(false); router.push('/invoices') }, 1800)
+      setTimeout(() => { setSendModalOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
     } catch (e: any) {
       setSendError(e.message)
     } finally {
@@ -678,107 +534,6 @@ export default function NewInvoiceClient({
 
           {/* ── LEFT: Form ── */}
           <div className="gen-left">
-
-            {/* AI Hero */}
-            <div className="ai-hero">
-              <div className="ai-hero-header">
-                <div className="ai-hero-icon">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="1.7"><path d="M2 12.5V14h1.5l7.1-7.1-1.5-1.5L2 12.5zM13.7 3.3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0L9.4 1.6l3 3 1.3-1.3z"/></svg>
-                </div>
-                <div>
-                  <div className="ai-hero-title">Describe your work</div>
-                  <div className="ai-hero-sub">AI will extract client, line items, rates and VAT automatically</div>
-                </div>
-              </div>
-
-              <textarea
-                ref={textareaRef}
-                className={`ai-big-textarea${aiLoading ? ' thinking' : ''}`}
-                placeholder='e.g. "Phase 2 structural review for Molapo Tower — 40 hours at P950/hr plus P2,400 site inspection, 30-day payment terms"'
-                rows={3}
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) generateInvoice() }}
-                disabled={aiLoading}
-              />
-
-              <div className="prompt-chips">
-                {Object.entries(CHIP_PROMPTS).map(([k, v]) => (
-                  <button key={k} className="prompt-chip" onClick={() => { setPrompt(v); textareaRef.current?.focus() }}>
-                    {k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, ' $1')}
-                  </button>
-                ))}
-              </div>
-
-              {aiLoading && (
-                <div className="ai-thinking">
-                  <div className="ai-dots"><span/><span/><span/></div>
-                  <span className="ai-thinking-text">Reading your description…</span>
-                </div>
-              )}
-
-              <button className="ai-generate-btn" onClick={generateInvoice} disabled={aiLoading || !prompt.trim()}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M2 8l5 5 7-7"/></svg>
-                {aiLoading ? 'Generating…' : 'Generate Invoice'}
-                {!aiLoading && <span style={{ fontSize: 11, opacity: .6, fontWeight: 400, letterSpacing: 0, textTransform: 'none', marginLeft: 4 }}>or Cmd+Enter</span>}
-              </button>
-            </div>
-
-            {/* AI Result */}
-            {(aiPreview || aiResult) && (
-              <div className="ai-result">
-                <div className="ai-result-header">
-                  <div className="ai-result-title">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
-                    {aiPreview ? 'Invoice ready — scroll down to edit' : 'Generation failed'}
-                  </div>
-                  <button onClick={() => { setAiPreview(null); setAiResult(null) }} style={{ background: 'transparent', border: 'none', color: 'var(--t3)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
-                </div>
-                {aiPreview ? (
-                  <div style={{ marginTop: 6 }}>
-                    {aiPreview.clientName && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>{aiPreview.clientName}</div>
-                          {aiPreview.project && <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>{aiPreview.project}</div>}
-                        </div>
-                        {aiPreview.matchedClient && (
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--g)', background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.25)', borderRadius: 4, padding: '2px 7px' }}>Matched</div>
-                        )}
-                      </div>
-                    )}
-                    {aiPreview.items.length > 0 && (
-                      <div style={{ borderTop: '1px solid rgba(242,169,0,.15)', paddingTop: 8 }}>
-                        {aiPreview.items.map((it, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--line)', fontSize: 12, color: 'var(--t2)' }}>
-                            <span style={{ flex: 1, marginRight: 8 }}>{it.desc}</span>
-                            <span style={{ fontSize: 11, color: 'var(--t3)', marginRight: 10, whiteSpace: 'nowrap' }}>{it.qty} × {fmtAmt(it.rate, aiPreview.currency)}</span>
-                            <span style={{ fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap' }}>{fmtAmt((it.qty || 0) * (it.rate || 0), aiPreview.currency)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ marginTop: 8, borderTop: '1px solid rgba(242,169,0,.15)', paddingTop: 8 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--t3)', marginBottom: 3 }}>
-                        <span>Subtotal</span><span>{fmtAmt(aiPreview.subtotal, aiPreview.currency)}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--t3)', marginBottom: 7 }}>
-                        <span>VAT ({aiPreview.vatRate}%)</span><span>{fmtAmt(aiPreview.vat, aiPreview.currency)}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--g)', borderRadius: 6, padding: '8px 10px' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,.85)' }}>Total Due</span>
-                        <span style={{ fontFamily: 'var(--font-bebas),sans-serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: 1 }}>{fmtAmt(aiPreview.total, aiPreview.currency)}</span>
-                      </div>
-                      {aiPreview.dueDays !== null && (
-                        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>Payment due in {aiPreview.dueDays} days</div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="ai-result-body">{aiResult}</div>
-                )}
-              </div>
-            )}
 
             {/* Advanced / Edit details */}
             <div>
@@ -1015,12 +770,9 @@ export default function NewInvoiceClient({
                 <div className="prev-top">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                        <rect x="1" y="17" width="6" height="15" rx="2" fill="#F2A900"/>
-                        <rect x="9" y="12" width="6" height="20" rx="2" fill="#F2A900" opacity=".82"/>
-                        <rect x="17" y="6" width="6" height="26" rx="2" fill="#F2A900" opacity=".65"/>
-                        <rect x="25" y="0" width="6" height="32" rx="2" fill="#F2A900" opacity=".48"/>
-                      </svg>
+                      <span style={{ display: 'inline-flex', width: 28, height: 28, flexShrink: 0 }}>
+                        <LogoIcon />
+                      </span>
                       <div className="prev-brand">{firmName.toUpperCase()}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -1103,7 +855,7 @@ export default function NewInvoiceClient({
 
                   <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="1" y="17" width="6" height="15" rx="2" fill="#F2A900"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#F2A900" opacity=".82"/><rect x="17" y="6" width="6" height="26" rx="2" fill="#F2A900" opacity=".65"/><rect x="25" y="0" width="6" height="32" rx="2" fill="#F2A900" opacity=".48"/></svg>
+                      <span style={{ display: 'inline-flex', width: 14, height: 14 }}><LogoIcon /></span>
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--t3)' }}>StagePay</span>
                     </div>
                     {dueDate && <span style={{ fontSize: 9, color: 'var(--t3)' }}>Due {fmtDate(dueDate)}</span>}

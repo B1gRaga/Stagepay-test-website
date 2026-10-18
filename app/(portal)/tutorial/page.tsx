@@ -1,4 +1,5 @@
 ﻿import Link from 'next/link'
+import { LogoIcon } from '@/components/Logo'
 
 const CSS = `
 :root{
@@ -422,12 +423,9 @@ export default function TutorialPage() {
         {/* Hero */}
         <div className="hero">
           <div className="hero-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#F2A900"/>
-              <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#F2A900" opacity=".82"/>
-              <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#F2A900" opacity=".65"/>
-              <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#F2A900" opacity=".48"/>
-            </svg>
+            <span style={{ display: 'inline-flex', width: 32, height: 32 }}>
+              <LogoIcon />
+            </span>
           </div>
           <div>
             <div className="hero-title">Welcome to StagePay</div>

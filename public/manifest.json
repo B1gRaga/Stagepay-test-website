@@ -1,7 +1,7 @@
 {
   "name": "StagePay",
   "short_name": "StagePay",
-  "description": "AI-powered invoicing — describe your work, send the invoice on WhatsApp in 30 seconds.",
+  "description": "StagePay organises a professional invoice, sends it on WhatsApp and follows up until you're paid.",
   "start_url": "/dashboard",
   "scope": "/",
   "id": "/",

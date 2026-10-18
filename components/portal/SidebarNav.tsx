@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { useState, useEffect } from 'react'
 import ThemeToggleBtn from './ThemeToggleBtn'
+import { LogoIcon } from '@/components/Logo'
 
 const CSS = `
   :root{
@@ -273,12 +274,9 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
       {/* ── MOBILE TOP BAR ── */}
       <div className="mob-topbar">
         <Link href="/dashboard" className="mob-topbar-logo">
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#F2A900"/>
-            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#F2A900" opacity=".82"/>
-            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#F2A900" opacity=".65"/>
-            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#F2A900" opacity=".48"/>
-          </svg>
+          <span style={{ display: 'inline-flex', width: 22, height: 22, flexShrink: 0 }}>
+            <LogoIcon />
+          </span>
           <span>STAGE<em>PAY</em></span>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -319,12 +317,9 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
         {/* ── DESKTOP SIDEBAR ── */}
         <div className="sidebar-logo">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#F2A900"/>
-              <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#F2A900" opacity=".82"/>
-              <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#F2A900" opacity=".65"/>
-              <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#F2A900" opacity=".48"/>
-            </svg>
+            <span style={{ display: 'inline-flex', width: 28, height: 28, flexShrink: 0 }}>
+              <LogoIcon />
+            </span>
             <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: 3 }}>
               Stage<em>Pay</em>
             </span>
