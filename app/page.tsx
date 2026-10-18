@@ -51,7 +51,6 @@ const CSS = `
 /* reveal-on-scroll (RevealObserver toggles .in) */
 .reveal{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease}
 .reveal.in{opacity:1;transform:none}
-.stagger .reveal, .stagger.reveal{transition-delay:calc(var(--i,0) * 90ms)}
 
 /* hero on-load entrance (no JS needed) */
 @keyframes heroIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -183,6 +182,10 @@ const CSS = `
 @media (min-width:720px){.grid-4{grid-template-columns:1fr 1fr;gap:20px}}
 .card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;display:flex;gap:20px;align-items:flex-start;box-shadow:var(--sh-1);transition:transform .2s ease, box-shadow .2s ease}
 .card:hover{transform:translateY(-4px);box-shadow:var(--sh-2)}
+/* .reveal sets its own transition shorthand (opacity+transform) — a plain .card
+   rule of equal specificity declared later would otherwise win the whole
+   transition-property list and silently drop opacity from it */
+.card.reveal{transition:opacity .6s ease,transform .6s ease,box-shadow .2s ease}
 .card svg{width:60px;height:60px;flex:none;transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
 .card:hover svg{transform:rotate(-6deg) scale(1.06)}
 .card h3{font-size:20px;margin-bottom:6px}
@@ -256,6 +259,7 @@ const CSS = `
 /* pricing */
 .plans{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:18px 4px 22px;margin-top:24px;-webkit-overflow-scrolling:touch}
 .plan{scroll-snap-align:start;flex:0 0 78%;max-width:320px;background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:28px 24px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh-1);transition:transform .2s ease, box-shadow .2s ease}
+.plan.reveal{transition:opacity .6s ease,transform .6s ease,box-shadow .2s ease}
 .plan:hover{transform:translateY(-4px);box-shadow:var(--sh-2)}
 .plan .name{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .plan .price{font-size:40px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
@@ -272,6 +276,7 @@ const CSS = `
 /* faq */
 .faq{margin-top:32px;display:grid;gap:12px;max-width:820px}
 .faq details{background:var(--white);border:1px solid var(--line);border-radius:var(--r-md);padding:4px 22px;box-shadow:var(--sh-1);transition:box-shadow .2s ease}
+.faq details.reveal{transition:opacity .6s ease,transform .6s ease,box-shadow .2s ease}
 .faq details[open]{box-shadow:var(--sh-2)}
 .faq summary{cursor:pointer;list-style:none;font-weight:700;font-size:18px;padding:18px 0;display:flex;justify-content:space-between;align-items:center;gap:16px}
 .faq summary::-webkit-details-marker{display:none}
@@ -749,11 +754,11 @@ export default function Home() {
           <div className="wrap">
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Everything you need to bill and get paid</h2></div>
-            <div className="grid-4 reveal">
-              <div className="card"><BrandCardIcon /><div><h3>Professional invoices</h3><p>Fill in the client, items and amounts; StagePay organises the rest.</p></div></div>
-              <div className="card"><WhatsAppCardIcon /><div><h3>WhatsApp delivery</h3><p>Invoices go straight to your client&apos;s WhatsApp.</p></div></div>
-              <div className="card"><ReminderCardIcon /><div><h3>Automatic reminders</h3><p>Follow-ups continue until the invoice is paid.</p></div></div>
-              <div className="card"><RecurringCardIcon /><div><h3>Recurring invoices</h3><p>Monthly fees go out for every student without retyping.</p></div></div>
+            <div className="grid-4">
+              <div className="card reveal" style={{ transitionDelay: '0ms' }}><BrandCardIcon /><div><h3>Professional invoices</h3><p>Fill in the client, items and amounts; StagePay organises the rest.</p></div></div>
+              <div className="card reveal" style={{ transitionDelay: '90ms' }}><WhatsAppCardIcon /><div><h3>WhatsApp delivery</h3><p>Invoices go straight to your client&apos;s WhatsApp.</p></div></div>
+              <div className="card reveal" style={{ transitionDelay: '180ms' }}><ReminderCardIcon /><div><h3>Automatic reminders</h3><p>Follow-ups continue until the invoice is paid.</p></div></div>
+              <div className="card reveal" style={{ transitionDelay: '270ms' }}><RecurringCardIcon /><div><h3>Recurring invoices</h3><p>Monthly fees go out for every student without retyping.</p></div></div>
             </div>
             <p className="note-line reveal"><VatIcon /> VAT is worked out on every invoice, and a receipt goes out once it&apos;s marked paid.</p>
           </div>
@@ -864,10 +869,10 @@ export default function Home() {
           <div className="wrap">
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Simple plans</h2></div>
-            <div className="plans reveal">
-              <div className="plan"><div className="name">Free</div><div className="price">P0</div><p className="desc">Up to 2 invoices a month.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('free')}>Join the waitlist</button></div>
-              <div className="plan hi"><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price">P100 <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><button className="btn btn-amber" type="button" onClick={() => setOverlaySource('pro')}>Join the waitlist</button></div>
-              <div className="plan"><div className="name">Business</div><div className="price">P400 <small>/ month</small></div><p className="desc">For teams with multiple users.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('business')}>Join the waitlist</button></div>
+            <div className="plans">
+              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price">P0</div><p className="desc">Up to 2 invoices a month.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('free')}>Join the waitlist</button></div>
+              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price">P100 <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><button className="btn btn-amber" type="button" onClick={() => setOverlaySource('pro')}>Join the waitlist</button></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price">P400 <small>/ month</small></div><p className="desc">For teams with multiple users.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('business')}>Join the waitlist</button></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
@@ -877,10 +882,10 @@ export default function Home() {
           <div className="wrap">
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Questions</h2></div>
-            <div className="faq reveal">
-              <details><summary>Do my clients need an app?</summary><p>No. Invoices arrive in their normal WhatsApp.</p></details>
-              <details><summary>Is StagePay VAT-ready?</summary><p>VAT is calculated on every invoice. We&apos;re still confirming our invoices meet every BURS requirement, so please check with your accountant for now.</p></details>
-              <details><summary>What happens after the free month?</summary><p>You choose a plan: Pro at P100 a month for tutors and small businesses, or Business at P400 a month for teams.</p></details>
+            <div className="faq">
+              <details className="reveal" style={{ transitionDelay: '0ms' }}><summary>Do my clients need an app?</summary><p>No. Invoices arrive in their normal WhatsApp.</p></details>
+              <details className="reveal" style={{ transitionDelay: '90ms' }}><summary>Is StagePay VAT-ready?</summary><p>VAT is calculated on every invoice. We&apos;re still confirming our invoices meet every BURS requirement, so please check with your accountant for now.</p></details>
+              <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>You choose a plan: Pro at P100 a month for tutors and small businesses, or Business at P400 a month for teams.</p></details>
             </div>
           </div>
         </section>
