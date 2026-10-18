@@ -33,13 +33,13 @@ type Profile = {
 type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'team' | 'security'
 
 const PANELS: { id: Panel; label: string; dot: string; businessOnly?: boolean }[] = [
-  { id: 'brand',    label: 'Branding',          dot: '#10B981' },
+  { id: 'brand',    label: 'Branding',          dot: '#F2A900' },
   { id: 'firm',     label: 'Firm details',       dot: '#3B82F6' },
   { id: 'invoice',  label: 'Invoice defaults',   dot: '#F59E0B' },
-  { id: 'payment',  label: 'Payment & banking',  dot: '#10B981' },
+  { id: 'payment',  label: 'Payment & banking',  dot: '#F2A900' },
   { id: 'notifs',   label: 'Notifications',      dot: '#8B5CF6' },
-  { id: 'plan',     label: 'Plan & billing',     dot: '#10B981' },
-  { id: 'team',     label: 'Team members',       dot: '#10B981', businessOnly: true },
+  { id: 'plan',     label: 'Plan & billing',     dot: '#F2A900' },
+  { id: 'team',     label: 'Team members',       dot: '#F2A900', businessOnly: true },
   { id: 'security', label: 'Security',           dot: '#EF4444' },
 ]
 
@@ -117,17 +117,17 @@ const SEC_RISKS = [
 
 const CSS = `
 :root{
-    --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
-    --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
+    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
+    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
+    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;--surface2:#dfd8ce;
-    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
-    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
-    --g-dim:rgba(16,185,129,.12);
+    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
+    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
+    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
+    --g-dim:rgba(242,169,0,.12);
   }
   html[data-theme="light"] .settings-layout{box-shadow:0 1px 6px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -136,7 +136,7 @@ const CSS = `
   @keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
 
   .settings-wrap{padding:0 28px 24px;height:calc(100vh - 80px);}
   .settings-layout{
@@ -162,7 +162,7 @@ const CSS = `
     border-bottom:1px solid var(--line);
   }
   .settings-panel-hero-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .settings-panel-hero-title{font-family:var(--font-bebas),sans-serif;font-size:24px;letter-spacing:2px;color:var(--t1);line-height:1;}
+  .settings-panel-hero-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:24px;letter-spacing:2px;color:var(--t1);line-height:1;}
   .settings-panel-hero-sub{font-size:12px;color:var(--t3);margin-top:3px;line-height:1.5;}
   .settings-panel-hero-badge{margin-left:auto;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px;white-space:nowrap;}
 
@@ -170,7 +170,7 @@ const CSS = `
   .settings-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
   .settings-section::before{content:'';position:absolute;left:-32px;top:0;width:3px;height:0;background:var(--g);border-radius:0 2px 2px 0;transition:height .3s ease;}
   .settings-section:hover::before{height:100%;}
-  .settings-section-title{font-family:var(--font-bebas),sans-serif;font-size:17px;letter-spacing:1.5px;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+  .settings-section-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:17px;letter-spacing:1.5px;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
   .settings-section-badge{font-family:var(--font-archivo),sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:3px;}
   .settings-section-desc{font-size:12px;color:var(--t3);margin-bottom:18px;line-height:1.6;}
 
@@ -181,20 +181,20 @@ const CSS = `
   .form-input,.form-select,.form-textarea{
     background:var(--surface);border:1px solid var(--line2);
     border-radius:7px;padding:10px 12px;
-    font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);
+    font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t1);
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
   }
   .form-input:focus,.form-select:focus,.form-textarea:focus{
-    border-color:rgba(16,185,129,.45);
-    box-shadow:0 0 0 3px rgba(16,185,129,.07);
+    border-color:rgba(242,169,0,.45);
+    box-shadow:0 0 0 3px rgba(242,169,0,.07);
   }
   .form-textarea{resize:vertical;min-height:80px;}
   .form-select option,.form-select optgroup{background:var(--bg2);color:var(--t1);}
 
   .topbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;background:transparent;color:var(--t2);}
   .topbar-btn:hover{border-color:var(--g);color:var(--g);}
-  .btn-primary{background:var(--g);color:var(--bg);border-color:var(--g);box-shadow:0 2px 8px rgba(16,185,129,.2);}
-  .btn-primary:hover{background:#34d399;border-color:#34d399;color:var(--bg);}
+  .btn-primary{background:var(--g);color:var(--bg);border-color:var(--g);box-shadow:0 2px 8px rgba(242,169,0,.2);}
+  .btn-primary:hover{background:#C98C00;border-color:#C98C00;color:var(--bg);}
   .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
   .notif-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);}
@@ -212,7 +212,7 @@ const CSS = `
   .sec-badge-high  {background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);}
   .sec-badge-med   {background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.3);}
   .sec-badge-low   {background:rgba(100,116,139,.12);color:#94A3B8;border:1px solid rgba(100,116,139,.3);}
-  .sec-badge-fixed {background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.3);}
+  .sec-badge-fixed {background:rgba(242,169,0,.12);color:#F2A900;border:1px solid rgba(242,169,0,.3);}
 
   .plan-card{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
 
@@ -221,12 +221,12 @@ const CSS = `
     padding:28px;text-align:center;cursor:pointer;
     transition:border-color .2s;margin-bottom:4px;
   }
-  .logo-zone:hover{border-color:rgba(16,185,129,.4);}
+  .logo-zone:hover{border-color:rgba(242,169,0,.4);}
   .logo-zone-icon{font-size:22px;margin-bottom:8px;opacity:.5;}
   .logo-zone-label{font-size:13px;color:var(--t2);font-weight:500;}
   .logo-zone-sub{font-size:11px;color:var(--t3);margin-top:4px;}
 
-  .success-toast{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;color:#34d399;font-weight:600;}
+  .success-toast{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(242,169,0,.15);border:1px solid rgba(242,169,0,.3);border-radius:6px;font-size:12px;color:#C98C00;font-weight:600;}
 
   .loading-spinner{display:flex;align-items:center;justify-content:center;padding:80px;gap:10px;color:var(--t3);font-size:13px;}
 
@@ -249,7 +249,7 @@ const CSS = `
   @media(max-width:700px){.theme-grid{grid-template-columns:repeat(3,1fr);}}
   .theme-card{cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid transparent;transition:border-color .15s,transform .1s;}
   .theme-card:hover{transform:scale(1.03);}
-  .theme-card.selected{border-color:var(--g);box-shadow:0 0 0 3px rgba(16,185,129,.15);}
+  .theme-card.selected{border-color:var(--g);box-shadow:0 0 0 3px rgba(242,169,0,.15);}
   .theme-card-name{text-align:center;font-size:10px;padding:4px 4px 6px;color:var(--t3);background:var(--surface);font-weight:400;font-family:var(--font-archivo),sans-serif;}
   .theme-card.selected .theme-card-name{color:var(--g);font-weight:600;}
 
@@ -257,7 +257,7 @@ const CSS = `
   .color-field{flex:1;min-width:160px;}
   .color-field-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:6px;}
   .color-field-row{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line2);border-radius:7px;padding:6px 10px;transition:border-color .2s,box-shadow .2s;}
-  .color-field-row:focus-within{border-color:rgba(16,185,129,.45);box-shadow:0 0 0 3px rgba(16,185,129,.07);}
+  .color-field-row:focus-within{border-color:rgba(242,169,0,.45);box-shadow:0 0 0 3px rgba(242,169,0,.07);}
   .color-field-hex{flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--t1);font-family:'Courier New',monospace;min-width:0;}
   .color-field-hint{font-size:10px;color:var(--t3);margin-top:4px;}
   .color-clear-btn{background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:0;line-height:1;flex-shrink:0;}
@@ -306,7 +306,7 @@ function BrandingColorField({
         )}
       </div>
       <div className="color-field-hint">
-        {value ? (isValid ? `Custom · ${value}` : 'Enter a valid hex e.g. #10B981') : `Theme default: ${placeholder}`}
+        {value ? (isValid ? `Custom · ${value}` : 'Enter a valid hex e.g. #F2A900') : `Theme default: ${placeholder}`}
       </div>
     </div>
   )
@@ -688,18 +688,18 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── BRANDING ── */}
           <div className={`settings-panel${panel === 'brand' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,.08) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M3 20c0-4 4-7 9-7s9 3 9 7"/></svg>
+            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.08) 0%,transparent 60%)' }}>
+              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.12)', border: '1px solid rgba(242,169,0,.2)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M3 20c0-4 4-7 9-7s9 3 9 7"/></svg>
               </div>
               <div>
                 <div className="settings-panel-hero-title">Branding</div>
                 <div className="settings-panel-hero-sub">Your logo, colour and invoice template · Visible on every invoice you send</div>
               </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(16,185,129,.2)' }}>Visual identity</span>
+              <span className="settings-panel-hero-badge" style={{ background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(242,169,0,.2)' }}>Visual identity</span>
             </div>
             <div className="settings-section">
-              <div className="settings-section-title">Logo <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Upload</span></div>
+              <div className="settings-section-title">Logo <span className="settings-section-badge" style={{ background: 'rgba(242,169,0,.1)', color: 'var(--g)' }}>Upload</span></div>
               <div className="settings-section-desc">Upload your company logo. PNG, JPG, or WebP recommended. Shows on all invoices and emails.</div>
               <input
                 ref={logoInputRef}
@@ -746,7 +746,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
             <div className="settings-section">
               <div className="settings-section-title">
                 Invoice template &amp; colours
-                <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Customise</span>
+                <span className="settings-section-badge" style={{ background: 'rgba(242,169,0,.1)', color: 'var(--g)' }}>Customise</span>
               </div>
               <div className="settings-section-desc">
                 Choose a template that matches your brand, then fine-tune with custom accent and header colours. Changes apply to every invoice PDF you generate.
@@ -801,7 +801,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                 <BrandingColorField
                   label="Accent colour"
                   value={branding.brand_color_primary}
-                  placeholder={THEME_PRESETS[branding.invoice_theme]?.accentColor ?? '#10B981'}
+                  placeholder={THEME_PRESETS[branding.invoice_theme]?.accentColor ?? '#F2A900'}
                   onChange={v => setBranding(p => ({ ...p, brand_color_primary: v }))}
                 />
                 <BrandingColorField
@@ -920,8 +920,8 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               <div className="settings-section-desc">These values pre-fill every new invoice. You can always override them per invoice.</div>
 
               {/* Country VAT picker */}
-              <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 10, padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}><circle cx="9" cy="9" r="8" stroke="#10B981" strokeWidth="1.5"/><path d="M9 4v5l3 2" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.2)', borderRadius: 10, padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}><circle cx="9" cy="9" r="8" stroke="#F2A900" strokeWidth="1.5"/><path d="M9 4v5l3 2" stroke="#F2A900" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', marginBottom: 3 }}>Auto-detect VAT by country</div>
                   <div style={{ fontSize: 11, color: 'var(--t3)' }}>Selecting your country sets the correct VAT rate and currency automatically.</div>
@@ -972,21 +972,21 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── PAYMENT & BANKING ── */}
           <div className={`settings-panel${panel === 'payment' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,.07) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.07) 0%,transparent 60%)' }}>
+              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.1)', border: '1px solid rgba(242,169,0,.2)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
               </div>
               <div>
                 <div className="settings-panel-hero-title">Payment &amp; banking</div>
                 <div className="settings-panel-hero-sub">Bank account details · Appear in invoice footer so clients know where to pay</div>
               </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(16,185,129,.2)' }}>Get paid</span>
+              <span className="settings-panel-hero-badge" style={{ background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(242,169,0,.2)' }}>Get paid</span>
             </div>
             <div className="settings-section">
-              <div className="settings-section-title">Bank account details <span className="settings-section-badge" style={{ background: 'rgba(16,185,129,.1)', color: 'var(--g)' }}>Invoice footer</span></div>
+              <div className="settings-section-title">Bank account details <span className="settings-section-badge" style={{ background: 'rgba(242,169,0,.1)', color: 'var(--g)' }}>Invoice footer</span></div>
               <div className="settings-section-desc">These appear in your invoice footer so clients know exactly where to pay. Managed in the app.</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(16,185,129,.06)', border: '1px solid rgba(16,185,129,.15)', borderRadius: 8, marginBottom: 16 }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="1.5" style={{ flexShrink: 0 }}><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(242,169,0,.06)', border: '1px solid rgba(242,169,0,.15)', borderRadius: 8, marginBottom: 16 }}>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="1.5" style={{ flexShrink: 0 }}><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
                 <span style={{ fontSize: 12, color: 'var(--t2)' }}>Your bank details are included automatically in every PDF export and client email.</span>
               </div>
               <div className="form-grid" style={{ maxWidth: 520 }}>
@@ -1038,9 +1038,9 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── PLAN & BILLING ── */}
           <div className={`settings-panel${panel === 'plan' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.25)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
+              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.15)', border: '1px solid rgba(242,169,0,.25)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
               </div>
               <div>
                 <div className="settings-panel-hero-title">Plan &amp; billing</div>
@@ -1049,9 +1049,9 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               <span className="settings-panel-hero-badge" style={{ background: 'var(--g)', color: 'var(--bg)', fontWeight: 700 }}>{(profile?.plan ?? 'free').toUpperCase()}</span>
             </div>
             {billingStatus === 'success' && (
-              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'rgba(16,185,129,.12)', border:'1px solid rgba(16,185,129,.3)', borderRadius:8, marginBottom:20 }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M3 8l3.5 3.5L13 5"/></svg>
-                <span style={{ fontSize:13, color:'#34d399', fontWeight:600 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'rgba(242,169,0,.12)', border:'1px solid rgba(242,169,0,.3)', borderRadius:8, marginBottom:20 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M3 8l3.5 3.5L13 5"/></svg>
+                <span style={{ fontSize:13, color:'#C98C00', fontWeight:600 }}>
                   Payment successful! You&apos;re now on the <span style={{ textTransform:'capitalize' }}>{billingPlan}</span> plan.
                 </span>
               </div>
@@ -1098,7 +1098,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                     Yearly
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
-                      background: '#10B981', color: '#000',
+                      background: '#F2A900', color: '#000',
                     }}>
                       -10%
                     </span>
@@ -1129,10 +1129,10 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   const priceLabel = price === 0 ? 'Free' : `P${price}/mo`
                   const yearlyNote = billingCycle === 'yearly' && price > 0 ? `P${price * 12}/yr` : null
                   return (
-                    <div key={plan.name} className="plan-card" style={{ border: isCurrent ? '1px solid rgba(16,185,129,.4)' : undefined, gap: 8 }}>
-                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 18, letterSpacing: 1.5, color: plan.highlight ? 'var(--g)' : 'var(--t1)' }}>{plan.name}</div>
+                    <div key={plan.name} className="plan-card" style={{ border: isCurrent ? '1px solid rgba(242,169,0,.4)' : undefined, gap: 8 }}>
+                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 18, letterSpacing: 1.5, color: plan.highlight ? 'var(--g)' : 'var(--t1)' }}>{plan.name}</div>
                       <div>
-                        <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 22, color: 'var(--t1)' }}>{priceLabel}</span>
+                        <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--t1)' }}>{priceLabel}</span>
                         {yearlyNote && (
                           <span style={{ fontSize: 10, color: 'var(--t3)', marginLeft: 5 }}>billed as {yearlyNote}</span>
                         )}
@@ -1181,9 +1181,9 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── TEAM MEMBERS ── */}
           <div className={`settings-panel${panel === 'team' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.25)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
+              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.15)', border: '1px solid rgba(242,169,0,.25)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
               </div>
               <div>
                 <div className="settings-panel-hero-title">Team members</div>
@@ -1209,7 +1209,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   style={{
                     flex: 1, padding: '8px 12px', borderRadius: 7, fontSize: 13,
                     background: 'var(--surface)', border: '1px solid var(--line2)',
-                    color: 'var(--t1)', fontFamily: 'var(--font-archivo),sans-serif',
+                    color: 'var(--t1)', fontFamily: 'var(--font-archivo),sans-serif', fontWeight: 700,
                     outline: 'none',
                   }}
                 />
@@ -1227,8 +1227,8 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
               {/* Generated invite link */}
               {inviteLink && (
-                <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 8 }}>
-                  <p style={{ fontSize: 11, color: '#10B981', fontWeight: 600, marginBottom: 6 }}>Invite link generated — share this with your team member:</p>
+                <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(242,169,0,.08)', border: '1px solid rgba(242,169,0,.25)', borderRadius: 8 }}>
+                  <p style={{ fontSize: 11, color: '#F2A900', fontWeight: 600, marginBottom: 6 }}>Invite link generated — share this with your team member:</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <code style={{ flex: 1, fontSize: 11, color: 'var(--t2)', wordBreak: 'break-all', background: 'var(--surface)', padding: '6px 10px', borderRadius: 5, border: '1px solid var(--line2)' }}>{inviteLink}</code>
                     <button
@@ -1253,7 +1253,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                   {/* Owner row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: teamMembers.length > 0 ? '1px solid var(--line)' : undefined }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#10B981', flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(242,169,0,.15)', border: '1px solid rgba(242,169,0,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#F2A900', flexShrink: 0 }}>
                         {(profile?.name ?? 'O')[0].toUpperCase()}
                       </div>
                       <div>
@@ -1261,7 +1261,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                         <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>Account owner</div>
                       </div>
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', padding: '3px 8px', background: 'rgba(16,185,129,.1)', borderRadius: 4 }}>Owner</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#F2A900', padding: '3px 8px', background: 'rgba(242,169,0,.1)', borderRadius: 4 }}>Owner</span>
                   </div>
 
                   {/* Member rows */}
@@ -1276,8 +1276,8 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                             <span style={{
                               fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3,
-                              background: m.status === 'active' ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.1)',
-                              color: m.status === 'active' ? '#10B981' : '#F59E0B',
+                              background: m.status === 'active' ? 'rgba(242,169,0,.1)' : 'rgba(245,158,11,.1)',
+                              color: m.status === 'active' ? '#F2A900' : '#F59E0B',
                             }}>
                               {m.status === 'active' ? 'Active' : 'Pending'}
                             </span>
@@ -1332,7 +1332,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
               <div className="settings-section-desc">Require a time-based one-time code from an authenticator app (Google Authenticator, Authy, 1Password) every time you sign in.</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 10, marginTop: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: profile?.two_fa_enabled ? 'var(--g)' : 'var(--t3)', boxShadow: profile?.two_fa_enabled ? '0 0 6px rgba(16,185,129,.5)' : 'none' }}/>
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: profile?.two_fa_enabled ? 'var(--g)' : 'var(--t3)', boxShadow: profile?.two_fa_enabled ? '0 0 6px rgba(242,169,0,.5)' : 'none' }}/>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{profile?.two_fa_enabled ? '2FA enabled' : '2FA disabled'}</div>
                     <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>{profile?.two_fa_enabled ? 'Your account is protected with TOTP.' : 'Your account only uses a password.'}</div>

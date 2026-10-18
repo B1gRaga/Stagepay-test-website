@@ -47,17 +47,17 @@ function fmtDate(d: string) {
 // ── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
 :root{
-    --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);
-    --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
+    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
+    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
+    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;--surface2:#dfd8ce;
-    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
-    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
-    --g-dim:rgba(16,185,129,.12);
+    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
+    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
+    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
+    --g-dim:rgba(242,169,0,.12);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
@@ -68,7 +68,7 @@ const CSS = `
   @keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
 
   .gen-wrap{padding:16px 28px;height:calc(100vh - 56px);}
   .gen-layout{display:grid;grid-template-columns:1fr 400px;gap:16px;height:100%;}
@@ -80,19 +80,19 @@ const CSS = `
   .ai-hero{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;}
   html[data-theme="light"] .ai-hero{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
   .ai-hero-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-  .ai-hero-icon{width:32px;height:32px;background:var(--g-dim);border:1px solid rgba(16,185,129,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ai-hero-icon{width:32px;height:32px;background:var(--g-dim);border:1px solid rgba(242,169,0,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .ai-hero-title{font-size:14px;font-weight:600;color:var(--t1);}
   .ai-hero-sub{font-size:11px;color:var(--t3);margin-top:1px;}
   .ai-big-textarea{
     width:100%;background:var(--surface);border:1px solid var(--line2);
-    border-radius:8px;padding:14px;font-family:var(--font-archivo),sans-serif;
+    border-radius:8px;padding:14px;font-family:var(--font-archivo),sans-serif;font-weight:700;
     font-size:14px;color:var(--t1);outline:none;resize:none;line-height:1.6;
     transition:border-color .2s, box-shadow .2s;
   }
-  .ai-big-textarea:focus{border-color:rgba(16,185,129,.5);box-shadow:0 0 0 3px rgba(16,185,129,.07);}
+  .ai-big-textarea:focus{border-color:rgba(242,169,0,.5);box-shadow:0 0 0 3px rgba(242,169,0,.07);}
   .ai-big-textarea::placeholder{color:var(--t3);font-size:14px;}
   .ai-big-textarea.thinking{
-    background:linear-gradient(90deg,var(--surface) 25%,rgba(16,185,129,.06) 50%,var(--surface) 75%);
+    background:linear-gradient(90deg,var(--surface) 25%,rgba(242,169,0,.06) 50%,var(--surface) 75%);
     background-size:200% auto;animation:shimmer 1.4s linear infinite;
   }
   .prompt-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
@@ -115,12 +115,12 @@ const CSS = `
     font-family:var(--font-archivo),sans-serif;font-size:13px;font-weight:700;
     letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:8px;
-    transition:all .2s;box-shadow:0 3px 10px rgba(16,185,129,.2);margin-top:12px;
+    transition:all .2s;box-shadow:0 3px 10px rgba(242,169,0,.2);margin-top:12px;
   }
-  .ai-generate-btn:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.35);}
+  .ai-generate-btn:hover{background:#C98C00;transform:translateY(-1px);box-shadow:0 6px 20px rgba(242,169,0,.35);}
   .ai-generate-btn:disabled{opacity:.5;transform:none;cursor:not-allowed;box-shadow:none;}
 
-  .ai-result{background:var(--g-dim);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:14px 16px;animation:fadeIn .3s ease;}
+  .ai-result{background:var(--g-dim);border:1px solid rgba(242,169,0,.25);border-radius:10px;padding:14px 16px;animation:fadeIn .3s ease;}
   .ai-result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .ai-result-title{font-size:12px;font-weight:700;color:var(--g);letter-spacing:.04em;display:flex;align-items:center;gap:6px;}
   .ai-result-body{font-size:12px;color:var(--t2);line-height:1.7;}
@@ -132,14 +132,14 @@ const CSS = `
     border-radius:10px;cursor:pointer;transition:all .2s;
   }
   .adv-toggle:hover{border-color:var(--line2);}
-  .adv-toggle.open{border-radius:10px 10px 0 0;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.04);}
+  .adv-toggle.open{border-radius:10px 10px 0 0;border-color:rgba(242,169,0,.3);background:rgba(242,169,0,.04);}
   .adv-toggle-label{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.04em;text-transform:uppercase;transition:color .2s;}
   .adv-toggle.open .adv-toggle-label{color:var(--g);}
   .adv-toggle-hint{font-size:11px;color:var(--t3);}
   .adv-chevron{width:20px;height:20px;color:var(--t3);transition:transform .25s;flex-shrink:0;}
   .adv-chevron.open{transform:rotate(180deg);color:var(--g);}
   .adv-body{
-    background:var(--bg2);border:1px solid rgba(16,185,129,.2);
+    background:var(--bg2);border:1px solid rgba(242,169,0,.2);
     border-top:none;border-radius:0 0 10px 10px;
     padding:0 16px;overflow:hidden;
     max-height:0;transition:max-height .35s ease, padding .35s;
@@ -152,14 +152,14 @@ const CSS = `
   .form-group.full{grid-column:1/-1;}
   .form-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;}
   .form-input,.form-select,.form-textarea{
-    background:rgba(16,185,129,.1) !important;border:1px solid rgba(16,185,129,.25) !important;
+    background:rgba(242,169,0,.1) !important;border:1px solid rgba(242,169,0,.25) !important;
     border-radius:7px;padding:10px 12px;
-    font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1) !important;
+    font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t1) !important;
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
   }
   .form-input::placeholder,.form-textarea::placeholder{color:var(--t3) !important;}
   .form-input:focus,.form-select:focus,.form-textarea:focus{
-    border-color:rgba(16,185,129,.45);box-shadow:0 0 0 3px rgba(16,185,129,.07);
+    border-color:rgba(242,169,0,.45);box-shadow:0 0 0 3px rgba(242,169,0,.07);
   }
   .form-textarea{resize:vertical;min-height:80px;}
   .form-select option,.form-select optgroup{background:var(--bg2);color:var(--t1);}
@@ -171,20 +171,20 @@ const CSS = `
     background:var(--surface);border:1px solid var(--line2);
     border-radius:20px;padding:4px 12px 4px 6px;
     font-size:12px;color:var(--t2);cursor:pointer;transition:all .15s;
-    font-family:var(--font-archivo),sans-serif;border:none;
+    font-family:var(--font-archivo),sans-serif;font-weight:700;border:none;
   }
   .client-pill:hover{border:1px solid var(--g);color:var(--t1);}
   .client-pill-av{
     width:18px;height:18px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-bebas),sans-serif;font-size:10px;flex-shrink:0;
+    font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:10px;flex-shrink:0;
   }
 
   /* Line items */
   .line-items-header{display:grid;grid-template-columns:1fr 90px 90px 90px 28px;gap:8px;padding:0 0 6px;border-bottom:1px solid var(--line);}
   .li-col-head{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);font-weight:600;}
   .line-item-row{display:grid;grid-template-columns:1fr 90px 90px 90px 28px;gap:8px;padding:8px 0;align-items:center;border-bottom:1px solid var(--line);}
-  .line-item-row .form-input:focus{border-color:rgba(16,185,129,.5);box-shadow:0 0 0 3px rgba(16,185,129,.08);}
+  .line-item-row .form-input:focus{border-color:rgba(242,169,0,.5);box-shadow:0 0 0 3px rgba(242,169,0,.08);}
   .li-amt{font-size:13px;font-weight:600;color:var(--t1);text-align:right;padding-right:4px;}
   .li-del{background:transparent;border:none;cursor:pointer;color:var(--t3);border-radius:4px;padding:4px;transition:color .15s;display:flex;align-items:center;}
   .li-del:hover{color:var(--danger);}
@@ -193,7 +193,7 @@ const CSS = `
     background:transparent;border:1px dashed var(--line2);
     border-radius:6px;padding:8px 14px;cursor:pointer;
     font-size:12px;color:var(--t3);margin-top:8px;width:100%;
-    justify-content:center;transition:all .15s;font-family:var(--font-archivo),sans-serif;
+    justify-content:center;transition:all .15s;font-family:var(--font-archivo),sans-serif;font-weight:700;
   }
   .add-line-btn:hover{border-color:var(--g);color:var(--g);}
 
@@ -203,7 +203,7 @@ const CSS = `
     background:transparent;color:var(--t3);font-size:11px;cursor:pointer;
     transition:all .15s;font-family:var(--font-archivo),sans-serif;font-weight:600;
   }
-  .deposit-preset.active{background:var(--g-dim);border-color:rgba(16,185,129,.3);color:var(--g);}
+  .deposit-preset.active{background:var(--g-dim);border-color:rgba(242,169,0,.3);color:var(--g);}
   .deposit-preset:hover{border-color:var(--g);color:var(--g);}
 
   /* Toggle */
@@ -224,14 +224,14 @@ const CSS = `
     padding:12px;font-size:13px;font-weight:700;letter-spacing:.05em;
     text-transform:uppercase;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:8px;
-    transition:all .2s;box-shadow:0 3px 10px rgba(16,185,129,.2);
+    transition:all .2s;box-shadow:0 3px 10px rgba(242,169,0,.2);
     font-family:var(--font-archivo),sans-serif;
   }
-  .apply-btn:hover{background:#34d399;}
+  .apply-btn:hover{background:#C98C00;}
   .clear-btn{
     background:transparent;color:var(--t3);border:1px solid var(--line2);
     border-radius:8px;padding:12px 16px;font-size:12px;cursor:pointer;
-    transition:all .15s;white-space:nowrap;font-family:var(--font-archivo),sans-serif;
+    transition:all .15s;white-space:nowrap;font-family:var(--font-archivo),sans-serif;font-weight:700;
   }
   .clear-btn:hover{border-color:var(--danger);color:var(--danger);}
 
@@ -243,7 +243,7 @@ const CSS = `
   .prev-top{background:var(--surface);padding:16px 18px;border-bottom:1px solid var(--line);position:relative;}
   html[data-theme="light"] .prev-top{background:var(--bg2);}
   .prev-top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g),transparent 60%);opacity:.6;}
-  .prev-brand{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
+  .prev-brand{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;color:var(--t1);}
   .prev-meta{font-size:11px;color:var(--t3);margin-top:3px;}
   .prev-body{padding:16px 18px;}
   .prev-from-to{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;}
@@ -260,18 +260,18 @@ const CSS = `
   .prev-total-final{background:var(--g);border-radius:7px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
   .preview-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;}
   .btn-primary{background:var(--g);color:var(--bg);border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;flex:1;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
-  .btn-primary:hover{background:#34d399;}
+  .btn-primary:hover{background:#C98C00;}
   .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
   .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);border-radius:6px;padding:9px 14px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
   .btn-outline:hover{border-color:var(--g);color:var(--g);}
-  .pill-draft{background:rgba(100,116,139,.12);color:rgba(248,250,252,.45);border:1px solid rgba(100,116,139,.2);display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
-  html[data-theme="light"] .pill-draft{color:rgba(15,23,42,.5);background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25);}
+  .pill-draft{background:rgba(100,116,139,.12);color:rgba(250,247,240,.45);border:1px solid rgba(100,116,139,.2);display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
+  html[data-theme="light"] .pill-draft{color:rgba(31,42,68,.5);background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25);}
 
   /* Send Modal */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;}
   .modal-box{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:480px;overflow:hidden;animation:modalIn .2s ease;}
   .modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
-  .modal-title{font-family:var(--font-bebas),sans-serif;font-size:18px;letter-spacing:2px;color:var(--t1);}
+  .modal-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;color:var(--t1);}
   .modal-close{background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;}
   .modal-body{padding:24px;}
   .modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;}
@@ -279,7 +279,7 @@ const CSS = `
   .channel-tab{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-archivo),sans-serif;text-transform:uppercase;letter-spacing:.05em;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
   .channel-tab.active{border-color:var(--g);background:var(--g-dim);color:var(--g);}
   .channel-tab.active.wa{border-color:#25D366;background:rgba(37,211,102,.1);color:#25D366;}
-  .success-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:8px;margin-bottom:16px;}
+  .success-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(242,169,0,.1);border:1px solid rgba(242,169,0,.25);border-radius:8px;margin-bottom:16px;}
 
   @media(max-width:1024px){
     .gen-layout{grid-template-columns:1fr;}
@@ -665,7 +665,7 @@ export default function NewInvoiceClient({
 
   const firmName = profile?.firm_name || profile?.name || 'Your Firm'
 
-  const COLORS = ['#10B981','#3B82F6','#F59E0B','#E8D8C3','#EF4444','#059669']
+  const COLORS = ['#F2A900','#3B82F6','#F59E0B','#E8D8C3','#EF4444','#C98C00']
 
   return (
     <>
@@ -683,7 +683,7 @@ export default function NewInvoiceClient({
             <div className="ai-hero">
               <div className="ai-hero-header">
                 <div className="ai-hero-icon">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="1.7"><path d="M2 12.5V14h1.5l7.1-7.1-1.5-1.5L2 12.5zM13.7 3.3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0L9.4 1.6l3 3 1.3-1.3z"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="1.7"><path d="M2 12.5V14h1.5l7.1-7.1-1.5-1.5L2 12.5zM13.7 3.3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0L9.4 1.6l3 3 1.3-1.3z"/></svg>
                 </div>
                 <div>
                   <div className="ai-hero-title">Describe your work</div>
@@ -729,7 +729,7 @@ export default function NewInvoiceClient({
               <div className="ai-result">
                 <div className="ai-result-header">
                   <div className="ai-result-title">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#10B981" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M2 8l5 5 7-7"/></svg>
                     {aiPreview ? 'Invoice ready — scroll down to edit' : 'Generation failed'}
                   </div>
                   <button onClick={() => { setAiPreview(null); setAiResult(null) }} style={{ background: 'transparent', border: 'none', color: 'var(--t3)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
@@ -743,12 +743,12 @@ export default function NewInvoiceClient({
                           {aiPreview.project && <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>{aiPreview.project}</div>}
                         </div>
                         {aiPreview.matchedClient && (
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--g)', background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 4, padding: '2px 7px' }}>Matched</div>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--g)', background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.25)', borderRadius: 4, padding: '2px 7px' }}>Matched</div>
                         )}
                       </div>
                     )}
                     {aiPreview.items.length > 0 && (
-                      <div style={{ borderTop: '1px solid rgba(16,185,129,.15)', paddingTop: 8 }}>
+                      <div style={{ borderTop: '1px solid rgba(242,169,0,.15)', paddingTop: 8 }}>
                         {aiPreview.items.map((it, i) => (
                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--line)', fontSize: 12, color: 'var(--t2)' }}>
                             <span style={{ flex: 1, marginRight: 8 }}>{it.desc}</span>
@@ -758,7 +758,7 @@ export default function NewInvoiceClient({
                         ))}
                       </div>
                     )}
-                    <div style={{ marginTop: 8, borderTop: '1px solid rgba(16,185,129,.15)', paddingTop: 8 }}>
+                    <div style={{ marginTop: 8, borderTop: '1px solid rgba(242,169,0,.15)', paddingTop: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--t3)', marginBottom: 3 }}>
                         <span>Subtotal</span><span>{fmtAmt(aiPreview.subtotal, aiPreview.currency)}</span>
                       </div>
@@ -767,7 +767,7 @@ export default function NewInvoiceClient({
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--g)', borderRadius: 6, padding: '8px 10px' }}>
                         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,.85)' }}>Total Due</span>
-                        <span style={{ fontFamily: 'var(--font-bebas),sans-serif', fontSize: 18, color: '#fff', letterSpacing: 1 }}>{fmtAmt(aiPreview.total, aiPreview.currency)}</span>
+                        <span style={{ fontFamily: 'var(--font-bebas),sans-serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: 1 }}>{fmtAmt(aiPreview.total, aiPreview.currency)}</span>
                       </div>
                       {aiPreview.dueDays !== null && (
                         <div style={{ marginTop: 6, fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>Payment due in {aiPreview.dueDays} days</div>
@@ -913,9 +913,9 @@ export default function NewInvoiceClient({
                             </div>
                           </div>
                         </div>
-                        <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit due</div>
-                          <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
+                          <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
                         </div>
                       </div>
                     )}
@@ -949,7 +949,7 @@ export default function NewInvoiceClient({
                         {effectiveDiscount > 0 && (
                           <div style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                             <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: '#F87171', marginBottom: 2 }}>Discount</div>
-                            <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: '#F87171' }}>−{fmtAmt(effectiveDiscount, currency)}</div>
+                            <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 20, color: '#F87171' }}>−{fmtAmt(effectiveDiscount, currency)}</div>
                           </div>
                         )}
                       </div>
@@ -1016,15 +1016,15 @@ export default function NewInvoiceClient({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                        <rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/>
-                        <rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/>
-                        <rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/>
-                        <rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/>
+                        <rect x="1" y="17" width="6" height="15" rx="2" fill="#F2A900"/>
+                        <rect x="9" y="12" width="6" height="20" rx="2" fill="#F2A900" opacity=".82"/>
+                        <rect x="17" y="6" width="6" height="26" rx="2" fill="#F2A900" opacity=".65"/>
+                        <rect x="25" y="0" width="6" height="32" rx="2" fill="#F2A900" opacity=".48"/>
                       </svg>
                       <div className="prev-brand">{firmName.toUpperCase()}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--g)' }}>INVOICE</div>
+                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: 2, color: 'var(--g)' }}>INVOICE</div>
                       <div className="prev-meta">#{savedInvNum || 'Auto'} · {fmtDate(issueDate) || '—'}</div>
                     </div>
                   </div>
@@ -1077,17 +1077,17 @@ export default function NewInvoiceClient({
                   </div>
                   <div className="prev-total-final">
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'rgba(255,255,255,.8)' }}>Total Due</span>
-                    <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 20, color: '#fff', letterSpacing: 1 }}>{fmtAmt(total, currency)}</span>
+                    <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 20, color: '#fff', letterSpacing: 1 }}>{fmtAmt(total, currency)}</span>
                   </div>
 
                   {depositOn && depositAmt > 0 && (
-                    <div style={{ marginTop: 10, background: 'var(--g-dim)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 7, padding: '10px 14px' }}>
+                    <div style={{ marginTop: 10, background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.2)', borderRadius: 7, padding: '10px 14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit Required</div>
                           <div style={{ fontSize: 11, color: 'var(--t3)' }}>{depositPct}% of total</div>
                         </div>
-                        <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 22, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
+                        <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
                       </div>
                     </div>
                   )}
@@ -1103,7 +1103,7 @@ export default function NewInvoiceClient({
 
                   <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="1" y="17" width="6" height="15" rx="2" fill="#10B981"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#10B981" opacity=".82"/><rect x="17" y="6" width="6" height="26" rx="2" fill="#10B981" opacity=".65"/><rect x="25" y="0" width="6" height="32" rx="2" fill="#10B981" opacity=".48"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><rect x="1" y="17" width="6" height="15" rx="2" fill="#F2A900"/><rect x="9" y="12" width="6" height="20" rx="2" fill="#F2A900" opacity=".82"/><rect x="17" y="6" width="6" height="26" rx="2" fill="#F2A900" opacity=".65"/><rect x="25" y="0" width="6" height="32" rx="2" fill="#F2A900" opacity=".48"/></svg>
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--t3)' }}>StagePay</span>
                     </div>
                     {dueDate && <span style={{ fontSize: 9, color: 'var(--t3)' }}>Due {fmtDate(dueDate)}</span>}
@@ -1138,7 +1138,7 @@ export default function NewInvoiceClient({
             <div className="modal-body">
               {sendDone ? (
                 <div className="success-banner">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="rgba(16,185,129,.2)"/><path d="M6 10l3 3 5-5" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="rgba(242,169,0,.2)"/><path d="M6 10l3 3 5-5" stroke="#F2A900" strokeWidth="1.8" strokeLinecap="round"/></svg>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--g)' }}>Invoice sent!</div>
                     <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Redirecting to invoices…</div>

@@ -19,7 +19,7 @@ export default function ThemeToggleBtn() {
   const toggle = useCallback(() => {
     if (phase !== 'idle') return
     const next = isDark ? 'light' : 'dark'
-    curtainColor.current = next === 'light' ? '#f3ede1' : '#0F172A'
+    curtainColor.current = next === 'light' ? '#FAF7F0' : '#18213A'
     setPhase('falling')
 
     setTimeout(() => {
@@ -64,12 +64,12 @@ export default function ThemeToggleBtn() {
           transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
         }}>
           <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
-            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
+            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#F2A900"/>
+            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#F2A900" opacity=".82"/>
+            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#F2A900" opacity=".65"/>
+            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#F2A900" opacity=".48"/>
           </svg>
-          <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontSize: 22, letterSpacing: 4, color: '#10B981' }}>
+          <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: '#F2A900' }}>
             STAGEPAY
           </div>
         </div>
@@ -98,15 +98,15 @@ export default function ThemeToggleBtn() {
         .theme-toggle-btn {
           border: 1px solid rgba(255,255,255,0.14);
           background: transparent;
-          color: rgba(248,250,252,0.55);
+          color: rgba(250,247,240,0.55);
         }
         .theme-toggle-btn:hover {
-          border-color: #10B981 !important;
-          color: #10B981 !important;
+          border-color: #F2A900 !important;
+          color: #F2A900 !important;
         }
         html[data-theme="light"] .theme-toggle-btn {
-          border: 1px solid rgba(15,23,42,0.18);
-          color: rgba(15,23,42,0.55);
+          border: 1px solid rgba(31,42,68,0.18);
+          color: rgba(31,42,68,0.55);
           background: transparent;
         }
       `}</style>

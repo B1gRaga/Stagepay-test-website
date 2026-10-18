@@ -401,6 +401,38 @@ export interface Database {
           }
         ]
       }
+      waitlist_signups: {
+        Row: {
+          id: string
+          full_name: string
+          whatsapp: string
+          email: string | null
+          business_type: string
+          student_range: string | null
+          note: string | null
+          consent: boolean
+          source: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          full_name: string
+          whatsapp: string
+          email?: string | null
+          business_type: string
+          student_range?: string | null
+          note?: string | null
+          consent: boolean
+          source?: string | null
+          status?: string
+          id?: string
+          created_at?: string
+        }
+        Update: {
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
