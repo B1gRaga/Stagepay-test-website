@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { RevealObserver } from '@/components/landing/RevealObserver'
+import { DotGridBackground } from '@/components/landing/DotGridBackground'
 import { LogoFull } from '@/components/Logo'
 
 const CSS = `
@@ -23,8 +24,9 @@ const CSS = `
 .lp a{color:inherit}
 .lp button{font-family:inherit}
 .lp :focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:8px}
-.band{padding:88px clamp(20px,5vw,48px)}
-.wrap{max-width:1120px;margin-inline:auto;position:relative}
+.band{padding:88px clamp(20px,5vw,48px);position:relative}
+.wrap{max-width:1120px;margin-inline:auto;position:relative;z-index:1}
+.dotfx{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none}
 .ink{background:var(--ink);color:var(--on-ink)}
 .p2{background:var(--paper-2)}
 .mark{display:flex;align-items:flex-end;height:10px;width:60px;margin-bottom:18px}
@@ -651,6 +653,7 @@ export default function Home() {
     <div className="lp">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <RevealObserver />
+      <DotGridBackground />
 
       <header className="nav">
         <div className="wrap">
