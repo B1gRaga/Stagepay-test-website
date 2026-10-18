@@ -311,32 +311,11 @@ const CSS = `
 .sticky .btn{min-height:46px;padding:0 22px;box-shadow:0 4px 0 #C98C00}
 @media (min-width:900px){.sticky{display:none}}
 
-/* waitlist sheet */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(24,33,58,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--paper);width:100%;max-height:100%;overflow-y:auto;border-radius:24px 24px 0 0;padding:26px clamp(20px,5vw,48px) calc(26px + 24px);box-shadow:var(--sh-3)}
-@media (min-width:700px){.overlay{align-items:center;padding:24px}.sheet{max-width:560px;border-radius:24px;padding:32px 36px}}
-.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-.sheet h2{font-size:28px}
-.x{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;color:var(--ink);width:44px;height:44px;border-radius:50%;flex:none}
-.x:hover{background:var(--paper-2)}
-.sheet .intro{color:var(--muted);margin:8px 0 22px}
-.lp form{display:grid;gap:16px}
-.field .err{color:var(--error);font-size:13px;font-weight:600}
-.field.bad input,.field.bad select{border-color:var(--error)}
-.check{display:flex;gap:12px;align-items:flex-start;font-size:15px;font-weight:500!important}
-.check input{width:22px;height:22px;margin-top:2px;accent-color:var(--ink);flex:none;min-height:0}
-.form-msg{font-size:14px;font-weight:600;padding:12px 14px;border-radius:12px;background:var(--amber-soft);color:var(--note-fg)}
-.done{display:grid;gap:14px;padding-block:8px}
-.done .tick{width:60px;height:60px;border-radius:50%;background:var(--ink);display:grid;place-items:center}
-.done .tick svg{width:30px;height:30px}
-
 @media (prefers-reduced-motion:reduce){
   .lp *,.lp *::before,.lp *::after{animation:none!important;transition:none!important}
 }
 `
 
-const BUSINESS_TYPES = ['Solo tutor', 'Tutoring centre', 'School', 'Other']
-const STUDENT_RANGES = ['1–10', '11–50', '51+', 'Not sure']
 const CONTACT = { whatsapp: '73205678', email: 'getstagepay@gmail.com' }
 
 function fmt(n: number) {
@@ -451,7 +430,6 @@ export default function Home() {
   const [tab, setTab] = useState<'before' | 'after'>('before')
   const [step, setStep] = useState(0)
   const [stickyShown, setStickyShown] = useState(false)
-  const [overlaySource, setOverlaySource] = useState<string | null>(null)
   const [heroTotal, setHeroTotal] = useState(0)
 
   const [bizName, setBizName] = useState('Thuto Tutoring Centre')
@@ -693,7 +671,10 @@ export default function Home() {
           <nav aria-label="Sections">
             <a href="#how">How it works</a><a href="#try">Try it</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
           </nav>
-          <button className="btn btn-amber" type="button" onClick={() => setOverlaySource('nav')}>Join waitlist</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <a className="textlink" href="/auth/login" style={{ fontSize: 15, color: 'var(--ink)' }}>Sign in</a>
+            <a className="btn btn-amber" href="/auth/signup">Try it free</a>
+          </div>
         </div>
       </header>
 
@@ -709,7 +690,7 @@ export default function Home() {
               <h1 ref={h1Ref}>You do the work. We send the invoice on <span className="wa">WhatsApp.</span></h1>
               <p className="lead">Fill in a few simple details. StagePay organises a professional invoice, sends it on WhatsApp and follows up until you&apos;re paid.</p>
               <div className="ctas">
-                <button className="btn btn-amber" type="button" onClick={() => setOverlaySource('hero')}>Join the waitlist <span className="arr">→</span></button>
+                <a className="btn btn-amber" href="/auth/signup">Try it free <span className="arr">→</span></a>
                 <a className="textlink" href="#how">See how it works →</a>
               </div>
               <p className="small"><b>First 100 users</b> get Pro free for one month.</p>
@@ -885,7 +866,7 @@ export default function Home() {
                   </div>
                 </div>
                 {sent && <div className="sentbox"><span className="ic"><WhatsAppCheckIcon stroke="#1F2A44" /></span><span><b>In the real app, this goes to your client&apos;s WhatsApp.</b><small>StagePay then follows up until it&apos;s paid.</small></span></div>}
-                <p className="demo-note">Demo preview. Join the waitlist to send real invoices.</p>
+                <p className="demo-note">Demo preview. <a href="/auth/signup" style={{ color: 'var(--ink)', fontWeight: 700 }}>Sign up free</a> to send real invoices.</p>
               </div>
             </div>
           </div>
@@ -896,7 +877,7 @@ export default function Home() {
             <div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
             <h2 className="h2">Built in Botswana, and just getting started</h2>
             <p className="lead" style={{ marginTop: 18 }}>StagePay is new. We built it after seeing tutors still invoice from paper receipt books. We&apos;re looking for our first users, and your feedback will shape what comes next.</p>
-            <button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('feedback')} style={{ marginTop: 24 }}>Share feedback</button>
+            <a className="btn btn-ghost" href="mailto:getstagepay@gmail.com?subject=StagePay%20feedback" style={{ marginTop: 24 }}>Share feedback</a>
           </div>
         </section>
 
@@ -905,9 +886,9 @@ export default function Home() {
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Simple plans</h2></div>
             <div className="plans">
-              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to 2 invoices a month.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('free')}>Join the waitlist</button></div>
-              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><button className="btn btn-amber" type="button" onClick={() => setOverlaySource('pro')}>Join the waitlist</button></div>
-              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('business')}>Join the waitlist</button></div>
+              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to 2 invoices a month.</p><a className="btn btn-ghost" href="/auth/signup">Get started</a></div>
+              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href="/auth/signup">Get started</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><a className="btn btn-ghost" href="/auth/signup">Get started</a></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
@@ -930,7 +911,7 @@ export default function Home() {
           <div className="wrap">
             <LogoFull tone="on-ink" className="logo-r" />
             <h2>Send your next invoice the easy way.</h2>
-            <div><button className="btn btn-amber" type="button" onClick={() => setOverlaySource('final')}>Join the waitlist <span className="arr">→</span></button></div>
+            <div><a className="btn btn-amber" href="/auth/signup">Try it free <span className="arr">→</span></a></div>
             <ContactPills />
           </div>
         </section>
@@ -939,16 +920,14 @@ export default function Home() {
       <footer>
         <div className="wrap">
           <span>© 2026 StagePay</span>
-          <details><summary>Privacy</summary><p>We only use your waitlist details to contact you about StagePay. We don&apos;t sell them. Email {CONTACT.email} at any time to remove them.</p></details>
+          <details><summary>Privacy</summary><p>We only use your details to run your StagePay account and keep you updated. We don&apos;t sell them. Email {CONTACT.email} at any time with questions.</p></details>
         </div>
       </footer>
 
       <div className={`sticky ${stickyShown ? 'show' : ''}`} aria-hidden={!stickyShown}>
         <span>Free month of Pro</span>
-        <button className="btn btn-amber" type="button" tabIndex={stickyShown ? 0 : -1} onClick={() => setOverlaySource('sticky')}>Join waitlist</button>
+        <a className="btn btn-amber" tabIndex={stickyShown ? 0 : -1} href="/auth/signup">Try it free</a>
       </div>
-
-      {overlaySource && <WaitlistSheet source={overlaySource} onClose={() => setOverlaySource(null)} />}
     </div>
   )
 }
@@ -965,138 +944,6 @@ function ContactPills() {
     <div className="contact">
       <span className="pillc">WhatsApp {CONTACT.whatsapp}<button type="button" onClick={() => copy('wa', CONTACT.whatsapp)}>{copied === 'wa' ? 'Copied' : 'Copy'}</button></span>
       <span className="pillc">Email {CONTACT.email}<button type="button" onClick={() => copy('email', CONTACT.email)}>{copied === 'email' ? 'Copied' : 'Copy'}</button></span>
-    </div>
-  )
-}
-
-function WaitlistSheet({ source, onClose }: { source: string; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [wa, setWa] = useState('')
-  const [email, setEmail] = useState('')
-  const [type, setType] = useState('')
-  const [range, setRange] = useState('')
-  const [note, setNote] = useState(source === 'feedback' ? '' : '')
-  const [consent, setConsent] = useState(false)
-  const [errors, setErrors] = useState<Record<string, boolean>>({})
-  const [msg, setMsg] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [done, setDone] = useState<null | 'new' | 'already'>(null)
-  const firstFieldRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    const t = setTimeout(() => firstFieldRef.current?.focus(), 40)
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => { document.body.style.overflow = ''; clearTimeout(t); document.removeEventListener('keydown', onKey) }
-  }, [onClose])
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    const nextErrors: Record<string, boolean> = {
-      name: name.trim().length < 2,
-      wa: !/^\+?\d{7,15}$/.test(wa.replace(/[^\d+]/g, '')),
-      email: !!email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
-      type: !type,
-      consent: !consent,
-    }
-    setErrors(nextErrors)
-    if (Object.values(nextErrors).some(Boolean)) return
-    setSubmitting(true)
-    setMsg(null)
-    try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: name.trim(),
-          whatsapp: wa.replace(/[^\d+]/g, ''),
-          email: email.trim() || null,
-          business_type: type,
-          student_range: range || null,
-          note: note.trim() || null,
-          consent: true,
-          source,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setMsg(data.error || 'Your details didn’t save. Check your connection and try again.')
-      } else if (data.alreadyExists) {
-        setDone('already')
-      } else {
-        setDone('new')
-      }
-    } catch {
-      setMsg('Your details didn’t save. Check your connection and try again.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
-        <div className="sheet-head">
-          <h2 id="wl-title">Join the waitlist</h2>
-          <button className="x" type="button" aria-label="Close" onClick={onClose}>×</button>
-        </div>
-        {!done ? (
-          <>
-            <p className="intro">Get a free month of StagePay Pro when we open to new users.</p>
-            <form onSubmit={submit} noValidate>
-              <div className={`field ${errors.name ? 'bad' : ''}`}>
-                <label htmlFor="name">Full name</label>
-                <input id="name" ref={firstFieldRef as React.RefObject<HTMLInputElement>} value={name} onChange={e => setName(e.target.value)} autoComplete="name" required />
-                {errors.name && <span className="err">Enter your name.</span>}
-              </div>
-              <div className={`field ${errors.wa ? 'bad' : ''}`}>
-                <label htmlFor="wa">WhatsApp number</label>
-                <input id="wa" type="tel" inputMode="tel" value={wa} onChange={e => setWa(e.target.value)} autoComplete="tel" placeholder="+267 7X XXX XXX" required />
-                {errors.wa && <span className="err">Enter a WhatsApp number, for example +267 71 234 567.</span>}
-              </div>
-              <div className={`field ${errors.email ? 'bad' : ''}`}>
-                <label htmlFor="email">Email <small>(optional)</small></label>
-                <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
-                {errors.email && <span className="err">Check the email address.</span>}
-              </div>
-              <div className={`field ${errors.type ? 'bad' : ''}`}>
-                <label htmlFor="type">Business type</label>
-                <select id="type" value={type} onChange={e => setType(e.target.value)} required>
-                  <option value="">Choose one</option>
-                  {BUSINESS_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-                {errors.type && <span className="err">Choose a business type.</span>}
-              </div>
-              <div className="field">
-                <label htmlFor="range">Students you invoice each month <small>(optional)</small></label>
-                <select id="range" value={range} onChange={e => setRange(e.target.value)}>
-                  <option value="">Choose one</option>
-                  {STUDENT_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="note">Anything you&apos;d like StagePay to do? <small>(optional)</small></label>
-                <textarea id="note" maxLength={600} value={note} onChange={e => setNote(e.target.value)}
-                  ref={source === 'feedback' ? (firstFieldRef as React.RefObject<HTMLTextAreaElement>) : undefined} />
-              </div>
-              <div className={`field ${errors.consent ? 'bad' : ''}`}>
-                <label className="check" htmlFor="consent"><input type="checkbox" id="consent" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree StagePay can contact me about the waitlist.</label>
-                {errors.consent && <span className="err">Tick the box so we can contact you.</span>}
-              </div>
-              {msg && <p className="form-msg">{msg}</p>}
-              <button className="btn btn-amber" type="submit" disabled={submitting}>{submitting ? 'Saving…' : 'Join the waitlist'}</button>
-            </form>
-          </>
-        ) : (
-          <div className="done">
-            <div className="tick"><svg viewBox="0 0 24 24" aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#F2A900" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-            <h3 style={{ fontSize: 24 }}>{done === 'already' ? 'You’re already on the list.' : 'You’re on the list.'}</h3>
-            <p style={{ color: 'var(--muted)' }}>We&apos;ll contact you on WhatsApp when your free month is ready.</p>
-            <div><button className="btn btn-ghost" type="button" onClick={onClose}>Close</button></div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
