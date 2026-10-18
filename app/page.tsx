@@ -413,6 +413,38 @@ function WhatsAppCheckIcon({ stroke = '#F2A900' }: { stroke?: string }) {
   )
 }
 
+// Counts up from 0 to `to` once the span scrolls into view. Jumps straight
+// to the final value under prefers-reduced-motion.
+function Counter({ to }: { to: number }) {
+  const [val, setVal] = useState(0)
+  const spanRef = useRef<HTMLSpanElement>(null)
+  const firedRef = useRef(false)
+
+  useEffect(() => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) { setVal(to); return }
+    const el = spanRef.current
+    if (!el || !('IntersectionObserver' in window)) { setVal(to); return }
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !firedRef.current) {
+        firedRef.current = true
+        const t0 = performance.now()
+        const step = (t: number) => {
+          const k = Math.min(1, (t - t0) / 1200)
+          setVal(Math.round(to * (1 - Math.pow(1 - k, 3))))
+          if (k < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+        obs.disconnect()
+      }
+    }, { threshold: 0.6 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [to])
+
+  return <span ref={spanRef}>{fmt(val)}</span>
+}
+
 type Row = { label: string; amount: number }
 
 export default function Home() {
@@ -873,9 +905,9 @@ export default function Home() {
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Simple plans</h2></div>
             <div className="plans">
-              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price">P0</div><p className="desc">Up to 2 invoices a month.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('free')}>Join the waitlist</button></div>
-              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price">P100 <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><button className="btn btn-amber" type="button" onClick={() => setOverlaySource('pro')}>Join the waitlist</button></div>
-              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price">P400 <small>/ month</small></div><p className="desc">For teams with multiple users.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('business')}>Join the waitlist</button></div>
+              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to 2 invoices a month.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('free')}>Join the waitlist</button></div>
+              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><button className="btn btn-amber" type="button" onClick={() => setOverlaySource('pro')}>Join the waitlist</button></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><button className="btn btn-ghost" type="button" onClick={() => setOverlaySource('business')}>Join the waitlist</button></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
