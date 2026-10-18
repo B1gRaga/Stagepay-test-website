@@ -56,10 +56,20 @@ const CSS = `
 /* hero on-load entrance (no JS needed) */
 @keyframes heroIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .hero .eyebrow{animation:heroIn .7s .05s ease both}
-.hero h1{animation:heroIn .8s .15s ease both}
 .hero .lead{animation:heroIn .7s .3s ease both}
 .hero .ctas{animation:heroIn .7s .42s ease both}
 .hero .small{animation:heroIn .7s .52s ease both}
+
+/* word-by-word hero heading stagger (JS-enhanced; plain text is the no-JS fallback) */
+.hero h1 .w{display:inline-block;will-change:transform}
+@keyframes wordIn{from{opacity:0;transform:translateY(.6em) rotate(4deg)}to{opacity:1;transform:none}}
+
+/* cursor glow (fine-pointer only, added by JS) */
+.hero .glow{position:absolute;left:0;top:0;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;background:radial-gradient(circle, rgba(242,169,0,.18), rgba(242,169,0,0) 60%);pointer-events:none;opacity:0;transition:opacity .4s ease;z-index:0}
+.hero .glow.on{opacity:1}
+
+/* magnetic buttons (JS sets transform on pointermove; .btn's existing transition smooths it) */
+.btn.mag{will-change:transform}
 
 /* nav */
 .nav{position:sticky;top:0;z-index:50;background:rgba(250,247,240,.9);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid rgba(228,221,207,.8);padding:0 clamp(20px,5vw,48px)}
@@ -74,7 +84,7 @@ const CSS = `
 /* hero */
 .hero{padding:56px clamp(20px,5vw,48px) 96px;overflow:hidden;position:relative}
 .hero::before{content:"";position:absolute;width:720px;height:720px;right:-220px;top:-260px;background:radial-gradient(circle, rgba(242,169,0,.22), rgba(242,169,0,0) 62%);pointer-events:none}
-.hero .stairs{position:absolute;right:0;bottom:0;width:min(520px,70vw);height:200px;display:flex;align-items:flex-end;opacity:.5;pointer-events:none}
+.hero .stairs{position:absolute;right:0;bottom:0;width:min(520px,70vw);height:200px;display:flex;align-items:flex-end;opacity:.5;pointer-events:none;transition:transform .2s ease-out;will-change:transform}
 .hero .stairs i{flex:1;background:var(--ink-2)}.hero .stairs i:nth-child(1){height:34%}.hero .stairs i:nth-child(2){height:67%}.hero .stairs i:nth-child(3){height:100%;background:#33405F}
 .hero .wrap{display:grid;gap:56px;align-items:center}
 .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:20px}
@@ -94,8 +104,9 @@ const CSS = `
 @media (min-width:900px){.hero{padding-block:96px 120px}.hero .wrap{grid-template-columns:1.02fr .98fr}}
 
 /* hero stage: layered cards */
-.stage{position:relative;height:540px;max-width:480px;width:100%;margin-inline:auto}
-.stage .layer{position:absolute}
+.stage{position:relative;height:540px;max-width:480px;width:100%;margin-inline:auto;perspective:1200px}
+.stage .layer{position:absolute;transition:transform .25s ease-out}
+.stage .toast{transition:transform .25s ease-out}
 .back{left:14%;top:30px;width:78%;transform:rotate(5deg)}
 .front{left:2%;top:58px;width:86%}
 .float{animation:bob 6s ease-in-out infinite}
@@ -194,7 +205,7 @@ const CSS = `
 .prog i{display:block;height:100%;width:0;background:var(--amber)}
 .running .step[aria-selected="true"] .prog i{animation:fill 4s linear forwards}
 @keyframes fill{to{width:100%}}
-.phone{width:100%;max-width:300px;margin-inline:auto;background:var(--ink);border-radius:40px;padding:12px;box-shadow:var(--sh-2), inset 0 0 0 2px #33405F;position:relative}
+.phone{width:100%;max-width:300px;margin-inline:auto;background:var(--ink);border-radius:40px;padding:12px;box-shadow:var(--sh-2), inset 0 0 0 2px #33405F;position:relative;transition:transform .2s ease-out;will-change:transform}
 .phone::before{content:"";position:absolute;top:18px;left:50%;width:70px;height:6px;border-radius:6px;background:#33405F;transform:translateX(-50%);z-index:2}
 .phone .scr{background:#EFE9DD;border-radius:30px;overflow:hidden;height:470px;position:relative}
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:opacity .35s ease, transform .35s ease}
@@ -272,7 +283,7 @@ const CSS = `
 .final{overflow:hidden;position:relative}
 .final::before{content:"";position:absolute;left:-200px;bottom:-300px;width:700px;height:700px;background:radial-gradient(circle, rgba(242,169,0,.18), rgba(242,169,0,0) 62%);pointer-events:none}
 .final .stairs{position:absolute;right:clamp(20px,5vw,48px);top:50%;transform:translateY(-50%);width:min(320px,40vw);height:min(320px,40vw);display:flex;align-items:flex-end;opacity:.9;pointer-events:none}
-.final .stairs i{flex:1;background:var(--ink-2)}.final .stairs i:nth-child(1){height:34%}.final .stairs i:nth-child(2){height:67%}.final .stairs i:nth-child(3){height:100%;background:var(--amber)}
+.final .stairs i{flex:1;background:var(--ink-2);transition:transform .2s ease-out;will-change:transform;transform-origin:bottom}.final .stairs i:nth-child(1){height:34%}.final .stairs i:nth-child(2){height:67%}.final .stairs i:nth-child(3){height:100%;background:var(--amber)}
 @media (max-width:700px){.final .stairs{opacity:.25}}
 .final .wrap{display:grid;gap:26px}
 .final svg.logo-r{height:34px;width:auto}
@@ -421,6 +432,14 @@ export default function Home() {
   const stepTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const tabTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  const h1Ref = useRef<HTMLHeadingElement>(null)
+  const glowRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const phoneRef = useRef<HTMLDivElement>(null)
+  const heroStairsRef = useRef<HTMLDivElement>(null)
+  const finalRef = useRef<HTMLDivElement>(null)
+  const finalStairsRef = useRef<HTMLDivElement>(null)
+
   const subtotal = items.reduce((s, r) => s + (r.amount || 0), 0)
   const vatAmount = vat ? Math.round(subtotal * 0.14) : 0
 
@@ -434,6 +453,119 @@ export default function Home() {
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // word-by-word hero heading stagger — splits the live text node into spans,
+  // each with a staggered inline animation. Plain text (no JS) stays fully
+  // visible, so this only enhances, never hides, the heading.
+  useEffect(() => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const h1 = h1Ref.current
+    if (reduce || !h1) return
+    let i = 0
+    function wrapWords(node: ChildNode) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const frag = document.createDocumentFragment()
+        const parts = (node.textContent || '').split(/(\s+)/)
+        parts.forEach(part => {
+          if (!part) return
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return }
+          const span = document.createElement('span')
+          span.className = 'w'
+          span.textContent = part
+          span.style.animation = `wordIn .8s ${(i * 55)}ms cubic-bezier(.2,1,.3,1) both`
+          i++
+          frag.appendChild(span)
+        })
+        node.parentNode?.replaceChild(frag, node)
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        // existing element children (e.g. the amber "WhatsApp." span) animate as one atomic word
+        ;(node as HTMLElement).classList.add('w')
+        ;(node as HTMLElement).style.animation = `wordIn .8s ${(i * 55)}ms cubic-bezier(.2,1,.3,1) both`
+        i++
+      }
+    }
+    Array.from(h1.childNodes).forEach(wrapWords)
+  }, [])
+
+  // cursor glow + magnetic buttons + scroll parallax (fine-pointer, motion-allowed only)
+  useEffect(() => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) return
+    const fine = window.matchMedia?.('(pointer: fine)').matches
+    const cleanups: Array<() => void> = []
+
+    if (fine) {
+      const hero = heroRef.current, glow = glowRef.current, stage = stageRef.current
+      if (hero && glow) {
+        const onMove = (e: PointerEvent) => {
+          const r = hero.getBoundingClientRect()
+          glow.style.transform = `translate(${e.clientX - r.left}px, ${e.clientY - r.top}px)`
+          glow.classList.add('on')
+        }
+        hero.addEventListener('pointermove', onMove)
+        cleanups.push(() => hero.removeEventListener('pointermove', onMove))
+      }
+      if (stage) {
+        const layers = Array.from(stage.querySelectorAll<HTMLElement>('[data-depth]'))
+        const onMove = (e: PointerEvent) => {
+          const r = stage.getBoundingClientRect()
+          const x = (e.clientX - r.left) / r.width - 0.5
+          const y = (e.clientY - r.top) / r.height - 0.5
+          layers.forEach(l => {
+            const d = +(l.getAttribute('data-depth') || 0)
+            const base = l.classList.contains('back') ? ' rotate(5deg)' : ''
+            l.style.transform = `translate(${(-x * d).toFixed(1)}px, ${(-y * d).toFixed(1)}px)${base}`
+          })
+        }
+        const onLeave = () => layers.forEach(l => { l.style.transform = l.classList.contains('back') ? 'rotate(5deg)' : '' })
+        stage.addEventListener('pointermove', onMove)
+        stage.addEventListener('pointerleave', onLeave)
+        cleanups.push(() => { stage.removeEventListener('pointermove', onMove); stage.removeEventListener('pointerleave', onLeave) })
+      }
+      const magButtons = Array.from(document.querySelectorAll<HTMLElement>('.btn-amber'))
+      magButtons.forEach(b => {
+        b.classList.add('mag')
+        const onMove = (e: PointerEvent) => {
+          const r = b.getBoundingClientRect()
+          b.style.transform = `translate(${((e.clientX - r.left - r.width / 2) * 0.18).toFixed(1)}px, ${((e.clientY - r.top - r.height / 2) * 0.3).toFixed(1)}px)`
+        }
+        const onLeave = () => { b.style.transform = '' }
+        b.addEventListener('pointermove', onMove)
+        b.addEventListener('pointerleave', onLeave)
+        cleanups.push(() => { b.removeEventListener('pointermove', onMove); b.removeEventListener('pointerleave', onLeave) })
+      })
+    }
+
+    // scroll-linked parallax — stairs rise/fall and the phone tilts a little; runs on all devices
+    function onScroll() {
+      const hero = heroRef.current
+      if (hero && heroStairsRef.current) {
+        const r = hero.getBoundingClientRect()
+        const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)))
+        heroStairsRef.current.style.transform = `translateY(${(p * -40).toFixed(1)}px)`
+      }
+      const final = finalRef.current
+      if (final) {
+        const r = final.getBoundingClientRect()
+        const p = Math.min(1, Math.max(0, 1 - r.top / Math.max(1, window.innerHeight)))
+        finalRef.current?.querySelectorAll<HTMLElement>('.stairs i').forEach((bar, n) => {
+          const k = Math.min(1, p * 1.6)
+          bar.style.transform = `scaleY(${Math.max(.15, Math.min(1, k * (1.4 - n * .2))).toFixed(3)})`
+        })
+      }
+      if (fine && phoneRef.current) {
+        const r = phoneRef.current.getBoundingClientRect()
+        const mid = r.top + r.height / 2
+        const p = 1 - mid / window.innerHeight
+        phoneRef.current.style.transform = `perspective(900px) rotateY(${((0.5 - p) * 16).toFixed(2)}deg) rotateX(${((p - 0.5) * 6).toFixed(2)}deg)`
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    cleanups.push(() => window.removeEventListener('scroll', onScroll))
+
+    return () => cleanups.forEach(fn => fn())
   }, [])
 
   // hero total count-up on load
@@ -529,11 +661,12 @@ export default function Home() {
 
       <main id="top">
         <section className="band ink hero" id="hero" ref={heroRef}>
-          <div className="stairs" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div className="glow" ref={glowRef} aria-hidden="true"></div>
+          <div className="stairs" ref={heroStairsRef} aria-hidden="true"><i></i><i></i><i></i></div>
           <div className="wrap">
             <div>
               <p className="eyebrow"><span className="dot"></span>For tutors and education businesses in Botswana</p>
-              <h1>You do the work. We send the invoice on <span className="wa">WhatsApp.</span></h1>
+              <h1 ref={h1Ref}>You do the work. We send the invoice on <span className="wa">WhatsApp.</span></h1>
               <p className="lead">Fill in a few simple details. StagePay organises a professional invoice, sends it on WhatsApp and follows up until you&apos;re paid.</p>
               <div className="ctas">
                 <button className="btn btn-amber" type="button" onClick={() => setOverlaySource('hero')}>Join the waitlist <span className="arr">→</span></button>
@@ -542,9 +675,9 @@ export default function Home() {
               <p className="small"><b>First 100 users</b> get Pro free for one month.</p>
             </div>
             <div>
-              <div className="stage" aria-label="Sample StagePay invoice for May tuition fees, total due P1,425, with delivery and reminder notifications" role="img">
-                <div className="layer back"><div className="invoice dim"><div className="steps-bar"><i></i><i></i><i></i></div><div className="inv-body"><div className="inv-top"><div><div className="inv-biz">Thuto Tutoring Centre</div><div className="inv-sub">Receipt · April</div></div><div className="inv-tag">RECEIPT</div></div><div style={{ height: 150 }}></div><div className="inv-total"><span>TOTAL PAID</span><b>P1,425</b></div></div><div className="stamp">PAID</div></div></div>
-                <div className="layer front"><div className="float"><div className="invoice build">
+              <div className="stage" ref={stageRef} aria-label="Sample StagePay invoice for May tuition fees, total due P1,425, with delivery and reminder notifications" role="img">
+                <div className="layer back" data-depth="10"><div className="invoice dim"><div className="steps-bar"><i></i><i></i><i></i></div><div className="inv-body"><div className="inv-top"><div><div className="inv-biz">Thuto Tutoring Centre</div><div className="inv-sub">Receipt · April</div></div><div className="inv-tag">RECEIPT</div></div><div style={{ height: 150 }}></div><div className="inv-total"><span>TOTAL PAID</span><b>P1,425</b></div></div><div className="stamp">PAID</div></div></div>
+                <div className="layer front" data-depth="22"><div className="float"><div className="invoice build">
                   <div className="steps-bar"><i></i><i></i><i></i></div>
                   <div className="inv-body">
                     <div className="inv-top"><div><div className="inv-biz">Thuto Tutoring Centre</div><div className="inv-sub">Sample issuer · Gaborone</div></div><div className="inv-tag">INVOICE</div></div>
@@ -563,9 +696,9 @@ export default function Home() {
                     <div className="inv-foot"><span>Sent and followed up with</span><LogoFull /></div>
                   </div>
                 </div></div></div>
-                <div className="toast t1"><span className="ic"><WhatsAppCheckIcon /></span><span>Sent on WhatsApp<small>to Thato M.</small></span></div>
-                <div className="toast t2"><span className="ic"><svg viewBox="0 0 24 24" aria-hidden><path d="M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" fill="none" stroke="#F2A900" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Reminder on WhatsApp<small>to Thato M.</small></span></div>
-                <div className="toast t3"><span className="ic"><svg viewBox="0 0 24 24" aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#1F2A44" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Repeats monthly<small>June invoice ready</small></span></div>
+                <div className="toast t1" data-depth="34"><span className="ic"><WhatsAppCheckIcon /></span><span>Sent on WhatsApp<small>to Thato M.</small></span></div>
+                <div className="toast t2" data-depth="40"><span className="ic"><svg viewBox="0 0 24 24" aria-hidden><path d="M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" fill="none" stroke="#F2A900" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Reminder on WhatsApp<small>to Thato M.</small></span></div>
+                <div className="toast t3" data-depth="30"><span className="ic"><svg viewBox="0 0 24 24" aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#1F2A44" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Repeats monthly<small>June invoice ready</small></span></div>
               </div>
               <p className="caption" style={{ textAlign: 'center', marginTop: 10 }}>Sample invoice. Names are illustrative.</p>
             </div>
@@ -640,7 +773,7 @@ export default function Home() {
                 <p style={{ marginTop: 16 }}><span className="chip neutral">↻ Set it to repeat monthly</span></p>
               </div>
               <figure style={{ margin: 0, display: 'grid', gap: 12, justifyItems: 'center' }}>
-                <div className="phone" role="img" aria-label="Illustrative phone screens: filling in details, the generated invoice, and the WhatsApp chat with reminder and payment">
+                <div className="phone" ref={phoneRef} role="img" aria-label="Illustrative phone screens: filling in details, the generated invoice, and the WhatsApp chat with reminder and payment">
                   <div className="scr">
                     <div className="screen" aria-hidden={step !== 0}>
                       <div className="bar"><PhoneBarIcon /><div><div className="who">New invoice</div><div className="sub">StagePay</div></div></div>
@@ -752,8 +885,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="band ink final">
-          <div className="stairs" aria-hidden="true"><i></i><i></i><i></i></div>
+        <section className="band ink final" ref={finalRef}>
+          <div className="stairs" ref={finalStairsRef} aria-hidden="true"><i></i><i></i><i></i></div>
           <div className="wrap">
             <LogoFull tone="on-ink" className="logo-r" />
             <h2>Send your next invoice the easy way.</h2>
