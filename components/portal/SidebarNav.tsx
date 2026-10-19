@@ -4,20 +4,21 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { useState, useEffect } from 'react'
 import ThemeToggleBtn from './ThemeToggleBtn'
+import { LogoIcon } from '@/components/Logo'
 
 const CSS = `
   :root{
-    --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);--g-glow:rgba(16,185,129,0.2);
-    --bg:#0F172A;--bg2:#1E293B;--bg3:#1E293B;--surface:#263244;--surface2:#2d3a50;
+    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);--g-glow:rgba(242,169,0,0.2);
+    --bg:#18213A;--bg2:#1F2A44;--bg3:#18213A;--surface:#1F2A44;--surface2:#2B3756;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
+    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;--surface2:#dfd8ce;
-    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
-    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
-    --g-dim:rgba(16,185,129,.12);
+    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
+    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
+    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
+    --g-dim:rgba(242,169,0,.12);
   }
 
   /* ── DESKTOP SIDEBAR ── */
@@ -36,7 +37,7 @@ const CSS = `
   .sidebar-logo{
     padding:22px 20px 16px;
     border-bottom:1px solid var(--line);
-    font-family:var(--font-bebas),sans-serif;
+    font-family:var(--font-bebas),sans-serif;font-weight:700;
     font-size:23px;letter-spacing:3px;color:var(--t1);
   }
   .sidebar-logo em{color:var(--g);font-style:normal;}
@@ -58,7 +59,7 @@ const CSS = `
     font-size:13px;color:var(--t2);cursor:pointer;
     transition:all .15s;position:relative;
     text-decoration:none;background:transparent;border:none;
-    width:calc(100% - 16px);font-family:var(--font-archivo),sans-serif;
+    width:calc(100% - 16px);font-family:var(--font-archivo),sans-serif;font-weight:700;
   }
   .nav-item:hover{background:var(--surface);color:var(--t1);}
   .nav-item.active{background:var(--g-dim);color:var(--g);}
@@ -78,7 +79,7 @@ const CSS = `
   .sidebar-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--line);}
   .user-pill{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s;position:relative;}
   .user-pill:hover{background:var(--surface);}
-  .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(16,185,129,.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-bebas),sans-serif;font-size:13px;color:var(--g);flex-shrink:0;}
+  .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(242,169,0,.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:13px;color:var(--g);flex-shrink:0;}
   .user-name{font-size:13px;color:var(--t1);font-weight:500;}
   .user-plan{font-size:11px;color:var(--g);}
   .profile-popup{
@@ -89,7 +90,7 @@ const CSS = `
   }
   @keyframes popupIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   .profile-popup-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);}
-  .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
+  .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
   .profile-popup-item:hover{background:var(--surface);color:var(--t1);}
   .profile-popup-item.danger{color:var(--danger);}
   .profile-popup-item.danger:hover{background:rgba(224,85,64,.08);color:var(--danger);}
@@ -109,29 +110,29 @@ const CSS = `
       position:fixed;top:0;left:0;right:0;z-index:999;
       height:calc(44px + env(safe-area-inset-top,0px));
       padding:env(safe-area-inset-top,0px) 16px 0;
-      background:rgba(15,23,42,0.94);
+      background:rgba(24,33,58,0.94);
       backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
       border-bottom:1px solid var(--line);
     }
-    html[data-theme="light"] .mob-topbar{background:#f0e9db;border-bottom-color:rgba(26,26,26,0.08);}
+    html[data-theme="light"] .mob-topbar{background:#FAF7F0;border-bottom-color:rgba(31,42,68,0.08);}
     html[data-theme="light"] .mob-topbar-logo{color:var(--t1);}
     html[data-theme="light"] .mob-tab{color:#3d3830;}
     html[data-theme="light"] .mob-tab.active{color:var(--g);}
     html[data-theme="light"] .mob-tab svg{stroke:#3d3830 !important;}
-    html[data-theme="light"] .mob-tab.active svg{stroke:#10B981 !important;}
+    html[data-theme="light"] .mob-tab.active svg{stroke:#F2A900 !important;}
     html[data-theme="light"] .mob-tab.active::before{background:var(--g);}
     html[data-theme="light"] .mob-tab span{color:#3d3830 !important;}
-    html[data-theme="light"] .mob-tab.active span{color:#10B981 !important;font-weight:700;}
+    html[data-theme="light"] .mob-tab.active span{color:#F2A900 !important;font-weight:700;}
     .mob-topbar-logo{
       display:flex;align-items:center;gap:8px;text-decoration:none;
-      font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2px;color:var(--t1);
+      font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2px;color:var(--t1);
     }
     .mob-topbar-logo em{color:var(--g);font-style:normal;}
     .mob-topbar-av{
       width:30px;height:30px;border-radius:50%;
-      background:var(--g-dim);border:1px solid rgba(16,185,129,.25);
+      background:var(--g-dim);border:1px solid rgba(242,169,0,.25);
       display:flex;align-items:center;justify-content:center;
-      font-family:var(--font-bebas),sans-serif;font-size:12px;color:var(--g);
+      font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:12px;color:var(--g);
       cursor:pointer;-webkit-tap-highlight-color:transparent;
     }
     .mob-menu-popup{
@@ -151,11 +152,11 @@ const CSS = `
       border-right:none;border-top:1px solid var(--line);
       position:fixed;bottom:0;left:0;right:0;top:auto;
       z-index:1000;
-      background:rgba(15,23,42,0.94);
+      background:rgba(24,33,58,0.94);
       backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
       padding-bottom:env(safe-area-inset-bottom,0px);
     }
-    html[data-theme="light"] .sidebar{background:#f0e9db;border-top-color:rgba(26,26,26,0.10);}
+    html[data-theme="light"] .sidebar{background:#FAF7F0;border-top-color:rgba(31,42,68,0.10);}
     .sidebar::before{display:none;}
     .sidebar-logo{display:none;}
     .desk-nav{display:none;}
@@ -186,7 +187,7 @@ const CSS = `
       -webkit-tap-highlight-color:transparent;
     }
     .mob-tab.active{color:var(--g);}
-    .mob-tab.active span{color:#10B981 !important;font-weight:700;}
+    .mob-tab.active span{color:#F2A900 !important;font-weight:700;}
     .mob-tab.active::before{
       content:'';position:absolute;
       top:0;left:50%;transform:translateX(-50%);
@@ -194,7 +195,7 @@ const CSS = `
       background:var(--g);border-radius:0 0 3px 3px;
     }
     .mob-tab svg{width:20px;height:20px;transition:stroke .15s;}
-    .mob-tab.active svg{stroke:#10B981 !important;}
+    .mob-tab.active svg{stroke:#F2A900 !important;}
 
     /* Overdue badge on invoices tab */
     .mob-overdue{
@@ -217,12 +218,12 @@ const CSS = `
       width:46px;height:46px;
       background:var(--g);border-radius:14px;
       display:flex;align-items:center;justify-content:center;
-      box-shadow:0 0 0 1px rgba(16,185,129,.3),0 0 18px rgba(16,185,129,.45),0 4px 12px rgba(16,185,129,.25);
+      box-shadow:0 0 0 1px rgba(242,169,0,.3),0 0 18px rgba(242,169,0,.45),0 4px 12px rgba(242,169,0,.25);
       transition:transform .15s,box-shadow .15s;
     }
     .mob-fab:active .mob-fab-inner{
       transform:scale(.91);
-      box-shadow:0 0 10px rgba(16,185,129,.25),0 2px 6px rgba(16,185,129,.15);
+      box-shadow:0 0 10px rgba(242,169,0,.25),0 2px 6px rgba(242,169,0,.15);
     }
   }
 `
@@ -273,12 +274,9 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
       {/* ── MOBILE TOP BAR ── */}
       <div className="mob-topbar">
         <Link href="/dashboard" className="mob-topbar-logo">
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
-            <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-            <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-            <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
-          </svg>
+          <span style={{ display: 'inline-flex', width: 22, height: 22, flexShrink: 0 }}>
+            <LogoIcon />
+          </span>
           <span>STAGE<em>PAY</em></span>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -319,13 +317,10 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
         {/* ── DESKTOP SIDEBAR ── */}
         <div className="sidebar-logo">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
-              <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-              <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
-            </svg>
-            <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 26, letterSpacing: 3 }}>
+            <span style={{ display: 'inline-flex', width: 28, height: 28, flexShrink: 0 }}>
+              <LogoIcon />
+            </span>
+            <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: 3 }}>
               Stage<em>Pay</em>
             </span>
           </div>
@@ -422,28 +417,28 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
           {/* Dashboard */}
           <Link href="/dashboard" className={`mob-tab${is('/dashboard') ? ' active' : ''}`}>
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-              style={is('/dashboard') ? { stroke: '#10B981' } : undefined}>
+              style={is('/dashboard') ? { stroke: '#F2A900' } : undefined}>
               <rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/>
               <rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/>
             </svg>
-            <span style={is('/dashboard') ? { color: '#10B981', fontWeight: 700 } : undefined}>Home</span>
+            <span style={is('/dashboard') ? { color: '#F2A900', fontWeight: 700 } : undefined}>Home</span>
           </Link>
 
           {/* Invoices (with overdue badge) */}
           <Link href="/invoices" className={`mob-tab${is('/invoices') ? ' active' : ''}`}>
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-              style={is('/invoices') ? { stroke: '#10B981' } : undefined}>
+              style={is('/invoices') ? { stroke: '#F2A900' } : undefined}>
               <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
               <path d="M5 6h6M5 9h4"/>
             </svg>
             {overdueCt > 0 && <span className="mob-overdue">{overdueCt}</span>}
-            <span style={is('/invoices') ? { color: '#10B981', fontWeight: 700 } : undefined}>Invoices</span>
+            <span style={is('/invoices') ? { color: '#F2A900', fontWeight: 700 } : undefined}>Invoices</span>
           </Link>
 
           {/* FAB — New Invoice */}
           <Link href="/new-invoice" className="mob-fab" aria-label="New Invoice">
             <div className="mob-fab-inner">
-              <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#1F2A44" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M8 3v10M3 8h10"/>
               </svg>
             </div>
@@ -452,21 +447,21 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
           {/* Clients */}
           <Link href="/clients" className={`mob-tab${is('/clients') ? ' active' : ''}`}>
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-              style={is('/clients') ? { stroke: '#10B981' } : undefined}>
+              style={is('/clients') ? { stroke: '#F2A900' } : undefined}>
               <circle cx="8" cy="5" r="3"/>
               <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5"/>
             </svg>
-            <span style={is('/clients') ? { color: '#10B981', fontWeight: 700 } : undefined}>Clients</span>
+            <span style={is('/clients') ? { color: '#F2A900', fontWeight: 700 } : undefined}>Clients</span>
           </Link>
 
           {/* Settings */}
           <Link href="/settings" className={`mob-tab${is('/settings') ? ' active' : ''}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-              style={is('/settings') ? { stroke: '#10B981' } : undefined}>
+              style={is('/settings') ? { stroke: '#F2A900' } : undefined}>
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
-            <span style={is('/settings') ? { color: '#10B981', fontWeight: 700 } : undefined}>Settings</span>
+            <span style={is('/settings') ? { color: '#F2A900', fontWeight: 700 } : undefined}>Settings</span>
           </Link>
 
         </nav>

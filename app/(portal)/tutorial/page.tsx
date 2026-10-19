@@ -1,18 +1,19 @@
 ﻿import Link from 'next/link'
+import { LogoIcon } from '@/components/Logo'
 
 const CSS = `
 :root{
-    --g:#10B981;--g2:#059669;--g-dim:rgba(16,185,129,0.1);--g-glow:rgba(16,185,129,0.18);
-    --bg:#0F172A;--bg2:#1E293B;--surface:#263244;--surface2:#2d3a50;
+    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);--g-glow:rgba(242,169,0,0.18);
+    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#F8FAFC;--t2:rgba(248,250,252,0.6);--t3:rgba(248,250,252,0.3);
+    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
   }
   html[data-theme="light"]{
-    --bg:#f3ede1;--bg2:#ffffff;--surface:#e8e1d5;--surface2:#dfd8ce;
-    --line:rgba(26,26,26,.08);--line2:rgba(26,26,26,.14);
-    --t1:#1a1a1a;--t2:rgba(26,26,26,.65);--t3:rgba(26,26,26,.45);
-    --g-dim:rgba(16,185,129,.12);
+    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
+    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
+    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
+    --g-dim:rgba(242,169,0,.12);
   }
   html[data-theme="light"] .hero{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -24,7 +25,7 @@ const CSS = `
     display:flex;align-items:center;justify-content:space-between;
     padding:0 28px;background:var(--bg2);
   }
-  .page-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
   .topbar-right{display:flex;align-items:center;gap:10px;}
   .topbar-btn{
     display:flex;align-items:center;gap:7px;
@@ -32,8 +33,8 @@ const CSS = `
     cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;
     text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;
   }
-  .btn-primary{background:var(--g);color:var(--bg);box-shadow:0 2px 8px rgba(16,185,129,.2);}
-  .btn-primary:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 4px 14px rgba(16,185,129,.3);}
+  .btn-primary{background:var(--g);color:var(--bg);box-shadow:0 2px 8px rgba(242,169,0,.2);}
+  .btn-primary:hover{background:#C98C00;transform:translateY(-1px);box-shadow:0 4px 14px rgba(242,169,0,.3);}
   .btn-outline{
     display:flex;align-items:center;gap:7px;
     padding:9px 20px;border-radius:6px;font-size:12px;font-weight:600;
@@ -59,10 +60,10 @@ const CSS = `
   }
   .hero-icon{
     width:64px;height:64px;border-radius:14px;
-    background:var(--g-dim);border:1px solid rgba(16,185,129,.2);
+    background:var(--g-dim);border:1px solid rgba(242,169,0,.2);
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
   }
-  .hero-title{font-family:var(--font-bebas),sans-serif;font-size:32px;letter-spacing:2px;color:var(--t1);line-height:1.1;margin-bottom:8px;}
+  .hero-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:32px;letter-spacing:2px;color:var(--t1);line-height:1.1;margin-bottom:8px;}
   .tut-hero-sub{font-size:14px;color:var(--t1);opacity:.7;line-height:1.6;max-width:480px;}
 
   /* progress bar */
@@ -99,14 +100,14 @@ const CSS = `
   .step-header{display:flex;align-items:flex-start;gap:16px;padding:20px 22px;}
   .step-num{
     width:36px;height:36px;border-radius:50%;
-    background:var(--g-dim);border:1px solid rgba(16,185,129,.25);
+    background:var(--g-dim);border:1px solid rgba(242,169,0,.25);
     display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-bebas),sans-serif;font-size:16px;letter-spacing:1px;
+    font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:16px;letter-spacing:1px;
     color:var(--g);flex-shrink:0;margin-top:2px;
   }
   .step-meta{flex:1;}
   .step-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--g);font-weight:600;margin-bottom:4px;}
-  .step-title{font-family:var(--font-bebas),sans-serif;font-size:20px;letter-spacing:1.5px;color:var(--t1);margin-bottom:6px;}
+  .step-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:1.5px;color:var(--t1);margin-bottom:6px;}
   .step-desc{font-size:13px;color:var(--t2);line-height:1.65;}
 
   .step-divider{height:1px;background:var(--line);}
@@ -124,7 +125,7 @@ const CSS = `
   .instr-text strong{color:var(--t1);font-weight:600;}
   .instr-text code{
     background:var(--surface);border:1px solid var(--line2);border-radius:4px;
-    padding:1px 6px;font-size:12px;color:var(--g);font-family:var(--font-archivo),monospace;
+    padding:1px 6px;font-size:12px;color:var(--g);font-family:var(--font-archivo),monospace;font-weight:700;
   }
   .instr-text em{color:var(--t3);font-style:italic;}
 
@@ -141,7 +142,7 @@ const CSS = `
   /* note (green) */
   .note-box{
     display:flex;align-items:flex-start;gap:10px;
-    background:var(--g-dim);border:1px solid rgba(16,185,129,.2);
+    background:var(--g-dim);border:1px solid rgba(242,169,0,.2);
     border-radius:8px;padding:12px 14px;
   }
   .note-icon{color:var(--g);flex-shrink:0;margin-top:1px;}
@@ -202,7 +203,7 @@ const CSS = `
     content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;
     background:linear-gradient(90deg,transparent,var(--g),transparent);opacity:.6;
   }
-  .cta-title{font-family:var(--font-bebas),sans-serif;font-size:26px;letter-spacing:2px;color:var(--t1);margin-bottom:8px;}
+  .cta-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:26px;letter-spacing:2px;color:var(--t1);margin-bottom:8px;}
   .cta-sub{font-size:13px;color:var(--t2);margin-bottom:20px;}
   .cta-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 
@@ -332,7 +333,7 @@ function Tiers() {
   return (
     <div className="tier-row">
       {[
-        { day: '3 days', label: 'Gentle nudge', color: '#10B981' },
+        { day: '3 days', label: 'Gentle nudge', color: '#F2A900' },
         { day: '7 days', label: 'Polite follow-up', color: '#F59E0B' },
         { day: '14 days', label: 'Firm notice', color: '#F97316' },
         { day: '30 days', label: 'Final escalation', color: '#EF4444' },
@@ -357,8 +358,8 @@ function Statuses() {
         { label: 'Sent', bg: 'rgba(59,130,246,.12)', color: '#3B82F6' },
         { label: 'Pending', bg: 'rgba(245,158,11,.12)', color: '#F59E0B' },
         { label: 'Overdue', bg: 'rgba(239,68,68,.12)', color: '#EF4444' },
-        { label: 'Paid', bg: 'rgba(16,185,129,.12)', color: '#10B981' },
-        { label: 'Cancelled', bg: 'rgba(248,250,252,.06)', color: 'var(--t3)' },
+        { label: 'Paid', bg: 'rgba(242,169,0,.12)', color: '#F2A900' },
+        { label: 'Cancelled', bg: 'rgba(250,247,240,.06)', color: 'var(--t3)' },
       ].map(s => (
         <span key={s.label} className="status-pill" style={{ background: s.bg, color: s.color }}>
           {s.label}
@@ -422,12 +423,9 @@ export default function TutorialPage() {
         {/* Hero */}
         <div className="hero">
           <div className="hero-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect x="1"  y="17" width="6"  height="15" rx="2" fill="#10B981"/>
-              <rect x="9"  y="12" width="6"  height="20" rx="2" fill="#10B981" opacity=".82"/>
-              <rect x="17" y="6"  width="6"  height="26" rx="2" fill="#10B981" opacity=".65"/>
-              <rect x="25" y="0"  width="6"  height="32" rx="2" fill="#10B981" opacity=".48"/>
-            </svg>
+            <span style={{ display: 'inline-flex', width: 32, height: 32 }}>
+              <LogoIcon />
+            </span>
           </div>
           <div>
             <div className="hero-title">Welcome to StagePay</div>
