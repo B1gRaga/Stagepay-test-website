@@ -24,8 +24,8 @@ const styles = StyleSheet.create({
   totalLabel: { color: '#64748B', fontSize: 10 },
   totalValue: { color: '#1E293B', fontSize: 10 },
   grandTotal: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#F2A900', padding: '8pt 10pt', borderRadius: 4, marginTop: 8 },
-  grandLabel: { color: '#ffffff', fontFamily: 'Helvetica-Bold', fontSize: 11 },
-  grandValue: { color: '#ffffff', fontFamily: 'Helvetica-Bold', fontSize: 11 },
+  grandLabel: { color: '#1F2A44', fontFamily: 'Helvetica-Bold', fontSize: 11 },
+  grandValue: { color: '#1F2A44', fontFamily: 'Helvetica-Bold', fontSize: 11 },
   footer: { position: 'absolute', bottom: 32, left: 48, right: 48, borderTop: '1pt solid #E2E8F0', paddingTop: 10, flexDirection: 'row', justifyContent: 'space-between' },
   footerText: { fontSize: 8, color: '#94A3B8' },
 })
@@ -66,7 +66,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
             {profile?.vat_number && <Text style={styles.badge}>VAT: {profile.vat_number}</Text>}
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#0F172A', letterSpacing: 2 }}>INVOICE</Text>
+            <Text style={{ fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#1F2A44', letterSpacing: 2 }}>INVOICE</Text>
             <Text style={styles.badge}>{invoice.invoice_number}</Text>
             <Text style={styles.badge}>Issued: {invoice.issue_date}</Text>
             {invoice.due_date && <Text style={{ ...styles.badge, color: '#EF4444' }}>Due: {invoice.due_date}</Text>}

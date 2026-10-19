@@ -11,7 +11,6 @@ const config: Config = {
     extend: {
       colors: {
         // StagePay brand palette
-        emerald:   { DEFAULT: "#10B981" },
         "deep-navy": "#060A12",
         bg2:       "#0C1220",
         surface:   "#131B2E",

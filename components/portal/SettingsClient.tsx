@@ -806,7 +806,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
                 <BrandingColorField
                   label="Header background"
                   value={branding.brand_color_header}
-                  placeholder={THEME_PRESETS[branding.invoice_theme]?.headerBg ?? '#0F172A'}
+                  placeholder={THEME_PRESETS[branding.invoice_theme]?.headerBg ?? '#1F2A44'}
                   onChange={v => setBranding(p => ({ ...p, brand_color_header: v }))}
                 />
               </div>

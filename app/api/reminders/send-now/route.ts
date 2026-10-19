@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, getCachedUser } from '@/lib/supabase/server'
 import { Resend } from 'resend'
-import twilio from 'twilio'
+import { sendWhatsApp as sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib/whatsapp'
 
 // POST /api/reminders/send-now
 // Sends a reminder immediately (bypasses cron) and logs it as status='sent'.
@@ -107,16 +107,11 @@ async function sendEmail(invoice: any, senderName: string, amount: string, to: s
 }
 
 async function sendWhatsApp(invoice: any, senderName: string, amount: string, phone: string) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID
-  const authToken  = process.env.TWILIO_AUTH_TOKEN
-  const from       = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
-  if (!accountSid || !authToken) throw new Error('WhatsApp not configured')
+  if (!isWhatsAppConfigured()) throw new Error('WhatsApp not configured')
 
-  const barePhone = phone.replace(/^whatsapp:/, '').replace(/\D/g, '')
-  const client    = twilio(accountSid, authToken)
-  await client.messages.create({
-    from,
-    to:   `whatsapp:+${barePhone}`,
-    body: `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`,
+  const templateName = process.env.WHATSAPP_REMINDER_TEMPLATE
+  await sendWhatsAppMessage(phone, {
+    text:     `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`,
+    template: templateName ? { name: templateName, params: [senderName, invoice.invoice_number, amount] } : null,
   })
 }

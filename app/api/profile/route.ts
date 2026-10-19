@@ -12,7 +12,7 @@ const ALLOWED = [
 const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
-const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-emerald'])
+const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-amber'])
 
 export async function GET() {
   const user = await getCachedUser()
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest) {
     } else if (key === 'brand_color_primary' || key === 'brand_color_header') {
       if (body[key] === null) { updates[key] = null; continue }
       const v = String(body[key])
-      if (v !== '' && !HEX_COLOR_RE.test(v)) return NextResponse.json({ error: `${key} must be a hex colour like #10B981` }, { status: 400 })
+      if (v !== '' && !HEX_COLOR_RE.test(v)) return NextResponse.json({ error: `${key} must be a hex colour like #F2A900` }, { status: 400 })
       updates[key] = v === '' ? null : v
     } else if (key === 'whatsapp_reminders_enabled') {
       updates[key] = Boolean(body[key])

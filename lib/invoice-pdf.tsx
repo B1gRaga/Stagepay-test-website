@@ -1,30 +1,27 @@
-import { renderToBuffer, Document, Page, Text, View, Image } from '@react-pdf/renderer'
+import { renderToBuffer, Document, Page, Text, View, Image, Svg, Path, Rect } from '@react-pdf/renderer'
 import { resolveTheme, type InvoiceTheme } from './invoice-themes'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const PAD     = 36           // page padding (pt)
-const EMERALD = '#10B981'
-const PALE_EM = '#E8F8F2'
+const AMBER   = '#F2A900'
+const PALE_AM = '#FCEFC7'
 const MUTED   = '#94A3B8'
-const NAVY    = '#0F172A'
+const INK     = '#1F2A44'
 const WHITE   = '#FFFFFF'
 
 // ─── Logo placeholder ─────────────────────────────────────────────────────────
-// Dark circle, emerald border, inner ring, 4 ascending bars
+// Ink circle, amber border, inner ring, the real bracket+bar brand mark
+// (same path as components/Logo.tsx, kept in sync by hand since this is a
+// separate react-pdf render tree, not a DOM one).
 function LogoMark() {
   const D = 38
-  const bars = [
-    { h: 8,  op: 1.00 },
-    { h: 11, op: 0.82 },
-    { h: 14, op: 0.65 },
-    { h: 17, op: 0.48 },
-  ]
   return (
     <View style={{
       width: D, height: D, borderRadius: D / 2,
-      backgroundColor: NAVY,
-      borderWidth: 1.8, borderColor: EMERALD, borderStyle: 'solid',
+      backgroundColor: INK,
+      borderWidth: 1.8, borderColor: AMBER, borderStyle: 'solid',
       flexShrink: 0, overflow: 'hidden',
+      alignItems: 'center', justifyContent: 'center',
     }}>
       {/* Decorative inner ring at 84% radius */}
       <View style={{
@@ -32,23 +29,14 @@ function LogoMark() {
         top: 3, left: 3,
         width: D - 6, height: D - 6,
         borderRadius: (D - 6) / 2,
-        borderWidth: 0.6, borderColor: EMERALD, borderStyle: 'solid',
+        borderWidth: 0.6, borderColor: AMBER, borderStyle: 'solid',
         opacity: 0.3,
       }} />
-      {/* 4 ascending bars, bottom-anchored */}
-      <View style={{
-        position: 'absolute', bottom: 7, left: 0, right: 0,
-        flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end',
-        gap: 2,
-      }}>
-        {bars.map((b, i) => (
-          <View key={i} style={{
-            width: 4, height: b.h,
-            backgroundColor: EMERALD, opacity: b.op,
-            borderTopLeftRadius: 2, borderTopRightRadius: 2,
-          }} />
-        ))}
-      </View>
+      {/* Bracket + bar brand mark, scaled to a 20pt box within the circle */}
+      <Svg width={20} height={20} viewBox="0 0 92.6 92.6">
+        <Path d="M24 92.6 V69.73 H46.87 V46.87 H69.73 V92.6 Z" fill={WHITE} />
+        <Rect x={69.73} y={24} width={22.87} height={68.6} fill={AMBER} />
+      </Svg>
     </View>
   )
 }
@@ -96,7 +84,7 @@ function AddressCard({ label, name, line1, line2, t }: {
       padding: '4pt 10pt',
     }}>
       <Text style={{
-        fontSize: 6, fontFamily: 'Helvetica-Bold', color: EMERALD,
+        fontSize: 6, fontFamily: 'Helvetica-Bold', color: AMBER,
         textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3,
       }}>
         {label}
@@ -130,7 +118,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
   // Meta
   const terms       = invoice.due_days != null ? `Net ${invoice.due_days}` : 'Due on Receipt'
   const statusLabel = invoice.status === 'paid' ? 'PAID' : invoice.status === 'overdue' ? 'OVERDUE' : 'UNPAID'
-  const statusColor = invoice.status === 'paid' ? EMERALD : invoice.status === 'overdue' ? '#F0B376' : '#F35480'
+  const statusColor = invoice.status === 'paid' ? AMBER : invoice.status === 'overdue' ? '#F0B376' : '#F35480'
 
   // Deposit
   const depositAmt  = Number(invoice.deposit_amount ?? 0)
@@ -170,9 +158,9 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
               <Text style={{ fontSize: 17, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor }}>
                 {firmName}
               </Text>
-              <Text style={{ fontSize: 8, color: EMERALD, marginTop: 2 }}>{subLabel}</Text>
-              {/* Thin emerald rule */}
-              <View style={{ width: 30, height: 1, backgroundColor: EMERALD, marginTop: 3, marginBottom: 3 }} />
+              <Text style={{ fontSize: 8, color: AMBER, marginTop: 2 }}>{subLabel}</Text>
+              {/* Thin amber rule */}
+              <View style={{ width: 30, height: 1, backgroundColor: AMBER, marginTop: 3, marginBottom: 3 }} />
               {firmAddress
                 ? <Text style={{ fontSize: 6.5, color: t.headerSubColor }}>{firmAddress}</Text>
                 : null}
@@ -296,13 +284,13 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
           <View style={{
             alignSelf: 'flex-end', width: '56%',
             minHeight: 20, borderRadius: 7,
-            backgroundColor: PALE_EM,
-            borderWidth: 1, borderColor: EMERALD, borderStyle: 'solid',
+            backgroundColor: PALE_AM,
+            borderWidth: 1, borderColor: AMBER, borderStyle: 'solid',
             paddingHorizontal: 10, paddingVertical: 4,
             marginTop: 6,
           }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: EMERALD }}>
+              <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: AMBER }}>
                 DEPOSIT REQUIRED ({depositPct}%)
               </Text>
               <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.bodyText }}>

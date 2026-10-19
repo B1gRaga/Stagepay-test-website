@@ -36,14 +36,14 @@ export default async function PublicInvoicePage({ params }: Props) {
         body { background: #f1f5f9 !important; padding: 24px 16px; }
         .sp-card { background: #fff; max-width: 720px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.08); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1e293b; }
         .sp-header { padding: 32px 40px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
-        .sp-firm { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #10b981; }
+        .sp-firm { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #F2A900; }
         .sp-firm-detail { font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.6; }
-        .sp-inv-label { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #0f172a; text-align: right; }
+        .sp-inv-label { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #1F2A44; text-align: right; }
         .sp-inv-meta { font-size: 12px; color: #64748b; text-align: right; margin-top: 4px; line-height: 1.7; }
         .sp-body { padding: 28px 40px; }
         .sp-bill-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
         .sp-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 6px; }
-        .sp-bill-name { font-size: 16px; font-weight: 700; color: #0f172a; }
+        .sp-bill-name { font-size: 16px; font-weight: 700; color: #1F2A44; }
         .sp-bill-detail { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.6; }
         .sp-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
         .sp-table th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #94a3b8; padding: 10px 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; }
@@ -54,8 +54,8 @@ export default async function PublicInvoicePage({ params }: Props) {
         .sp-totals { display: flex; justify-content: flex-end; margin-top: 8px; }
         .sp-totals-inner { width: 260px; }
         .sp-total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: #475569; }
-        .sp-grand { background: #10b981; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; margin-top: 10px; }
-        .sp-grand span { color: #fff; font-weight: 700; font-size: 15px; }
+        .sp-grand { background: #F2A900; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; margin-top: 10px; }
+        .sp-grand span { color: #1F2A44; font-weight: 700; font-size: 15px; }
         .sp-notes { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
         .sp-notes p { font-size: 12px; color: #64748b; line-height: 1.7; margin-top: 6px; }
         .sp-footer { padding: 16px 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }

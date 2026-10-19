@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext, createServiceClient } from '@/lib/supabase/server'
-import twilio from 'twilio'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
-import { withRetry, NonRetryableError } from '@/lib/retry'
+import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 
 export const runtime = 'nodejs'
 
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest) {
   // attacker-controlled and bypass the ownership check.
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, status, invoice_number, client_name, total, currency, due_date')
+    .select('id, status, invoice_number, client_name, total, currency, due_date, public_token')
     .eq('id', invoice_id)
     .eq('user_id', user.id)
     .single()
@@ -60,17 +59,13 @@ export async function POST(req: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  const accountSid = process.env.TWILIO_ACCOUNT_SID
-  const authToken  = process.env.TWILIO_AUTH_TOKEN
-  const from       = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
-
-  if (!accountSid || !authToken) {
+  if (!isWhatsAppConfigured()) {
     return NextResponse.json({ error: 'WhatsApp not configured' }, { status: 503 })
   }
 
   const senderName = profile?.firm_name || profile?.name || 'Your service provider'
 
-  // Upload PDF to Supabase Storage so Twilio can fetch it as mediaUrl
+  // Upload PDF to Supabase Storage so Meta can fetch it as a document link
   let pdfUrl: string | undefined
   if (pdf_base64) {
     try {
@@ -111,50 +106,31 @@ export async function POST(req: NextRequest) {
     ? `${dbCurrency}${Number(dbTotal).toLocaleString('en', { minimumFractionDigits: 2 })}`
     : ''
 
-  try {
-    const client = twilio(accountSid, authToken)
-    const toFormatted = `whatsapp:+${barePhone}`
+  const appUrl      = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
+  const invoiceLink = appUrl && invoice.public_token ? `${appUrl}/invoice/${invoice.public_token}` : ''
 
+  try {
     const body = custom_body || [
       `Hello from ${senderName} 👋`,
       ``,
-      `Please find your invoice attached.`,
+      pdfUrl ? `Please find your invoice attached.` : `Here is your invoice.`,
       dbInvoiceNumber ? `📄 Invoice: ${dbInvoiceNumber}` : '',
       amountFormatted ? `💰 Amount:  ${amountFormatted}` : '',
       dbDueDate       ? `📅 Due:     ${dbDueDate}` : '',
+      invoiceLink     ? `🔗 View:    ${invoiceLink}` : '',
       ``,
       `Thank you for your business!`,
     ].filter(Boolean).join('\n')
 
-    const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID
-    const msgParams: any = { from, to: toFormatted }
+    // Business-initiated invoice sends need an approved template to deliver
+    // outside the 24h window. Custom bodies (paid receipts, composed
+    // messages) can't fit a template, so they go as free-form text.
+    const templateName = process.env.WHATSAPP_INVOICE_TEMPLATE
+    const template = templateName && !custom_body
+      ? { name: templateName, params: [senderName, dbInvoiceNumber, amountFormatted, dbDueDate || 'upon receipt', invoiceLink || appUrl] }
+      : null
 
-    // Only use the content template when a PDF URL is present — the template
-    // expects a media URL at variable 5, and passing an empty string causes
-    // Twilio to reject with "Media URLs are invalid".
-    if (templateSid && pdfUrl) {
-      msgParams.contentSid = templateSid
-      msgParams.contentVariables = JSON.stringify({
-        '1': senderName,
-        '2': dbInvoiceNumber,
-        '3': amountFormatted,
-        '4': dbDueDate || 'upon receipt',
-        '5': pdfUrl,
-      })
-    } else {
-      // Free-form body (custom reminders / confirmations / no PDF)
-      msgParams.body = body
-      if (pdfUrl) msgParams.mediaUrl = [pdfUrl]
-    }
-
-    // Only retry transient failures (network errors, 5xx, rate limits) —
-    // a 4xx (e.g. invalid number) will never succeed on retry.
-    await withRetry(() => client.messages.create(msgParams).catch((err: any) => {
-      if (err?.status >= 400 && err.status < 500 && err.status !== 429) {
-        throw new NonRetryableError(err.message)
-      }
-      throw err
-    }))
+    await sendWhatsApp(barePhone, { text: body, template, documentUrl: pdfUrl })
 
     // Record the send on the invoice
     const { error: statusErr } = await supabase
@@ -166,7 +142,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch(err: any) {
     const msg = err?.message || 'Failed to send WhatsApp message'
-    console.error('[WhatsApp] Twilio error:', msg, 'code:', err?.code, 'status:', err?.status)
+    console.error('[WhatsApp] send error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

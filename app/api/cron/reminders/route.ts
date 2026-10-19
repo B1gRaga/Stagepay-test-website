@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { log, logError, cronitorPing } from '@/lib/logger'
 import { Resend } from 'resend'
-import twilio from 'twilio'
-import { withRetry, NonRetryableError } from '@/lib/retry'
+import { withRetry } from '@/lib/retry'
+import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const start = Date.now()
   const DEADLINE_MS  = 50_000 // leave a buffer under maxDuration=60
   const BATCH_SIZE   = 50
-  const CHUNK_SIZE    = 10 // bound concurrent Supabase/Twilio/Resend calls per wave
+  const CHUNK_SIZE    = 10 // bound concurrent Supabase/WhatsApp/Resend calls per wave
   await cronitorPing('reminders', 'run')
   const supabase = createServiceClient()
 
@@ -141,28 +141,15 @@ async function sendReminderEmail(reminder: any, invoice: any, senderName: string
 }
 
 async function sendReminderWhatsApp(reminder: any, invoice: any, senderName: string, amount: string) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID
-  const authToken  = process.env.TWILIO_AUTH_TOKEN
-  const from       = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+  if (!isWhatsAppConfigured()) throw new Error('WhatsApp not configured')
 
-  if (!accountSid || !authToken) throw new Error('WhatsApp not configured')
-
-  const barePhone  = reminder.recipient_phone.replace(/^whatsapp:/, '').replace(/\D/g, '')
-  const to         = `whatsapp:+${barePhone}`
-  const client     = twilio(accountSid, authToken)
-
-  const msgParams: any = { from, to }
-
-  // Reminders never carry a PDF, so never use the content template
-  // (it expects a media URL at variable 5 — an empty string causes Twilio
-  // to reject with "Media URLs are invalid"). Always send free-form body.
-  msgParams.body = reminder.message_preview ||
-    `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`
-
-  await withRetry(() => client.messages.create(msgParams).catch((err: any) => {
-    if (err?.status >= 400 && err.status < 500 && err.status !== 429) {
-      throw new NonRetryableError(err.message)
-    }
-    throw err
-  }))
+  // Cron reminders are always business-initiated, so they need the approved
+  // template to deliver. The custom message_preview is only used as a
+  // free-form fallback when no template is configured.
+  const templateName = process.env.WHATSAPP_REMINDER_TEMPLATE
+  await sendWhatsApp(reminder.recipient_phone, {
+    text: reminder.message_preview ||
+      `Hello! This is a reminder from ${senderName}.\n\nInvoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. Thank you!`,
+    template: templateName ? { name: templateName, params: [senderName, invoice.invoice_number, amount] } : null,
+  })
 }

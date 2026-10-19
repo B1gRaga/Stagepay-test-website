@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     : ''
 
   const paidBodyContent = `<p style="margin:0 0 16px;font-size:16px">Dear ${escapeHtml(invoice.client_name || 'Client')},</p>
-       <p style="margin:0 0 16px">This is to confirm that invoice <strong>${invoiceNum}</strong> for <strong>${total}</strong> has been received and is marked as <strong style="color:#10B981">PAID</strong>.</p>
+       <p style="margin:0 0 16px">This is to confirm that invoice <strong>${invoiceNum}</strong> for <strong>${total}</strong> has been received and is marked as <strong style="color:#C98C00">PAID</strong>.</p>
        <p style="margin:0 0 16px;color:#555">Please find the paid invoice attached for your records.</p>
        <p style="margin:0;color:#555">Thank you for your prompt payment.</p>`
 

@@ -714,7 +714,7 @@ export default function Home() {
                       </tbody>
                     </table>
                     <div className="inv-total"><span>TOTAL DUE</span><b>{fmt(heroTotal)}</b></div>
-                    <div className="inv-foot"><span>Sent and followed up with</span><LogoFull /></div>
+                    <div className="inv-foot"><span>Sent and followed up with</span><LogoFull tone="default" /></div>
                   </div>
                 </div></div></div>
                 <div className="toast t1" data-depth="34"><span className="ic"><WhatsAppCheckIcon /></span><span>Sent on WhatsApp<small>to Thato M.</small></span></div>
@@ -862,7 +862,7 @@ export default function Home() {
                       {vat && <tr className="muted"><td>VAT (14%)</td><td>{fmt(vatAmount)}</td></tr>}
                     </tbody></table>
                     <div className="inv-total"><span>TOTAL DUE</span><b>{fmt(previewTotal)}</b></div>
-                    <div className="inv-foot"><span>Sent and followed up with</span><LogoFull /></div>
+                    <div className="inv-foot"><span>Sent and followed up with</span><LogoFull tone="default" /></div>
                   </div>
                 </div>
                 {sent && <div className="sentbox"><span className="ic"><WhatsAppCheckIcon stroke="#1F2A44" /></span><span><b>In the real app, this goes to your client&apos;s WhatsApp.</b><small>StagePay then follows up until it&apos;s paid.</small></span></div>}

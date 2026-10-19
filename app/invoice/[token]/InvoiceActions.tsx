@@ -5,7 +5,7 @@ export default function InvoiceActions({ token, invoiceNumber }: { token: string
     <div style={{ padding: '20px 40px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
       <a
         href={`/invoice/${token}/pdf`}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', background: '#0f172a', color: '#fff' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', background: '#1F2A44', color: '#fff' }}
       >
         ↓ Download PDF
       </a>

@@ -40,10 +40,10 @@ vi.mock('resend', () => ({
   },
 }))
 
-vi.mock('twilio', () => ({
-  default: function () {
-    return { messages: { create: vi.fn().mockResolvedValue({ sid: 'SM-1' }) } }
-  },
+const mockSendWhatsApp = vi.fn()
+vi.mock('@/lib/whatsapp', () => ({
+  isWhatsAppConfigured: () => true,
+  sendWhatsApp:         (...args: unknown[]) => mockSendWhatsApp(...args),
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -118,5 +118,33 @@ describe('GET /api/cron/reminders', () => {
     const json = await res.json()
     expect(json.sent).toBe(1)
     expect(json.failed).toBe(0)
+  })
+
+  it('sends WhatsApp reminder via the approved template when configured', async () => {
+    vi.stubEnv('WHATSAPP_REMINDER_TEMPLATE', 'payment_reminder')
+    mockSendWhatsApp.mockResolvedValue({ messages: [{ id: 'wamid.1' }] })
+    mockProfileQuery.mockResolvedValue({ data: { firm_name: 'ACME', name: null, email: null } })
+    mockUpdateReminder.mockResolvedValue({ error: null })
+    mockRemindersQuery.mockResolvedValue({
+      data: [{
+        id: 'r-2',
+        channel: 'whatsapp',
+        recipient_email: null,
+        recipient_phone: '+267 71 234 567',
+        message_preview: null,
+        invoices: {
+          id: 'inv-2', invoice_number: '#002', client_name: 'Client Co',
+          total: 1200, currency: 'P', due_date: '2025-06-01', status: 'pending',
+          user_id: 'user-1', invoice_items: [],
+        },
+      }],
+      error: null,
+    })
+    const { GET } = await import('@/app/api/cron/reminders/route')
+    const res = await GET(makeRequest(CRON_SECRET))
+    expect(await res.json()).toMatchObject({ sent: 1, failed: 0 })
+    expect(mockSendWhatsApp).toHaveBeenCalledWith('+267 71 234 567', expect.objectContaining({
+      template: { name: 'payment_reminder', params: ['ACME', '#002', 'P1,200.00'] },
+    }))
   })
 })
