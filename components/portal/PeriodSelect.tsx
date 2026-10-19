@@ -1,16 +1,7 @@
 'use client'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-
-export const PERIODS = [
-  { id: '7d', label: 'Last 7 days' },
-  { id: '30d', label: 'Last 30 days' },
-  { id: '90d', label: 'Last 3 months' },
-  { id: 'year', label: 'This year' },
-  { id: 'all', label: 'All time' },
-] as const
-
-export type PeriodId = typeof PERIODS[number]['id']
+import { PERIODS, type PeriodId } from './periods'
 
 export function PeriodSelect({ value }: { value: PeriodId }) {
   const router = useRouter()

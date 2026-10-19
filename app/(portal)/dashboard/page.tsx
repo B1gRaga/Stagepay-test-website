@@ -1,7 +1,8 @@
 ﻿import { redirect } from 'next/navigation'
 import { createClient, getCachedUser, getCachedProfile } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { PeriodSelect, PERIODS, type PeriodId } from '@/components/portal/PeriodSelect'
+import { PeriodSelect } from '@/components/portal/PeriodSelect'
+import { PERIODS, type PeriodId } from '@/components/portal/periods'
 
 function periodSince(period: PeriodId, now: Date): string | null {
   const d = new Date(now)
