@@ -8,8 +8,10 @@ const mockInsertInvoice  = vi.fn()
 const mockInvoicesInsert = vi.fn(() => ({
   select: vi.fn(() => ({ single: mockInsertInvoice })),
 }))
-const mockInsertItems = vi.fn()
-const mockDeleteEq    = vi.fn().mockResolvedValue({ error: null })
+const mockInsertItems    = vi.fn()
+const mockDeleteEq       = vi.fn().mockResolvedValue({ error: null })
+const mockProfileSingle  = vi.fn()
+const mockInvoicesCount  = vi.fn()
 
 function buildAuthedClient() {
   return {
@@ -17,9 +19,13 @@ function buildAuthedClient() {
       if (table === 'invoices') return {
         insert: mockInvoicesInsert,
         delete: vi.fn(() => ({ eq: mockDeleteEq })),
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ gte: mockInvoicesCount })) })),
       }
       if (table === 'invoice_items') return {
         insert: mockInsertItems,
+      }
+      if (table === 'profiles') return {
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ single: mockProfileSingle })) })),
       }
       return {}
     },
@@ -54,6 +60,8 @@ describe('POST /api/invoices', () => {
       error: null,
     })
     mockInsertItems.mockResolvedValue({ error: null })
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'pro' }, error: null })
+    mockInvoicesCount.mockResolvedValue({ count: 0 })
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -167,5 +175,33 @@ describe('POST /api/invoices', () => {
       client_address: '<b>123 Main St</b>',
     }))
     expect(res.status).toBe(201)
+  })
+
+  it('blocks a free-plan user at the monthly invoice limit', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'free' }, error: null })
+    mockInvoicesCount.mockResolvedValue({ count: 2 })
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM }))
+    expect(res.status).toBe(403)
+    expect(await res.json()).toMatchObject({
+      error: 'Free plan is limited to 2 invoices a month. Upgrade to Pro for unlimited invoices.',
+    })
+    expect(mockInvoicesInsert).not.toHaveBeenCalled()
+  })
+
+  it('allows a free-plan user under the monthly invoice limit', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'free' }, error: null })
+    mockInvoicesCount.mockResolvedValue({ count: 1 })
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM }))
+    expect(res.status).toBe(201)
+  })
+
+  it('does not count invoices for a paid-plan user', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'business' }, error: null })
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM }))
+    expect(res.status).toBe(201)
+    expect(mockInvoicesCount).not.toHaveBeenCalled()
   })
 })

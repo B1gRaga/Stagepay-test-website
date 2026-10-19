@@ -31,11 +31,33 @@ export async function GET(req: NextRequest) {
   })
 }
 
+const FREE_PLAN_MONTHLY_LIMIT = 2
+
 // POST /api/invoices — create a new invoice with its line items
 export async function POST(req: NextRequest) {
   const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
+
+  const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  if ((profile?.plan ?? 'free') === 'free') {
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const { count } = await supabase
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', startOfMonth.toISOString())
+
+    if ((count ?? 0) >= FREE_PLAN_MONTHLY_LIMIT) {
+      return NextResponse.json(
+        { error: `Free plan is limited to ${FREE_PLAN_MONTHLY_LIMIT} invoices a month. Upgrade to Pro for unlimited invoices.` },
+        { status: 403 },
+      )
+    }
+  }
 
   let body: Record<string, unknown>
   try {
