@@ -104,7 +104,7 @@ describe('GET /api/cron/billing-reconcile', () => {
     const res = await GET(makeRequest(CRON_SECRET))
     const json = await res.json()
     expect(json).toMatchObject({ upgraded: 1, cleared: 0 })
-    expect(mockConfirmPlanUpgrade).toHaveBeenCalledWith(expect.anything(), 'user-2', 'business')
+    expect(mockConfirmPlanUpgrade).toHaveBeenCalledWith(expect.anything(), 'user-2', 'business', expect.any(String))
   })
 
   it('clears an abandoned token once past the TTL and still unverified', async () => {

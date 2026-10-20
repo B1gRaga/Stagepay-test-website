@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown transaction' }, { status: 400 })
   }
 
-  await confirmPlanUpgrade(serviceClient, profile.id, profile.pending_plan as DpoPlan)
+  await confirmPlanUpgrade(serviceClient, profile.id, profile.pending_plan as DpoPlan, transactionToken)
 
   return NextResponse.json({ ok: true })
 }

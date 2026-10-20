@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   }
 
   const plan = profile.pending_plan as DpoPlan
-  await confirmPlanUpgrade(serviceClient, user.id, plan)
+  await confirmPlanUpgrade(serviceClient, user.id, plan, transactionToken)
 
   return NextResponse.redirect(`${APP_URL}/settings?billing=success&plan=${plan}`)
 }

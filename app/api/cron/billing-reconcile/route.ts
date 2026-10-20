@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       const { success } = await verifyPaymentToken(profile.dpo_transaction_ref!)
 
       if (success) {
-        await confirmPlanUpgrade(supabase, profile.id, profile.pending_plan as DpoPlan)
+        await confirmPlanUpgrade(supabase, profile.id, profile.pending_plan as DpoPlan, profile.dpo_transaction_ref!)
         upgraded++
         log('cron.billing_reconcile.upgraded', { userId: profile.id })
         continue

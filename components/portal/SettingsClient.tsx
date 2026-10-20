@@ -6,6 +6,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { firmLines } from '@/lib/firm-details'
+import { PLANS, FREE_MONTHLY_LIMIT, planName } from '@/lib/plans'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 
 const supabase = createBrowserClient(
@@ -33,6 +34,7 @@ type Profile = {
   brand_color_header: string | null
   payment_methods?: unknown
   default_due_days?: number | null
+  subscription_expires_at?: string | null
 }
 
 type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'team' | 'security'
@@ -174,6 +176,27 @@ const CSS = `
   .in-suffix .in{padding-right:32px;}
   .in-suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--t2);font-weight:600;pointer-events:none;}
   .def-note{font-size:13px;line-height:1.5;color:var(--t1);padding:12px 14px;border-radius:8px;background:color-mix(in srgb,var(--g) 12%,transparent);}
+  .pl-banner{font-size:14px;font-weight:600;padding:12px 14px;border-radius:10px;margin-bottom:20px;}
+  .pl-banner.ok{background:color-mix(in srgb,var(--g) 16%,transparent);color:var(--t1);}
+  .pl-banner.err{background:color-mix(in srgb,#DC4B3E 12%,transparent);color:#DC4B3E;}
+  .pl-now{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center;padding:20px 22px;margin-bottom:28px;border-radius:12px;background:var(--bg);border:1px solid var(--line);}
+  .pl-kicker{font-size:12px;font-weight:600;color:var(--t2);}
+  .pl-now h3{font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--t1);margin-top:2px;}
+  .pl-usage p{font-size:14px;color:var(--t1);line-height:1.5;}
+  .pl-usage p + p{margin-top:6px;}
+  .pl-meter{display:flex;gap:6px;margin-bottom:8px;max-width:240px;}
+  .pl-meter span{flex:1;height:8px;border-radius:4px;background:var(--line2);}
+  .pl-meter span.on{background:var(--g);}
+  .pl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .pl-card{display:flex;flex-direction:column;gap:8px;padding:18px;border:1px solid var(--line2);border-radius:12px;background:var(--bg2);}
+  .pl-card[aria-current="true"]{border-color:var(--t1);box-shadow:inset 0 0 0 1px var(--t1);}
+  .pl-head{display:flex;align-items:center;gap:8px;}
+  .pl-head b{font-size:15px;color:var(--t1);}
+  .pl-price{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--t1);font-variant-numeric:tabular-nums;}
+  .pl-price small{font-size:13px;font-weight:500;color:var(--t2);letter-spacing:0;}
+  .pl-card > p{font-size:14px;color:var(--t2);line-height:1.5;flex:1;}
+  .pl-card .save,.pl-card .btn-line{width:100%;}
+  @media(max-width:900px){.pl-now{grid-template-columns:1fr;gap:12px;}.pl-grid{grid-template-columns:1fr;}}
   .pp-ref{margin-top:8px;font-size:12px;color:#64748B;line-height:1.5;}
   .pp-empty{font-size:13px;color:var(--t2);line-height:1.5;padding:16px;border:1px dashed var(--line2);border-radius:10px;}
   @media(max-width:1100px){.pay-layout{grid-template-columns:minmax(0,1fr);}.pay-preview{position:static;}}
@@ -439,7 +462,7 @@ function InvoicePreviewMock({ theme: t, logoUrl, firm, taxLabel, vatRate, curren
   )
 }
 
-export function SettingsClient({ initialProfile = null }: { initialProfile?: Profile | null }) {
+export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }: { initialProfile?: Profile | null; invoicesThisMonth?: number }) {
   const [profile, setProfile]   = useState<Profile | null>(initialProfile)
   const [loading, setLoading]   = useState(initialProfile === null)
   const [panel,   setPanel]     = useState<Panel>('brand')
@@ -672,19 +695,28 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
     }
   }
 
+  // Plan & billing
+  const currentPlan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'business'
+  const planEnd = profile?.subscription_expires_at ? new Date(profile.subscription_expires_at) : null
+  const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - Date.now()) / 86400000)) : 0
+  const usedThisMonth = invoicesThisMonth
+  const [upgradeError, setUpgradeError] = useState('')
+  const longDay = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+
   async function upgradePlan(plan: 'pro' | 'business') {
     setUpgrading(plan)
+    setUpgradeError('')
     try {
       const res  = await fetch('/api/billing/checkout', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan }) })
       const data = await res.json()
       if (res.ok && data.paymentUrl) {
         window.location.href = data.paymentUrl
       } else {
-        alert(data.error ?? 'Could not initiate payment. Please try again.')
+        setUpgradeError(data.error ?? 'Couldn’t open the payment page. Please try again.')
         setUpgrading(null)
       }
     } catch {
-      alert('Network error. Please try again.')
+      setUpgradeError('Couldn’t reach the payment page. Check your connection and try again.')
       setUpgrading(null)
     }
   }
@@ -1236,91 +1268,68 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── PLAN & BILLING ── */}
           <div className={`settings-panel${panel === 'plan' ? ' active' : ''}`}>
-            <PanelHead title={<>Plan &amp; billing</>} sub={<>{profile?.plan === 'pro' ? 'Pro plan' : profile?.plan === 'business' ? 'Business plan' : 'Starter · Free · 5 invoices/month'}</>} />
+            <PanelHead title="Plan & billing" sub="Your plan, what it costs, and when it ends." />
+
             {billingStatus === 'success' && (
-              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'rgba(242,169,0,.12)', border:'1px solid rgba(242,169,0,.3)', borderRadius:8, marginBottom:20 }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M3 8l3.5 3.5L13 5"/></svg>
-                <span style={{ fontSize:13, color:'#C98C00', fontWeight:600 }}>
-                  Payment successful! You&apos;re now on the <span style={{ textTransform:'capitalize' }}>{billingPlan}</span> plan.
-                </span>
-              </div>
+              <p className="pl-banner ok" role="status">Payment received. You’re on {planName(billingPlan)}{planEnd ? ` until ${longDay(planEnd)}` : ''}.</p>
             )}
             {billingStatus === 'failed' && (
-              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'rgba(239,68,68,.1)', border:'1px solid rgba(239,68,68,.25)', borderRadius:8, marginBottom:20 }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#EF4444" strokeWidth="2"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-                <span style={{ fontSize:13, color:'#EF4444', fontWeight:600 }}>Payment was not completed. No charge was made.</span>
-              </div>
+              <p className="pl-banner err" role="alert">The payment didn’t go through, so nothing was charged. You can try again below.</p>
             )}
-            <div className="settings-section">
-              <div className="settings-section-title">Your plan</div>
-              <div className="settings-section-desc">You are on the <strong style={{ color: 'var(--t2)' }}>{profile?.plan ?? 'free'}</strong> plan.</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 12 }}>
-                {[
-                  {
-                    id: 'free', name: 'Starter', highlight: false,
-                    price: 0,
-                    features: ['5 invoices/month', 'PDF export', 'WhatsApp send'],
-                  },
-                  {
-                    id: 'pro', name: 'Pro', highlight: true,
-                    price: 100,
-                    features: ['Unlimited invoices', 'Recurring invoices', 'Email delivery', 'Auto-reminders'],
-                  },
-                  {
-                    id: 'business', name: 'Business', highlight: false,
-                    price: 400,
-                    features: ['Everything in Pro', 'Multi-user', 'Advanced reporting', 'Priority support'],
-                  },
-                ].map(plan => {
-                  const isCurrent = plan.id === (profile?.plan ?? 'free')
-                  const canUpgrade = !isCurrent && plan.id !== 'free'
-                  const priceLabel = plan.price === 0 ? 'Free' : `P${plan.price}/mo`
+
+            <section className="pl-now" aria-labelledby="pl-now">
+              <div>
+                <div className="pl-kicker">Your plan</div>
+                <h3 id="pl-now">{planName(currentPlan)}</h3>
+              </div>
+              {currentPlan === 'free' ? (
+                <div className="pl-usage">
+                  <div className="pl-meter" role="img" aria-label={`${usedThisMonth} of ${FREE_MONTHLY_LIMIT} free invoices used this month`}>
+                    {Array.from({ length: FREE_MONTHLY_LIMIT }, (_, i) => <span key={i} className={i < usedThisMonth ? 'on' : ''} />)}
+                  </div>
+                  <p>{Math.min(usedThisMonth, FREE_MONTHLY_LIMIT)} of {FREE_MONTHLY_LIMIT} invoices used this month.{usedThisMonth >= FREE_MONTHLY_LIMIT ? ' Upgrade to send more before the month ends.' : ''}</p>
+                </div>
+              ) : planEnd ? (
+                <div className="pl-usage">
+                  <p><b>{daysLeft > 0 ? `Paid until ${longDay(planEnd)}` : 'Ends today'}</b>{daysLeft > 0 ? `, ${daysLeft === 1 ? '1 day' : `${daysLeft} days`} left.` : '.'}</p>
+                  <p className="help">Plans don’t renew on their own. Pay for another month before then to keep {planName(currentPlan)}; otherwise your account moves to Free. We email you 3 days before it ends.</p>
+                </div>
+              ) : (
+                <div className="pl-usage"><p>This plan has no end date.</p></div>
+              )}
+            </section>
+
+            <section className="block" aria-labelledby="pl-all">
+              <h3 id="pl-all">Plans</h3>
+              <div className="pl-grid">
+                {PLANS.map(p => {
+                  const isCurrent = p.id === currentPlan
+                  const paid = p.id !== 'free'
+                  const label = isCurrent ? `Pay for another month` : `Switch to ${p.name}`
                   return (
-                    <div key={plan.name} className="plan-card" style={{ border: isCurrent ? '1px solid rgba(242,169,0,.4)' : undefined, gap: 8 }}>
-                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 18, letterSpacing: 1.5, color: plan.highlight ? 'var(--g)' : 'var(--t1)' }}>{plan.name}</div>
-                      <div>
-                        <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--t1)' }}>{priceLabel}</span>
+                    <div key={p.id} className="pl-card" aria-current={isCurrent ? 'true' : undefined}>
+                      <div className="pl-head">
+                        <b>{p.name}</b>
+                        {isCurrent && <span className="pm-pref">Your plan</span>}
                       </div>
-                      {plan.features.map(f => <div key={f} style={{ fontSize: 11, color: 'var(--t3)', display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: 'var(--g)', fontSize: 10 }}>✓</span>{f}</div>)}
-                      <div style={{ marginTop: 4 }}>
-                        {isCurrent ? (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--g)', padding: '4px 10px', background: 'var(--g-dim)', borderRadius: 4 }}>Current plan</span>
-                        ) : canUpgrade ? (
-                          <button
-                            className="topbar-btn btn-primary"
-                            style={{ fontSize: 11, padding: '5px 12px', width: '100%', justifyContent: 'center' }}
-                            disabled={!!upgrading}
-                            onClick={() => upgradePlan(plan.id as 'pro' | 'business')}
-                          >
-                            {upgrading === plan.id ? 'Redirecting…' : `Upgrade to ${plan.name}`}
-                          </button>
-                        ) : null}
-                      </div>
+                      <div className="pl-price">P{p.price}{p.price ? <small> a month</small> : null}</div>
+                      <p>{p.includes}</p>
+                      {paid && (isCurrent ? !!planEnd : true) && (
+                        <button type="button" className={isCurrent ? 'btn-line press' : 'save press'} disabled={!!upgrading} onClick={() => upgradePlan(p.id as 'pro' | 'business')}>
+                          {upgrading === p.id ? 'Opening payment…' : label}
+                        </button>
+                      )}
+                      {paid && !isCurrent && currentPlan !== 'free' && planEnd && daysLeft > 0 && (
+                        <span className="help">Starts today. The days left on {planName(currentPlan)} aren’t carried over.</span>
+                      )}
+                      {isCurrent && paid && planEnd && <span className="help">Adds 30 days to {longDay(planEnd)}.</span>}
                     </div>
                   )
                 })}
               </div>
-            </div>
-            <div className="settings-section">
-              <div className="settings-section-title" style={{ color: 'var(--danger)' }}>Danger zone</div>
-              <div className="settings-section-desc">These actions are permanent and cannot be undone.</div>
-              <div style={{ border: '1px solid rgba(239,68,68,.18)', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid rgba(239,68,68,.1)' }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--t1)' }}>Export all data</div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Download all invoices, clients and settings as a ZIP file</div>
-                  </div>
-                  <button className="topbar-btn" style={{ color: 'var(--warn)', borderColor: 'rgba(245,158,11,.3)', flexShrink: 0 }}>Export</button>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--danger)' }}>Cancel plan</div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Your account will downgrade to Starter at end of billing period</div>
-                  </div>
-                  <button className="topbar-btn" style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,.25)', flexShrink: 0 }}>Cancel</button>
-                </div>
-              </div>
-            </div>
+              {upgradeError && <p className="save-note err" role="alert" style={{ marginTop: 12 }}>{upgradeError}</p>}
+              <p className="help" style={{ marginTop: 14 }}>You pay in Pula on DPO’s secure payment page, then come straight back here. Each payment covers 30 days.</p>
+            </section>
           </div>
 
           {/* ── TEAM MEMBERS ── */}

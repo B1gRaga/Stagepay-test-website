@@ -78,7 +78,7 @@ describe('GET /api/billing/verify', () => {
     mockSingle.mockResolvedValue({ data: { pending_plan: 'pro' } })
     const { GET } = await import('@/app/api/billing/verify/route')
     const res = await GET(makeRequest('tok-1'))
-    expect(mockConfirmPlanUpgrade).toHaveBeenCalledWith(expect.anything(), 'user-1', 'pro')
+    expect(mockConfirmPlanUpgrade).toHaveBeenCalledWith(expect.anything(), 'user-1', 'pro', expect.any(String))
     expect(locationOf(res)).toContain('billing=success')
     expect(locationOf(res)).toContain('plan=pro')
   })

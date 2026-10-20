@@ -1,3 +1,4 @@
+import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient, getCachedUser } from '@/lib/supabase/server'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
   })
 }
 
-const FREE_PLAN_MONTHLY_LIMIT = 2
+const FREE_PLAN_MONTHLY_LIMIT = FREE_MONTHLY_LIMIT
 
 // POST /api/invoices — create a new invoice with its line items
 export async function POST(req: NextRequest) {

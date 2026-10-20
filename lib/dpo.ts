@@ -102,12 +102,26 @@ export async function verifyPaymentToken(
 
 // Shared by /api/billing/verify, /api/billing/callback, and the
 // billing-reconcile cron — all three confirm a DPO payment the same way.
+// Each payment buys 30 days. Paying again for the same plan before it ends
+// adds the 30 days to the current end date, so renewing early loses nothing.
+// The update only applies while this payment is still pending, so when two of
+// the callers confirm the same payment at once, Postgres lets only one through.
 export async function confirmPlanUpgrade(
   serviceClient: SupabaseClient<Database>,
   userId: string,
   plan: DpoPlan,
+  transactionToken: string,
 ): Promise<void> {
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: current } = await serviceClient
+    .from('profiles')
+    .select('plan, subscription_expires_at')
+    .eq('id', userId)
+    .single()
+
+  const now = Date.now()
+  const currentEnd = current?.subscription_expires_at ? new Date(current.subscription_expires_at).getTime() : 0
+  const from = current?.plan === plan && currentEnd > now ? currentEnd : now
+  const expiresAt = new Date(from + PLAN_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
   await serviceClient
     .from('profiles')
@@ -117,4 +131,8 @@ export async function confirmPlanUpgrade(
       pending_plan: null,
     })
     .eq('id', userId)
+    .eq('dpo_transaction_ref', transactionToken)
+    .not('pending_plan', 'is', null)
 }
+
+export const PLAN_DAYS = 30
