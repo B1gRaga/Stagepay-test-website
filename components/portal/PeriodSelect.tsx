@@ -18,11 +18,10 @@ export function PeriodSelect({ value }: { value: PeriodId }) {
 
   return (
     <select
-      className="topbar-btn btn-outline"
+      className="period-select"
       value={value}
       onChange={e => onChange(e.target.value)}
-      style={{ paddingRight: 10, cursor: 'pointer' }}
-      aria-label="History period"
+      aria-label="Period"
     >
       {PERIODS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
     </select>

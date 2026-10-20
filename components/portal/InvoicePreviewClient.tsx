@@ -100,6 +100,7 @@ ${STATUS_CSS}
 
   .preview{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
   .preview iframe{width:100%;height:80vh;border:none;display:block;background:#fff;}
+  .no-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 20px;font-size:14px;color:var(--t2);}
 
   .toast{position:fixed;left:50%;bottom:24px;z-index:1300;transform:translateX(-50%);display:flex;align-items:center;gap:14px;min-width:300px;max-width:calc(100vw - 32px);padding:12px 12px 12px 16px;border-radius:12px;background:#111827;color:#FAF7F0;font-size:14px;box-shadow:0 12px 32px rgba(0,0,0,.3);overflow:hidden;animation:toast-in var(--dur-2) var(--ease) both;}
   .toast .msg{flex:1;}
@@ -179,6 +180,11 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [] 
   const [toast, setToast] = useState<{ msg: string; undo: boolean } | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // Browsers without a built-in PDF viewer (Android Chrome, in-editor browsers) download a
+  // framed PDF instead of showing it, so they get an "Open the PDF" card. Unknown until mounted.
+  const [pdfInline, setPdfInline] = useState<boolean | null>(null)
+  useEffect(() => { setPdfInline(navigator.pdfViewerEnabled !== false) }, [])
 
   // A "mark as paid" waits UNDO_MS before it is saved, because paid can't be reversed on the server.
   const pendingPaid = useRef<{ timer: ReturnType<typeof setTimeout>; prev: string } | null>(null)
@@ -425,7 +431,15 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [] 
         </ol>
 
         <div className="preview">
-          <iframe src={`/api/invoices/${invoice.id}/pdf?view=true`} title={`Invoice ${invoice.invoice_number}`} />
+          {pdfInline === true && (
+            <iframe src={`/api/invoices/${invoice.id}/pdf?view=true`} title={`Invoice ${invoice.invoice_number}`} />
+          )}
+          {pdfInline === false && (
+            <div className="no-preview">
+              <p>This browser can’t show the invoice here.</p>
+              <a className="btn press" href={`/api/invoices/${invoice.id}/pdf?view=true`} target="_blank" rel="noreferrer">Open the PDF</a>
+            </div>
+          )}
         </div>
       </div>
 
