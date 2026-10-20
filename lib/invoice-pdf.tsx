@@ -116,7 +116,12 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
   const subLabel    = profile.vat_number ? `VAT No: ${profile.vat_number}` : 'Professional Services'
 
   // Meta
-  const terms       = invoice.due_days != null ? `Net ${invoice.due_days}` : 'Due on Receipt'
+  // Invoices store issue and due dates, not a terms field: derive "Net N" from the gap.
+  const dueDays     = invoice.due_days != null ? Number(invoice.due_days)
+    : invoice.issue_date && invoice.due_date
+      ? Math.round((Date.parse(invoice.due_date) - Date.parse(invoice.issue_date)) / 86_400_000)
+      : null
+  const terms       = dueDays != null && dueDays > 0 ? `Net ${dueDays} days` : 'Due on Receipt'
   const statusLabel = invoice.status === 'paid' ? 'PAID' : invoice.status === 'overdue' ? 'OVERDUE' : 'UNPAID'
   const statusColor = invoice.status === 'paid' ? AMBER : invoice.status === 'overdue' ? '#F0B376' : '#F35480'
 

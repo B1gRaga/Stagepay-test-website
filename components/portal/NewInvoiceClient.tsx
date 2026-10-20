@@ -1,12 +1,15 @@
 ﻿'use client'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogoIcon } from '@/components/Logo'
+import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
+import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type LineItem = { desc: string; qty: number; rate: number }
-type Client   = { id: string; name: string; email: string | null; phone: string | null }
-type Profile  = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string }
+type Client  = { id: string; name: string; email: string | null; phone: string | null }
+type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string }
 
 const CURRENCIES = [
   { v: 'P',   l: 'BWP — Pula (P)' },
@@ -21,227 +24,250 @@ const CURRENCIES = [
   { v: 'AED', l: 'AED — Dirham' },
 ]
 
-function today() { return new Date().toISOString().split('T')[0] }
+const TERMS = [
+  { days: 0,  label: 'On receipt' },
+  { days: 7,  label: '7 days' },
+  { days: 14, label: '14 days' },
+  { days: 30, label: '30 days' },
+] as const
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function today() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Gaborone' }).format(new Date())
+}
 function addDays(d: string, n: number) {
-  const dt = new Date(d); dt.setDate(dt.getDate() + n)
-  return dt.toISOString().split('T')[0]
+  const [y, m, day] = d.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, day + n)).toISOString().slice(0, 10)
+}
+function daysBetween(a: string, b: string) {
+  return Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000)
 }
 function fmtAmt(n: number, sym: string) {
   return `${sym}${Number(n).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 function fmtDate(d: string) {
   if (!d) return ''
-  const [y, m, day] = d.split('-')
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return `${day} ${months[parseInt(m)-1]} ${y}`
+  const [y, m, day] = d.split('-').map(Number)
+  return `${day} ${MONTHS[m - 1]} ${y}`
+}
+function longDate(d: string) {
+  const [y, m, day] = d.split('-').map(Number)
+  return `${DAYS[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]}, ${day} ${MONTHS[m - 1]}`
+}
+function initials(name: string) {
+  return name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
+}
+// A stable hue per person, so the same client always wears the same tint.
+function hue(name: string) {
+  let h = 0
+  for (const c of name.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) % 360
+  return h
+}
+const reducedMotion = () => typeof window !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// Glides a number to its new value, so the preview total visibly follows the form.
+function useTween(value: number, ms = 450) {
+  const [shown, setShown] = useState(value)
+  const from = useRef(value)
+  useEffect(() => {
+    if (reducedMotion()) { setShown(value); from.current = value; return }
+    const start = performance.now(), a = from.current, b = value
+    let raf = 0
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / ms)
+      const v = a + (b - a) * (1 - Math.pow(1 - p, 3))
+      setShown(v); from.current = v
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value, ms])
+  return shown
 }
 
-// ── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
-:root{
-    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
-    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
-    --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
-    --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
-  }
-  html[data-theme="light"]{
-    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
-    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
-    --g-dim:rgba(242,169,0,.12);
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  @keyframes dots{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-  @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-
-  .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
+  .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 28px;background:var(--bg2);}
   .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
+  .ni{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start;padding:24px 28px 48px;max-width:1240px;}
+  .ni-form{display:flex;flex-direction:column;gap:16px;min-width:0;}
 
-  .gen-wrap{padding:16px 28px;height:calc(100vh - 56px);}
-  .gen-layout{display:grid;grid-template-columns:1fr 400px;gap:16px;height:100%;}
-  .gen-left{display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-right:2px;padding-bottom:16px;}
-  .gen-right{background:var(--bg2);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;}
-  html[data-theme="light"] .gen-right{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
+  .sec{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px 22px;}
+  .sec h2{font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-.01em;}
+  .sec-sub{font-size:14px;color:var(--t2);margin-top:2px;}
+  .sec-body{margin-top:16px;}
 
-  /* Advanced / Edit details panel */
-  .adv-toggle{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:12px 16px;background:var(--bg2);border:1px solid var(--line);
-    border-radius:10px;cursor:pointer;transition:all .2s;
-  }
-  .adv-toggle:hover{border-color:var(--line2);}
-  .adv-toggle.open{border-radius:10px 10px 0 0;border-color:rgba(242,169,0,.3);background:rgba(242,169,0,.04);}
-  .adv-toggle-label{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.04em;text-transform:uppercase;transition:color .2s;}
-  .adv-toggle.open .adv-toggle-label{color:var(--g);}
-  .adv-toggle-hint{font-size:11px;color:var(--t3);}
-  .adv-chevron{width:20px;height:20px;color:var(--t3);transition:transform .25s;flex-shrink:0;}
-  .adv-chevron.open{transform:rotate(180deg);color:var(--g);}
-  .adv-body{
-    background:var(--bg2);border:1px solid rgba(242,169,0,.2);
-    border-top:none;border-radius:0 0 10px 10px;
-    padding:0 16px;overflow:hidden;
-    max-height:0;transition:max-height .35s ease, padding .35s;
-  }
-  .adv-body.open{max-height:2400px;padding:16px;}
+  .lbl{display:block;font-size:13px;font-weight:600;color:var(--t2);margin-bottom:6px;}
+  .in{width:100%;height:42px;background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:0 12px;font:500 15px var(--font-manrope),sans-serif;color:var(--t1);outline:none;transition:border-color var(--dur-1) var(--ease),box-shadow var(--dur-1) var(--ease);}
+  textarea.in{height:auto;min-height:84px;padding:10px 12px;line-height:1.5;resize:vertical;}
+  select.in{cursor:pointer;}
+  .in:focus{border-color:var(--g);box-shadow:0 0 0 3px color-mix(in srgb,var(--g) 22%,transparent);}
+  .in::placeholder{color:var(--t3);}
+  .in.bad{border-color:#E5484D;}
+  .in.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px;}
+  .field-err{font-size:13px;color:#E5484D;margin-top:6px;}
 
-  /* Form */
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .form-group{display:flex;flex-direction:column;gap:5px;}
-  .form-group.full{grid-column:1/-1;}
-  .form-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;}
-  .form-input,.form-select,.form-textarea{
-    background:rgba(242,169,0,.1) !important;border:1px solid rgba(242,169,0,.25) !important;
-    border-radius:7px;padding:10px 12px;
-    font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t1) !important;
-    outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
-  }
-  .form-input::placeholder,.form-textarea::placeholder{color:var(--t3) !important;}
-  .form-input:focus,.form-select:focus,.form-textarea:focus{
-    border-color:rgba(242,169,0,.45);box-shadow:0 0 0 3px rgba(242,169,0,.07);
-  }
-  .form-textarea{resize:vertical;min-height:80px;}
-  .form-select option,.form-select optgroup{background:var(--bg2);color:var(--t1);}
+  /* Clients: one tap fills the details. */
+  .people{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .person{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 5px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--t1);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .person:hover{border-color:var(--t3);}
+  .person[aria-pressed="true"]{border-color:var(--t1);background:color-mix(in srgb,var(--t1) 6%,transparent);}
+  .av{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:700;background:hsl(var(--h) 70% 90%);color:hsl(var(--h) 45% 28%);}
+  html:not([data-theme="light"]) .av{background:hsl(var(--h) 30% 30%);color:hsl(var(--h) 70% 85%);}
+  .people-more{height:38px;padding:0 12px;border:0;background:none;color:var(--t2);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .people-more:hover{color:var(--t1);}
 
-  /* Client pills */
-  .client-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-  .client-pill{
-    display:flex;align-items:center;gap:6px;
-    background:var(--surface);border:1px solid var(--line2);
-    border-radius:20px;padding:4px 12px 4px 6px;
-    font-size:12px;color:var(--t2);cursor:pointer;transition:all .15s;
-    font-family:var(--font-archivo),sans-serif;font-weight:700;border:none;
-  }
-  .client-pill:hover{border:1px solid var(--g);color:var(--t1);}
-  .client-pill-av{
-    width:18px;height:18px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:10px;flex-shrink:0;
+  /* Same as last time. */
+  .again{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;border-radius:12px;background:color-mix(in srgb,var(--g) 12%,transparent);animation:ni-rise var(--dur-3) var(--ease) both;}
+  .again p{font-size:14px;color:var(--t1);}
+  .again small{display:block;font-size:13px;color:var(--t2);margin-top:2px;}
+  .again-btn{height:36px;padding:0 14px;border-radius:9px;border:0;background:var(--t1);color:var(--bg);font:700 14px var(--font-manrope),sans-serif;cursor:pointer;white-space:nowrap;}
+  .again-done{font-size:14px;font-weight:600;color:var(--t1);}
+
+  /* Items. */
+  .items-head,.item-row{display:grid;grid-template-columns:minmax(0,1fr) 76px 112px 112px 36px;gap:10px;align-items:center;}
+  .items-head{font-size:13px;font-weight:600;color:var(--t2);margin-bottom:6px;}
+  .items-head .r,.item-amt{text-align:right;}
+  .item-row{padding:6px 0;animation:ni-rise var(--dur-3) var(--ease) both;}
+  .item-amt{font-size:15px;font-weight:700;color:var(--t1);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .item-del{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:9px;background:transparent;color:var(--t3);cursor:pointer;}
+  .item-del:hover{color:#E5484D;background:color-mix(in srgb,#E5484D 10%,transparent);}
+  .item-del:disabled{opacity:.3;cursor:default;background:none;color:var(--t3);}
+  .add-item{display:inline-flex;align-items:center;gap:8px;height:38px;margin-top:8px;padding:0 12px;border-radius:9px;border:1px dashed var(--line2);background:transparent;color:var(--t1);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .add-item:hover{border-color:var(--t3);}
+
+  .sums{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);display:grid;justify-content:end;grid-template-columns:auto 140px;gap:6px 24px;font-size:14px;color:var(--t2);font-variant-numeric:tabular-nums;}
+  .sums span:nth-child(even){text-align:right;color:var(--t1);}
+  .sums .total{font-size:18px;font-weight:700;color:var(--t1);padding-top:6px;}
+
+  /* Due date. */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{height:38px;padding:0 14px;border-radius:9px;border:1px solid var(--line2);background:transparent;color:var(--t1);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .chip:hover{border-color:var(--t3);}
+  .chip[aria-pressed="true"]{background:var(--t1);border-color:var(--t1);color:var(--bg);}
+  .due-line{margin-top:12px;font-size:14px;color:var(--t2);}
+  .due-line b{color:var(--t1);}
+
+  /* More options. */
+  details.sec > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  details.sec > summary::-webkit-details-marker{display:none;}
+  details.sec > summary svg{transition:transform var(--dur-2) var(--ease);color:var(--t2);}
+  details.sec[open] > summary svg{transform:rotate(180deg);}
+  details.sec[open] .sec-body{animation:ni-rise var(--dur-2) var(--ease) both;}
+  .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);}
+  .opt:first-child{border-top:0;padding-top:0;}
+  .opt-l{font-size:14px;font-weight:600;color:var(--t1);}
+  .opt-l small{display:block;font-size:13px;font-weight:400;color:var(--t2);margin-top:1px;}
+  .opt-in{display:flex;align-items:center;gap:8px;}
+  .opt-in .in{width:110px;}
+  .switch{position:relative;width:44px;height:26px;flex:none;border-radius:999px;border:0;background:var(--line2);cursor:pointer;transition:background-color var(--dur-2) var(--ease);}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform var(--dur-2) var(--ease);}
+  .switch[aria-checked="true"]{background:var(--g);}
+  .switch[aria-checked="true"]::after{transform:translateX(18px);}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--t1);font:700 14px var(--font-manrope),sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none;}
+  .btn:hover:not(:disabled){border-color:var(--t3);}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .btn.primary{background:var(--g);border-color:var(--g);color:#1F2A44;}
+  .btn.primary:hover:not(:disabled){background:#FFB81C;border-color:#FFB81C;}
+  .btn.ghost{border-color:transparent;color:var(--t2);}
+  .btn.ghost:hover:not(:disabled){color:var(--t1);border-color:transparent;background:color-mix(in srgb,var(--t1) 5%,transparent);}
+  .btn:focus-visible,.chip:focus-visible,.person:focus-visible,.switch:focus-visible,.item-del:focus-visible,.add-item:focus-visible,.again-btn:focus-visible,summary:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
+
+  /* Preview: looks like the PDF the client receives. */
+  .ni-side{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px;}
+  .side-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--t2);}
+  .paper{background:#FFFFFF;color:#1F2A44;border-radius:12px;overflow:hidden;font-size:12px;box-shadow:0 1px 0 rgba(31,42,68,.06),0 8px 28px rgba(15,23,41,.12);}
+  .paper-top{background:#1F2A44;color:#FAF7F0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px;}
+  .paper-firm{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#F2A900;}
+  .paper-firm small{display:block;font-size:10.5px;font-weight:500;color:rgba(250,247,240,.6);margin-top:1px;}
+  .paper-word{font-size:20px;font-weight:800;letter-spacing:.04em;color:#F2A900;text-align:right;line-height:1;}
+  .paper-word small{display:block;font-size:10.5px;font-weight:500;letter-spacing:0;color:rgba(250,247,240,.7);margin-top:4px;}
+  .paper-body{padding:14px 18px 16px;}
+  .paper-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .paper-meta div{background:#FCEFC7;border-radius:6px;padding:6px 8px;}
+  .paper-meta span{display:block;font-size:9.5px;color:#6B4A00;}
+  .paper-meta b{font-size:11.5px;font-variant-numeric:tabular-nums;}
+  .paper-to{margin-top:10px;background:#FAF7F0;border-radius:6px;padding:8px 10px;}
+  .paper-to span{font-size:9.5px;color:#6B4A00;}
+  .paper-to b{display:block;font-size:12.5px;margin-top:1px;}
+  .paper-to small{display:block;color:#5B6475;font-size:11px;}
+  .paper-items{width:100%;border-collapse:collapse;margin-top:12px;font-variant-numeric:tabular-nums;}
+  .paper-items th{background:#1F2A44;color:#FAF7F0;font-size:9.5px;font-weight:700;text-align:left;padding:6px 8px;}
+  .paper-items th:first-child{border-radius:5px 0 0 5px;}
+  .paper-items th:last-child{border-radius:0 5px 5px 0;}
+  .paper-items td{padding:6px 8px;font-size:11.5px;}
+  .paper-items tr:nth-child(even) td{background:#FCEFC7;}
+  .paper-items .r{text-align:right;white-space:nowrap;}
+  .paper-items tr.fresh td{animation:ni-flash 900ms var(--ease) both;}
+  .paper-empty{padding:14px 8px;color:#8A93A6;font-style:italic;font-size:11.5px;}
+  .paper-sums{display:grid;grid-template-columns:1fr auto;gap:3px 16px;margin:10px 0 0 auto;width:60%;font-size:11.5px;color:#5B6475;font-variant-numeric:tabular-nums;}
+  .paper-sums span:nth-child(even){text-align:right;color:#1F2A44;}
+  .paper-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:9px 12px;border-radius:7px;background:#F2A900;color:#1F2A44;font-weight:800;font-variant-numeric:tabular-nums;}
+  .paper-total b{font-size:17px;}
+  .paper-note{margin-top:10px;font-size:11px;color:#5B6475;white-space:pre-wrap;}
+  .side-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .side-actions .primary{grid-column:1 / -1;height:48px;font-size:15px;}
+  .side-err{font-size:14px;color:#E5484D;}
+  .side-err a{color:inherit;font-weight:700;}
+
+  /* Phone and tablet: the form, then a bar that keeps the total and Send in reach. */
+  .bar,.mob-err{display:none;}
+  .sheet-bg{position:fixed;inset:0;z-index:3000;background:rgba(10,14,24,.55);display:flex;align-items:flex-end;justify-content:center;animation:ni-fade var(--dur-2) var(--ease) both;}
+  .sheet{width:100%;max-width:520px;max-height:92dvh;overflow:auto;background:var(--bg2);border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));animation:ni-up var(--dur-3) var(--ease) both;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .sheet-head h2{font-size:17px;font-weight:700;color:var(--t1);}
+  .sheet-x{width:36px;height:36px;border:0;border-radius:10px;background:color-mix(in srgb,var(--t1) 6%,transparent);color:var(--t1);font-size:20px;cursor:pointer;}
+  @media(min-width:640px){.sheet-bg{align-items:center;}.sheet{border-radius:16px;}}
+
+  .send-to{font-size:14px;color:var(--t2);margin-bottom:14px;}
+  .send-to b{color:var(--t1);}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:11px;background:color-mix(in srgb,var(--t1) 6%,transparent);margin-bottom:14px;}
+  .tabs button{height:36px;border:0;border-radius:8px;background:transparent;color:var(--t2);font:700 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .tabs button[aria-pressed="true"]{background:var(--bg2);color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12);}
+  .send-done{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;background:color-mix(in srgb,var(--g) 14%,transparent);font-size:14px;color:var(--t1);}
+  .send-done small{display:block;color:var(--t2);margin-top:2px;}
+  .sheet-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+
+  @keyframes ni-rise{from{opacity:0;transform:translateY(8px)}}
+  @keyframes ni-fade{from{opacity:0}}
+  @keyframes ni-up{from{transform:translateY(24px);opacity:0}}
+  @keyframes ni-flash{0%{background:rgba(242,169,0,.35)}}
+  @media (prefers-reduced-motion: reduce){
+    .again,.item-row,details.sec[open] .sec-body,.sheet-bg,.sheet,.paper-items tr.fresh td{animation:none;}
   }
 
-  /* Line items */
-  .line-items-header{display:grid;grid-template-columns:1fr 90px 90px 90px 28px;gap:8px;padding:0 0 6px;border-bottom:1px solid var(--line);}
-  .li-col-head{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);font-weight:600;}
-  .line-item-row{display:grid;grid-template-columns:1fr 90px 90px 90px 28px;gap:8px;padding:8px 0;align-items:center;border-bottom:1px solid var(--line);}
-  .line-item-row .form-input:focus{border-color:rgba(242,169,0,.5);box-shadow:0 0 0 3px rgba(242,169,0,.08);}
-  .li-amt{font-size:13px;font-weight:600;color:var(--t1);text-align:right;padding-right:4px;}
-  .li-del{background:transparent;border:none;cursor:pointer;color:var(--t3);border-radius:4px;padding:4px;transition:color .15s;display:flex;align-items:center;}
-  .li-del:hover{color:var(--danger);}
-  .add-line-btn{
-    display:flex;align-items:center;gap:6px;
-    background:transparent;border:1px dashed var(--line2);
-    border-radius:6px;padding:8px 14px;cursor:pointer;
-    font-size:12px;color:var(--t3);margin-top:8px;width:100%;
-    justify-content:center;transition:all .15s;font-family:var(--font-archivo),sans-serif;font-weight:700;
+  @media(max-width:1100px){
+    .ni{grid-template-columns:1fr;padding:20px 20px 120px;}
+    .ni-side{display:none;}
+    .mob-err{display:block;}
+    .bar{display:flex;position:sticky;bottom:0;z-index:20;align-items:center;gap:10px;margin:0 -20px;padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg2) 94%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(8px);}
+    .bar-total{flex:1;min-width:0;}
+    .bar-total small{display:block;font-size:12px;color:var(--t2);}
+    .bar-total b{font-size:19px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums;}
+    .bar .btn.primary{height:46px;}
   }
-  .add-line-btn:hover{border-color:var(--g);color:var(--g);}
-
-  /* Deposit presets */
-  .deposit-preset{
-    padding:4px 10px;border-radius:4px;border:1px solid var(--line2);
-    background:transparent;color:var(--t3);font-size:11px;cursor:pointer;
-    transition:all .15s;font-family:var(--font-archivo),sans-serif;font-weight:600;
-  }
-  .deposit-preset.active{background:var(--g-dim);border-color:rgba(242,169,0,.3);color:var(--g);}
-  .deposit-preset:hover{border-color:var(--g);color:var(--g);}
-
-  /* Toggle */
-  .toggle-sw{width:36px;height:20px;border-radius:10px;background:var(--surface);border:1px solid var(--line2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;display:inline-block;}
-  .toggle-sw.on{background:var(--g);border-color:var(--g);}
-  .toggle-sw::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--t3);transition:transform .2s, background .2s;}
-  .toggle-sw.on::after{transform:translateX(16px);background:#fff;}
-
-  /* Action bar */
-  .action-bar{
-    display:flex;align-items:center;gap:10px;
-    margin-top:16px;padding-top:14px;
-    border-top:1px solid var(--line);
-    position:sticky;bottom:0;background:var(--bg2);padding-bottom:4px;
-  }
-  .apply-btn{
-    flex:1;background:var(--g);color:var(--bg);border:none;border-radius:8px;
-    padding:12px;font-size:13px;font-weight:700;letter-spacing:.05em;
-    text-transform:uppercase;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    transition:all .2s;box-shadow:0 3px 10px rgba(242,169,0,.2);
-    font-family:var(--font-archivo),sans-serif;
-  }
-  .apply-btn:hover{background:#C98C00;}
-  .clear-btn{
-    background:transparent;color:var(--t3);border:1px solid var(--line2);
-    border-radius:8px;padding:12px 16px;font-size:12px;cursor:pointer;
-    transition:all .15s;white-space:nowrap;font-family:var(--font-archivo),sans-serif;font-weight:700;
-  }
-  .clear-btn:hover{border-color:var(--danger);color:var(--danger);}
-
-  /* Preview */
-  .preview-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
-  .preview-header-title{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.05em;text-transform:uppercase;}
-  .preview-body{flex:1;overflow-y:auto;padding:18px;}
-  .preview-invoice{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;}
-  .prev-top{background:var(--surface);padding:16px 18px;border-bottom:1px solid var(--line);position:relative;}
-  html[data-theme="light"] .prev-top{background:var(--bg2);}
-  .prev-top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g),transparent 60%);opacity:.6;}
-  .prev-brand{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;color:var(--t1);}
-  .prev-meta{font-size:11px;color:var(--t3);margin-top:3px;}
-  .prev-body{padding:16px 18px;}
-  .prev-from-to{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px;}
-  .prev-section-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
-  .prev-name{font-size:12px;font-weight:600;color:var(--t1);}
-  .prev-detail{font-size:11px;color:var(--t3);line-height:1.6;}
-  .prev-table{width:100%;border-collapse:collapse;margin-bottom:12px;}
-  .prev-table th{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);padding:0 0 8px;border-bottom:1px solid var(--line);text-align:left;font-weight:600;}
-  .prev-table th:last-child,.prev-table td:last-child{text-align:right;}
-  .prev-table td{font-size:12px;color:var(--t2);padding:8px 0;border-bottom:1px solid var(--line);}
-  .prev-table tr:last-child td{border-bottom:none;}
-  .prev-totals{border-top:1px solid var(--line2);padding-top:10px;}
-  .prev-total-row{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);padding:3px 0;}
-  .prev-total-final{background:var(--g);border-radius:7px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
-  .preview-actions{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;}
-  .btn-primary{background:var(--g);color:var(--bg);border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;flex:1;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
-  .btn-primary:hover{background:#C98C00;}
-  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-  .btn-outline{background:transparent;color:var(--t2);border:1px solid var(--line2);border-radius:6px;padding:9px 14px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;font-family:var(--font-archivo),sans-serif;transition:all .15s;}
-  .btn-outline:hover{border-color:var(--g);color:var(--g);}
-  .pill-draft{background:rgba(100,116,139,.12);color:rgba(250,247,240,.45);border:1px solid rgba(100,116,139,.2);display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px;}
-  html[data-theme="light"] .pill-draft{color:rgba(31,42,68,.5);background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25);}
-
-  /* Send Modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;}
-  .modal-box{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:480px;overflow:hidden;animation:modalIn .2s ease;}
-  .modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
-  .modal-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;color:var(--t1);}
-  .modal-close{background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;}
-  .modal-body{padding:24px;}
-  .modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;}
-  .channel-tabs{display:flex;gap:6px;margin-bottom:20px;}
-  .channel-tab{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-archivo),sans-serif;text-transform:uppercase;letter-spacing:.05em;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
-  .channel-tab.active{border-color:var(--g);background:var(--g-dim);color:var(--g);}
-  .channel-tab.active.wa{border-color:#25D366;background:rgba(37,211,102,.1);color:#25D366;}
-  .success-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(242,169,0,.1);border:1px solid rgba(242,169,0,.25);border-radius:8px;margin-bottom:16px;}
-
-  @media(max-width:1024px){
-    .gen-layout{grid-template-columns:1fr;}
-    .gen-right{display:none;}
-  }
-  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
-  @media(max-width:600px){
-    .gen-wrap{padding:12px 16px;}
-    .form-grid{grid-template-columns:1fr;}
-    .form-input,.form-select,.form-textarea{font-size:12px !important;}
-    .form-input::placeholder,.form-textarea::placeholder{font-size:12px !important;}
-    .line-items-header{display:none;}
-    .line-item-row{
-      grid-template-columns:1fr 1fr auto 28px;
-      grid-template-rows:auto auto;
-      gap:6px 8px;
-      padding:10px 0;
-    }
-    .line-item-row>*:nth-child(1){grid-column:1/-1;}
+  @media(max-width:768px){
+    .topbar{padding:0 16px;}
+    .topbar .btn{display:none;}
+    .ni{padding:16px 16px 24px;}
+    .sec{padding:16px;}
+    .bar{bottom:calc(56px + env(safe-area-inset-bottom,0px));margin:0 -16px;padding:10px 16px;}
+    .grid2,.grid3{grid-template-columns:1fr;}
+    .items-head{display:none;}
+    .item-row{grid-template-columns:72px minmax(0,1fr) 36px;grid-template-areas:"desc desc del" "qty rate amt";row-gap:8px;padding:12px 0;border-top:1px solid var(--line);}
+    .item-row:first-of-type{border-top:0;}
+    .item-row .c-desc{grid-area:desc;}
+    .item-row .c-qty{grid-area:qty;}
+    .item-row .c-rate{grid-area:rate;}
+    .item-row .item-amt{grid-area:amt;grid-column:3;justify-self:end;}
+    .item-row .item-del{grid-area:del;}
+    .item-row{grid-template-columns:72px minmax(0,1fr) auto;}
+    .sums{grid-template-columns:auto 120px;}
+    .opt{flex-wrap:wrap;}
   }
 `
 
@@ -251,253 +277,272 @@ export default function NewInvoiceClient({
   initialClients,
   editId,
   initialInvoice = null,
+  lastByClient = {},
+  knownItems = [],
 }: {
   initialProfile: Profile | null
   initialClients: Client[]
   editId: string | null
   initialInvoice?: Record<string, any> | null
+  lastByClient?: Record<string, LastInvoice>
+  knownItems?: KnownItem[]
 }) {
   const router = useRouter()
+  const profile = initialProfile
+  const inv = editId ? initialInvoice : null
 
-  // Data — pre-populated from server; only editId triggers a client fetch
-  const [profile,  setProfile]  = useState<Profile | null>(initialProfile)
-  const [clients,  setClients]  = useState<Client[]>(initialClients)
+  // Form state, filled from the invoice being edited or from the profile's defaults.
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(inv?.client_id ?? null)
+  const [clientName,  setClientName]  = useState<string>(inv?.client_name ?? '')
+  const [clientEmail, setClientEmail] = useState<string>(inv?.client_email ?? '')
+  const [clientPhone, setClientPhone] = useState<string>(inv?.client_phone ?? '')
+  const [project,     setProject]     = useState<string>(inv?.project ?? '')
+  const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
+  const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())
+  const initialDue = inv?.due_date || addDays(inv?.issue_date || today(), 30)
+  const initialTerm = daysBetween(inv?.issue_date || today(), initialDue)
+  const [termDays,    setTermDays]    = useState<number | null>(TERMS.some(t => t.days === initialTerm) ? initialTerm : null)
+  const [customDue,   setCustomDue]   = useState<string>(initialDue)
+  const [vatRate,     setVatRate]     = useState<number>(inv?.vat_rate ?? (Number(profile?.default_vat_rate) || 14))
+  const [items,       setItems]       = useState<(LineItem & { key: number })[]>(() => {
+    const src = inv?.invoice_items?.length
+      ? [...inv.invoice_items].sort((a: any, b: any) => a.sort_order - b.sort_order).map((it: any) => ({ desc: it.description, qty: Number(it.quantity), rate: Number(it.unit_price) }))
+      : [{ desc: '', qty: 1, rate: 0 }]
+    return src.map((it: LineItem, i: number) => ({ ...it, key: i }))
+  })
+  const nextKey = useRef(items.length)
+  const [discountOn,  setDiscountOn]  = useState<boolean>(Number(inv?.discount_amount) > 0)
+  const [discountAmt, setDiscountAmt] = useState<number>(Number(inv?.discount_amount) || 0)
+  const [depositOn,   setDepositOn]   = useState<boolean>(Number(inv?.deposit_amount) > 0)
+  const [depositPct,  setDepositPct]  = useState<number>(() => {
+    const t = Number(inv?.total), d = Number(inv?.deposit_amount)
+    return t > 0 && d > 0 ? Math.round((d / t) * 100) : 50
+  })
+  const [isRecurring, setIsRecurring] = useState<boolean>(!!inv?.is_recurring)
+  const [recurInterval, setRecurInterval] = useState<'monthly' | 'quarterly' | 'yearly'>(inv?.recurrence_interval || 'monthly')
+  const [notes,       setNotes]       = useState<string>(inv?.notes ?? '')
 
-  // Form
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
-  const [clientName,  setClientName]  = useState('')
-  const [clientEmail, setClientEmail] = useState('')
-  const [clientPhone, setClientPhone] = useState('')
-  const [project,     setProject]     = useState('')
-  const [currency,    setCurrency]    = useState('P')
-  const [issueDate,   setIssueDate]   = useState(today())
-  const [dueDate,     setDueDate]     = useState(addDays(today(), 30))
-  const [vatRate,     setVatRate]     = useState(14)
-  const [items,       setItems]       = useState<LineItem[]>([{ desc: '', qty: 1, rate: 0 }])
-  const [depositOn,   setDepositOn]   = useState(false)
-  const [depositPct,  setDepositPct]  = useState(50)
-  const [discountOn,  setDiscountOn]  = useState(false)
-  const [discountAmt, setDiscountAmt] = useState(0)
-  const [isRecurring, setIsRecurring] = useState(false)
-  const [recurInterval, setRecurInterval] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly')
-  const [notes,       setNotes]       = useState('')
-  const [tc,          setTc]          = useState('')
-  const [terms,       setTerms]       = useState('30')
+  const [showAllPeople, setShowAllPeople] = useState(false)
+  const [usedAgain,  setUsedAgain]  = useState<string | null>(null)
+  const [freshKeys,  setFreshKeys]  = useState<Set<number>>(new Set())
+  const [tried,      setTried]      = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [saveError,  setSaveError]  = useState('')
+  const [previewOpen, setPreviewOpen] = useState(false)
 
-  // UI
-  const [advOpen,  setAdvOpen]  = useState(false)
+  // Once saved, later saves update the same invoice instead of creating another.
+  const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(editId)
+  const [savedInvNum,    setSavedInvNum]    = useState<string | null>(inv?.invoice_number ?? null)
+  const [savedToken,     setSavedToken]     = useState<string | null>(inv?.public_token ?? null)
 
-  // Save / send
-  const [saving,         setSaving]         = useState(false)
-  const [sendModalOpen,  setSendModalOpen]  = useState(false)
-  const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null)
-  const [savedInvNum,    setSavedInvNum]    = useState<string | null>(null)
-  const [channel,        setChannel]        = useState<'email' | 'wa'>('email')
-  const [sendEmail,      setSendEmail]      = useState('')
-  const [sendPhone,      setSendPhone]      = useState('')
-  const [sending,        setSending]        = useState(false)
-  const [sendDone,       setSendDone]       = useState(false)
-  const [sendError,      setSendError]      = useState('')
+  const [sendOpen,  setSendOpen]  = useState(false)
+  const [channel,   setChannel]   = useState<'wa' | 'email'>('wa')
+  const [sendEmail, setSendEmail] = useState('')
+  const [sendPhone, setSendPhone] = useState('')
+  const [sending,   setSending]   = useState(false)
+  const [sendDone,  setSendDone]  = useState(false)
+  const [sendError, setSendError] = useState('')
 
-  // Set defaults from pre-fetched profile
-  useEffect(() => {
-    if (initialProfile && !editId) {
-      setCurrency(initialProfile.default_currency || 'P')
-      setVatRate(Number(initialProfile.default_vat_rate) || 14)
-    }
-  }, [])
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
-  // Populate form from server-pre-fetched invoice (edit mode)
-  useEffect(() => {
-    if (!editId || !initialInvoice) return
-    const inv = initialInvoice
-    setClientName(inv.client_name || '')
-    setClientEmail(inv.client_email || '')
-    setClientPhone(inv.client_phone || '')
-    setProject(inv.project || '')
-    setCurrency(inv.currency || initialProfile?.default_currency || 'P')
-    setIssueDate(inv.issue_date || today())
-    setDueDate(inv.due_date || addDays(today(), 30))
-    setVatRate(inv.vat_rate ?? 14)
-    setNotes(inv.notes || '')
-    if (inv.deposit_amount > 0) setDepositOn(true)
-    if (inv.invoice_items?.length) {
-      setItems(inv.invoice_items
-        .sort((a: any, b: any) => a.sort_order - b.sort_order)
-        .map((it: any) => ({ desc: it.description, qty: it.quantity, rate: it.unit_price })))
-    }
-  }, [])
+  const nameRef = useRef<HTMLInputElement>(null)
+  const firstItemRef = useRef<HTMLInputElement>(null)
 
-  // ── Computed totals ──
-  const subtotal       = useMemo(() => items.reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0), [items])
-  const effectiveDiscount = useMemo(() => discountOn ? Math.min(discountAmt, subtotal) : 0, [discountOn, discountAmt, subtotal])
-  const discountedSub  = useMemo(() => subtotal - effectiveDiscount, [subtotal, effectiveDiscount])
-  const vatAmt         = useMemo(() => discountedSub * (vatRate / 100), [discountedSub, vatRate])
-  const total          = useMemo(() => discountedSub + vatAmt, [discountedSub, vatAmt])
-  const depositAmt     = useMemo(() => depositOn ? total * (depositPct / 100) : 0, [depositOn, total, depositPct])
+  // ── Derived ──
+  const dueDate = termDays === null ? customDue : addDays(issueDate, termDays)
+  const lines = items.filter(i => i.desc.trim())
+  const subtotal = items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.rate) || 0), 0)
+  const effectiveDiscount = discountOn ? Math.min(discountAmt, subtotal) : 0
+  const vatAmt = (subtotal - effectiveDiscount) * (vatRate / 100)
+  const total = subtotal - effectiveDiscount + vatAmt
+  const depositAmt = depositOn ? total * (depositPct / 100) : 0
+  const shownTotal = useTween(total)
 
-  // ── Helpers ──
-  function clearForm() {
-    setSelectedClientId(null)
-    setClientName(''); setClientEmail(''); setClientPhone(''); setProject('')
-    setCurrency(profile?.default_currency || 'P')
-    setIssueDate(today()); setDueDate(addDays(today(), 30))
-    setVatRate(Number(profile?.default_vat_rate) || 14)
-    setItems([{ desc: '', qty: 1, rate: 0 }])
-    setDepositOn(false); setDepositPct(50)
-    setDiscountOn(false); setDiscountAmt(0)
-    setIsRecurring(false); setRecurInterval('monthly')
-    setNotes(''); setTc(''); setTerms('30')
+  const problems = {
+    client: !clientName.trim() ? 'Add who this invoice is for.' : '',
+    items: !lines.some(i => (Number(i.qty) || 0) * (Number(i.rate) || 0) > 0) ? 'Add at least one item with an amount.' : '',
   }
 
+  const firmName = profile?.firm_name || profile?.name || 'Your business'
+  // Older invoices may be linked to the client only by name, so look both ways and take the newest.
+  const nameKey = clientName.trim() ? `name:${clientName.trim().toLowerCase()}` : ''
+  const last = [selectedClientId && lastByClient[selectedClientId], nameKey && lastByClient[nameKey]]
+    .filter((x): x is LastInvoice => !!x)
+    .sort((a, b) => (b.issue_date ?? '').localeCompare(a.issue_date ?? ''))[0]
+  const knownByDesc = useMemo(() => new Map(knownItems.map(k => [k.desc.toLowerCase(), k])), [knownItems])
+  const people = showAllPeople ? initialClients : initialClients.slice(0, 8)
+
+  // ── Client ──
   function selectClient(c: Client) {
+    if (selectedClientId === c.id) return
     setSelectedClientId(c.id)
     setClientName(c.name)
     setClientEmail(c.email ?? '')
     setClientPhone(c.phone ?? '')
-    if (!advOpen) setAdvOpen(true)
+    setUsedAgain(null)
   }
 
-  const updateItem = useCallback((i: number, field: keyof LineItem, val: string | number) => {
-    setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it))
-  }, [])
+  function useLastTime() {
+    if (!last) return
+    if (last.project) setProject(last.project)
+    if (last.currency) setCurrency(last.currency)
+    const keys: number[] = []
+    setItems(last.items.map(i => { const key = nextKey.current++; keys.push(key); return { ...i, key } }))
+    setFreshKeys(new Set(keys))
+    setUsedAgain(last.invoice_number)
+  }
 
-  const addItem = useCallback(() => {
-    setItems(prev => [...prev, { desc: '', qty: 1, rate: 0 }])
-  }, [])
+  // ── Items ──
+  function updateItem(key: number, field: keyof LineItem, val: string | number) {
+    setItems(prev => prev.map(it => {
+      if (it.key !== key) return it
+      const next = { ...it, [field]: val }
+      // A remembered item brings its last rate with it, unless a rate is already set.
+      if (field === 'desc' && !Number(it.rate)) {
+        const k = knownByDesc.get(String(val).trim().toLowerCase())
+        if (k) next.rate = k.rate
+      }
+      return next
+    }))
+  }
+  function addItem() {
+    const key = nextKey.current++
+    setItems(prev => [...prev, { desc: '', qty: 1, rate: 0, key }])
+    setFreshKeys(new Set([key]))
+    requestAnimationFrame(() => document.getElementById(`ni-desc-${key}`)?.focus())
+  }
+  function removeItem(key: number) {
+    setItems(prev => (prev.length === 1 ? prev : prev.filter(it => it.key !== key)))
+  }
 
-  const removeItem = useCallback((i: number) => {
-    setItems(prev => prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i))
-  }, [])
-
-  // ── Save invoice ──
-  async function saveInvoice(status: 'draft' | 'sent') {
-    setSaving(true)
+  // ── Save ──
+  async function saveInvoice(createAs: 'draft' | 'sent' = 'draft') {
+    setSaving(true); setSaveError('')
     try {
-      const payload = {
-        status,
-        client_id:            selectedClientId ?? null,
-        client_name:          clientName || 'Unknown Client',
-        client_email:         clientEmail || null,
-        client_phone:         clientPhone || null,
-        project:              project || null,
+      const payload: Record<string, unknown> = {
+        client_id:           selectedClientId ?? null,
+        client_name:         clientName.trim(),
+        client_email:        clientEmail.trim() || null,
+        client_phone:        clientPhone.trim() || null,
+        project:             project.trim() || null,
         currency,
-        issue_date:           issueDate,
-        due_date:             dueDate || null,
-        vat_rate:             vatRate,
-        discount_amount:      effectiveDiscount,
-        deposit_amount:       depositAmt,
-        is_recurring:         isRecurring,
-        recurrence_interval:  isRecurring ? recurInterval : undefined,
-        notes:                notes || null,
-        items: items.filter(i => i.desc.trim()).map(i => ({
-          description: i.desc,
-          quantity:    Number(i.qty) || 1,
-          unit_price:  Number(i.rate) || 0,
-        })),
+        issue_date:          issueDate,
+        due_date:            dueDate || null,
+        vat_rate:            vatRate,
+        discount_amount:     effectiveDiscount,
+        deposit_amount:      depositAmt,
+        is_recurring:        isRecurring,
+        recurrence_interval: isRecurring ? recurInterval : undefined,
+        notes:               notes.trim() || null,
+        items: lines.map(i => ({ description: i.desc.trim(), quantity: Number(i.qty) || 1, unit_price: Number(i.rate) || 0 })),
       }
+      // Status is only set on create: an invoice that is already sent must not be pushed back to draft.
+      if (!savedInvoiceId) payload.status = createAs
+      const url = savedInvoiceId ? `/api/invoices/${savedInvoiceId}` : '/api/invoices'
+      const res = await fetch(url, { method: savedInvoiceId ? 'PATCH' : 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Couldn’t save the invoice. Try again.')
+      const saved = data.invoice
+      setSavedInvoiceId(saved.id)
+      if (saved.invoice_number) setSavedInvNum(saved.invoice_number)
+      if (saved.public_token) setSavedToken(saved.public_token)
 
-      const url    = editId ? `/api/invoices/${editId}` : '/api/invoices'
-      const method = editId ? 'PATCH' : 'POST'
-      const res    = await fetch(url, { method, credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
-      const data   = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to save')
-
-      const savedInvoice = data.invoice
-
-      // Auto-save client if name provided and no existing client was selected
+      // A new name becomes a client, linked to this invoice.
       const name = clientName.trim()
-      if (name && name !== 'Unknown Client' && !selectedClientId) {
-        const exists = clients.some(c => c.name.toLowerCase() === name.toLowerCase())
-        if (!exists) {
-          try {
-            const cr = await fetch('/api/clients', {
-              method: 'POST', credentials: 'include',
+      if (name && !selectedClientId && !initialClients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        try {
+          const cr = await fetch('/api/clients', {
+            method: 'POST', credentials: 'include',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ name, email: clientEmail || undefined, phone: clientPhone || undefined }),
+          })
+          const cd = await cr.json().catch(() => ({}))
+          if (cr.ok && cd.client?.id) {
+            setSelectedClientId(cd.client.id)
+            fetch(`/api/invoices/${saved.id}`, {
+              method: 'PATCH', credentials: 'include',
               headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ name, email: clientEmail || undefined, phone: clientPhone || undefined }),
-            })
-            if (cr.ok) {
-              const cd = await cr.json()
-              // Link the new client back to the invoice
-              if (cd.client?.id) {
-                setSelectedClientId(cd.client.id)
-                fetch(`/api/invoices/${savedInvoice.id}`, {
-                  method: 'PATCH', credentials: 'include',
-                  headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ client_id: cd.client.id }),
-                }).catch(() => {})
-              }
-            }
-          } catch { /* non-fatal */ }
-        }
+              body: JSON.stringify({ client_id: cd.client.id }),
+            }).catch(() => {})
+          }
+        } catch { /* the invoice is saved; the client record is a nicety */ }
       }
-
-      return savedInvoice
+      return saved as { id: string; invoice_number: string; public_token?: string | null }
+    } catch (e: any) {
+      setSaveError(e.message)
+      throw e
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDraft() {
-    try {
-      const inv = await saveInvoice('draft')
-      router.push(`/invoices/${inv.id}`)
-    } catch (e: any) {
-      alert(e.message)
-    }
+  function check(forSend: boolean) {
+    setTried(true)
+    if (problems.client) { nameRef.current?.focus(); return false }
+    if (forSend && problems.items) { firstItemRef.current?.focus(); return false }
+    return true
   }
 
-  async function handleSendClick() {
-    // Save first, then open send modal
-    setSaving(true)
+  async function handleDraft() {
+    if (!check(false)) return
     try {
-      const inv = await saveInvoice('draft')
-      setSavedInvoiceId(inv.id)
-      setSavedInvNum(inv.invoice_number)
+      const saved = await saveInvoice('draft')
+      router.push(`/invoices/${saved.id}`)
+    } catch { /* shown in saveError */ }
+  }
+
+  async function handleSendClick(which: 'wa' | 'email') {
+    if (!check(true)) return
+    try {
+      await saveInvoice('draft')
+      setChannel(which)
       setSendEmail(clientEmail)
       setSendPhone(clientPhone)
       setSendDone(false)
       setSendError('')
-      setSendModalOpen(true)
-    } catch (e: any) {
-      alert(e.message)
-    } finally {
-      setSaving(false)
-    }
+      setPreviewOpen(false)
+      setSendOpen(true)
+    } catch { /* shown in saveError */ }
   }
 
   async function handleSend() {
     if (!savedInvoiceId) return
-    setSending(true)
     setSendError('')
-    try {
-      if (channel === 'email') {
-        const res = await fetch('/api/email/send', {
-          method: 'POST', credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ invoice_id: savedInvoiceId, to_email: sendEmail }),
-        })
-        const d = await res.json()
-        if (!res.ok) throw new Error(d.error || 'Send failed')
-      } else {
-        const res = await fetch('/api/whatsapp/send', {
-          method: 'POST', credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            invoice_id:     savedInvoiceId,
-            to_phone:       sendPhone,
-            invoice_number: savedInvNum,
-            client_name:    clientName,
-            total_amount:   total,
-            currency,
-            due_date:       dueDate,
-          }),
-        })
-        const d = await res.json()
-        if (!res.ok) throw new Error(d.error || 'Send failed')
+
+    // WhatsApp opens the user's own app via wa.me — window.open has to run
+    // before any await or the browser treats it as a popup and blocks it.
+    if (channel !== 'email') {
+      if (sendPhone.replace(/\D/g, '').length < 7) {
+        setSendError('Enter the number with country code, e.g. +267 71 234 567')
+        return
       }
+      const link = publicInvoiceUrl(savedToken)
+      openWhatsApp(sendPhone, [
+        `Hi ${clientName} 👋`,
+        ``,
+        `Here is invoice *${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.`,
+        link ? `\nView and download it here:\n${link}` : '',
+        ``,
+        `Thank you for your business!`,
+      ].join('\n'))
       setSendDone(true)
-      setTimeout(() => { setSendModalOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
+      await markInvoiceSent(savedInvoiceId)
+      setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
+      return
+    }
+
+    setSending(true)
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST', credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ invoice_id: savedInvoiceId, to_email: sendEmail }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Send failed')
+      setSendDone(true)
+      setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
     } catch (e: any) {
       setSendError(e.message)
     } finally {
@@ -506,455 +551,368 @@ export default function NewInvoiceClient({
   }
 
   async function handlePDF() {
+    if (!check(true)) return
+    // Open the tab inside the click so it isn't blocked as a popup, then point it at the PDF.
+    const tab = window.open('', '_blank')
     try {
-      let invId = savedInvoiceId
-      if (!invId) {
-        const inv = await saveInvoice('draft')
-        invId = inv.id
-        setSavedInvoiceId(inv.id)
-      }
-      window.open(`/api/invoices/${invId}/pdf`, '_blank')
-    } catch (e: any) {
-      alert(e.message)
+      const saved = await saveInvoice('draft')
+      const url = `/api/invoices/${saved.id}/pdf?view=true`
+      if (tab) tab.location.href = url
+      else window.location.href = url
+    } catch {
+      tab?.close()
     }
   }
 
-  const firmName = profile?.firm_name || profile?.name || 'Your Firm'
+  // Clear the "new row" flash once it has played.
+  useEffect(() => {
+    if (!freshKeys.size) return
+    const t = setTimeout(() => setFreshKeys(new Set()), 1000)
+    return () => clearTimeout(t)
+  }, [freshKeys])
 
-  const COLORS = ['#F2A900','#3B82F6','#F59E0B','#E8D8C3','#EF4444','#C98C00']
+  const sendLabel = 'Send on WhatsApp'
+  const tryMsg = tried && (problems.client || problems.items)
+
+  // ── Preview ──
+  const paper = (
+    <div className="paper" aria-label="Invoice preview">
+      <div className="paper-top">
+        <div className="paper-firm">
+          <span style={{ display: 'inline-flex', width: 22, height: 22 }}><LogoIcon /></span>
+          <span>{firmName}<small>{profile?.address || ''}</small></span>
+        </div>
+        <div className="paper-word">INVOICE<small>{savedInvNum ? savedInvNum : 'Number on save'}</small></div>
+      </div>
+      <div className="paper-body">
+        <div className="paper-meta">
+          <div><span>Issued</span><b>{fmtDate(issueDate)}</b></div>
+          <div><span>Due</span><b>{fmtDate(dueDate)}</b></div>
+          <div><span>Terms</span><b>{termDays === 0 ? 'On receipt' : `Net ${daysBetween(issueDate, dueDate)} days`}</b></div>
+        </div>
+        <div className="paper-to">
+          <span>Bill to</span>
+          <b>{clientName.trim() || 'Client name'}</b>
+          {(clientPhone || clientEmail) && <small>{[clientPhone, clientEmail].filter(Boolean).join(' · ')}</small>}
+          {project && <small>{project}</small>}
+        </div>
+        <table className="paper-items">
+          <thead><tr><th>Description</th><th className="r">Qty</th><th className="r">Rate</th><th className="r">Amount</th></tr></thead>
+          <tbody>
+            {lines.length === 0
+              ? <tr><td colSpan={4} className="paper-empty">Items you add appear here.</td></tr>
+              : lines.map(it => (
+                <tr key={it.key} className={freshKeys.has(it.key) ? 'fresh' : ''}>
+                  <td>{it.desc}</td>
+                  <td className="r">{it.qty}</td>
+                  <td className="r">{fmtAmt(Number(it.rate) || 0, currency)}</td>
+                  <td className="r"><b>{fmtAmt((Number(it.qty) || 0) * (Number(it.rate) || 0), currency)}</b></td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+        <div className="paper-sums">
+          <span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span>
+          {effectiveDiscount > 0 && <><span>Discount</span><span>−{fmtAmt(effectiveDiscount, currency)}</span></>}
+          <span>VAT ({vatRate}%)</span><span>{fmtAmt(vatAmt, currency)}</span>
+        </div>
+        <div className="paper-total"><span>Total due</span><b>{fmtAmt(shownTotal, currency)}</b></div>
+        {depositAmt > 0 && <div className="paper-note"><b>Deposit due now: {fmtAmt(depositAmt, currency)}</b> ({depositPct}%)</div>}
+        {notes.trim() && <div className="paper-note">{notes.trim()}</div>}
+      </div>
+    </div>
+  )
+
+  const errorBox = saveError && (
+    <p className="side-err" role="alert">
+      {saveError}{/limit|upgrade|plan/i.test(saveError) && <> <Link href="/settings">See plans</Link></>}
+    </p>
+  )
 
   return (
     <>
       <style>{CSS}</style>
 
-      <div className="topbar"><h1 className="page-title">{editId ? 'Edit invoice' : 'New invoice'}</h1></div>
+      <div className="topbar">
+        <h1 className="page-title">{editId ? `Edit ${inv?.invoice_number ?? 'invoice'}` : 'New invoice'}</h1>
+        <button type="button" className="btn ghost press" onClick={handleDraft} disabled={saving}>{saving ? 'Saving…' : 'Save draft'}</button>
+      </div>
 
-      <div className="gen-wrap">
-        <div className="gen-layout">
+      <div className="ni">
+        <div className="ni-form">
 
-          {/* ── LEFT: Form ── */}
-          <div className="gen-left">
-
-            {/* Advanced / Edit details */}
-            <div>
-              <div className={`adv-toggle${advOpen ? ' open' : ''}`} onClick={() => setAdvOpen(p => !p)}>
-                <div className="adv-toggle-left">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4h10M5 8h6M7 12h2"/></svg>
-                  <div>
-                    <div className="adv-toggle-label">Edit details</div>
-                    <div className="adv-toggle-hint">
-                      {clientName || 'Client'}{project ? ` · ${project}` : ''} · {items.length} line item{items.length !== 1 ? 's' : ''} · VAT {vatRate}%
-                    </div>
-                  </div>
+          {/* Who */}
+          <section className="sec" aria-labelledby="who-h">
+            <h2 id="who-h">Who is it for?</h2>
+            <div className="sec-body">
+              {initialClients.length > 0 && (
+                <div className="people" role="group" aria-label="Your clients">
+                  {people.map(c => (
+                    <button key={c.id} type="button" className="person press" aria-pressed={selectedClientId === c.id} onClick={() => selectClient(c)}>
+                      <span className="av" style={{ ['--h' as string]: hue(c.name) }} aria-hidden="true">{initials(c.name)}</span>
+                      {c.name}
+                    </button>
+                  ))}
+                  {initialClients.length > 8 && (
+                    <button type="button" className="people-more" onClick={() => setShowAllPeople(v => !v)}>
+                      {showAllPeople ? 'Show fewer' : `All ${initialClients.length} clients`}
+                    </button>
+                  )}
                 </div>
-                <svg className={`adv-chevron${advOpen ? ' open' : ''}`} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 6l4 4 4-4"/></svg>
+              )}
+              <div className="grid3">
+                <div>
+                  <label className="lbl" htmlFor="ni-client-name">Name</label>
+                  <input ref={nameRef} id="ni-client-name" name="client_name" autoComplete="off" className={`in${tried && problems.client ? ' bad' : ''}`}
+                    value={clientName} onChange={e => { setClientName(e.target.value); setSelectedClientId(null); setUsedAgain(null) }}
+                    placeholder={initialClients.length ? 'Or type a new client' : 'e.g. Kefilwe Mokobi'} aria-invalid={!!(tried && problems.client)} />
+                </div>
+                <div>
+                  <label className="lbl" htmlFor="ni-client-phone">WhatsApp number</label>
+                  <input id="ni-client-phone" name="client_phone" className="in" type="tel" inputMode="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="+267 71 234 567" />
+                </div>
+                <div>
+                  <label className="lbl" htmlFor="ni-client-email">Email <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                  <input id="ni-client-email" name="client_email" className="in" type="email" inputMode="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="e.g. kefilwe@gmail.com" />
+                </div>
+              </div>
+              {tried && problems.client && <p className="field-err">{problems.client}</p>}
+
+              {last && (
+                <div className="again" aria-live="polite">
+                  <p>
+                    Last time: {last.project || `${last.items.length} items`} · <b>{fmtAmt(last.total, last.currency || currency)}</b>
+                    <small>{last.items.slice(0, 3).map(i => i.desc).join(', ')}{last.items.length > 3 ? ` and ${last.items.length - 3} more` : ''} · {last.invoice_number}</small>
+                  </p>
+                  {usedAgain === last.invoice_number
+                    ? <span className="again-done">Copied. Change anything you need.</span>
+                    : <button type="button" className="again-btn press" onClick={useLastTime}>Use the same items</button>}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* What */}
+          <section className="sec" aria-labelledby="what-h">
+            <h2 id="what-h">What is it for?</h2>
+            <div className="sec-body">
+              <label className="lbl" htmlFor="ni-project">Description</label>
+              <input id="ni-project" name="project" className="in" value={project} onChange={e => setProject(e.target.value)} placeholder="e.g. November tuition fees" />
+
+              <div style={{ marginTop: 18 }}>
+                <div className="items-head" aria-hidden="true">
+                  <span>Item</span><span className="r">Qty</span><span className="r">Rate</span><span className="r">Amount</span><span />
+                </div>
+                <datalist id="ni-known">
+                  {knownItems.map(k => <option key={k.desc} value={k.desc}>{fmtAmt(k.rate, currency)}</option>)}
+                </datalist>
+                {items.map((it, i) => (
+                  <div key={it.key} className="item-row">
+                    <input ref={i === 0 ? firstItemRef : undefined} id={`ni-desc-${it.key}`} name={`item_desc_${i}`} list="ni-known" autoComplete="off"
+                      className={`in c-desc${tried && problems.items && i === 0 ? ' bad' : ''}`} value={it.desc}
+                      onChange={e => updateItem(it.key, 'desc', e.target.value)} placeholder="e.g. Mathematics" aria-label={`Item ${i + 1}`} />
+                    <input id={`ni-qty-${it.key}`} name={`item_qty_${i}`} className="in num c-qty" type="number" inputMode="decimal" min={0} step="0.5"
+                      value={it.qty} onChange={e => updateItem(it.key, 'qty', parseFloat(e.target.value) || 0)} aria-label={`Quantity for item ${i + 1}`} />
+                    <input id={`ni-rate-${it.key}`} name={`item_rate_${i}`} className="in num c-rate" type="number" inputMode="decimal" min={0}
+                      value={it.rate || ''} onChange={e => updateItem(it.key, 'rate', parseFloat(e.target.value) || 0)} placeholder="0.00" aria-label={`Rate for item ${i + 1}`} />
+                    <span className="item-amt">{fmtAmt((Number(it.qty) || 0) * (Number(it.rate) || 0), currency)}</span>
+                    <button type="button" className="item-del press" onClick={() => removeItem(it.key)} disabled={items.length === 1} aria-label={`Remove item ${i + 1}`}>
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="add-item press" onClick={addItem}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+                  Add an item
+                </button>
+                {tried && problems.items && <p className="field-err">{problems.items}</p>}
               </div>
 
-              <div className={`adv-body${advOpen ? ' open' : ''}`}>
-                {/* Client quick-select */}
-                {clients.length > 0 && (
-                  <div style={{ marginBottom: 14 }}>
-                    <div className="form-label" style={{ marginBottom: 8 }}>Quick select client</div>
-                    <div className="client-pills">
-                      {clients.slice(0, 6).map((c, i) => {
-                        const color = COLORS[i % COLORS.length]
-                        const ini   = c.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-                        return (
-                          <button key={c.id} className="client-pill" onClick={() => selectClient(c)}>
-                            <div className="client-pill-av" style={{ background: `${color}22`, color }}>{ini}</div>
-                            {c.name.split(' ')[0]}
-                          </button>
-                        )
-                      })}
-                    </div>
+              <div className="sums" aria-live="polite">
+                <span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span>
+                {effectiveDiscount > 0 && <><span>Discount</span><span>−{fmtAmt(effectiveDiscount, currency)}</span></>}
+                <span>VAT {vatRate}%</span><span>{fmtAmt(vatAmt, currency)}</span>
+                <span className="total">Total</span><span className="total">{fmtAmt(shownTotal, currency)}</span>
+                {depositAmt > 0 && <><span>Deposit due now</span><span>{fmtAmt(depositAmt, currency)}</span></>}
+              </div>
+            </div>
+          </section>
+
+          {/* When */}
+          <section className="sec" aria-labelledby="when-h">
+            <h2 id="when-h">When is it due?</h2>
+            <div className="sec-body">
+              <div className="chips" role="group" aria-label="Payment due">
+                {TERMS.map(t => (
+                  <button key={t.days} type="button" className="chip press" aria-pressed={termDays === t.days} onClick={() => setTermDays(t.days)}>{t.label}</button>
+                ))}
+                <button type="button" className="chip press" aria-pressed={termDays === null} onClick={() => { setCustomDue(dueDate); setTermDays(null) }}>Pick a date</button>
+              </div>
+              <div className="grid2" style={{ marginTop: 14 }}>
+                <div>
+                  <label className="lbl" htmlFor="ni-issue-date">Issue date</label>
+                  <input id="ni-issue-date" name="issue_date" className="in" type="date" value={issueDate} onChange={e => setIssueDate(e.target.value || today())} />
+                </div>
+                {termDays === null && (
+                  <div>
+                    <label className="lbl" htmlFor="ni-due-date">Due date</label>
+                    <input id="ni-due-date" name="due_date" className="in" type="date" min={issueDate} value={customDue} onChange={e => setCustomDue(e.target.value)} />
                   </div>
                 )}
+              </div>
+              <p className="due-line">Due <b>{longDate(dueDate)}</b>{termDays !== null && termDays > 0 ? `, ${termDays} days after it’s issued.` : termDays === 0 ? ', as soon as they receive it.' : '.'}</p>
+            </div>
+          </section>
 
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-client-name">Client name</label>
-                    <input id="ni-client-name" name="client_name" className="form-input" value={clientName} onChange={e => { setClientName(e.target.value); setSelectedClientId(null) }} placeholder="e.g. Molapo Tower Ltd."/>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-client-email">Client email</label>
-                    <input id="ni-client-email" name="client_email" className="form-input" type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="client@company.co.bw"/>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-client-phone">Client phone (WhatsApp)</label>
-                    <input id="ni-client-phone" name="client_phone" className="form-input" type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="+267 71 234 567"/>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-currency">Currency</label>
-                    <select id="ni-currency" name="currency" className="form-select" value={currency} onChange={e => setCurrency(e.target.value)}>
-                      {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+          {/* More */}
+          <details className="sec" open={discountOn || depositOn || isRecurring || !!notes.trim() || undefined}>
+            <summary>
+              <span>
+                <h2>More options</h2>
+                <span className="sec-sub">VAT {vatRate}% · {currency === 'P' ? 'Pula' : currency}{discountOn ? ' · discount' : ''}{depositOn ? ' · deposit' : ''}{isRecurring ? ` · repeats ${recurInterval}` : ''}</span>
+              </span>
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+            </summary>
+            <div className="sec-body">
+              <div className="opt">
+                <span className="opt-l">VAT rate<small>Use 0 if you aren’t VAT registered.</small></span>
+                <span className="opt-in"><input id="ni-vat-rate" name="vat_rate" className="in num" type="number" inputMode="decimal" min={0} max={100} step="0.1" value={vatRate} onChange={e => setVatRate(parseFloat(e.target.value) || 0)} aria-label="VAT rate in percent" />%</span>
+              </div>
+              <div className="opt">
+                <span className="opt-l">Currency</span>
+                <select id="ni-currency" name="currency" className="in" style={{ width: 220 }} value={currency} onChange={e => setCurrency(e.target.value)} aria-label="Currency">
+                  {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                </select>
+              </div>
+              <div className="opt">
+                <span className="opt-l">Discount<small>Taken off before VAT.</small></span>
+                <span className="opt-in">
+                  {discountOn && <input id="ni-discount-amt" name="discount_amt" className="in num" type="number" inputMode="decimal" min={0} value={discountAmt || ''} onChange={e => setDiscountAmt(Number(e.target.value) || 0)} aria-label="Discount amount" placeholder="0.00" />}
+                  <button type="button" role="switch" aria-checked={discountOn} aria-label="Discount" className="switch" onClick={() => setDiscountOn(v => !v)} />
+                </span>
+              </div>
+              <div className="opt">
+                <span className="opt-l">Ask for a deposit<small>{depositOn ? `${fmtAmt(depositAmt, currency)} due now.` : 'Part of the total paid up front.'}</small></span>
+                <span className="opt-in">
+                  {depositOn && <><input id="ni-deposit-pct" name="deposit_pct" className="in num" style={{ width: 80 }} type="number" inputMode="numeric" min={1} max={100} value={depositPct} onChange={e => setDepositPct(Number(e.target.value) || 0)} aria-label="Deposit percent" />%</>}
+                  <button type="button" role="switch" aria-checked={depositOn} aria-label="Deposit" className="switch" onClick={() => setDepositOn(v => !v)} />
+                </span>
+              </div>
+              <div className="opt">
+                <span className="opt-l">Repeat this invoice<small>{isRecurring ? 'A new draft is made for you each time.' : 'Handy for monthly fees.'}</small></span>
+                <span className="opt-in">
+                  {isRecurring && (
+                    <select id="ni-recur-interval" name="recur_interval" className="in" style={{ width: 130 }} value={recurInterval} onChange={e => setRecurInterval(e.target.value as 'monthly' | 'quarterly' | 'yearly')} aria-label="How often">
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="yearly">Yearly</option>
                     </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-issue-date">Issue date</label>
-                    <input id="ni-issue-date" name="issue_date" className="form-input" type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)}/>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-due-date">Due date</label>
-                    <input id="ni-due-date" name="due_date" className="form-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}/>
-                  </div>
-                  <div className="form-group full">
-                    <label className="form-label" htmlFor="ni-project">Project description</label>
-                    <input id="ni-project" name="project" className="form-input" value={project} onChange={e => setProject(e.target.value)} placeholder="e.g. Molapo Tower — Phase 2 Structural Review"/>
-                  </div>
-                </div>
-
-                {/* Line items */}
-                <div style={{ marginTop: 16 }}>
-                  <div className="form-label" style={{ marginBottom: 8 }}>Line items</div>
-                  <div className="line-items-header">
-                    <div className="li-col-head">Description</div>
-                    <div className="li-col-head">Qty / Hrs</div>
-                    <div className="li-col-head">Rate</div>
-                    <div className="li-col-head">Amount</div>
-                    <div/>
-                  </div>
-                  {items.map((item, i) => (
-                    <div key={i} className="line-item-row">
-                      <input id={`ni-desc-${i}`} name={`item_desc_${i}`} className="form-input" value={item.desc} onChange={e => updateItem(i, 'desc', e.target.value)} placeholder="Service description" style={{ padding: '7px 10px' }}/>
-                      <input id={`ni-qty-${i}`} name={`item_qty_${i}`} className="form-input" type="number" value={item.qty} min={0} step="0.5" onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} placeholder="Qty" style={{ padding: '7px 10px' }}/>
-                      <input id={`ni-rate-${i}`} name={`item_rate_${i}`} className="form-input" type="number" value={item.rate} min={0} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} placeholder="Rate" style={{ padding: '7px 10px' }}/>
-                      <div className="li-amt">{fmtAmt((item.qty || 0) * (item.rate || 0), currency)}</div>
-                      <button className="li-del" onClick={() => removeItem(i)}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v6M10 7v6M3 4l1 10h8l1-10"/></svg>
-                      </button>
-                    </div>
-                  ))}
-                  <button className="add-line-btn" onClick={addItem}>
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
-                    Add line item
-                  </button>
-                </div>
-
-                <div className="form-grid" style={{ marginTop: 14 }}>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-vat-rate">VAT rate (%)</label>
-                    <input id="ni-vat-rate" name="vat_rate" className="form-input" type="number" value={vatRate} min={0} max={100} step="0.1" onChange={e => setVatRate(parseFloat(e.target.value) || 0)}/>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="ni-payment-terms">Payment terms</label>
-                    <select id="ni-payment-terms" name="payment_terms" className="form-select" value={terms} onChange={e => setTerms(e.target.value)}>
-                      <option value="30">30 days</option>
-                      <option value="14">14 days</option>
-                      <option value="7">7 days</option>
-                      <option value="0">Due on receipt</option>
-                    </select>
-                  </div>
-
-                  {/* Deposit */}
-                  <div className="form-group full">
-                    <div className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      Deposit required
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{depositOn ? 'On' : 'Off'}</span>
-                        <div className={`toggle-sw${depositOn ? ' on' : ''}`} onClick={() => setDepositOn(p => !p)}/>
-                      </span>
-                    </div>
-                    {depositOn && (
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
-                        <div style={{ flex: 1, minWidth: 120 }}>
-                          <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Deposit %</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input id="ni-deposit-pct" name="deposit_pct" className="form-input" type="number" min={1} max={100} value={depositPct} onChange={e => setDepositPct(Number(e.target.value))} style={{ width: 80, padding: '7px 10px' }}/>
-                            <span style={{ fontSize: 13, color: 'var(--t3)' }}>%</span>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              {[25, 50, 100].map(p => (
-                                <button key={p} className={`deposit-preset${depositPct === p ? ' active' : ''}`} onClick={() => setDepositPct(p)}>{p}%</button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                          <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit due</div>
-                          <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Discount */}
-                  <div className="form-group full">
-                    <div className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      Discount
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{discountOn ? 'On' : 'Off'}</span>
-                        <div className={`toggle-sw${discountOn ? ' on' : ''}`} onClick={() => setDiscountOn(p => !p)}/>
-                      </span>
-                    </div>
-                    {discountOn && (
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
-                        <div style={{ flex: 1, minWidth: 120 }}>
-                          <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Discount amount</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input id="ni-discount-amt" name="discount_amt" className="form-input" type="number" min={0} max={subtotal} value={discountAmt} onChange={e => setDiscountAmt(Number(e.target.value) || 0)} style={{ width: 100, padding: '7px 10px' }}/>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              {[5, 10, 15, 20].map(p => {
-                                const amt = Math.round(subtotal * p / 100 * 100) / 100
-                                return (
-                                  <button key={p} className={`deposit-preset${discountAmt === amt ? ' active' : ''}`} onClick={() => setDiscountAmt(amt)}>{p}%</button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                        {effectiveDiscount > 0 && (
-                          <div style={{ background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: '#F87171', marginBottom: 2 }}>Discount</div>
-                            <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 20, color: '#F87171' }}>−{fmtAmt(effectiveDiscount, currency)}</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recurring */}
-                  <div className="form-group full">
-                    <div className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      Recurring invoice
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--t3)' }}>{isRecurring ? 'On' : 'Off'}</span>
-                        <div className={`toggle-sw${isRecurring ? ' on' : ''}`} onClick={() => setIsRecurring(p => !p)}/>
-                      </span>
-                    </div>
-                    {isRecurring && (
-                      <div style={{ marginTop: 8, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <select id="ni-recur-interval" name="recur_interval" className="form-select" value={recurInterval} onChange={e => setRecurInterval(e.target.value as any)} style={{ width: 160 }}>
-                          <option value="monthly">Monthly</option>
-                          <option value="quarterly">Quarterly</option>
-                          <option value="yearly">Yearly</option>
-                        </select>
-                        <span style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
-                          A new draft invoice will be auto-generated each period. You can edit and send it before it goes out.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group full">
-                    <label className="form-label" htmlFor="ni-notes">Notes (optional)</label>
-                    <input id="ni-notes" name="notes" className="form-input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Bank: FNB Botswana, Acc: 62123456789"/>
-                  </div>
-
-                  <div className="form-group full">
-                    <label className="form-label" htmlFor="ni-tc">Terms &amp; conditions (optional)</label>
-                    <textarea id="ni-tc" name="tc" className="form-textarea" value={tc} onChange={e => setTc(e.target.value)} rows={3} placeholder="e.g. Payment is due within 30 days. Late payments incur 2% interest per month."/>
-                  </div>
-                </div>
-
-                {/* Action bar */}
-                <div className="action-bar">
-                  <button className="apply-btn" onClick={() => {}}>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
-                    Apply &amp; preview
-                  </button>
-                  <button className="clear-btn" onClick={clearForm}>Clear form</button>
-                </div>
+                  )}
+                  <button type="button" role="switch" aria-checked={isRecurring} aria-label="Repeat this invoice" className="switch" onClick={() => setIsRecurring(v => !v)} />
+                </span>
+              </div>
+              <div className="opt" style={{ display: 'block' }}>
+                <label className="opt-l" htmlFor="ni-notes" style={{ display: 'block', marginBottom: 8 }}>Note on the invoice<small>Payment details, terms or a thank-you. It prints on the PDF.</small></label>
+                <textarea id="ni-notes" name="notes" className="in" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Pay to FNB Botswana, account 62123456789. Reference: your child’s name." />
               </div>
             </div>
+          </details>
+
+          {/* Phone and tablet: total and Send stay in reach. */}
+          <div className="bar">
+            <div className="bar-total"><small>Total</small><b>{fmtAmt(shownTotal, currency)}</b></div>
+            <button type="button" className="btn press" onClick={() => setPreviewOpen(true)}>Preview</button>
+            <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>{saving ? 'Saving…' : 'Send'}</button>
           </div>
+          {saveError && <div className="mob-err">{errorBox}</div>}
+        </div>
 
-          {/* ── RIGHT: Live preview ── */}
-          <div className="gen-right">
-            <div className="preview-header">
-              <span className="preview-header-title">Live preview</span>
-              <span className="pill-draft">Draft</span>
-            </div>
+        {/* Desktop: the live invoice and its actions. */}
+        <aside className="ni-side" aria-label="Preview and send">
+          <div className="side-head"><span>What {clientName.trim() ? firstName(clientName) : 'your client'} will receive</span></div>
+          {paper}
+          {tryMsg && <p className="side-err" role="alert">{problems.client || problems.items}</p>}
+          {errorBox}
+          <div className="side-actions">
+            <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M2 14l1.3-3.9A6 6 0 1 1 6.3 13L2 14z"/></svg>
+              {saving ? 'Saving…' : sendLabel}
+            </button>
+            <button type="button" className="btn press" onClick={() => handleSendClick('email')} disabled={saving}>Send by email</button>
+            <button type="button" className="btn press" onClick={handlePDF} disabled={saving}>View PDF</button>
+          </div>
+        </aside>
+      </div>
 
-            <div className="preview-body">
-              <div className="preview-invoice">
-                {/* Header */}
-                <div className="prev-top">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ display: 'inline-flex', width: 28, height: 28, flexShrink: 0 }}>
-                        <LogoIcon />
-                      </span>
-                      <div className="prev-brand">{firmName.toUpperCase()}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: 2, color: 'var(--g)' }}>INVOICE</div>
-                      <div className="prev-meta">#{savedInvNum || 'Auto'} · {fmtDate(issueDate) || '—'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Body */}
-                <div className="prev-body">
-                  <div className="prev-from-to">
-                    <div>
-                      <div className="prev-section-label">From</div>
-                      <div className="prev-name">{firmName}</div>
-                      <div className="prev-detail">{profile?.address || ''}{profile?.email ? `\n${profile.email}` : ''}</div>
-                    </div>
-                    <div>
-                      <div className="prev-section-label">Bill to</div>
-                      <div className="prev-name">{clientName || 'Client Name'}</div>
-                      <div className="prev-detail">{clientEmail || '—'}{clientPhone ? `\n${clientPhone}` : ''}</div>
-                    </div>
-                  </div>
-
-                  {project && <div className="prev-section-label" style={{ marginBottom: 8 }}>{project}</div>}
-
-                  <table className="prev-table">
-                    <thead>
-                      <tr>
-                        <th>Description</th>
-                        <th style={{ textAlign: 'right' }}>Qty</th>
-                        <th style={{ textAlign: 'right' }}>Rate</th>
-                        <th style={{ textAlign: 'right' }}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.filter(i => i.desc).map((it, idx) => (
-                        <tr key={idx}>
-                          <td>{it.desc}</td>
-                          <td style={{ textAlign: 'right' }}>{it.qty}</td>
-                          <td style={{ textAlign: 'right' }}>{fmtAmt(it.rate, currency)}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--t1)' }}>{fmtAmt((it.qty || 0) * (it.rate || 0), currency)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="prev-totals">
-                    <div className="prev-total-row"><span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span></div>
-                    {effectiveDiscount > 0 && (
-                      <div className="prev-total-row" style={{ color: '#F87171' }}><span>Discount</span><span>−{fmtAmt(effectiveDiscount, currency)}</span></div>
-                    )}
-                    <div className="prev-total-row"><span>VAT ({vatRate}%)</span><span>{fmtAmt(vatAmt, currency)}</span></div>
-                  </div>
-                  <div className="prev-total-final">
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'rgba(255,255,255,.8)' }}>Total Due</span>
-                    <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 20, color: '#fff', letterSpacing: 1 }}>{fmtAmt(total, currency)}</span>
-                  </div>
-
-                  {depositOn && depositAmt > 0 && (
-                    <div style={{ marginTop: 10, background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.2)', borderRadius: 7, padding: '10px 14px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--g)', marginBottom: 2 }}>Deposit Required</div>
-                          <div style={{ fontSize: 11, color: 'var(--t3)' }}>{depositPct}% of total</div>
-                        </div>
-                        <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--g)' }}>{fmtAmt(depositAmt, currency)}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {tc && (
-                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }}>Terms &amp; Conditions</div>
-                      <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.6 }}>{tc}</div>
-                    </div>
-                  )}
-
-                  {notes && <div style={{ marginTop: 10, fontSize: 11, color: 'var(--t3)', lineHeight: 1.6 }}>{notes}</div>}
-
-                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ display: 'inline-flex', width: 14, height: 14 }}><LogoIcon /></span>
-                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--t3)' }}>StagePay</span>
-                    </div>
-                    {dueDate && <span style={{ fontSize: 9, color: 'var(--t3)' }}>Due {fmtDate(dueDate)}</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="preview-actions">
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSendClick} disabled={saving}>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l12-6-6 12V8H2z"/></svg>
-                {saving ? 'Saving…' : 'Send Invoice'}
-              </button>
-              <button className="btn-outline" onClick={handlePDF} disabled={saving}>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 1h6l4 4v10H4V1z"/><path d="M10 1v4h4"/></svg>
-                PDF
-              </button>
-              <button className="btn-outline" onClick={handleDraft} disabled={saving}>Draft</button>
+      {/* Sheets render into <body> so no wrapper on the page can sit above them. */}
+      {mounted && createPortal(<>
+      {/* Phone preview sheet */}
+      {previewOpen && (
+        <div className="sheet-bg" onClick={() => setPreviewOpen(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="pv-h" onClick={e => e.stopPropagation()}>
+            <div className="sheet-head"><h2 id="pv-h">Preview</h2><button type="button" className="sheet-x" onClick={() => setPreviewOpen(false)} aria-label="Close">×</button></div>
+            {paper}
+            {tryMsg && <p className="side-err" role="alert" style={{ marginTop: 12 }}>{problems.client || problems.items}</p>}
+            {errorBox && <div style={{ marginTop: 12 }}>{errorBox}</div>}
+            <div className="side-actions" style={{ marginTop: 14 }}>
+              <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>{saving ? 'Saving…' : sendLabel}</button>
+              <button type="button" className="btn press" onClick={() => handleSendClick('email')} disabled={saving}>Send by email</button>
+              <button type="button" className="btn press" onClick={handleDraft} disabled={saving}>Save draft</button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Send Modal ── */}
-      {sendModalOpen && (
-        <div className="modal-overlay" onClick={() => !sending && setSendModalOpen(false)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title">SEND INVOICE</div>
-              <button className="modal-close" onClick={() => setSendModalOpen(false)}>×</button>
+      {/* Send sheet */}
+      {sendOpen && (
+        <div className="sheet-bg" onClick={() => !sending && setSendOpen(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="send-h" onClick={e => e.stopPropagation()}>
+            <div className="sheet-head">
+              <h2 id="send-h">Send {savedInvNum ?? 'invoice'}</h2>
+              <button type="button" className="sheet-x" onClick={() => setSendOpen(false)} aria-label="Close" disabled={sending}>×</button>
             </div>
-            <div className="modal-body">
-              {sendDone ? (
-                <div className="success-banner">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="rgba(242,169,0,.2)"/><path d="M6 10l3 3 5-5" stroke="#F2A900" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--g)' }}>Invoice sent!</div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Redirecting to invoices…</div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {savedInvNum && (
-                    <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
-                      Invoice <strong style={{ color: 'var(--t2)' }}>{savedInvNum}</strong> for <strong style={{ color: 'var(--t2)' }}>{clientName}</strong> — {fmtAmt(total - depositAmt, currency)}
-                    </div>
-                  )}
-                  <div className="channel-tabs">
-                    <button className={`channel-tab${channel === 'email' ? ' active' : ''}`} onClick={() => setChannel('email')}>
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 5l7 5 7-5"/></svg>
-                      Email
-                    </button>
-                    <button className={`channel-tab${channel === 'wa' ? ' active wa' : ''}`} onClick={() => setChannel('wa')}>
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill={channel === 'wa' ? '#25D366' : 'currentColor'}><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
-                      WhatsApp
-                    </button>
-                  </div>
-
-                  {channel === 'email' ? (
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="ni-send-email">Send to email</label>
-                      <input id="ni-send-email" name="send_email" className="form-input" type="email" value={sendEmail} onChange={e => setSendEmail(e.target.value)} placeholder="client@email.com" autoFocus/>
-                    </div>
-                  ) : (
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="ni-send-phone">Send to WhatsApp number</label>
-                      <input id="ni-send-phone" name="send_phone" className="form-input" type="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" autoFocus/>
-                      <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 4 }}>Include country code, e.g. +267 for Botswana</div>
-                    </div>
-                  )}
-
-                  {sendError && (
-                    <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, fontSize: 12, color: 'var(--danger)' }}>
-                      {sendError}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-            {!sendDone && (
-              <div className="modal-footer">
-                <button className="btn-outline" onClick={() => setSendModalOpen(false)} disabled={sending}>Cancel</button>
-                <button
-                  className="btn-primary"
-                  style={{ flex: 'unset', padding: '9px 24px' }}
-                  onClick={handleSend}
-                  disabled={sending || (channel === 'email' ? !sendEmail.trim() : !sendPhone.trim())}
-                >
-                  {sending ? (
-                    <><span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', animation: 'spin .7s linear infinite', display: 'inline-block' }}/> Sending…</>
-                  ) : (
-                    <>{channel === 'email' ? 'Send via Email' : 'Send via WhatsApp'}</>
-                  )}
-                </button>
+            {sendDone ? (
+              <div className="send-done" role="status">
+                <svg width="22" height="22" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="#F2A900"/><path d="M5.2 9.1l2.6 2.6 5.1-5.6" fill="none" stroke="#1F2A44" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span>{channel === 'email' ? 'Invoice sent!' : 'WhatsApp opened — tap send there'}<small>Taking you to the invoice…</small></span>
               </div>
+            ) : (
+              <>
+                <p className="send-to"><b>{fmtAmt(total - depositAmt, currency)}</b> to <b>{clientName}</b>{dueDate ? <>, due {fmtDate(dueDate)}</> : null}.</p>
+                <div className="tabs" role="group" aria-label="Send with">
+                  <button type="button" aria-pressed={channel === 'wa'} onClick={() => setChannel('wa')}>WhatsApp</button>
+                  <button type="button" aria-pressed={channel === 'email'} onClick={() => setChannel('email')}>Email</button>
+                </div>
+                {channel === 'email' ? (
+                  <>
+                    <label className="lbl" htmlFor="ni-send-email">Their email</label>
+                    <input id="ni-send-email" name="send_email" className="in" type="email" inputMode="email" value={sendEmail} onChange={e => setSendEmail(e.target.value)} placeholder="e.g. kefilwe@gmail.com" autoFocus />
+                  </>
+                ) : (
+                  <>
+                    <label className="lbl" htmlFor="ni-send-phone">Their WhatsApp number</label>
+                    <input id="ni-send-phone" name="send_phone" className="in" type="tel" inputMode="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" autoFocus />
+                    <p className="sec-sub" style={{ marginTop: 6, fontSize: 13 }}>WhatsApp opens with the message ready. Tap send there.</p>
+                  </>
+                )}
+                {sendError && <p className="field-err" role="alert">{sendError}</p>}
+                <div className="sheet-actions">
+                  <button type="button" className="btn ghost press" onClick={() => setSendOpen(false)} disabled={sending}>Not now</button>
+                  <button type="button" className="btn primary press" onClick={handleSend}
+                    disabled={sending || (channel === 'email' ? !sendEmail.trim() : !sendPhone.trim())}>
+                    {sending ? 'Sending…' : channel === 'email' ? 'Send email' : 'Open in WhatsApp'}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
       )}
+      </>, document.body)}
     </>
   )
+}
+
+function firstName(name: string) {
+  return name.trim().split(/\s+/)[0]
 }

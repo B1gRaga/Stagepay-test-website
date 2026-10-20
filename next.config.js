@@ -27,6 +27,9 @@ const securityHeaders = [
 const nextConfig = {
   // React <ViewTransition> on route changes (invoice list ⇄ invoice page).
   experimental: { viewTransition: true },
+  // Dev server only: let a phone on the same Wi-Fi load the app from this PC's
+  // address. Ignored by production builds.
+  allowedDevOrigins: ['192.168.1.157'],
   async headers() {
     return [
       { source: '/(.*)', headers: securityHeaders },
