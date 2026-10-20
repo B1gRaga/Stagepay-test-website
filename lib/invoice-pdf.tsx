@@ -1,12 +1,10 @@
 import { renderToBuffer, Document, Page, Text, View, Image, Svg, Path, Rect } from '@react-pdf/renderer'
-import { resolveTheme, type InvoiceTheme } from './invoice-themes'
+import { resolveTheme, tint, type InvoiceTheme } from './invoice-themes'
 import { paymentBlocks } from './payment-methods'
 import { firmLines } from './firm-details'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const PAD     = 36           // page padding (pt)
-const AMBER   = '#F2A900'
-const PALE_AM = '#FCEFC7'
 const MUTED   = '#94A3B8'
 const INK     = '#1F2A44'
 const WHITE   = '#FFFFFF'
@@ -15,13 +13,13 @@ const WHITE   = '#FFFFFF'
 // Ink circle, amber border, inner ring, the real bracket+bar brand mark
 // (same path as components/Logo.tsx, kept in sync by hand since this is a
 // separate react-pdf render tree, not a DOM one).
-function LogoMark() {
+function LogoMark({ accent }: { accent: string }) {
   const D = 38
   return (
     <View style={{
       width: D, height: D, borderRadius: D / 2,
       backgroundColor: INK,
-      borderWidth: 1.8, borderColor: AMBER, borderStyle: 'solid',
+      borderWidth: 1.8, borderColor: accent, borderStyle: 'solid',
       flexShrink: 0, overflow: 'hidden',
       alignItems: 'center', justifyContent: 'center',
     }}>
@@ -31,13 +29,13 @@ function LogoMark() {
         top: 3, left: 3,
         width: D - 6, height: D - 6,
         borderRadius: (D - 6) / 2,
-        borderWidth: 0.6, borderColor: AMBER, borderStyle: 'solid',
+        borderWidth: 0.6, borderColor: accent, borderStyle: 'solid',
         opacity: 0.3,
       }} />
       {/* Bracket + bar brand mark, scaled to a 20pt box within the circle */}
       <Svg width={20} height={20} viewBox="0 0 92.6 92.6">
         <Path d="M24 92.6 V69.73 H46.87 V46.87 H69.73 V92.6 Z" fill={WHITE} />
-        <Rect x={69.73} y={24} width={22.87} height={68.6} fill={AMBER} />
+        <Rect x={69.73} y={24} width={22.87} height={68.6} fill={accent} />
       </Svg>
     </View>
   )
@@ -86,7 +84,7 @@ function AddressCard({ label, name, line1, line2, t }: {
       padding: '4pt 10pt',
     }}>
       <Text style={{
-        fontSize: 6, fontFamily: 'Helvetica-Bold', color: AMBER,
+        fontSize: 6, fontFamily: 'Helvetica-Bold', color: t.accentColor,
         textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3,
       }}>
         {label}
@@ -127,7 +125,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
       : null
   const terms       = dueDays != null && dueDays > 0 ? `Net ${dueDays} days` : 'Due on Receipt'
   const statusLabel = invoice.status === 'paid' ? 'PAID' : invoice.status === 'overdue' ? 'OVERDUE' : 'UNPAID'
-  const statusColor = invoice.status === 'paid' ? AMBER : invoice.status === 'overdue' ? '#F0B376' : '#F35480'
+  const statusColor = invoice.status === 'paid' ? t.accentColor : invoice.status === 'overdue' ? '#F0B376' : '#F35480'
 
   // Deposit
   const depositAmt  = Number(invoice.deposit_amount ?? 0)
@@ -161,15 +159,15 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             {profile.logo_url
               ? <Image src={profile.logo_url} style={{ width: 38, height: 38, borderRadius: 19, objectFit: 'contain', flexShrink: 0 }} />
-              : <LogoMark />
+              : <LogoMark accent={t.accentColor} />
             }
             <View>
               <Text style={{ fontSize: 17, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor }}>
                 {firmName}
               </Text>
-              {subLabel ? <Text style={{ fontSize: 8, color: AMBER, marginTop: 2 }}>{subLabel}</Text> : null}
+              {subLabel ? <Text style={{ fontSize: 8, color: t.accentColor, marginTop: 2 }}>{subLabel}</Text> : null}
               {/* Thin amber rule */}
-              <View style={{ width: 30, height: 1, backgroundColor: AMBER, marginTop: 3, marginBottom: 3 }} />
+              <View style={{ width: 30, height: 1, backgroundColor: t.accentColor, marginTop: 3, marginBottom: 3 }} />
               {firmAddress
                 ? <Text style={{ fontSize: 6.5, color: t.headerSubColor }}>{firmAddress}</Text>
                 : null}
@@ -295,13 +293,13 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
           <View style={{
             alignSelf: 'flex-end', width: '56%',
             minHeight: 20, borderRadius: 7,
-            backgroundColor: PALE_AM,
-            borderWidth: 1, borderColor: AMBER, borderStyle: 'solid',
+            backgroundColor: tint(t.accentColor, 0.8),
+            borderWidth: 1, borderColor: t.accentColor, borderStyle: 'solid',
             paddingHorizontal: 10, paddingVertical: 4,
             marginTop: 6,
           }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: AMBER }}>
+              <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: t.bodyText }}>
                 DEPOSIT REQUIRED ({depositPct}%)
               </Text>
               <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: t.bodyText }}>

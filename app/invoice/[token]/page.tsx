@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import InvoiceActions from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
 import { firmLines } from '@/lib/firm-details'
+import { resolveTheme } from '@/lib/invoice-themes'
 
 type Props = { params: Promise<{ token: string }> }
 
@@ -24,12 +25,13 @@ export default async function PublicInvoicePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_name, name, email, phone, address, city, country, vat_number, payment_methods, tax_label')
+    .select('firm_name, name, email, phone, address, city, country, vat_number, payment_methods, tax_label, invoice_theme, brand_color_primary, brand_color_header')
     .eq('id', invoice.user_id)
     .single()
 
   const sym = invoice.currency || 'P'
   const firm = firmLines(profile)
+  const t = resolveTheme(profile?.invoice_theme, profile?.brand_color_primary, profile?.brand_color_header)
   const senderName = firm.name || 'StagePay'
   const items: any[] = invoice.invoice_items || []
   const payBlocks = invoice.status === 'paid' ? [] : paymentBlocks(profile?.payment_methods)
@@ -40,7 +42,7 @@ export default async function PublicInvoicePage({ params }: Props) {
         body { background: #f1f5f9 !important; padding: 24px 16px; }
         .sp-card { background: #fff; max-width: 720px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.08); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1e293b; }
         .sp-header { padding: 32px 40px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
-        .sp-firm { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #F2A900; }
+        .sp-firm { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: var(--accent); }
         .sp-firm-detail { font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.6; }
         .sp-inv-label { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #1F2A44; text-align: right; }
         .sp-inv-meta { font-size: 12px; color: #64748b; text-align: right; margin-top: 4px; line-height: 1.7; }
@@ -58,8 +60,8 @@ export default async function PublicInvoicePage({ params }: Props) {
         .sp-totals { display: flex; justify-content: flex-end; margin-top: 8px; }
         .sp-totals-inner { width: 260px; }
         .sp-total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: #475569; }
-        .sp-grand { background: #F2A900; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; margin-top: 10px; }
-        .sp-grand span { color: #1F2A44; font-weight: 700; font-size: 15px; }
+        .sp-grand { background: var(--grand-bg); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; margin-top: 10px; }
+        .sp-grand span { color: var(--grand-fg); font-weight: 700; font-size: 15px; }
         .sp-notes { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
         .sp-notes p { font-size: 12px; color: #64748b; line-height: 1.7; margin-top: 6px; }
         .sp-footer { padding: 16px 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
@@ -67,7 +69,7 @@ export default async function PublicInvoicePage({ params }: Props) {
         @media print { body { background: #fff !important; padding: 0; } .sp-card { box-shadow: none; border-radius: 0; } }
       `}</style>
 
-      <div className="sp-card">
+      <div className="sp-card" style={{ ['--accent' as string]: t.accentColor, ['--grand-bg' as string]: t.grandRowBg, ['--grand-fg' as string]: t.grandRowText }}>
         {/* Header */}
         <div className="sp-header">
           <div>
@@ -134,7 +136,7 @@ export default async function PublicInvoicePage({ params }: Props) {
               <div className="sp-total-row"><span>Subtotal</span><span>{fmt(invoice.subtotal, sym)}</span></div>
               {Number(invoice.vat_rate) > 0 && <div className="sp-total-row"><span>{profile?.tax_label || 'VAT'} ({Number(invoice.vat_rate)}%)</span><span>{fmt(invoice.vat_amount, sym)}</span></div>}
               {invoice.deposit_amount > 0 && (
-                <div className="sp-total-row" style={{ color: '#f59e0b' }}>
+                <div className="sp-total-row" style={{ color: t.accentColor }}>
                   <span>Deposit paid</span><span>−{fmt(invoice.deposit_amount, sym)}</span>
                 </div>
               )}

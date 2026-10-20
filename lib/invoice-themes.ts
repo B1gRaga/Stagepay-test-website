@@ -154,12 +154,14 @@ export function resolveTheme(
   const result = { ...base } as Record<string, string>
 
   if (primaryColor && /^#[0-9a-f]{6}$/i.test(primaryColor)) {
-    const defaultAccent = base.accentColor
-    // Replace every colour field that was using the theme's default accent colour
+    // Every shade of the brand orange follows the custom accent: the strong
+    // ones become the accent, the pale fills become a light tint of it.
+    const pale = tint(primaryColor, 0.8)
     for (const key of Object.keys(result)) {
-      if (result[key] === defaultAccent) result[key] = primaryColor
+      const v = result[key].toUpperCase()
+      if (BRAND_ORANGES.includes(v) || v === base.accentColor.toUpperCase()) result[key] = primaryColor
+      else if (v === BRAND_PALE) result[key] = pale
     }
-    // Always override core brand-expression fields regardless of their base value
     result.accentColor      = primaryColor
     result.grandRowBg       = primaryColor
     result.footerBrandColor = primaryColor
@@ -169,5 +171,42 @@ export function resolveTheme(
     result.headerBg = headerColor
   }
 
+  // Custom colours can make text unreadable on them; switch that text to white or ink.
+  const pairs: [string, string][] = [
+    ['grandRowText', 'grandRowBg'], ['tableHeadText', 'tableHeadBg'],
+    ['headerFirmColor', 'headerBg'], ['invoiceLabelColor', 'headerBg'], ['headerSubColor', 'headerBg'],
+    ['footerBrandColor', 'footerBg'], ['footerTextColor', 'footerBg'],
+  ]
+  for (const [fg, bg] of pairs) {
+    if (contrast(result[fg], result[bg]) < (fg === 'headerSubColor' || fg === 'footerTextColor' ? 2.5 : 3)) {
+      result[fg] = contrast('#FFFFFF', result[bg]) >= contrast(INK, result[bg]) ? '#FFFFFF' : INK
+    }
+  }
+
   return result as unknown as InvoiceTheme
+}
+
+const BRAND_ORANGES = ['#F2A900', '#C98C00']
+const BRAND_PALE    = '#FCEFC7'
+const INK           = '#1F2A44'
+
+function rgb(hex: string) {
+  const n = parseInt(hex.replace('#', ''), 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+
+// Mixes a colour with white: amount 0 = the colour, 1 = white.
+export function tint(hex: string, amount: number) {
+  return '#' + rgb(hex).map(c => Math.round(c + (255 - c) * amount).toString(16).padStart(2, '0')).join('').toUpperCase()
+}
+
+function luminance(hex: string) {
+  const [r, g, b] = rgb(hex).map(c => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+export function contrast(a: string, b: string) {
+  if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return 21
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
 }
