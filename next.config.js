@@ -1,31 +1,43 @@
 /** @type {import('next').NextConfig} */
 const { withSentryConfig } = require('@sentry/nextjs')
 
+// frameAncestors: who may embed this response. 'none' everywhere except the
+// invoice PDF, which the portal's own preview page embeds.
+const csp = (frameAncestors) => [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://va.vercel-scripts.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  "worker-src blob:",
+  "frame-src 'self'",
+  `frame-ancestors ${frameAncestors}`,
+].join('; ')
+
 const securityHeaders = [
   { key: 'X-Frame-Options',           value: 'DENY' },
   { key: 'X-Content-Type-Options',    value: 'nosniff' },
   { key: 'Referrer-Policy',           value: 'strict-origin-when-cross-origin' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'Permissions-Policy',        value: 'camera=(), microphone=(), geolocation=()' },
-  {
-    key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://va.vercel-scripts.com",
-      "style-src 'self' 'unsafe-inline'",
-      "font-src 'self' data:",
-      "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
-      "worker-src blob:",
-      "frame-src 'none'",
-      "frame-ancestors 'none'",
-    ].join('; '),
-  },
+  { key: 'Content-Security-Policy',   value: csp("'none'") },
 ]
 
 const nextConfig = {
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }]
+    return [
+      { source: '/(.*)', headers: securityHeaders },
+      // Later rules override earlier ones for the same key: let only our own
+      // pages frame the invoice PDF (the preview on /invoices/[id]).
+      {
+        source: '/api/invoices/:id/pdf',
+        headers: [
+          { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
+          { key: 'Content-Security-Policy', value: csp("'self'") },
+        ],
+      },
+    ]
   },
   async redirects() {
     return [
