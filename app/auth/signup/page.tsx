@@ -260,7 +260,7 @@ export default function SignupPage() {
             {error && <div className="auth-error">{error}</div>}
 
             {step === 1 ? (
-              <form onSubmit={handleStepOne} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
+              <form method="post" onSubmit={handleStepOne} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
                 <div className="auth-group">
                   <label htmlFor="name">Full name</label>
                   <input className="auth-input" id="name" name="name" type="text" required autoComplete="name"
@@ -293,7 +293,7 @@ export default function SignupPage() {
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
+              <form method="post" onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14,flex:1}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
                   <button type="button" onClick={() => { setStep(1); setError('') }}
                     style={{background:'transparent',border:'none',color:'rgba(31,42,68,.4)',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:5,fontSize:11}}>

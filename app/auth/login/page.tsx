@@ -283,7 +283,7 @@ export default function LoginPage() {
 
             {error && <div className="auth-error">{error}</div>}
 
-            <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:16,flex:1}}>
+            <form method="post" onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:16,flex:1}}>
               <div className="auth-group">
                 <label htmlFor="email">Email address</label>
                 <input className="auth-input" id="email" name="email" type="email" required autoComplete="email"

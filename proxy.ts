@@ -12,6 +12,16 @@ function isPortalPath(pathname: string) {
   return PORTAL_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 }
 
+// Reads the `aal` claim from an access token that getUser() has already verified.
+function tokenAal(token: string | undefined): string | null {
+  try {
+    const b64 = token!.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '='))).aal ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function proxy(request: NextRequest) {
   // Collect cookies that Supabase wants to set (token refresh),
   // apply them to the final response at the end.
@@ -32,12 +42,22 @@ export async function proxy(request: NextRequest) {
   let { data: { user } } = await supabase.auth.getUser()
 
   // Fall back to Bearer token for clients that can't use cookies (e.g. app.html)
+  let bearerToken: string | undefined
   if (!user) {
     const authHeader = request.headers.get('authorization')
     if (authHeader?.startsWith('Bearer ')) {
       const { data: bearerData } = await supabase.auth.getUser(authHeader.slice(7))
       user = bearerData?.user ?? null
+      if (user) bearerToken = authHeader.slice(7)
     }
+  }
+
+  // MFA: a user with a verified factor must have completed it (aal2) for this
+  // session. A password-only session (aal1) is treated as half signed in.
+  let needsMfa = false
+  if (user?.factors?.some(f => f.status === 'verified')) {
+    const token = bearerToken ?? (await supabase.auth.getSession()).data.session?.access_token
+    needsMfa = tokenAal(token) !== 'aal2'
   }
 
   const { pathname } = request.nextUrl
@@ -51,6 +71,18 @@ export async function proxy(request: NextRequest) {
   // API route protection
   if (pathname.startsWith('/api/') && !isPublic && !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // MFA not completed: portal → the code page, API → 401. Refreshed session
+  // cookies still go out so the user stays signed in for the code step.
+  if (needsMfa && (isPortalPath(pathname) || (pathname.startsWith('/api/') && !isPublic))) {
+    const blocked = isPortalPath(pathname)
+      ? NextResponse.redirect(new URL('/auth/mfa', request.url))
+      : NextResponse.json({ error: 'MFA required' }, { status: 401 })
+    cookiesToSet.forEach(({ name, value, options }) =>
+      blocked.cookies.set(name, value, options as Parameters<typeof blocked.cookies.set>[2])
+    )
+    return blocked
   }
 
   // CSRF: reject cross-origin mutations. Requests without Origin (server-to-server,
