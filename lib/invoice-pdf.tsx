@@ -1,6 +1,7 @@
 import { renderToBuffer, Document, Page, Text, View, Image, Svg, Path, Rect } from '@react-pdf/renderer'
 import { resolveTheme, type InvoiceTheme } from './invoice-themes'
 import { paymentBlocks } from './payment-methods'
+import { firmLines } from './firm-details'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const PAD     = 36           // page padding (pt)
@@ -111,10 +112,11 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
   const fmt = (n: number) => `${sym}${Number(n ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
 
   // Firm info
-  const firmName    = profile.firm_name || profile.name || 'Your Company'
-  const firmAddress = [profile.address, profile.city, profile.country].filter(Boolean).join(', ')
-  const firmContact = [profile.email, profile.phone].filter(Boolean).join('  ·  ')
-  const subLabel    = profile.vat_number ? `VAT No: ${profile.vat_number}` : 'Professional Services'
+  const firm        = firmLines(profile)
+  const firmName    = firm.name || 'Your Company'
+  const firmAddress = firm.address
+  const firmContact = firm.contact
+  const subLabel    = firm.vat
   const payBlocks   = paymentBlocks(profile.payment_methods)
 
   // Meta
@@ -165,7 +167,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
               <Text style={{ fontSize: 17, fontFamily: 'Helvetica-Bold', color: t.headerFirmColor }}>
                 {firmName}
               </Text>
-              <Text style={{ fontSize: 8, color: AMBER, marginTop: 2 }}>{subLabel}</Text>
+              {subLabel ? <Text style={{ fontSize: 8, color: AMBER, marginTop: 2 }}>{subLabel}</Text> : null}
               {/* Thin amber rule */}
               <View style={{ width: 30, height: 1, backgroundColor: AMBER, marginTop: 3, marginBottom: 3 }} />
               {firmAddress
@@ -263,10 +265,12 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
             <Text style={{ fontSize: 8.5, color: MUTED }}>Subtotal</Text>
             <Text style={{ fontSize: 8.5, color: t.bodyText }}>{fmt(invoice.subtotal)}</Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 8.5, color: MUTED }}>VAT ({invoice.vat_rate}%)</Text>
-            <Text style={{ fontSize: 8.5, color: t.bodyText }}>{fmt(invoice.vat_amount)}</Text>
-          </View>
+          {Number(invoice.vat_rate) > 0 ? (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 8.5, color: MUTED }}>{profile.tax_label || 'VAT'} ({Number(invoice.vat_rate)}%)</Text>
+              <Text style={{ fontSize: 8.5, color: t.bodyText }}>{fmt(invoice.vat_amount)}</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* ── TOTAL DUE PILL ─────────────────────────────────────────────────── */}

@@ -4,6 +4,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
+import { COUNTRIES, countryCode } from '@/lib/countries'
+import { firmLines } from '@/lib/firm-details'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 
 const supabase = createBrowserClient(
@@ -63,54 +65,6 @@ function PanelHead({ title, sub }: { title: React.ReactNode; sub: React.ReactNod
   )
 }
 
-const VAT_COUNTRIES = [
-  { g: 'Southern Africa', opts: [
-    { v: 'BW', l: 'Botswana — 14% VAT',       rate: 14,   sym: 'P'   },
-    { v: 'ZA', l: 'South Africa — 15% VAT',   rate: 15,   sym: 'R'   },
-    { v: 'ZW', l: 'Zimbabwe — 15% VAT',       rate: 15,   sym: 'ZWL' },
-    { v: 'NA', l: 'Namibia — 15% VAT',        rate: 15,   sym: 'N$'  },
-    { v: 'ZM', l: 'Zambia — 16% VAT',         rate: 16,   sym: 'K'   },
-    { v: 'MZ', l: 'Mozambique — 17% VAT',     rate: 17,   sym: 'MT'  },
-    { v: 'LS', l: 'Lesotho — 15% VAT',        rate: 15,   sym: 'LSL' },
-    { v: 'SZ', l: 'Eswatini — 15% VAT',       rate: 15,   sym: 'SZL' },
-    { v: 'MW', l: 'Malawi — 16.5% VAT',       rate: 16.5, sym: 'MK'  },
-    { v: 'MG', l: 'Madagascar — 20% VAT',     rate: 20,   sym: 'Ar'  },
-  ]},
-  { g: 'East Africa', opts: [
-    { v: 'KE', l: 'Kenya — 16% VAT',          rate: 16,   sym: 'KSh' },
-    { v: 'TZ', l: 'Tanzania — 18% VAT',       rate: 18,   sym: 'TSh' },
-    { v: 'UG', l: 'Uganda — 18% VAT',         rate: 18,   sym: 'UGX' },
-    { v: 'RW', l: 'Rwanda — 18% VAT',         rate: 18,   sym: 'RWF' },
-    { v: 'ET', l: 'Ethiopia — 15% VAT',       rate: 15,   sym: 'ETB' },
-  ]},
-  { g: 'West Africa', opts: [
-    { v: 'NG', l: 'Nigeria — 7.5% VAT',       rate: 7.5,  sym: '₦'   },
-    { v: 'GH', l: 'Ghana — 15% VAT',          rate: 15,   sym: 'GH₵' },
-    { v: 'SN', l: 'Senegal — 18% VAT',        rate: 18,   sym: 'CFA' },
-    { v: 'CI', l: "Côte d'Ivoire — 18% VAT",  rate: 18,   sym: 'CFA' },
-  ]},
-  { g: 'Europe', opts: [
-    { v: 'GB', l: 'United Kingdom — 20% VAT', rate: 20,   sym: '£'   },
-    { v: 'DE', l: 'Germany — 19% VAT',        rate: 19,   sym: '€'   },
-    { v: 'FR', l: 'France — 20% VAT',         rate: 20,   sym: '€'   },
-    { v: 'NL', l: 'Netherlands — 21% VAT',    rate: 21,   sym: '€'   },
-    { v: 'SE', l: 'Sweden — 25% VAT',         rate: 25,   sym: 'kr'  },
-    { v: 'CH', l: 'Switzerland — 8.1% VAT',   rate: 8.1,  sym: 'CHF' },
-  ]},
-  { g: 'Middle East', opts: [
-    { v: 'AE', l: 'UAE — 5% VAT',             rate: 5,    sym: 'AED' },
-    { v: 'SA', l: 'Saudi Arabia — 15% VAT',   rate: 15,   sym: 'SAR' },
-    { v: 'QA', l: 'Qatar — 0% (no VAT)',      rate: 0,    sym: 'QAR' },
-  ]},
-  { g: 'Americas', opts: [
-    { v: 'US', l: 'United States — 0%',       rate: 0,    sym: '$'   },
-    { v: 'CA', l: 'Canada — 5% GST',          rate: 5,    sym: 'CA$' },
-    { v: 'AU', l: 'Australia — 10% GST',      rate: 10,   sym: 'A$'  },
-    { v: 'NZ', l: 'New Zealand — 15% GST',    rate: 15,   sym: 'NZ$' },
-    { v: 'IN', l: 'India — 18% GST',          rate: 18,   sym: '₹'   },
-    { v: 'SG', l: 'Singapore — 9% GST',       rate: 9,    sym: 'S$'  },
-  ]},
-]
 
 const CURRENCIES = [
   { v: 'P',    l: 'BWP — Pula (P)' },
@@ -161,14 +115,16 @@ const CSS = `
   /* Shared pieces for rebuilt panels */
   .fld{display:flex;flex-direction:column;gap:6px;}
   .fld label{font-size:13px;font-weight:600;color:var(--t1);}
-  .fld .help{font-size:12px;color:var(--t2);}
+  .fld .help,p.help{font-size:12px;color:var(--t2);line-height:1.5;}
+  .block > p.help{font-size:13px;margin-bottom:0;}
   .in{height:42px;width:100%;padding:0 12px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--t1);font:500 14px var(--font-manrope),sans-serif;outline:none;transition:border-color var(--dur-1) var(--ease);}
   .in:focus{border-color:var(--g);}
   .in::placeholder{color:var(--t3);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .grid2 .full{grid-column:1 / -1;}
   .block{margin-bottom:28px;}
-  .block h3{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px;}
+  .block h3{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:12px;}
+  .block h3 + p{margin-top:-8px;}
   .block > p{font-size:14px;color:var(--t2);margin-bottom:16px;line-height:1.5;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
   .chip{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t2);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
@@ -206,6 +162,18 @@ const CSS = `
   .pm-hint{font-size:12px;color:var(--t2);margin-top:10px;}
   .pm-add{display:flex;flex-direction:column;gap:8px;padding:14px 0 0;}
   .pm-add > span{font-size:13px;font-weight:600;color:var(--t1);}
+  .fp-label{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748B;margin-bottom:6px;}
+  .fp-name{font-size:17px;font-weight:800;line-height:1.25;}
+  .fp-vat{font-size:12px;font-weight:600;color:#B07A00;margin-top:2px;}
+  .fp-line{font-size:12px;color:#475569;margin-top:4px;line-height:1.45;word-break:break-word;}
+  .in[readonly]{background:transparent;color:var(--t2);}
+  select.in{appearance:auto;padding-right:8px;}
+  .pp-total{margin-top:6px;padding-top:8px;border-top:1px solid rgba(31,42,68,.12);}
+  .pp-total span{color:#1F2A44;font-weight:700;}
+  .in-suffix{position:relative;display:block;}
+  .in-suffix .in{padding-right:32px;}
+  .in-suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--t2);font-weight:600;pointer-events:none;}
+  .def-note{font-size:13px;line-height:1.5;color:var(--t1);padding:12px 14px;border-radius:8px;background:color-mix(in srgb,var(--g) 12%,transparent);}
   .pp-ref{margin-top:8px;font-size:12px;color:#64748B;line-height:1.5;}
   .pp-empty{font-size:13px;color:var(--t2);line-height:1.5;padding:16px;border:1px dashed var(--line2);border-radius:10px;}
   @media(max-width:1100px){.pay-layout{grid-template-columns:minmax(0,1fr);}.pay-preview{position:static;}}
@@ -483,23 +451,53 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
   const [logoError,     setLogoError]     = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  // Firm details form state
-  const [firm, setFirm] = useState({
-    name:       initialProfile?.name       ?? '',
-    firm_name:  initialProfile?.firm_name  ?? '',
-    phone:      initialProfile?.phone      ?? '',
-    address:    initialProfile?.address    ?? '',
-    city:       initialProfile?.city       ?? '',
-    country:    initialProfile?.country    ?? 'BW',
-    vat_number: initialProfile?.vat_number ?? '',
+  // Firm details form state. Older profiles store the country's name, so it's read as a code.
+  const firmFrom = (p: Profile | null) => ({
+    name:       p?.name       ?? '',
+    firm_name:  p?.firm_name  ?? '',
+    phone:      p?.phone      ?? '',
+    address:    p?.address    ?? '',
+    city:       p?.city       ?? '',
+    country:    countryCode(p?.country) || 'BW',
+    vat_number: p?.vat_number ?? '',
   })
+  const [firm, setFirm] = useState(() => firmFrom(initialProfile))
+  const [firmError, setFirmError] = useState('')
+  const savedFirm = firmFrom(profile)
+  const firmDirty = (Object.keys(firm) as (keyof typeof firm)[]).some(k => firm[k].trim() !== savedFirm[k].trim())
+  const firmPreview = firmLines({ ...firm, email: profile?.email })
+
+  async function saveFirm() {
+    setFirmError('')
+    const fields = Object.fromEntries(Object.entries(firm).map(([k, v]) => [k, v.trim()]))
+    const ok = await save(fields, 'firm')
+    if (!ok) setFirmError('Couldn’t save. Check your connection and try again.')
+  }
 
   // Invoice defaults form state
-  const [inv, setInv] = useState({
-    default_currency: initialProfile?.default_currency ?? 'P',
-    default_vat_rate: String(initialProfile?.default_vat_rate ?? 14),
-    tax_label:        initialProfile?.tax_label ?? 'VAT',
+  const invFrom = (p: Profile | null) => ({
+    default_currency: p?.default_currency ?? 'P',
+    default_vat_rate: String(Number(p?.default_vat_rate ?? 14)),
+    tax_label:        p?.tax_label ?? 'VAT',
   })
+  const [inv, setInv] = useState(() => invFrom(initialProfile))
+  const [invError, setInvError] = useState('')
+  const rateNum = Number(inv.default_vat_rate)
+  const vatOn = inv.default_vat_rate.trim() !== '0' && rateNum !== 0
+  const invValid = inv.default_vat_rate.trim() !== '' && Number.isFinite(rateNum) && rateNum >= 0 && rateNum <= 100
+  // The rate to go back to when VAT is switched off and on again.
+  const lastRate = useRef(vatOn ? inv.default_vat_rate : '14')
+  const savedInv = invFrom(profile)
+  const invDirty = inv.default_currency !== savedInv.default_currency
+    || rateNum !== Number(savedInv.default_vat_rate)
+    || (inv.tax_label.trim() || 'VAT') !== savedInv.tax_label
+  const fmtSample = (n: number) => `${inv.default_currency}${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+  async function saveInv() {
+    setInvError('')
+    const ok = await save({ default_currency: inv.default_currency, default_vat_rate: rateNum, tax_label: inv.tax_label.trim() || 'VAT' }, 'invoice')
+    if (!ok) setInvError('Couldn’t save. Check your connection and try again.')
+  }
 
   // Getting paid: the ways clients can pay, and the default payment terms
   const methodKey = useRef(0)
@@ -547,15 +545,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
           brand_color_primary: p.brand_color_primary ?? '',
           brand_color_header:  p.brand_color_header  ?? '',
         })
-        setFirm({
-          name:       p.name       ?? '',
-          firm_name:  p.firm_name  ?? '',
-          phone:      p.phone      ?? '',
-          address:    p.address    ?? '',
-          city:       p.city       ?? '',
-          country:    p.country    ?? 'BW',
-          vat_number: p.vat_number ?? '',
-        })
+        setFirm(firmFrom(p))
         setInv({
           default_currency: p.default_currency ?? 'P',
           default_vat_rate: String(p.default_vat_rate ?? 14),
@@ -728,13 +718,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
     }
   }
 
-  async function onVatCountryChange(val: string) {
-    const all = VAT_COUNTRIES.flatMap(g => g.opts)
-    const match = all.find(o => o.v === val)
-    if (!match) return
-    setInv(p => ({ ...p, default_vat_rate: String(match.rate), default_currency: match.sym }))
-    await save({ default_vat_rate: match.rate, default_currency: match.sym }, 'invoice')
-  }
+
 
   if (loading) return (
     <>
@@ -921,111 +905,165 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── FIRM DETAILS ── */}
           <div className={`settings-panel${panel === 'firm' ? ' active' : ''}`}>
-            <PanelHead title={<>Firm details</>} sub={<>Business name, address, registration · Printed on every invoice</>} />
-            <div className="settings-section">
-              <div className="settings-section-title">Business information</div>
-              <div className="settings-section-desc">This information appears on every invoice you send.</div>
-              <div className="form-grid" style={{ maxWidth: 520 }}>
-                <div className="form-group full">
-                  <label className="form-label" htmlFor="s-firm-name">Business / Firm name</label>
-                  <input id="s-firm-name" name="firm_name" className="form-input" value={firm.firm_name} onChange={e => setFirm(p => ({ ...p, firm_name: e.target.value }))} placeholder="Your business name"/>
-                </div>
-                <div className="form-group full">
-                  <label className="form-label" htmlFor="s-name">Your full name</label>
-                  <input id="s-name" name="name" className="form-input" value={firm.name} onChange={e => setFirm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="s-phone">Phone number</label>
-                  <input id="s-phone" name="phone" className="form-input" value={firm.phone} onChange={e => setFirm(p => ({ ...p, phone: e.target.value }))} placeholder="e.g. +267 71 234 567"/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="s-vat">VAT / TIN number</label>
-                  <input id="s-vat" name="vat_number" className="form-input" value={firm.vat_number} onChange={e => setFirm(p => ({ ...p, vat_number: e.target.value }))} placeholder="e.g. P03812345W"/>
-                </div>
-                <div className="form-group full">
-                  <label className="form-label" htmlFor="s-address">Physical address</label>
-                  <input id="s-address" name="address" className="form-input" value={firm.address} onChange={e => setFirm(p => ({ ...p, address: e.target.value }))} placeholder="Your business address"/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="s-city">City</label>
-                  <input id="s-city" name="city" className="form-input" value={firm.city} onChange={e => setFirm(p => ({ ...p, city: e.target.value }))} placeholder="e.g. Gaborone"/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Country</label>
-                  <select className="form-select" value={firm.country} onChange={e => setFirm(p => ({ ...p, country: e.target.value }))}>
-                    <option value="BW">Botswana</option><option value="ZA">South Africa</option>
-                    <option value="ZW">Zimbabwe</option><option value="NA">Namibia</option>
-                    <option value="KE">Kenya</option><option value="NG">Nigeria</option>
-                    <option value="GH">Ghana</option><option value="GB">United Kingdom</option>
-                    <option value="US">United States</option><option value="AE">UAE</option>
-                    <option value="AU">Australia</option><option value="IN">India</option>
-                  </select>
-                </div>
+            <PanelHead title="Firm details" sub="Who the invoice is from. This prints at the top of every invoice you send." />
+
+            <div className="pay-layout">
+              <div>
+                <section className="block" aria-labelledby="firm-who">
+                  <h3 id="firm-who">Business</h3>
+                  <div className="grid2">
+                    <div className="fld full">
+                      <label htmlFor="s-firm-name">Business name</label>
+                      <input id="s-firm-name" name="firm_name" className="in" autoComplete="organization" value={firm.firm_name} onChange={e => setFirm(p => ({ ...p, firm_name: e.target.value }))} />
+                    </div>
+                    <div className="fld full">
+                      <label htmlFor="s-name">Your name</label>
+                      <input id="s-name" name="name" className="in" autoComplete="name" value={firm.name} onChange={e => setFirm(p => ({ ...p, name: e.target.value }))} />
+                      <span className="help">Shown instead when there’s no business name.</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="block" aria-labelledby="firm-contact">
+                  <h3 id="firm-contact">Contact</h3>
+                  <div className="grid2">
+                    <div className="fld">
+                      <label htmlFor="s-email">Email</label>
+                      <input id="s-email" name="email" className="in" value={profile?.email ?? ''} readOnly aria-describedby="s-email-help" />
+                      <span className="help" id="s-email-help">The email you sign in with.</span>
+                    </div>
+                    <div className="fld">
+                      <label htmlFor="s-phone">Phone</label>
+                      <input id="s-phone" name="phone" className="in" type="tel" autoComplete="tel" value={firm.phone} onChange={e => setFirm(p => ({ ...p, phone: e.target.value }))} />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="block" aria-labelledby="firm-where">
+                  <h3 id="firm-where">Address</h3>
+                  <div className="grid2">
+                    <div className="fld full">
+                      <label htmlFor="s-address">Street address</label>
+                      <input id="s-address" name="address" className="in" autoComplete="street-address" value={firm.address} onChange={e => setFirm(p => ({ ...p, address: e.target.value }))} />
+                    </div>
+                    <div className="fld">
+                      <label htmlFor="s-city">City or town</label>
+                      <input id="s-city" name="city" className="in" autoComplete="address-level2" value={firm.city} onChange={e => setFirm(p => ({ ...p, city: e.target.value }))} />
+                    </div>
+                    <div className="fld">
+                      <label htmlFor="s-country">Country</label>
+                      <select id="s-country" name="country" className="in" value={firm.country} onChange={e => setFirm(p => ({ ...p, country: e.target.value }))}>
+                        {!COUNTRIES.some(c => c.code === firm.country) && firm.country && <option value={firm.country}>{firm.country}</option>}
+                        {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="block" aria-labelledby="firm-tax">
+                  <h3 id="firm-tax">Tax</h3>
+                  <div className="grid2">
+                    <div className="fld full">
+                      <label htmlFor="s-vat">VAT number</label>
+                      <input id="s-vat" name="vat_number" className="in" autoComplete="off" value={firm.vat_number} onChange={e => setFirm(p => ({ ...p, vat_number: e.target.value.toUpperCase() }))} />
+                      <span className="help">Only if you’re registered for VAT. Prints as “VAT No”.</span>
+                    </div>
+                  </div>
+                </section>
               </div>
+
+              <figure className="pay-preview" aria-label="How it appears on your invoices">
+                <figcaption>On your invoices</figcaption>
+                <div className="pp-card fp-card">
+                  <div className="fp-label">From</div>
+                  <div className="fp-name">{firmPreview.name || 'Your business name'}</div>
+                  {firmPreview.vat && <div className="fp-vat">{firmPreview.vat}</div>}
+                  {firmPreview.address && <div className="fp-line">{firmPreview.address}</div>}
+                  {firmPreview.contact && <div className="fp-line">{firmPreview.contact}</div>}
+                </div>
+                {!firmPreview.address && <p className="pm-hint">Add an address so clients know where you’re based.</p>}
+              </figure>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="topbar-btn btn-primary" disabled={saving} onClick={() => save({ ...firm }, 'firm')}>
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
-              {saved === 'firm' && <span className="success-toast">✓ Saved</span>}
+
+            <div className="savebar">
+              <button type="button" className="save press" disabled={!firmDirty || saving} onClick={saveFirm}>{saving ? 'Saving…' : 'Save'}</button>
+              {saved === 'firm' ? <span className="save-note ok" role="status">Saved</span>
+                : firmError ? <span className="save-note err" role="alert">{firmError}</span>
+                : firmDirty ? <span className="save-note">Unsaved changes</span> : null}
             </div>
           </div>
 
           {/* ── INVOICE DEFAULTS ── */}
           <div className={`settings-panel${panel === 'invoice' ? ' active' : ''}`}>
-            <PanelHead title={<>Invoice defaults</>} sub={<>Currency, VAT rate, payment terms · Pre-fills every new invoice automatically</>} />
-            <div className="settings-section">
-              <div className="settings-section-title">Invoice defaults</div>
-              <div className="settings-section-desc">These values pre-fill every new invoice. You can always override them per invoice.</div>
+            <PanelHead title="Invoice defaults" sub="What every new invoice starts with. You can still change them on any invoice." />
 
-              {/* Country VAT picker */}
-              <div style={{ background: 'var(--g-dim)', border: '1px solid rgba(242,169,0,.2)', borderRadius: 10, padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}><circle cx="9" cy="9" r="8" stroke="#F2A900" strokeWidth="1.5"/><path d="M9 4v5l3 2" stroke="#F2A900" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                <div style={{ flex: 1, minWidth: 180 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', marginBottom: 3 }}>Auto-detect VAT by country</div>
-                  <div style={{ fontSize: 11, color: 'var(--t3)' }}>Selecting your country sets the correct VAT rate and currency automatically.</div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                  <select className="form-select" style={{ minWidth: 200 }} onChange={e => onVatCountryChange(e.target.value)}>
-                    <option value="">— Pick a country —</option>
-                    {VAT_COUNTRIES.map(g => (
-                      <optgroup key={g.g} label={g.g}>
-                        {g.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
-                  <div style={{ background: 'var(--g)', color: 'var(--bg)', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 60, textAlign: 'center' }}>{inv.default_vat_rate}%</div>
-                </div>
+            <div className="pay-layout">
+              <div>
+                <section className="block" aria-labelledby="def-vat">
+                  <h3 id="def-vat">VAT</h3>
+                  <div className="chips" role="group" aria-label="Do you charge VAT?">
+                    <button type="button" className="chip press" aria-pressed={vatOn} onClick={() => setInv(p => ({ ...p, default_vat_rate: lastRate.current }))}>I charge VAT</button>
+                    <button type="button" className="chip press" aria-pressed={!vatOn} onClick={() => { if (vatOn) lastRate.current = inv.default_vat_rate; setInv(p => ({ ...p, default_vat_rate: '0' })) }}>I don’t charge VAT</button>
+                  </div>
+                  {vatOn ? (
+                    <div className="grid2" style={{ marginTop: 16 }}>
+                      <div className="fld">
+                        <label htmlFor="s-vat-rate">Rate</label>
+                        <span className="in-suffix">
+                          <input id="s-vat-rate" name="default_vat_rate" className="in" type="number" inputMode="decimal" min="0" max="100" step="0.1" value={inv.default_vat_rate} onChange={e => setInv(p => ({ ...p, default_vat_rate: e.target.value }))} />
+                          <span aria-hidden="true">%</span>
+                        </span>
+                      </div>
+                      <div className="fld">
+                        <label htmlFor="s-tax-label">Called</label>
+                        <input id="s-tax-label" name="tax_label" className="in" maxLength={12} value={inv.tax_label} onChange={e => setInv(p => ({ ...p, tax_label: e.target.value }))} />
+                        <span className="help">The name printed on invoices, like VAT or GST.</span>
+                      </div>
+                      {!firm.vat_number.trim() && (
+                        <p className="def-note full">
+                          Only businesses registered for VAT may charge it. If you are, add your VAT number in{' '}
+                          <button type="button" className="pm-link" onClick={() => setPanel('firm')}>Firm details</button> so it prints on your invoices.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="help" style={{ marginTop: 12 }}>New invoices won’t add VAT, and won’t show a VAT line.</p>
+                  )}
+                </section>
+
+                <section className="block" aria-labelledby="def-cur">
+                  <h3 id="def-cur">Currency</h3>
+                  <div className="grid2">
+                    <div className="fld">
+                      <label htmlFor="s-currency">Bill in</label>
+                      <select id="s-currency" name="default_currency" className="in" value={inv.default_currency} onChange={e => setInv(p => ({ ...p, default_currency: e.target.value }))}>
+                        {!CURRENCIES.some(c => c.v === inv.default_currency) && <option value={inv.default_currency}>{inv.default_currency}</option>}
+                        {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                      </select>
+                      <span className="help">Also the currency your dashboard totals are shown in.</span>
+                    </div>
+                  </div>
+                </section>
+
+                <p className="help" style={{ marginBottom: 24 }}>Payment terms are set in <button type="button" className="pm-link" onClick={() => setPanel('payment')}>Getting paid</button>.</p>
               </div>
 
-              <div className="form-grid" style={{ maxWidth: 520 }}>
-                <div className="form-group">
-                  <label className="form-label">Default currency</label>
-                  <select className="form-select" value={inv.default_currency} onChange={e => setInv(p => ({ ...p, default_currency: e.target.value }))}>
-                    {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
-                  </select>
+              <figure className="pay-preview" aria-label="How totals work out on a new invoice">
+                <figcaption>A new {fmtSample(1000).replace('.00', '')} invoice</figcaption>
+                <div className="pp-card">
+                  <div className="pp-row"><span>Subtotal</span><b>{fmtSample(1000)}</b></div>
+                  {vatOn && <div className="pp-row"><span>{inv.tax_label.trim() || 'VAT'} ({rateNum}%)</span><b>{fmtSample(1000 * rateNum / 100)}</b></div>}
+                  <div className="pp-row pp-total"><span>Total due</span><b>{fmtSample(1000 * (1 + (vatOn ? rateNum : 0) / 100))}</b></div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="s-vat-rate">Default VAT / tax rate (%)</label>
-                  <input id="s-vat-rate" name="default_vat_rate" className="form-input" type="number" min="0" max="100" step="0.1" value={inv.default_vat_rate} onChange={e => setInv(p => ({ ...p, default_vat_rate: e.target.value }))}/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="s-tax-label">Tax label</label>
-                  <input id="s-tax-label" name="tax_label" className="form-input" value={inv.tax_label} onChange={e => setInv(p => ({ ...p, tax_label: e.target.value }))} placeholder="VAT, GST, IVA…"/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Default payment terms</label>
-                  <select className="form-select">
-                    <option>30 days</option><option>14 days</option><option>7 days</option><option>Due on receipt</option>
-                  </select>
-                </div>
-              </div>
+              </figure>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="topbar-btn btn-primary" disabled={saving} onClick={() => save({ default_currency: inv.default_currency, default_vat_rate: Number(inv.default_vat_rate), tax_label: inv.tax_label }, 'invoice')}>
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
-              {saved === 'invoice' && <span className="success-toast">✓ Saved</span>}
+
+            <div className="savebar">
+              <button type="button" className="save press" disabled={!invDirty || !invValid || saving} onClick={saveInv}>{saving ? 'Saving…' : 'Save'}</button>
+              {saved === 'invoice' ? <span className="save-note ok" role="status">Saved</span>
+                : invError ? <span className="save-note err" role="alert">{invError}</span>
+                : !invValid ? <span className="save-note err">Enter a rate between 0 and 100.</span>
+                : invDirty ? <span className="save-note">Unsaved changes</span> : null}
             </div>
           </div>
 

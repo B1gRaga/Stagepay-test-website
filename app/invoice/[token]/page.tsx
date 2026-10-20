@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import InvoiceActions from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
+import { firmLines } from '@/lib/firm-details'
 
 type Props = { params: Promise<{ token: string }> }
 
@@ -23,12 +24,13 @@ export default async function PublicInvoicePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_name, name, email, address, city, country, vat_number, payment_methods')
+    .select('firm_name, name, email, phone, address, city, country, vat_number, payment_methods, tax_label')
     .eq('id', invoice.user_id)
     .single()
 
   const sym = invoice.currency || 'P'
-  const senderName = profile?.firm_name || profile?.name || 'StagePay'
+  const firm = firmLines(profile)
+  const senderName = firm.name || 'StagePay'
   const items: any[] = invoice.invoice_items || []
   const payBlocks = invoice.status === 'paid' ? [] : paymentBlocks(profile?.payment_methods)
 
@@ -71,10 +73,9 @@ export default async function PublicInvoicePage({ params }: Props) {
           <div>
             <div className="sp-firm">{senderName}</div>
             <div className="sp-firm-detail">
-              {profile?.address && <>{profile.address}<br /></>}
-              {profile?.city && <>{profile.city}{profile?.country ? `, ${profile.country}` : ''}<br /></>}
-              {profile?.email && <>{profile.email}<br /></>}
-              {profile?.vat_number && <>VAT: {profile.vat_number}</>}
+              {firm.address && <>{firm.address}<br /></>}
+              {firm.contact && <>{firm.contact}<br /></>}
+              {firm.vat}
             </div>
           </div>
           <div>
@@ -131,7 +132,7 @@ export default async function PublicInvoicePage({ params }: Props) {
           <div className="sp-totals">
             <div className="sp-totals-inner">
               <div className="sp-total-row"><span>Subtotal</span><span>{fmt(invoice.subtotal, sym)}</span></div>
-              <div className="sp-total-row"><span>VAT ({invoice.vat_rate}%)</span><span>{fmt(invoice.vat_amount, sym)}</span></div>
+              {Number(invoice.vat_rate) > 0 && <div className="sp-total-row"><span>{profile?.tax_label || 'VAT'} ({Number(invoice.vat_rate)}%)</span><span>{fmt(invoice.vat_amount, sym)}</span></div>}
               {invoice.deposit_amount > 0 && (
                 <div className="sp-total-row" style={{ color: '#f59e0b' }}>
                   <span>Deposit paid</span><span>−{fmt(invoice.deposit_amount, sym)}</span>

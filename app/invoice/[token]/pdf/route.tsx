@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { paymentBlocks } from '@/lib/payment-methods'
+import { firmLines } from '@/lib/firm-details'
 import { renderToBuffer, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
 type Params = { params: Promise<{ token: string }> }
@@ -48,12 +49,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data: profile } = await supabaseAny
     .from('profiles')
-    .select('firm_name, name, email, address, city, country, vat_number, payment_methods')
+    .select('firm_name, name, email, phone, address, city, country, vat_number, payment_methods, tax_label')
     .eq('id', invoice.user_id)
     .single()
 
   const sym = invoice.currency || 'P'
-  const senderName = profile?.firm_name || profile?.name || 'StagePay'
+  const firm = firmLines(profile)
+  const senderName = firm.name || 'StagePay'
   const items: any[] = invoice.invoice_items || []
   const payBlocks = invoice.status === 'paid' ? [] : paymentBlocks(profile?.payment_methods)
 
@@ -63,9 +65,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
         <View style={styles.row}>
           <View>
             <Text style={styles.logo}>{senderName}</Text>
-            {profile?.address && <Text style={styles.badge}>{profile.address}</Text>}
-            {profile?.city && <Text style={styles.badge}>{profile.city}, {profile?.country}</Text>}
-            {profile?.vat_number && <Text style={styles.badge}>VAT: {profile.vat_number}</Text>}
+            {firm.address ? <Text style={styles.badge}>{firm.address}</Text> : null}
+            {firm.contact ? <Text style={styles.badge}>{firm.contact}</Text> : null}
+            {firm.vat ? <Text style={styles.badge}>{firm.vat}</Text> : null}
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#1F2A44', letterSpacing: 2 }}>INVOICE</Text>
@@ -115,10 +117,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
             <Text style={styles.totalLabel}>Subtotal</Text>
             <Text style={styles.totalValue}>{fmt(invoice.subtotal, sym)}</Text>
           </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>VAT ({invoice.vat_rate}%)</Text>
-            <Text style={styles.totalValue}>{fmt(invoice.vat_amount, sym)}</Text>
-          </View>
+          {Number(invoice.vat_rate) > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>{profile?.tax_label || 'VAT'} ({Number(invoice.vat_rate)}%)</Text>
+              <Text style={styles.totalValue}>{fmt(invoice.vat_amount, sym)}</Text>
+            </View>
+          )}
           {invoice.deposit_amount > 0 && (
             <View style={styles.totalRow}>
               <Text style={{ ...styles.totalLabel, color: '#F59E0B' }}>Deposit paid</Text>

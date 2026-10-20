@@ -307,7 +307,7 @@ export default function NewInvoiceClient({
   const initialTerm = daysBetween(inv?.issue_date || today(), initialDue)
   const [termDays,    setTermDays]    = useState<number | null>(TERMS.some(t => t.days === initialTerm) ? initialTerm : null)
   const [customDue,   setCustomDue]   = useState<string>(initialDue)
-  const [vatRate,     setVatRate]     = useState<number>(inv?.vat_rate ?? (Number(profile?.default_vat_rate) || 14))
+  const [vatRate,     setVatRate]     = useState<number>(inv?.vat_rate ?? (Number.isFinite(Number(profile?.default_vat_rate)) && profile?.default_vat_rate != null ? Number(profile.default_vat_rate) : 14))
   const [items,       setItems]       = useState<(LineItem & { key: number })[]>(() => {
     const src = inv?.invoice_items?.length
       ? [...inv.invoice_items].sort((a: any, b: any) => a.sort_order - b.sort_order).map((it: any) => ({ desc: it.description, qty: Number(it.quantity), rate: Number(it.unit_price) }))
@@ -359,6 +359,7 @@ export default function NewInvoiceClient({
   const subtotal = items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.rate) || 0), 0)
   const effectiveDiscount = discountOn ? Math.min(discountAmt, subtotal) : 0
   const vatAmt = (subtotal - effectiveDiscount) * (vatRate / 100)
+  const taxLabel = profile?.tax_label || 'VAT'
   const total = subtotal - effectiveDiscount + vatAmt
   const depositAmt = depositOn ? total * (depositPct / 100) : 0
   const shownTotal = useTween(total)
@@ -618,7 +619,7 @@ export default function NewInvoiceClient({
         <div className="paper-sums">
           <span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span>
           {effectiveDiscount > 0 && <><span>Discount</span><span>−{fmtAmt(effectiveDiscount, currency)}</span></>}
-          <span>VAT ({vatRate}%)</span><span>{fmtAmt(vatAmt, currency)}</span>
+          <span>{taxLabel} ({vatRate}%)</span><span>{fmtAmt(vatAmt, currency)}</span>
         </div>
         <div className="paper-total"><span>Total due</span><b>{fmtAmt(shownTotal, currency)}</b></div>
         {depositAmt > 0 && <div className="paper-note"><b>Deposit due now: {fmtAmt(depositAmt, currency)}</b> ({depositPct}%)</div>}
@@ -735,7 +736,7 @@ export default function NewInvoiceClient({
               <div className="sums" aria-live="polite">
                 <span>Subtotal</span><span>{fmtAmt(subtotal, currency)}</span>
                 {effectiveDiscount > 0 && <><span>Discount</span><span>−{fmtAmt(effectiveDiscount, currency)}</span></>}
-                <span>VAT {vatRate}%</span><span>{fmtAmt(vatAmt, currency)}</span>
+                <span>{taxLabel} {vatRate}%</span><span>{fmtAmt(vatAmt, currency)}</span>
                 <span className="total">Total</span><span className="total">{fmtAmt(shownTotal, currency)}</span>
                 {depositAmt > 0 && <><span>Deposit due now</span><span>{fmtAmt(depositAmt, currency)}</span></>}
               </div>
@@ -773,7 +774,7 @@ export default function NewInvoiceClient({
             <summary>
               <span>
                 <h2>More options</h2>
-                <span className="sec-sub">VAT {vatRate}% · {currency === 'P' ? 'Pula' : currency}{discountOn ? ' · discount' : ''}{depositOn ? ' · deposit' : ''}{isRecurring ? ` · repeats ${recurInterval}` : ''}</span>
+                <span className="sec-sub">{vatRate > 0 ? `${taxLabel} ${vatRate}%` : `No ${taxLabel}`} · {currency === 'P' ? 'Pula' : currency}{discountOn ? ' · discount' : ''}{depositOn ? ' · deposit' : ''}{isRecurring ? ` · repeats ${recurInterval}` : ''}</span>
               </span>
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
             </summary>
