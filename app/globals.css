@@ -25,3 +25,38 @@ html[data-theme="light"]{
   --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.42);
   --g-dim:rgba(242,169,0,.14);
 }
+
+/* ── MOTION ──
+   One curve, three speeds. Motion is feedback: press, hover, a sheet opening,
+   a page arriving. Transform and opacity only. */
+:root{
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --ease-in:cubic-bezier(.4,0,1,1);
+  --dur-1:120ms; /* press, hover, focus */
+  --dur-2:200ms; /* menus, toasts, row state */
+  --dur-3:320ms; /* page and shared-element moves */
+}
+.press{transition:transform var(--dur-1) var(--ease),background-color var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease),color var(--dur-1) var(--ease),opacity var(--dur-1) var(--ease);}
+.press:active:not(:disabled){transform:scale(.97);}
+
+/* ── PAGE TRANSITIONS (React <ViewTransition>, next.config experimental.viewTransition) ──
+   The shell (sidebar, bars) is identical on both pages, so the root does not
+   crossfade; only the page content and the shared invoice elements move. */
+::view-transition-old(root),::view-transition-new(root){animation:none;}
+::view-transition-group(*){animation-duration:var(--dur-3);animation-timing-function:var(--ease);}
+
+::view-transition-old(.nav-forward){animation:var(--dur-1) var(--ease-in) both vt-fade reverse,var(--dur-3) var(--ease) both vt-slide reverse;--vt-x:-24px;}
+::view-transition-new(.nav-forward){animation:var(--dur-2) var(--ease) var(--dur-1) both vt-fade,var(--dur-3) var(--ease) both vt-slide;--vt-x:24px;}
+::view-transition-old(.nav-back){animation:var(--dur-1) var(--ease-in) both vt-fade reverse,var(--dur-3) var(--ease) both vt-slide reverse;--vt-x:24px;}
+::view-transition-new(.nav-back){animation:var(--dur-2) var(--ease) var(--dur-1) both vt-fade,var(--dur-3) var(--ease) both vt-slide;--vt-x:-24px;}
+@keyframes vt-fade{from{opacity:0}to{opacity:1}}
+@keyframes vt-slide{from{translate:var(--vt-x) 0}to{translate:0 0}}
+
+/* Shared invoice text (client name, amount) morphs between list and detail. */
+::view-transition-group(.inv-shared){animation-duration:var(--dur-3);}
+::view-transition-old(.inv-shared),::view-transition-new(.inv-shared){height:100%;object-fit:none;object-position:left center;}
+
+@media (prefers-reduced-motion: reduce){
+  .press:active:not(:disabled){transform:none;}
+  ::view-transition-old(*),::view-transition-new(*),::view-transition-group(*){animation-duration:0s !important;animation-delay:0s !important;}
+}

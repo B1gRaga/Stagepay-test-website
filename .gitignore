@@ -33,3 +33,6 @@ next-env.d.ts
 token.json
 
 .vercel
+
+# taste-skill working files (screenshots, direction sheets)
+.taste-skill/

@@ -1,0 +1,30 @@
+import { createClient, getCachedUser } from '@/lib/supabase/server'
+import InvoicesTable from '@/components/portal/InvoicesTable'
+
+export default async function InvoicesPage() {
+  const user = await getCachedUser()
+  if (!user) return null
+
+  const supabase = await createClient()
+  const { data: invoices, count } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, client_name, project, issue_date, due_date, total, status, currency', { count: 'estimated' })
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .range(0, 49)
+
+  // Reminders that actually went out, per invoice: drives the second tick.
+  const ids = (invoices ?? []).map(i => i.id)
+  const remindersSent: Record<string, number> = {}
+  if (ids.length) {
+    const { data: sent } = await supabase
+      .from('reminders')
+      .select('invoice_id')
+      .in('invoice_id', ids)
+      .eq('status', 'sent')
+    for (const r of sent ?? []) remindersSent[r.invoice_id] = (remindersSent[r.invoice_id] ?? 0) + 1
+  }
+
+  const rows = (invoices ?? []).map(i => ({ ...i, reminders_sent: remindersSent[i.id] ?? 0 }))
+  return <InvoicesTable initialInvoices={rows} totalCount={count ?? 0} />
+}

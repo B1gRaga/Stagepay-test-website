@@ -44,73 +44,7 @@ export default async function PortalLayout({ children }: { children: React.React
           input,select,textarea{font-size:max(16px,1em) !important;}
         }
 
-        /* ── Mobile splash screen ── */
-        #sp-splash{
-          position:fixed;inset:0;z-index:9999;
-          background:#18213A;
-          display:flex;align-items:center;justify-content:center;flex-direction:column;
-          transition:opacity .5s ease,visibility .5s;
-        }
-        html[data-theme="light"] #sp-splash{background:#FAF7F0;}
-        #sp-splash.sp-out{opacity:0;visibility:hidden;}
-        .sp-inner{display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:-20px;}
-        /* Bars — start reversed (descending L→R), settle to ascending L→R */
-        .sp-bars{display:flex;align-items:flex-end;gap:5px;height:56px;filter:drop-shadow(0 0 16px rgba(242,169,0,.45));}
-        .sp-bar{border-radius:3px 3px 2px 2px;background:linear-gradient(to bottom,var(--g),var(--g2));}
-        .sp-b1{width:11px;animation:spB1 .5s cubic-bezier(.34,1.56,.64,1) .12s both;}
-        .sp-b2{width:11px;opacity:.82;animation:spB2 .5s cubic-bezier(.34,1.56,.64,1) .06s both;}
-        .sp-b3{width:11px;opacity:.65;animation:spB3 .5s cubic-bezier(.34,1.56,.64,1) .02s both;}
-        .sp-b4{width:10px;opacity:.48;animation:spB4 .5s cubic-bezier(.34,1.56,.64,1) 0s   both;}
-        @keyframes spB1{from{height:56px}to{height:26px}}
-        @keyframes spB2{from{height:46px}to{height:36px}}
-        @keyframes spB3{from{height:36px}to{height:46px}}
-        @keyframes spB4{from{height:26px}to{height:56px}}
-        .sp-word{
-          font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:34px;
-          letter-spacing:9px;color:#FAF7F0;
-          animation:sp-up .3s ease .52s both;
-        }
-        html[data-theme="light"] .sp-word{color:#1F2A44;}
-        .sp-word em{color:#F2A900;font-style:normal;}
-        .sp-tag{
-          font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:10px;
-          letter-spacing:.2em;text-transform:uppercase;
-          color:rgba(250,247,240,.28);margin-top:-16px;
-          animation:sp-up .3s ease .62s both;
-        }
-        html[data-theme="light"] .sp-tag{color:rgba(31,42,68,.32);}
-        .sp-progress{
-          position:fixed;bottom:0;left:0;right:0;height:2px;
-          background:rgba(242,169,0,0.07);overflow:hidden;
-          animation:sp-appear .2s ease .1s both;
-        }
-        .sp-progress-fill{
-          height:100%;width:100%;
-          background:linear-gradient(90deg,var(--g2) 0%,var(--g) 55%,var(--g2) 100%);
-          transform-origin:left;transform:scaleX(0);
-          animation:sp-prog .9s cubic-bezier(.4,0,.2,1) .1s forwards;
-        }
-        @keyframes sp-appear{from{opacity:0}to{opacity:1}}
-        @keyframes sp-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes sp-prog{to{transform:scaleX(1);}}
-        @media(min-width:769px){#sp-splash{display:none;}}
       `}</style>
-
-      {/* Mobile splash — bars reorganise from reversed to correct order, then settle */}
-      <div id="sp-splash" aria-hidden="true">
-        <div className="sp-inner">
-          <div className="sp-bars">
-            <div className="sp-bar sp-b1" />
-            <div className="sp-bar sp-b2" />
-            <div className="sp-bar sp-b3" />
-            <div className="sp-bar sp-b4" />
-          </div>
-          <div className="sp-word">STAGE<em>PAY</em></div>
-          <div className="sp-tag">Invoice · Send · Get paid</div>
-        </div>
-        <div className="sp-progress"><div className="sp-progress-fill"/></div>
-      </div>
-      <script dangerouslySetInnerHTML={{ __html: `(function(){function hide(){var el=document.getElementById('sp-splash');if(!el)return;el.classList.add('sp-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},520);}setTimeout(hide,500);})()` }} />
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflowX: 'hidden' }}>
         <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} overdueCt={overdueCount ?? 0} />

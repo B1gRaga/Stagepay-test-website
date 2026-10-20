@@ -25,6 +25,8 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
+  // React <ViewTransition> on route changes (invoice list ⇄ invoice page).
+  experimental: { viewTransition: true },
   async headers() {
     return [
       { source: '/(.*)', headers: securityHeaders },

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning data-theme="light"
+    <html lang="en" suppressHydrationWarning data-theme="light" data-scroll-behavior="smooth"
       className={manrope.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('stagepay-theme');if(t==='dark')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme','light')}catch(e){}})()` }} />
