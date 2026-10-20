@@ -81,15 +81,6 @@ const CURRENCIES = [
   { v: 'AED',  l: 'AED — Dirham' },
 ]
 
-const SEC_RISKS = [
-  { badge: 'fixed', title: 'XSS — stored cross-site scripting',         owasp: 'A03', desc: 'User-controlled strings are HTML-escaped via esc() before DOM insertion, preventing script injection.' },
-  { badge: 'fixed', title: 'Brute force — no login rate limiting',      owasp: 'A07', desc: 'Login attempts are capped; after 5 failures the form locks for 10 minutes.' },
-  { badge: 'fixed', title: 'Session hijacking — no inactivity timeout', owasp: 'A07', desc: 'Sessions auto-expire after the configured inactivity period.' },
-  { badge: 'fixed', title: 'Weak auth — single-factor password only',   owasp: 'A07', desc: 'TOTP-based 2FA is available. When enabled, a code is required after every password login.' },
-  { badge: 'high',  title: 'Plaintext passwords in memory',             owasp: 'A02', desc: 'Supabase handles auth server-side with bcrypt hashing. No plaintext passwords are stored.' },
-  { badge: 'med',   title: 'Missing CSRF protection',                   owasp: 'A01', desc: 'All API routes use cookie-based sessions with SameSite protections via Supabase SSR.' },
-  { badge: 'fixed', title: 'No Content Security Policy header',         owasp: 'A05', desc: 'CSP is enforced via next.config.js headers(), restricting script-src, frame-ancestors, and other directives.' },
-]
 
 const CSS = `
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -197,6 +188,26 @@ const CSS = `
   .pl-card > p{font-size:14px;color:var(--t2);line-height:1.5;flex:1;}
   .pl-card .save,.pl-card .btn-line{width:100%;}
   @media(max-width:900px){.pl-now{grid-template-columns:1fr;gap:12px;}.pl-grid{grid-template-columns:1fr;}}
+  .sec-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border:1px solid var(--line2);border-radius:12px;background:var(--bg);}
+  .sec-row b{display:block;font-size:16px;color:var(--t1);}
+  .sec-row b.sec-on{color:var(--t1);}
+  .sec-row b.sec-on::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#1DA851;margin-right:8px;vertical-align:middle;}
+  .sec-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;}
+  .pm-link:disabled{opacity:.5;cursor:default;}
+  .sec-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,14,26,.55);animation:panelIn var(--dur-2) var(--ease) both;}
+  .sec-modal{width:100%;max-width:440px;padding:24px;border-radius:14px;background:var(--bg2);border:1px solid var(--line2);box-shadow:0 24px 64px rgba(0,0,0,.35);font-family:var(--font-manrope),sans-serif;} /* taste-skill-ignore: dialog */
+  .sec-modal h2{font-size:18px;font-weight:700;color:var(--t1);margin-bottom:12px;}
+  .sec-steps{margin:0 0 16px 18px;font-size:14px;color:var(--t2);line-height:1.6;}
+  .sec-qr{display:block;margin:0 auto 10px;border-radius:10px;background:#fff;padding:8px;}
+  .sec-key{text-align:center;word-break:break-all;margin-bottom:16px;}
+  .sec-key span{color:var(--t1);font-weight:600;letter-spacing:.06em;}
+  .sec-label{display:block;font-size:13px;font-weight:600;color:var(--t1);margin-bottom:6px;}
+  .sec-code{text-align:center;font-size:22px;letter-spacing:.4em;font-variant-numeric:tabular-nums;height:52px;margin-bottom:10px;}
+  .sec-copy{font-size:14px;color:var(--t2);line-height:1.5;margin-bottom:16px;}
+  .sec-modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .sec-danger{height:40px;padding:0 18px;border:0;border-radius:8px;background:#DC4B3E;color:#fff;font:700 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .sec-danger:disabled{opacity:.5;}
+  @media(max-width:600px){.sec-row{flex-direction:column;align-items:flex-start;}.sec-backdrop{align-items:flex-end;padding:0;}.sec-modal{max-width:none;border-radius:16px 16px 0 0;}}
   .pp-ref{margin-top:8px;font-size:12px;color:#64748B;line-height:1.5;}
   .pp-empty{font-size:13px;color:var(--t2);line-height:1.5;padding:16px;border:1px dashed var(--line2);border-radius:10px;}
   @media(max-width:1100px){.pay-layout{grid-template-columns:minmax(0,1fr);}.pay-preview{position:static;}}
@@ -769,18 +780,39 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
     })
   }
 
+  // Two-step sign-in: the status comes from the sign-in service itself, not a saved flag.
+  const [mfaOn, setMfaOn] = useState<boolean | null>(null)
+  const [mfaNote, setMfaNote] = useState('')
+  async function refreshMfa() {
+    const { data } = await supabase.auth.mfa.listFactors()
+    setMfaOn(!!data?.totp?.some(f => f.status === 'verified'))
+  }
+  useEffect(() => { refreshMfa().catch(() => setMfaOn(!!initialProfile?.two_fa_enabled)) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function startEnroll2FA() {
-    setMfaError(''); setMfaBusy(true)
+    setMfaError(''); setMfaNote(''); setMfaBusy(true)
     try {
+      // A set-up that was abandoned half-way leaves an unverified factor behind; clear it first.
+      const { data: list } = await supabase.auth.mfa.listFactors()
+      for (const f of list?.all ?? []) {
+        if (f.factor_type === 'totp' && f.status !== 'verified') await supabase.auth.mfa.unenroll({ factorId: f.id })
+      }
       const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'StagePay', friendlyName: 'Authenticator' })
-      if (error || !data) { setMfaError(error?.message ?? 'Enroll failed'); return }
+      if (error || !data) { setMfaNote(error?.message ?? 'Couldn’t start set-up. Please try again.'); return }
       setMfaFactorId(data.id)
       setMfaQr(data.totp.qr_code)
       setMfaSecret(data.totp.secret)
+      setMfaCode('')
       setMfaModal('enroll')
     } finally {
       setMfaBusy(false)
     }
+  }
+
+  async function cancelEnroll2FA() {
+    setMfaModal(null); setMfaCode(''); setMfaError('')
+    if (mfaFactorId) await supabase.auth.mfa.unenroll({ factorId: mfaFactorId }).catch(() => {})
+    setMfaFactorId('')
   }
 
   async function confirmEnroll2FA() {
@@ -788,11 +820,13 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
     setMfaError(''); setMfaBusy(true)
     try {
       const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
-      if (cErr || !challenge) { setMfaError(cErr?.message ?? 'Challenge failed'); return }
+      if (cErr || !challenge) { setMfaError(cErr?.message ?? 'Couldn’t check the code. Please try again.'); return }
       const { error: vErr } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challenge.id, code: mfaCode })
-      if (vErr) { setMfaError('Invalid code, try again'); return }
-      setProfile(prev => prev ? { ...prev, two_fa_enabled: true } : prev)
+      if (vErr) { setMfaError('That code didn’t match. Codes change every 30 seconds; try the current one.'); return }
+      setMfaOn(true)
+      setMfaFactorId('')
       setMfaModal(null); setMfaCode('')
+      setMfaNote('Two-step sign-in is on.')
     } finally {
       setMfaBusy(false)
     }
@@ -802,19 +836,58 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
     setMfaError(''); setMfaBusy(true)
     try {
       const { data: factors } = await supabase.auth.mfa.listFactors()
-      const totp = factors?.totp?.[0]
-      if (totp) {
-        const { error } = await supabase.auth.mfa.unenroll({ factorId: totp.id })
+      for (const f of factors?.totp ?? []) {
+        const { error } = await supabase.auth.mfa.unenroll({ factorId: f.id })
         if (error) { setMfaError(error.message); return }
       }
-      setProfile(prev => prev ? { ...prev, two_fa_enabled: false } : prev)
+      setMfaOn(false)
       setMfaModal(null)
+      setMfaNote('Two-step sign-in is off.')
     } finally {
       setMfaBusy(false)
     }
   }
 
+  // Password
+  const [pw, setPw] = useState({ next: '', again: '' })
+  const [pwBusy, setPwBusy] = useState(false)
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const pwProblem = !pw.next ? '' : pw.next.length < 8 ? 'Use at least 8 characters.' : pw.again && pw.again !== pw.next ? 'The two passwords don’t match.' : ''
+  async function changePassword() {
+    if (pw.next.length < 8 || pw.next !== pw.again) return
+    setPwBusy(true); setPwMsg(null)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pw.next })
+      if (error) {
+        setPwMsg({ ok: false, text: /reauth|recent/i.test(error.message)
+          ? 'For your safety, sign out and back in, then change your password straight away.'
+          : error.message })
+        return
+      }
+      setPw({ next: '', again: '' })
+      setPwMsg({ ok: true, text: 'Password changed. Use the new one next time you sign in.' })
+    } finally {
+      setPwBusy(false)
+    }
+  }
 
+  // Sessions
+  const [signingOut, setSigningOut] = useState<'' | 'here' | 'others'>('')
+  const [othersDone, setOthersDone] = useState(false)
+  async function signOut(scope: 'local' | 'others') {
+    setSigningOut(scope === 'local' ? 'here' : 'others')
+    try {
+      await supabase.auth.signOut({ scope })
+      if (scope === 'local') {
+        try { sessionStorage.removeItem('sp-splash') } catch {}
+        window.location.href = '/auth/login'
+        return
+      }
+      setOthersDone(true)
+    } finally {
+      setSigningOut('')
+    }
+  }
 
   if (loading) return (
     <>
@@ -1459,122 +1532,112 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
 
           {/* ── SECURITY ── */}
           <div className={`settings-panel${panel === 'security' ? ' active' : ''}`}>
-            <PanelHead title={<>Security</>} sub={<>Two-factor authentication · Session control · Security assessment</>} />
+            <PanelHead title="Security" sub="Keep other people out of your account." />
 
-            {/* 2FA */}
-            <div className="settings-section">
-              <div className="settings-section-title">Two-factor authentication (TOTP)</div>
-              <div className="settings-section-desc">Require a time-based one-time code from an authenticator app (Google Authenticator, Authy, 1Password) every time you sign in.</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--line2)', borderRadius: 10, marginTop: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: profile?.two_fa_enabled ? 'var(--g)' : 'var(--t3)', boxShadow: profile?.two_fa_enabled ? '0 0 6px rgba(242,169,0,.5)' : 'none' }}/>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{profile?.two_fa_enabled ? '2FA enabled' : '2FA disabled'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>{profile?.two_fa_enabled ? 'Your account is protected with TOTP.' : 'Your account only uses a password.'}</div>
-                  </div>
+            <section className="block" aria-labelledby="sec-2fa">
+              <h3 id="sec-2fa">Two-step sign-in</h3>
+              <p>After your password, StagePay asks for a 6-digit code from an authenticator app on your phone, such as Google Authenticator or Authy. Someone who learns your password still can’t get in.</p>
+              <div className="sec-row">
+                <div>
+                  <b className={mfaOn ? 'sec-on' : ''}>{mfaOn === null ? 'Checking…' : mfaOn ? 'On' : 'Off'}</b>
+                  <span className="help">{mfaOn ? 'You’re asked for a code each time you sign in.' : mfaOn === false ? 'Only your password protects this account.' : ''}</span>
                 </div>
-                <button
-                  className={`topbar-btn ${profile?.two_fa_enabled ? 'btn-outline' : 'btn-primary'}`}
-                  style={{ padding: '6px 14px', fontSize: 12 }}
-                  disabled={mfaBusy}
-                  onClick={() => profile?.two_fa_enabled ? setMfaModal('unenroll') : startEnroll2FA()}
-                >{mfaBusy ? '…' : profile?.two_fa_enabled ? 'Remove 2FA' : 'Enable 2FA'}</button>
+                {mfaOn !== null && (
+                  mfaOn
+                    ? <button type="button" className="btn-line press" disabled={mfaBusy} onClick={() => { setMfaError(''); setMfaModal('unenroll') }}>Turn off</button>
+                    : <button type="button" className="save press" disabled={mfaBusy} onClick={startEnroll2FA}>{mfaBusy ? 'Starting…' : 'Turn on'}</button>
+                )}
               </div>
-            </div>
+              {mfaNote && <p className={`save-note${/is (on|off)\.$/.test(mfaNote) ? ' ok' : ' err'}`} role="status" style={{ marginTop: 10 }}>{mfaNote}</p>}
+            </section>
 
-            {/* Session security */}
-            <div className="settings-section">
-              <div className="settings-section-title">Session security</div>
-              <div className="settings-section-desc">Control how long your session stays active when you&apos;re not using the app.</div>
-              <div className="form-group" style={{ maxWidth: 320, marginTop: 12 }}>
-                <label className="form-label">Inactivity timeout</label>
-                <select className="form-input">
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                  <option value="0">Never (not recommended)</option>
-                </select>
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--t3)' }}>You&apos;ll be signed out automatically after this period of inactivity.</div>
-              <div style={{ marginTop: 14 }}>
-                <Link href="/auth/login" className="topbar-btn" style={{ textDecoration: 'none', color: 'var(--danger)', borderColor: 'rgba(239,68,68,.3)' }}>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 8H3M6 5l-3 3 3 3M11 3h2a1 1 0 011 1v8a1 1 0 01-1 1h-2"/></svg>
-                  Sign out
-                </Link>
-              </div>
-            </div>
+            <section className="block" aria-labelledby="sec-pw">
+              <h3 id="sec-pw">Password</h3>
+              <form className="grid2" onSubmit={e => { e.preventDefault(); changePassword() }} method="post">
+                <input type="email" name="username" autoComplete="username" value={profile?.email ?? ''} readOnly hidden />
+                <div className="fld">
+                  <label htmlFor="sec-pw-new">New password</label>
+                  <input id="sec-pw-new" name="new-password" className="in" type="password" autoComplete="new-password" value={pw.next} onChange={e => { setPw(p => ({ ...p, next: e.target.value })); setPwMsg(null) }} />
+                </div>
+                <div className="fld">
+                  <label htmlFor="sec-pw-again">Type it again</label>
+                  <input id="sec-pw-again" name="confirm-password" className="in" type="password" autoComplete="new-password" value={pw.again} onChange={e => { setPw(p => ({ ...p, again: e.target.value })); setPwMsg(null) }} />
+                </div>
+                <div className="full sec-actions">
+                  <button type="submit" className="btn-line press" disabled={pwBusy || pw.next.length < 8 || pw.next !== pw.again}>{pwBusy ? 'Changing…' : 'Change password'}</button>
+                  {pwProblem ? <span className="save-note err">{pwProblem}</span>
+                    : pwMsg ? <span className={`save-note ${pwMsg.ok ? 'ok' : 'err'}`} role="status">{pwMsg.text}</span>
+                    : <span className="help">At least 8 characters.</span>}
+                </div>
+              </form>
+            </section>
 
-            {/* Security assessment */}
-            <div className="settings-section">
-              <div className="settings-section-title">Security assessment</div>
-              <div className="settings-section-desc">Known risks and hardening status. Severity ratings follow OWASP guidelines.</div>
-              <div style={{ marginTop: 14 }}>
-                {SEC_RISKS.map((r, i) => (
-                  <div key={i} className="sec-risk-row">
-                    <div><span className={`sec-badge sec-badge-${r.badge}`}>{r.badge.charAt(0).toUpperCase() + r.badge.slice(1)}</span></div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{r.title}</div>
-                      <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 3 }}>{r.desc}</div>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', whiteSpace: 'nowrap' }}>OWASP {r.owasp}</div>
-                  </div>
-                ))}
+            <section className="block" aria-labelledby="sec-sess">
+              <h3 id="sec-sess">Signed-in devices</h3>
+              <p>Lost a phone, or signed in on someone else’s computer? Sign out everywhere except here.</p>
+              <div className="sec-actions">
+                <button type="button" className="btn-line press" disabled={!!signingOut || othersDone} onClick={() => signOut('others')}>
+                  {signingOut === 'others' ? 'Signing out…' : othersDone ? 'Other devices signed out' : 'Sign out other devices'}
+                </button>
+                <button type="button" className="pm-link" disabled={!!signingOut} onClick={() => signOut('local')}>
+                  {signingOut === 'here' ? 'Signing out…' : 'Sign out of this device'}
+                </button>
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </div>
 
-      {/* ── 2FA enroll modal ── */}
+      {/* ── Two-step sign-in: set up ── */}
       {mfaModal === 'enroll' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'var(--bg2)', border: '1px solid var(--line2)', borderRadius: 16, padding: 32, maxWidth: 420, width: '100%' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 6 }}>Set up authenticator</div>
-            <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 20 }}>Scan this QR code with Google Authenticator, Authy, or 1Password, then enter the 6-digit code to confirm.</div>
+        <div className="sec-backdrop" role="dialog" aria-modal="true" aria-labelledby="mfa-title">
+          <div className="sec-modal">
+            <h2 id="mfa-title">Set up two-step sign-in</h2>
+            <ol className="sec-steps">
+              <li>Open your authenticator app and add an account.</li>
+              <li>Scan this code, or type in the key below it.</li>
+              <li>Enter the 6-digit code the app shows.</li>
+            </ol>
             {mfaQr && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={mfaQr} alt="QR code" width={160} height={160} style={{ borderRadius: 8, background: '#fff', padding: 8 }}/>
-              </div>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={mfaQr} alt="QR code to scan with your authenticator app" width={168} height={168} className="sec-qr" />
             )}
-            <div style={{ fontSize: 11, color: 'var(--t3)', textAlign: 'center', marginBottom: 20, wordBreak: 'break-all' }}>
-              Can&apos;t scan? Manual key: <span style={{ color: 'var(--t2)', fontFamily: 'monospace' }}>{mfaSecret}</span>
-            </div>
-            {mfaError && <div style={{ fontSize: 12, color: 'var(--danger)', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>{mfaError}</div>}
+            <p className="help sec-key">Key: <span>{mfaSecret}</span></p>
+            <label htmlFor="s-mfa-code" className="sec-label">6-digit code</label>
             <input
               id="s-mfa-code"
               name="mfa_code"
+              className="in sec-code"
               type="text"
               inputMode="numeric"
+              autoComplete="one-time-code"
               maxLength={6}
-              placeholder="000000"
               value={mfaCode}
-              onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              style={{ width: '100%', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, padding: '10px 14px', fontSize: 20, letterSpacing: 6, textAlign: 'center', color: 'var(--t1)', outline: 'none', marginBottom: 14, fontFamily: 'monospace' }}
+              autoFocus
+              onChange={e => { setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setMfaError('') }}
+              onKeyDown={e => { if (e.key === 'Enter') confirmEnroll2FA() }}
             />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="topbar-btn btn-primary" style={{ flex: 1 }} disabled={mfaCode.length !== 6 || mfaBusy} onClick={confirmEnroll2FA}>
-                {mfaBusy ? 'Verifying…' : 'Activate 2FA'}
+            {mfaError && <p className="save-note err" role="alert">{mfaError}</p>}
+            <div className="sec-modal-foot">
+              <button type="button" className="btn-line" onClick={cancelEnroll2FA}>Cancel</button>
+              <button type="button" className="save press" disabled={mfaCode.length !== 6 || mfaBusy} onClick={confirmEnroll2FA}>
+                {mfaBusy ? 'Checking…' : 'Turn on'}
               </button>
-              <button className="topbar-btn btn-outline" onClick={() => { setMfaModal(null); setMfaCode(''); setMfaError('') }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── 2FA unenroll confirm ── */}
+      {/* ── Two-step sign-in: turn off ── */}
       {mfaModal === 'unenroll' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'var(--bg2)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 16, padding: 32, maxWidth: 380, width: '100%' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 8 }}>Remove two-factor authentication?</div>
-            <div style={{ fontSize: 13, color: 'var(--t3)', marginBottom: 24 }}>Your account will only be protected by your password. You can re-enable 2FA at any time.</div>
-            {mfaError && <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 14 }}>{mfaError}</div>}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="topbar-btn" style={{ flex: 1, background: 'rgba(239,68,68,.1)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,.3)' }} disabled={mfaBusy} onClick={unenroll2FA}>
-                {mfaBusy ? 'Removing…' : 'Yes, remove 2FA'}
-              </button>
-              <button className="topbar-btn btn-outline" onClick={() => { setMfaModal(null); setMfaError('') }}>Cancel</button>
+        <div className="sec-backdrop" role="dialog" aria-modal="true" aria-labelledby="mfa-off-title">
+          <div className="sec-modal" style={{ maxWidth: 400 }}>
+            <h2 id="mfa-off-title">Turn off two-step sign-in?</h2>
+            <p className="sec-copy">Only your password will protect your account. You can turn it back on any time.</p>
+            {mfaError && <p className="save-note err" role="alert">{mfaError}</p>}
+            <div className="sec-modal-foot">
+              <button type="button" className="btn-line" onClick={() => { setMfaModal(null); setMfaError('') }}>Keep it on</button>
+              <button type="button" className="sec-danger press" disabled={mfaBusy} onClick={unenroll2FA}>{mfaBusy ? 'Turning off…' : 'Turn off'}</button>
             </div>
           </div>
         </div>

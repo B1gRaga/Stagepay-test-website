@@ -5,6 +5,11 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  // Where to go after signing in. Only paths on this site are accepted, so the
+  // link can't be used to send someone elsewhere.
+  const nextParam = searchParams.get('next') ?? ''
+  const next = /^\/(?![/\\])[\w\-/]*$/.test(nextParam) ? nextParam : '/dashboard'
+  const isReset = next === '/auth/reset-password'
 
   if (code) {
     const cookieStore = await cookies()
@@ -25,9 +30,11 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}/dashboard`)
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=Could+not+confirm+email`)
+  return NextResponse.redirect(isReset
+    ? `${origin}/auth/forgot-password?expired=1`
+    : `${origin}/auth/login?error=Could+not+confirm+email`)
 }
