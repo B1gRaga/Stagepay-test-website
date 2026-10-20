@@ -1,7 +1,9 @@
 ﻿'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { openWhatsApp, publicInvoiceUrl } from '@/lib/wa-link'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { STATUS_CSS } from './InvoiceStatus'
 
 export type Invoice = {
   id: string
@@ -14,6 +16,7 @@ export type Invoice = {
   total: number
   currency: string
   status: string
+  public_token?: string | null
 }
 
 export type Reminder = {
@@ -23,38 +26,58 @@ export type Reminder = {
   send_at: string
   channel: string
   sent_at: string | null
+  days_after_due?: number | null
+  error_message?: string | null
 }
 
 const ACTIVE_STATUSES = ['sent', 'overdue']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// Days after the due date that automatic reminders can go out on.
+const STAGES = [
+  { day: 3,  desc: 'Gentle first nudge', defaultOn: true  },
+  { day: 7,  desc: 'Polite follow-up',   defaultOn: true  },
+  { day: 14, desc: 'Firm final notice',  defaultOn: true  },
+  { day: 30, desc: 'Final demand',       defaultOn: false },
+]
+const SCHEDULE_KEY = 'stagepay.reminderDays'
+
+// The track runs from a week before the due date to 30 days after it.
+const TRACK_MIN = -7, TRACK_MAX = 30
+const DAY = 86400000
+
+function localDay(s: string) {
+  const [y, m, d] = s.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+function todayStart() {
+  const t = new Date(); t.setHours(0, 0, 0, 0); return t
+}
 function daysOverdue(dueDateStr: string | null): number {
   if (!dueDateStr) return 0
-  const due  = new Date(dueDateStr)
-  const now  = new Date()
-  due.setHours(0, 0, 0, 0)
-  now.setHours(0, 0, 0, 0)
-  return Math.floor((now.getTime() - due.getTime()) / 86400000)
+  return Math.round((todayStart().getTime() - localDay(dueDateStr).getTime()) / DAY)
 }
-
-function urgencyColor(days: number) {
-  if (days >= 14) return 'var(--danger)'
-  if (days >= 7)  return 'var(--warn)'
-  if (days >= 0)  return '#F59E0B'
-  return 'var(--g)'
+function shortDate(d: Date, weekday = false) {
+  return `${weekday ? WEEKDAYS[d.getDay()] + ' ' : ''}${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
-
-function daysLabel(days: number) {
-  if (days > 0)  return `${days}d overdue`
-  if (days === 0) return 'Due today'
-  return `${Math.abs(days)}d left`
+// "Tuesday 27 October", for messages the client reads.
+function longDate(s: string) {
+  return localDay(s).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 }
-
-function fmt(n: number, sym: string) {
-  return `${sym}${Number(n).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+function money(n: number, sym: string) {
+  return `${sym}${Math.round(Number(n)).toLocaleString('en')}`
 }
-
 function fmtAmt(n: number, sym: string) {
   return `${sym}${Number(n).toLocaleString('en', { minimumFractionDigits: 2 })}`
+}
+function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`
+}
+function reminderDay(r: Reminder, due: string | null) {
+  if (r.days_after_due != null) return r.days_after_due
+  if (!due) return 0
+  return Math.round((new Date(r.send_at).getTime() - localDay(due).getTime()) / DAY)
 }
 
 function genEmail(inv: Invoice, firmName: string): string {
@@ -63,7 +86,7 @@ function genEmail(inv: Invoice, firmName: string): string {
   const dueLine = !inv.due_date ? '' :
     days > 0  ? `The invoice is currently ${days} day${days === 1 ? '' : 's'} overdue.` :
     days === 0 ? 'The invoice is due today.' :
-                 `The invoice is due on ${inv.due_date}.`
+                 `The invoice is due on ${longDate(inv.due_date)}.`
 
   return `Dear ${inv.client_name},
 
@@ -81,155 +104,167 @@ function genWhatsApp(inv: Invoice, firmName: string): string {
   const dueLine = !inv.due_date ? '' :
     days > 0  ? `It is currently *${days} day${days === 1 ? '' : 's'} overdue*.` :
     days === 0 ? 'It is *due today*.' :
-                 `It is due on *${inv.due_date}*.`
+                 `It is due on *${longDate(inv.due_date)}*.`
 
   return `Hi ${inv.client_name} 👋
 
 Just a friendly follow-up on invoice *${inv.invoice_number}* for *${amount}*${inv.project ? ` (${inv.project})` : ''}. ${dueLine}
 
-Please let me know if you have any questions or need anything from our side.
+${inv.public_token ? `You can view the invoice here: ${publicInvoiceUrl(inv.public_token)}\n\n` : ''}Please let me know if you have any questions or need anything from our side.
 
 Regards,
 ${firmName}`
 }
 
-const CSS = `
-:root{
-    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
-    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
-    --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
-    --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
-  }
-  html[data-theme="light"]{
-    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
-    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
-    --g-dim:rgba(242,169,0,.12);
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
+const WA_PATH = 'M2 14l1.3-3.9A6 6 0 1 1 6.3 13L2 14z'
 
+const CSS = `
+${STATUS_CSS}
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
   .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
-  .topbar-right{display:flex;align-items:center;gap:10px;}
-  .topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;background:transparent;color:var(--t2);}
-  .topbar-btn:hover{border-color:var(--g);color:var(--g);}
-  .btn-primary{background:var(--g);color:#1F2A44;border:none;box-shadow:0 0 14px rgba(242,169,0,.4),0 2px 8px rgba(242,169,0,.2);}
-  .btn-primary:hover{background:#C98C00;transform:translateY(-1px);color:#1F2A44;box-shadow:0 0 24px rgba(242,169,0,.6),0 4px 16px rgba(242,169,0,.3);}
+  .btn-new{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:8px;background:var(--g);color:#1F2A44;font-size:14px;font-weight:700;text-decoration:none;}
+  .btn-new:hover{background:#FFB81C;}
+  .content{padding:24px 28px 48px;max-width:1180px;}
+  .finding{font-size:15px;color:var(--t1);line-height:1.5;margin-bottom:6px;}
+  .finding b{font-variant-numeric:tabular-nums;}
+  .finding .late{color:var(--st-late);}
+  .next{font-size:14px;color:var(--t2);margin-bottom:20px;}
+  .next b{color:var(--t1);font-weight:600;}
+  .note{border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px;background:color-mix(in srgb,var(--st-late) 10%,transparent);color:var(--st-late);}
 
-  .content{padding:24px 28px;}
+  /* The schedule, as one sentence of switches */
+  .rules{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:14px 18px;margin-bottom:22px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;font-size:14px;color:var(--t2);}
+  .rules .lead{color:var(--t1);font-weight:600;margin-right:2px;}
+  .chips{display:inline-flex;gap:4px;}
+  .chip{height:30px;min-width:38px;padding:0 10px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--t2);font:600 13px var(--font-manrope),sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+  .chip:hover{border-color:var(--t3);color:var(--t1);}
+  .chip[aria-pressed="true"]{background:var(--t1);border-color:var(--t1);color:var(--bg2);}
+  .chip:disabled{opacity:.45;cursor:not-allowed;}
+  .chip .wa-i{color:#1DA851;}
+  html:not([data-theme="light"]) .chip .wa-i{color:#3DDC84;}
+  .chip[aria-pressed="true"] .wa-i{color:inherit;}
+  .rules .aside{flex-basis:100%;font-size:12px;color:var(--t3);}
 
-  .rem-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;}
+  .group{margin-bottom:22px;}
+  .group h2{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:600;color:var(--t2);margin:0 0 8px 2px;}
+  .group h2 .n{font-weight:500;color:var(--t3);font-variant-numeric:tabular-nums;}
+  .group.late h2{color:var(--st-late);}
+  .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .grid{display:grid;grid-template-columns:minmax(0,1.3fr) 110px 150px minmax(220px,1fr) 168px;column-gap:20px;align-items:center;padding:0 20px;}
+  .row{min-height:84px;border-bottom:1px solid var(--line);transition:background-color var(--dur-1) var(--ease);animation:rm-in var(--dur-3) var(--ease) both;animation-delay:calc(var(--i,0) * 35ms);}
+  .row:last-child{border-bottom:0;}
+  .row:hover{background:color-mix(in srgb,var(--t1) 3%,transparent);}
+  .who{min-width:0;padding:14px 0;}
+  .client{display:block;font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ref{display:block;font-size:13px;color:var(--t2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .amt{font-size:15px;font-weight:700;color:var(--t1);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .late .amt,.amt.late{color:var(--st-late);}
+  .when{font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap;}
+  .when.late{color:var(--st-late);}
+  .when small{display:block;font-size:12px;font-weight:500;color:var(--t2);margin-top:2px;}
 
-  .inv-table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
-  html[data-theme="light"] .inv-table-wrap{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-  html[data-theme="light"] .inv-table-head{background:rgba(31,42,68,.03);}
-  html[data-theme="light"] .sched-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-  .inv-table-head{
-    display:grid;grid-template-columns:36px 1fr 110px 100px 110px 130px;
-    gap:12px;padding:11px 20px;border-bottom:1px solid var(--line);background:var(--surface);
+  .track-wrap{min-width:0;padding:12px 0;}
+  .track{position:relative;height:30px;margin:0 10px;}
+  .track .base{position:absolute;left:0;right:0;top:11px;height:2px;border-radius:1px;background:var(--line2);}
+  .track .elapsed{position:absolute;left:0;top:11px;height:2px;border-radius:1px;background:var(--t3);transform-origin:left;animation:rm-grow 900ms var(--ease) both;animation-delay:calc(120ms + var(--i,0) * 35ms);}
+  .late .track .elapsed{background:color-mix(in srgb,var(--st-late) 55%,transparent);}
+  .track .due{position:absolute;top:5px;width:2px;height:14px;border-radius:1px;background:var(--t2);transform:translateX(-50%);}
+  .mk{position:absolute;top:7px;width:10px;height:10px;border-radius:50%;transform:translateX(-50%);box-sizing:border-box;}
+  .mk.plan{border:1.5px dashed var(--t3);background:var(--bg2);}
+  .mk.sched{border:2px solid var(--t1);background:var(--bg2);}
+  .mk.sent{background:var(--t1);}
+  .mk.fail{background:var(--st-late);}
+  .mk.off{top:10px;width:4px;height:4px;background:var(--line2);}
+  .track .lbl.off{opacity:.55;}
+  .chip.fixed{cursor:default;background:var(--t1);border-color:var(--t1);color:var(--bg2);}
+  .cap .warn{color:var(--st-late);}
+  .track .today{position:absolute;top:0;width:2px;height:24px;border-radius:1px;background:var(--g);transform:translateX(-50%);animation:rm-fade var(--dur-3) var(--ease) both;animation-delay:calc(600ms + var(--i,0) * 35ms);}
+  .track .lbl{position:absolute;top:19px;font-size:11px;line-height:12px;color:var(--t2);transform:translateX(-50%);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .cap{display:block;font-size:12px;color:var(--t2);margin:4px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cap.warn{color:var(--st-late);}
+
+  .acts{display:flex;align-items:center;justify-content:flex-end;gap:10px;}
+  .sw{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 4px;border:0;background:transparent;color:var(--t2);font:600 13px var(--font-manrope),sans-serif;cursor:pointer;}
+  .sw .knob{position:relative;width:34px;height:20px;border-radius:10px;background:var(--line2);transition:background-color var(--dur-2) var(--ease);}
+  .sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--bg2);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform var(--dur-2) var(--ease);} /* taste-skill-ignore: switch knob */
+  .sw[aria-checked="true"]{color:var(--t1);}
+  .sw[aria-checked="true"] .knob{background:var(--g);}
+  .sw[aria-checked="true"] .knob::after{transform:translateX(14px);}
+  .sw:disabled{opacity:.5;cursor:progress;}
+  .act{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:var(--bg2);color:var(--t1);font:600 13px var(--font-manrope),sans-serif;cursor:pointer;white-space:nowrap;}
+  .act:hover{border-color:var(--t3);}
+  .late .act.chase{background:var(--t1);border-color:var(--t1);color:var(--bg2);}
+  .sw:focus-visible,.act:focus-visible,.chip:focus-visible,.btn-new:focus-visible,.tab:focus-visible{outline:2px solid var(--g);outline-offset:2px;border-radius:8px;}
+
+  .empty{padding:56px 24px;text-align:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;}
+  .empty h2{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:6px;}
+  .empty p{font-size:14px;color:var(--t2);max-width:360px;margin:0 auto 18px;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+  @keyframes rm-in{from{opacity:0;transform:translateY(6px)}}
+  @keyframes rm-grow{from{transform:scaleX(0)}}
+  @keyframes rm-fade{from{opacity:0}}
+  @media (prefers-reduced-motion: reduce){.row,.track .elapsed,.track .today{animation:none;}}
+
+  @media(max-width:1100px){
+    .grid{grid-template-columns:minmax(0,1fr) 100px 130px minmax(200px,1fr);row-gap:0;}
+    .acts{grid-column:1 / -1;justify-content:flex-start;padding:0 0 14px;}
   }
-  .inv-th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;}
-  .rem-row{
-    display:grid;grid-template-columns:36px 1fr 110px 100px 110px 130px;
-    gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);
-    align-items:center;transition:background .15s;cursor:pointer;
+  @media(max-width:768px){
+    .topbar{padding:0 16px;}
+    .btn-new{display:none;}
+    .content{padding:16px 16px 32px;}
+    .rules{padding:14px;}
+    .grid{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"who amt" "when when" "track track" "acts acts";padding:14px 16px;row-gap:8px;}
+    .row{min-height:0;}
+    .who{grid-area:who;padding:0;}
+    .amt{grid-area:amt;align-self:start;}
+    .when{grid-area:when;}
+    .when small{display:inline;margin:0 0 0 6px;}
+    .track-wrap{grid-area:track;padding:4px 0 0;}
+    .acts{grid-area:acts;padding:0;justify-content:space-between;}
+    .act.chase{flex:1;max-width:220px;}
   }
-  .rem-row:last-child{border-bottom:none;}
-  .rem-row:hover{background:var(--surface);}
-  .rem-urgency{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin:0 auto;}
-  .rem-client{font-size:13px;font-weight:500;color:var(--t1);}
-  .rem-inv{font-size:11px;color:var(--t3);margin-top:2px;}
-  .rem-amount{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;}
-  .rem-toggle{
-    display:flex;align-items:center;gap:5px;
-    background:var(--surface);border:1px solid var(--line2);
-    border-radius:5px;padding:4px 8px;cursor:pointer;
-    font-size:11px;font-weight:600;color:var(--t2);
-    transition:all .15s;white-space:nowrap;font-family:var(--font-archivo),sans-serif;
+
+  /* Sheets */
+  .backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,14,26,.55);animation:rm-fade var(--dur-2) var(--ease) both;}
+  .modal{width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);color:var(--t1);border:1px solid var(--line2);border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,.35);animation:rm-up var(--dur-3) var(--ease) both;font-family:var(--font-manrope),sans-serif;} /* taste-skill-ignore: dialog */
+  @keyframes rm-up{from{opacity:0;transform:translateY(12px) scale(.985)}}
+  .m-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--line);}
+  .m-title{font-size:16px;font-weight:700;}
+  .m-sub{font-size:13px;color:var(--t2);margin-top:3px;font-variant-numeric:tabular-nums;}
+  .m-close{flex:none;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--t2);cursor:pointer;}
+  .m-close:hover{background:var(--surface);color:var(--t1);}
+  .tabs{display:flex;gap:4px;padding:12px 22px 0;border-bottom:1px solid var(--line);}
+  .tab{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;color:var(--t2);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .tab[aria-selected="true"]{color:var(--t1);border-bottom-color:var(--g);}
+  .m-body{padding:18px 22px;overflow-y:auto;flex:1;}
+  .m-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--line);}
+  .field{margin-bottom:14px;}
+  .field label{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--t1);margin-bottom:6px;}
+  .field label span{font-weight:500;color:var(--t3);}
+  .input,.textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--t1);font:500 14px var(--font-manrope),sans-serif;outline:none;transition:border-color var(--dur-1) var(--ease);}
+  .input{height:40px;padding:0 12px;}
+  .textarea{padding:10px 12px;min-height:200px;line-height:1.55;resize:vertical;}
+  .input:focus,.textarea:focus{border-color:var(--g);}
+  .hint{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:14px;}
+  .hint.warn{color:var(--st-late);}
+  .err{font-size:13px;color:var(--st-late);margin-bottom:10px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t1);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .btn:hover{border-color:var(--t3);}
+  .btn.primary{background:var(--g);border-color:var(--g);color:#1F2A44;}
+  .btn.primary:hover{background:#FFB81C;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn.left{margin-right:auto;}
+  .done{text-align:center;padding:28px 0 12px;}
+  .done .tick{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;background:color-mix(in srgb,var(--g) 16%,transparent);color:var(--st-paid);}
+  .done h3{font-size:16px;font-weight:700;margin-bottom:6px;}
+  .done p{font-size:13px;color:var(--t2);margin-bottom:18px;}
+  @media(max-width:600px){
+    .backdrop{align-items:flex-end;padding:0;}
+    .modal{max-width:none;border-radius:16px 16px 0 0;max-height:92vh;}
   }
-  .rem-toggle.active{background:var(--g-dim);border-color:rgba(242,169,0,.3);color:var(--g);}
-  .rem-toggle:hover:not(.active){border-color:var(--g);color:var(--g);}
-  .compose-btn{
-    display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;
-    font-size:11px;font-weight:600;cursor:pointer;
-    background:var(--g-dim);border:1px solid rgba(242,169,0,.3);color:var(--g);
-    font-family:var(--font-archivo),sans-serif;transition:all .15s;
-  }
-  .compose-btn:hover{background:rgba(242,169,0,.18);}
-
-  .sched-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:sticky;top:0;}
-  .sched-header{padding:16px 20px;border-bottom:1px solid var(--line);}
-  .sched-title{font-size:13px;font-weight:600;color:var(--t1);}
-  .sched-sub{font-size:11px;color:var(--t3);margin-top:3px;}
-  .sched-rule{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);}
-  .sched-rule:last-of-type{border-bottom:none;}
-  .sched-rule-left{display:flex;align-items:center;gap:12px;}
-  .sched-day-badge{width:40px;height:40px;border-radius:8px;font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .sched-rule-name{font-size:13px;font-weight:500;color:var(--t1);}
-  .sched-rule-desc{font-size:11px;color:var(--t3);margin-top:2px;}
-  .toggle-sw{width:36px;height:20px;border-radius:10px;background:var(--surface);border:1px solid var(--line2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
-  .toggle-sw.on{background:var(--g);border-color:var(--g);}
-  .toggle-sw::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--t3);transition:transform .2s,background .2s;}
-  .toggle-sw.on::after{transform:translateX(16px);background:#fff;}
-  .sched-channel-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--line);}
-  .sched-channel-label{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--t2);}
-  .wa-badge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:rgba(37,211,102,.1);color:#25D366;border:1px solid rgba(37,211,102,.2);border-radius:3px;padding:2px 6px;font-weight:700;}
-
-  .empty-state{text-align:center;padding:52px 20px;}
-  .empty-illustration{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
-  .empty-title{font-size:16px;color:var(--t1);margin-bottom:6px;}
-  .empty-sub{font-size:12px;color:var(--t3);margin-bottom:18px;max-width:320px;margin-left:auto;margin-right:auto;}
-  .empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#1F2A44;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;}
-
-  /* Compose modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;}
-  .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);max-height:90vh;display:flex;flex-direction:column;}
-  .modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--line);flex-shrink:0;}
-  .modal-title{font-size:15px;font-weight:600;color:var(--t1);display:flex;align-items:center;justify-content:space-between;gap:10px;}
-  .modal-sub{font-size:12px;color:var(--t3);margin-top:3px;}
-  .modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:none;background:transparent;color:var(--t3);cursor:pointer;transition:all .12s;flex-shrink:0;}
-  .modal-close:hover{background:var(--surface);color:var(--t1);}
-  .modal-tabs{display:flex;gap:2px;padding:14px 22px 0;border-bottom:1px solid var(--line);flex-shrink:0;}
-  .modal-tab{padding:8px 16px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--t3);font-family:var(--font-archivo),sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
-  .modal-tab.active{color:var(--g);border-bottom-color:var(--g);}
-  .modal-tab:hover:not(.active){color:var(--t2);}
-  .modal-body{padding:18px 22px;overflow-y:auto;flex:1;}
-  .modal-footer{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;}
-  .modal-field{margin-bottom:14px;}
-  .modal-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
-  .modal-input{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:8px 12px;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
-  .modal-input:focus{border-color:rgba(242,169,0,.4);}
-  .modal-textarea{width:100%;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:10px 12px;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:12.5px;color:var(--t2);outline:none;transition:border-color .15s;resize:vertical;min-height:160px;line-height:1.6;}
-  .modal-textarea:focus{border-color:rgba(242,169,0,.4);color:var(--t1);}
-  .modal-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;}
-  .modal-btn-primary{background:var(--g);color:#1F2A44;box-shadow:0 0 14px rgba(242,169,0,.35);}
-  .modal-btn-primary:hover{background:#C98C00;box-shadow:0 0 22px rgba(242,169,0,.55);}
-  .modal-btn-secondary{background:transparent;color:var(--t2);border:1px solid var(--line2);}
-  .modal-btn-secondary:hover{border-color:var(--t2);}
-  .modal-btn:disabled{opacity:.5;cursor:not-allowed;}
-  .modal-success{text-align:center;padding:24px 0 8px;}
-  .copy-notice{font-size:11px;color:var(--g);margin-top:6px;text-align:center;}
-  .wa-info{background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.15);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.5;}
-
-  @media(max-width:1024px){
-    .rem-layout{grid-template-columns:1fr;}
-    .sched-card{display:none;}
-    .rem-row{grid-template-columns:36px 1fr 100px 90px;}
-    .inv-table-head{grid-template-columns:36px 1fr 100px 90px;}
-    .inv-table-head>*:nth-child(5),.rem-row>*:nth-child(5){display:none;}
-  }
-  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
-  @media(max-width:600px){.content{padding:16px;}}
 `
-
-const SCHEDULE_RULES = [
-  { day: '3',  label: '3-day reminder',   desc: 'Gentle first nudge',  badgeBg: 'var(--g-dim)',        badgeColor: 'var(--g)',      defaultOn: true  },
-  { day: '7',  label: '7-day reminder',   desc: 'Polite follow-up',    badgeBg: 'rgba(224,160,48,.1)', badgeColor: 'var(--warn)',   defaultOn: true  },
-  { day: '14', label: '14-day reminder',  desc: 'Firm final notice',   badgeBg: 'rgba(224,85,64,.1)',  badgeColor: 'var(--danger)', defaultOn: true  },
-  { day: '30', label: '30-day escalation',desc: 'Final demand notice', badgeBg: 'rgba(224,85,64,.15)', badgeColor: 'var(--danger)', defaultOn: false },
-]
 
 type ComposeState = {
   inv:       Invoice
@@ -244,57 +279,152 @@ type ComposeState = {
   err:       string
 }
 
+type Mark = { day: number; state: 'plan' | 'sched' | 'sent' | 'fail' }
+
+// Stops sit evenly along the track (a week before due, due, then each stage);
+// days in between are placed proportionally within their gap.
+const STOPS = [TRACK_MIN, 0, ...STAGES.map(s => s.day)]
+function pos(day: number) {
+  const d = Math.max(TRACK_MIN, Math.min(TRACK_MAX, day))
+  let k = 0
+  while (k < STOPS.length - 2 && d > STOPS[k + 1]) k++
+  const frac = (d - STOPS[k]) / (STOPS[k + 1] - STOPS[k])
+  return ((k + frac) / (STOPS.length - 1)) * 100
+}
+
+// Due date, each reminder stage and today, on one line.
+function Track({ marks, days }: { marks: Mark[]; days: number }) {
+  const today = pos(days)
+  const shown = new Set(marks.map(m => m.day))
+  return (
+    <div className="track" aria-hidden="true">
+      <span className="base" />
+      <span className="elapsed" style={{ width: `${today}%` }} />
+      <span className="due" style={{ left: `${pos(0)}%` }} />
+      <span className="lbl" style={{ left: `${pos(0)}%` }}>Due</span>
+      {STAGES.filter(s => !shown.has(s.day)).map(s => (
+        <span key={`off${s.day}`}>
+          <span className="mk off" style={{ left: `${pos(s.day)}%` }} />
+          <span className="lbl off" style={{ left: `${pos(s.day)}%` }}>+{s.day}</span>
+        </span>
+      ))}
+      {marks.map(m => (
+        <span key={m.day}>
+          <span className={`mk ${m.state}`} style={{ left: `${pos(m.day)}%` }} />
+          <span className="lbl" style={{ left: `${pos(m.day)}%` }}>+{m.day}</span>
+        </span>
+      ))}
+      <span className="today" style={{ left: `${today}%` }} />
+    </div>
+  )
+}
+
 export default function RemindersClient({
   initialInvoices,
   initialReminders,
   firmName,
+  currency = 'P',
   initialWaOn = false,
+  waConfigured = false,
 }: {
   initialInvoices:  Invoice[]
   initialReminders: Reminder[]
   firmName:         string
+  currency?:        string
   initialWaOn?:     boolean
+  waConfigured?:    boolean
 }) {
-  const router = useRouter()
   const [invoices,  setInvoices]  = useState<Invoice[]>(initialInvoices)
   const [reminders, setReminders] = useState<Reminder[]>(initialReminders)
-  const [autoOn,    setAutoOn]    = useState<Record<string, boolean>>(() => {
-    const map: Record<string, boolean> = {}
-    for (const r of initialReminders) {
-      if (r.status === 'scheduled') map[r.invoice_id] = true
-    }
-    return map
-  })
   const [toggling,  setToggling]  = useState<Record<string, boolean>>({})
   const [remError,  setRemError]  = useState<string | null>(null)
-  const [schedule,  setSchedule]  = useState<Record<string, boolean>>(
-    Object.fromEntries(SCHEDULE_RULES.map(r => [r.day, r.defaultOn]))
+  const [schedule,  setSchedule]  = useState<Record<number, boolean>>(
+    () => Object.fromEntries(STAGES.map(s => [s.day, s.defaultOn]))
   )
   const [waOn,      setWaOn]      = useState(initialWaOn)
   const [compose,   setCompose]   = useState<ComposeState | null>(null)
-  const [contactModal, setContactModal] = useState<{ inv: Invoice; email: string; phone: string; pendingInvId: string } | null>(null)
+  const [contactModal, setContactModal] = useState<{ inv: Invoice; email: string; phone: string } | null>(null)
   const [contactSaving, setContactSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // The chosen days are remembered on this device.
+  useEffect(() => {
+    setMounted(true)
+    try {
+      const saved = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || 'null')
+      if (Array.isArray(saved)) setSchedule(Object.fromEntries(STAGES.map(s => [s.day, saved.includes(s.day)])))
+    } catch {}
+  }, [])
+
+  function toggleDay(day: number) {
+    setSchedule(prev => {
+      const next = { ...prev, [day]: !prev[day] }
+      try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(STAGES.filter(s => next[s.day]).map(s => s.day))) } catch {}
+      return next
+    })
+  }
+
+  function toggleWa() {
+    const next = !waOn
+    setWaOn(next)
+    fetch('/api/profile', {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp_reminders_enabled: next }),
+    }).catch(() => {})
+  }
 
   const pending = useMemo(
     () => invoices.filter(i => ACTIVE_STATUSES.includes(i.status)),
     [invoices]
   )
 
-  const remStats = useMemo(() => {
-    const map: Record<string, { sent: number; queued: number }> = {}
-    for (const r of reminders) {
-      const s = map[r.invoice_id] ?? { sent: 0, queued: 0 }
-      if (r.status === 'sent')      s.sent++
-      if (r.status === 'scheduled') s.queued++
-      map[r.invoice_id] = s
-    }
+  const byInvoice = useMemo(() => {
+    const map: Record<string, Reminder[]> = {}
+    for (const r of reminders) (map[r.invoice_id] ??= []).push(r)
     return map
   }, [reminders])
+
+  const activeDays = STAGES.filter(s => schedule[s.day]).map(s => s.day)
+  const waUsable = waConfigured && waOn
+
+  // Most overdue first; then whatever falls due soonest.
+  const groups = useMemo(() => {
+    const rows = pending.map(inv => ({ inv, days: daysOverdue(inv.due_date) }))
+      .sort((a, b) => (b.days - a.days) || a.inv.client_name.localeCompare(b.inv.client_name))
+    return [
+      { key: 'late',  title: 'Late',                 rows: rows.filter(r => r.inv.due_date && r.days > 0) },
+      { key: 'soon',  title: 'Due in the next week', rows: rows.filter(r => r.inv.due_date && r.days <= 0 && r.days >= -7) },
+      { key: 'later', title: 'Due later',            rows: rows.filter(r => !r.inv.due_date || r.days < -7) },
+    ].filter(g => g.rows.length)
+  }, [pending])
+
+  // The summary only adds up money in the account's main currency.
+  const here = pending.filter(i => (i.currency || 'P') === currency)
+  const owed = here.reduce((s, i) => s + Number(i.total || 0), 0)
+  const lateRows = here.filter(i => i.due_date && daysOverdue(i.due_date) > 0)
+  const lateSum = lateRows.reduce((s, i) => s + Number(i.total || 0), 0)
+
+  const nextUp = useMemo(() => {
+    const ids = new Set(pending.map(i => i.id))
+    const now = Date.now()
+    const queued = reminders
+      .filter(r => r.status === 'scheduled' && ids.has(r.invoice_id) && new Date(r.send_at).getTime() >= now - DAY)
+      .sort((a, b) => a.send_at.localeCompare(b.send_at))
+    if (!queued.length) return null
+    const first = queued[0]
+    const sameDay = queued.filter(r => r.send_at.slice(0, 10) === first.send_at.slice(0, 10) && r.invoice_id === first.invoice_id)
+    return {
+      date: new Date(first.send_at),
+      inv: pending.find(i => i.id === first.invoice_id)!,
+      channels: [...new Set(sameDay.map(r => r.channel))],
+    }
+  }, [reminders, pending])
 
   function openCompose(inv: Invoice) {
     setCompose({
       inv,
-      tab:       'email',
+      tab:       inv.client_email || !inv.client_phone ? 'email' : 'whatsapp',
       emailTo:   inv.client_email || '',
       emailBody: genEmail(inv, firmName),
       waBody:    genWhatsApp(inv, firmName),
@@ -323,23 +453,12 @@ export default function RemindersClient({
     }
   }
 
-  async function sendWhatsApp() {
+  function sendWhatsApp() {
     if (!compose) return
     const phone = compose.inv.client_phone
     if (!phone) return
-    setCompose(p => p ? { ...p, sending: true, err: '' } : null)
-    try {
-      const res = await fetch('/api/whatsapp/send', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoice_id: compose.inv.id, to_phone: phone, custom_body: compose.waBody }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to send WhatsApp message')
-      setCompose(p => p ? { ...p, sending: false, sent: true, sentVia: 'whatsapp' } : null)
-    } catch (e: any) {
-      setCompose(p => p ? { ...p, sending: false, err: e.message } : null)
-    }
+    openWhatsApp(phone, compose.waBody)
+    setCompose(p => p ? { ...p, sent: true, sentVia: 'whatsapp' } : null)
   }
 
   async function saveContact() {
@@ -358,9 +477,8 @@ export default function RemindersClient({
       const updated = { ...contactModal.inv, client_email: contactModal.email || null, client_phone: contactModal.phone || null }
       setInvoices(prev => prev.map(i => i.id === updated.id ? updated : i))
       setContactModal(null)
-      // Retry auto-toggle with the updated invoice
-      const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent
-      await toggleAuto(updated, fakeEvent)
+      // Retry turning auto on with the updated invoice
+      await toggleAuto(updated, false)
     } finally {
       setContactSaving(false)
     }
@@ -374,64 +492,74 @@ export default function RemindersClient({
     })
   }
 
-  async function toggleAuto(inv: Invoice, e: React.MouseEvent) {
-    e.stopPropagation()
+  function channelsFor(inv: Invoice) {
+    const ch: Array<'email' | 'whatsapp'> = []
+    if (inv.client_email) ch.push('email')
+    if (waUsable && inv.client_phone) ch.push('whatsapp')
+    return ch
+  }
+
+  // The stage that would go out straight away if auto were turned on now.
+  function dueNowStage(inv: Invoice) {
+    const days = daysOverdue(inv.due_date)
+    if (!inv.due_date) return null
+    const past = activeDays.filter(d => d <= days)
+    return past.length ? past[past.length - 1] : null
+  }
+
+  async function toggleAuto(inv: Invoice, isOn: boolean) {
     if (toggling[inv.id]) return
     setToggling(p => ({ ...p, [inv.id]: true }))
 
-    if (autoOn[inv.id]) {
+    if (isOn) {
       const toDelete = reminders.filter(r => r.invoice_id === inv.id && r.status === 'scheduled')
       await Promise.all(toDelete.map(r =>
         fetch(`/api/reminders/${r.id}`, { method: 'DELETE', credentials: 'include' })
       ))
       setReminders(prev => prev.filter(r => !(r.invoice_id === inv.id && r.status === 'scheduled')))
-      setAutoOn(p => ({ ...p, [inv.id]: false }))
     } else {
-      const channels: Array<'email' | 'whatsapp'> = []
-      if (inv.client_email) channels.push('email')
-      if (waOn && inv.client_phone) channels.push('whatsapp')
+      const channels = channelsFor(inv)
       if (channels.length === 0) {
-        setContactModal({ inv, email: inv.client_email || '', phone: inv.client_phone || '', pendingInvId: inv.id })
+        setContactModal({ inv, email: inv.client_email || '', phone: inv.client_phone || '' })
         setToggling(p => ({ ...p, [inv.id]: false }))
         return
       }
-      const base = inv.due_date ? new Date(inv.due_date) : new Date()
+      const base = inv.due_date ? localDay(inv.due_date) : todayStart()
+      const sendNow = dueNowStage(inv)
+      const already = byInvoice[inv.id] ?? []
       const created: Reminder[] = []
       let lastErrMsg = ''
       for (const ch of channels) {
-        for (const rule of SCHEDULE_RULES) {
-          if (!schedule[rule.day]) continue
-          const sendAt = new Date(base)
-          sendAt.setDate(sendAt.getDate() + parseInt(rule.day))
+        for (const day of activeDays) {
+          const sendAt = new Date(base.getTime() + day * DAY)
           const isPast = sendAt <= new Date()
+          // A late invoice gets only its latest missed stage now, not every stage it has passed.
+          if (isPast && day !== sendNow) continue
+          if (isPast && already.some(r => r.channel === ch && r.status === 'sent' && reminderDay(r, inv.due_date) >= day)) continue
 
           const commonPayload = {
             invoice_id:      inv.id,
             channel:         ch,
-            days_after_due:  parseInt(rule.day),
-            recipient_email: ch === 'email'     ? inv.client_email  : undefined,
-            recipient_phone: ch === 'whatsapp'  ? inv.client_phone  : undefined,
+            days_after_due:  day,
+            recipient_email: ch === 'email'    ? inv.client_email : undefined,
+            recipient_phone: ch === 'whatsapp' ? inv.client_phone : undefined,
           }
 
-          let res: Response
-          if (isPast) {
-            // Overdue invoice: send immediately — no cron wait
-            res = await fetch('/api/reminders/send-now', {
-              method: 'POST', credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(commonPayload),
-            })
-          } else {
-            res = await fetch('/api/reminders', {
-              method: 'POST', credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...commonPayload, send_at: sendAt.toISOString() }),
-            })
-          }
+          const res = isPast
+            ? await fetch('/api/reminders/send-now', {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(commonPayload),
+              })
+            : await fetch('/api/reminders', {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...commonPayload, send_at: sendAt.toISOString() }),
+              })
 
           if (res.ok) {
             const { reminder } = await res.json()
-            created.push(reminder)
+            if (reminder) created.push(reminder)
           } else {
             try {
               const errData = await res.json()
@@ -442,16 +570,19 @@ export default function RemindersClient({
       }
       if (created.length > 0) {
         setReminders(prev => [...prev, ...created])
-        setAutoOn(p => ({ ...p, [inv.id]: true }))
       } else {
         setRemError(lastErrMsg
-          ? `Could not schedule reminders: ${lastErrMsg}`
-          : 'Could not schedule reminders — check that the invoice has a client email or phone.')
+          ? `Could not turn on reminders: ${lastErrMsg}`
+          : activeDays.length === 0
+            ? 'Pick at least one day in the schedule first.'
+            : 'Every reminder day for this invoice has already passed.')
         setTimeout(() => setRemError(null), 5000)
       }
     }
     setToggling(p => ({ ...p, [inv.id]: false }))
   }
+
+  let rowIndex = 0
 
   return (
     <>
@@ -459,309 +590,293 @@ export default function RemindersClient({
 
       <div className="topbar">
         <h1 className="page-title">Reminders</h1>
-        <div className="topbar-right">
-          <Link href="/new-invoice" className="topbar-btn btn-primary" style={{ textDecoration: 'none' }}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
-            New Invoice
-          </Link>
-        </div>
+        <Link href="/new-invoice" className="btn-new press">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+          New invoice
+        </Link>
       </div>
 
       <div className="content">
-        {remError && (
-          <div style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '10px 16px', fontSize: 12, color: '#F87171', marginBottom: 16 }}>
-            {remError}
+        {pending.length > 0 && (
+          <>
+            <p className="finding">
+              <b>{money(owed, currency)}</b> is waiting on {plural(here.length, 'invoice')}.{' '}
+              {lateRows.length === 0
+                ? 'None of it is late yet.'
+                : <><b className="late">{money(lateSum, currency)}</b> of it is late, on {plural(lateRows.length, 'invoice')}.</>}
+            </p>
+            <p className="next">
+              {nextUp
+                ? <>Next reminder: <b>{shortDate(nextUp.date, true)}</b> to {nextUp.inv.client_name}, by {nextUp.channels.map(c => c === 'email' ? 'email' : 'WhatsApp').join(' and ')}.</>
+                : 'No automatic reminders are queued. Turn on Auto for an invoice to start.'}
+            </p>
+          </>
+        )}
+
+        {remError && <div className="note" role="alert">{remError}</div>}
+
+        <div className="rules">
+          <span className="lead">Auto reminders go out</span>
+          <span className="chips" role="group" aria-label="Days after the due date">
+            {STAGES.map(s => (
+              <button key={s.day} type="button" className="chip press" aria-pressed={!!schedule[s.day]} title={s.desc} onClick={() => toggleDay(s.day)}>{s.day}</button>
+            ))}
+          </span>
+          <span>days after the due date, by</span>
+          <span className="chips" role="group" aria-label="Channels">
+            <span className="chip fixed" title="Email is always used when the client has an address">Email</span>
+            <button
+              type="button" className="chip press"
+              aria-pressed={waUsable}
+              disabled={!waConfigured}
+              title={waConfigured ? 'Also send automatic reminders on WhatsApp' : 'Automatic WhatsApp needs the WhatsApp Business setup'}
+              onClick={toggleWa}
+            >
+              <svg className="wa-i" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={WA_PATH}/></svg>
+              WhatsApp
+            </button>
+          </span>
+          <span className="aside">
+            New days apply the next time you turn Auto on for an invoice.
+            {!waConfigured && ' Automatic WhatsApp needs the WhatsApp Business setup; Chase still opens WhatsApp for you.'}
+          </span>
+        </div>
+
+        {pending.length === 0 ? (
+          <div className="empty">
+            <h2>Nobody to chase</h2>
+            <p>Every invoice you have sent is paid. Reminders show up here once an invoice is sent and waiting.</p>
+            <Link href="/new-invoice" className="btn-new press">New invoice</Link>
+          </div>
+        ) : groups.map(g => (
+          <section key={g.key} className={`group ${g.key}`} aria-labelledby={`g-${g.key}`}>
+            <h2 id={`g-${g.key}`}>{g.title} <span className="n">{g.rows.length}</span></h2>
+            <div className="sheet">
+              {g.rows.map(({ inv, days }) => {
+                const i = rowIndex++
+                const sym = inv.currency || 'P'
+                const rems = byInvoice[inv.id] ?? []
+                const queued = rems.filter(r => r.status === 'scheduled')
+                const sent = rems.filter(r => r.status === 'sent')
+                const failed = rems.filter(r => r.status === 'failed')
+                const isOn = queued.length > 0
+                const late = !!inv.due_date && days > 0
+
+                // One mark per day; a failure outranks a send, a send outranks a queued one.
+                const rank = { plan: 0, sched: 1, sent: 2, fail: 3 } as const
+                const marks: Record<number, Mark> = {}
+                for (const r of rems) {
+                  if (r.status === 'cancelled') continue
+                  const day = reminderDay(r, inv.due_date)
+                  const state: Mark['state'] = r.status === 'sent' ? 'sent' : r.status === 'failed' ? 'fail' : 'sched'
+                  if (!marks[day] || rank[state] > rank[marks[day].state]) marks[day] = { day, state }
+                }
+                if (!isOn) for (const d of activeDays) if (!marks[d]) marks[d] = { day: d, state: 'plan' }
+                const markList = Object.values(marks).sort((a, b) => a.day - b.day)
+
+                const due = inv.due_date ? localDay(inv.due_date) : null
+                const whenText = !due ? 'No due date'
+                  : days > 0 ? `${plural(days, 'day')} late`
+                  : days === 0 ? 'Due today'
+                  : days === -1 ? 'Due tomorrow'
+                  : `Due in ${plural(-days, 'day')}`
+
+                const lastSent = sent.map(r => r.sent_at || r.send_at).sort().pop()
+                const nextQ = [...queued].sort((a, b) => a.send_at.localeCompare(b.send_at))[0]
+                const stuckWa = !waConfigured && queued.some(r => r.channel === 'whatsapp')
+                const cap = failed.length && !queued.length
+                  ? { warn: true, text: `${plural(failed.length, 'reminder')} failed to send` }
+                  : {
+                      warn: false,
+                      text: [
+                        sent.length ? `${sent.length} sent, last ${shortDate(new Date(lastSent!))}` : null,
+                        nextQ ? `next ${shortDate(new Date(nextQ.send_at))}` : null,
+                        !isOn && !sent.length ? (dueNowStage(inv) != null ? `Auto would send the ${dueNowStage(inv)}-day reminder now` : 'Auto is off') : null,
+                      ].filter(Boolean).join(' · ') || 'Auto is off',
+                    }
+                const summary = `${sent.length} sent, ${queued.length} queued${failed.length ? `, ${failed.length} failed` : ''}.`
+
+                return (
+                  <div key={inv.id} className={`grid row${late ? ' late' : ''}`} style={{ ['--i' as string]: Math.min(i, 12) }}>
+                    <div className="who">
+                      <span className="client">{inv.client_name}</span>
+                      <span className="ref">{inv.invoice_number}{inv.project ? ` · ${inv.project}` : ''}</span>
+                    </div>
+                    <span className="amt">{money(Number(inv.total || 0), sym)}</span>
+                    <span className={`when${late ? ' late' : ''}`}>
+                      {whenText}
+                      {due && <small>{days > 0 ? 'was due' : 'due'} {shortDate(due, true)}</small>}
+                    </span>
+                    <div className="track-wrap">
+                      <Track marks={markList} days={inv.due_date ? days : TRACK_MIN} />
+                      <span className={`cap${cap.warn ? ' warn' : ''}`} title={stuckWa ? "Queued WhatsApp reminders can't send until WhatsApp Business is set up" : undefined}>
+                        {cap.text}{stuckWa && !cap.warn && <> · <span className="warn">WhatsApp not set up</span></>}
+                      </span>
+                      <span className="sr">Reminders: {summary}</span>
+                    </div>
+                    <div className="acts">
+                      <button
+                        type="button" role="switch" className="sw"
+                        aria-checked={isOn}
+                        aria-label={`Automatic reminders for ${inv.invoice_number}`}
+                        disabled={!!toggling[inv.id]}
+                        onClick={() => toggleAuto(inv, isOn)}
+                      >
+                        <span className="knob" aria-hidden="true" />
+                        {toggling[inv.id] ? 'Saving…' : 'Auto'}
+                      </button>
+                      <button type="button" className="act chase press" onClick={() => openCompose(inv)}>Chase</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* Sheets render into <body> so no wrapper on the page can sit above them. */}
+      {mounted && createPortal(<>
+        {contactModal && (
+          <div className="backdrop" onClick={() => !contactSaving && setContactModal(null)}>
+            <div className="modal" style={{ maxWidth: 440 }} role="dialog" aria-modal="true" aria-labelledby="ct-title" onClick={e => e.stopPropagation()}>
+              <div className="m-head">
+                <div>
+                  <div className="m-title" id="ct-title">Add contact details</div>
+                  <div className="m-sub">{contactModal.inv.client_name} · {contactModal.inv.invoice_number}</div>
+                </div>
+                <button type="button" className="m-close" aria-label="Close" onClick={() => setContactModal(null)}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>
+                </button>
+              </div>
+              <div className="m-body">
+                <p className="hint">Auto reminders need an email address{waUsable ? ' or a WhatsApp number' : ''}. These are saved to the invoice.</p>
+                <div className="field">
+                  <label htmlFor="rm-contact-email">Email</label>
+                  <input id="rm-contact-email" name="contact_email" className="input" type="email" placeholder="Client’s email address"
+                    value={contactModal.email}
+                    onChange={e => setContactModal(p => p ? { ...p, email: e.target.value } : null)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="rm-contact-phone">Phone</label>
+                  <input id="rm-contact-phone" name="contact_phone" className="input" type="tel" placeholder="71 234 567"
+                    value={contactModal.phone}
+                    onChange={e => setContactModal(p => p ? { ...p, phone: e.target.value } : null)} />
+                </div>
+              </div>
+              <div className="m-foot">
+                <button type="button" className="btn" onClick={() => setContactModal(null)}>Cancel</button>
+                <button
+                  type="button" className="btn primary"
+                  onClick={saveContact}
+                  disabled={contactSaving || (!contactModal.email && !(waUsable && contactModal.phone))}
+                >{contactSaving ? 'Saving…' : 'Save and turn on'}</button>
+              </div>
+            </div>
           </div>
         )}
-        <div className="rem-layout">
 
-          {/* Left — invoice list */}
-          <div>
-            <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 10 }}>
-              Click any invoice row to compose a reminder message
-            </div>
-            <div className="inv-table-wrap">
-              <div className="inv-table-head">
-                <div></div>
-                <div className="inv-th">Invoice</div>
-                <div className="inv-th">Amount</div>
-                <div className="inv-th">Overdue</div>
-                <div className="inv-th">Reminders</div>
-                <div className="inv-th">Actions</div>
+        {compose && (
+          <div className="backdrop" onClick={() => !compose.sending && setCompose(null)}>
+            <div className="modal" role="dialog" aria-modal="true" aria-labelledby="cp-title" onClick={e => e.stopPropagation()}>
+              <div className="m-head">
+                <div style={{ minWidth: 0 }}>
+                  <div className="m-title" id="cp-title">Chase {compose.inv.client_name}</div>
+                  <div className="m-sub">
+                    {compose.inv.invoice_number} · {money(compose.inv.total, compose.inv.currency || 'P')}
+                    {compose.inv.due_date ? ` · due ${shortDate(localDay(compose.inv.due_date), true)}` : ''}
+                  </div>
+                </div>
+                <button type="button" className="m-close" aria-label="Close" onClick={() => setCompose(null)}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>
+                </button>
               </div>
 
-              {pending.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-illustration" style={{ background: 'rgba(242,169,0,.1)', border: '1px solid rgba(242,169,0,.2)' }}>
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#F2A900" strokeWidth="1.8">
-                      <circle cx="14" cy="14" r="10"/><path d="M8 14l4 4 8-8"/>
-                    </svg>
+              {!compose.sent ? (
+                <>
+                  <div className="tabs" role="tablist">
+                    <button type="button" role="tab" className="tab" aria-selected={compose.tab === 'email'} onClick={() => setCompose(p => p ? { ...p, tab: 'email' } : null)}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="2"/><path d="M2 5l6 4 6-4"/></svg>
+                      Email
+                    </button>
+                    <button type="button" role="tab" className="tab" aria-selected={compose.tab === 'whatsapp'} onClick={() => setCompose(p => p ? { ...p, tab: 'whatsapp' } : null)}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d={WA_PATH}/></svg>
+                      WhatsApp
+                    </button>
                   </div>
-                  <div className="empty-title">Cash flow is healthy</div>
-                  <div className="empty-sub">No pending or overdue invoices right now. Send more invoices to keep the momentum going.</div>
-                  <Link href="/new-invoice" className="empty-cta">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
-                    New Invoice
-                  </Link>
-                </div>
-              ) : (
-                pending.map(inv => {
-                  const days  = daysOverdue(inv.due_date)
-                  const color = urgencyColor(days)
-                  const label = daysLabel(days)
-                  const sym   = inv.currency || 'P'
-                  const stats = remStats[inv.id] ?? { sent: 0, queued: 0 }
-                  const isOn  = !!autoOn[inv.id]
-                  return (
-                    <div key={inv.id} className="rem-row" onClick={() => openCompose(inv)} title="Click to compose reminder">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div className="rem-urgency" style={{ background: color, boxShadow: `0 0 6px ${color}44` }}/>
-                      </div>
-                      <div>
-                        <div className="rem-client">{inv.client_name}</div>
-                        <div className="rem-inv">{inv.invoice_number}{inv.project ? ` · ${inv.project}` : ''}</div>
-                      </div>
-                      <div className="rem-amount" style={{ color }}>{fmt(Number(inv.total || 0), sym)}</div>
-                      <div style={{ fontSize: 12, color, fontWeight: 500 }}>{label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--t3)' }}>{stats.sent} sent · {stats.queued} queued</div>
-                      <div style={{ display: 'flex', gap: 5 }} onClick={e => e.stopPropagation()}>
+
+                  <div className="m-body">
+                    {compose.tab === 'email' ? (
+                      <>
+                        <div className="field">
+                          <label htmlFor="rm-compose-email">To</label>
+                          <input id="rm-compose-email" name="compose_email" className="input" type="email" placeholder="Client’s email address"
+                            value={compose.emailTo} onChange={e => setCompose(p => p ? { ...p, emailTo: e.target.value } : null)} />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="rm-email-body">Message <span>Edit before sending</span></label>
+                          <textarea id="rm-email-body" name="email_body" className="textarea" value={compose.emailBody}
+                            onChange={e => setCompose(p => p ? { ...p, emailBody: e.target.value } : null)} />
+                        </div>
+                        {compose.err && <div className="err" role="alert">{compose.err}</div>}
+                      </>
+                    ) : (
+                      <>
+                        {compose.inv.client_phone
+                          ? <p className="hint">Opens WhatsApp on your phone with this message ready, sent from your own number to <b>{compose.inv.client_phone}</b>.</p>
+                          : <p className="hint warn">This invoice has no phone number. Copy the message, or add a number to the invoice.</p>}
+                        <div className="field">
+                          <label htmlFor="rm-wa-body">Message <span>Edit if needed</span></label>
+                          <textarea id="rm-wa-body" name="wa_body" className="textarea" value={compose.waBody}
+                            onChange={e => setCompose(p => p ? { ...p, waBody: e.target.value } : null)} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="m-foot">
+                    {compose.tab === 'email' ? (
+                      <>
+                        <button type="button" className="btn" onClick={() => setCompose(null)}>Cancel</button>
+                        <button type="button" className="btn primary press" onClick={sendEmail} disabled={compose.sending || !compose.emailTo}>
+                          {compose.sending ? 'Sending…' : 'Send email'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" className="btn left" onClick={copyWa}>{compose.copied ? 'Copied' : 'Copy message'}</button>
                         <button
-                          className={`rem-toggle${isOn ? ' active' : ''}`}
-                          onClick={e => toggleAuto(inv, e)}
-                          disabled={!!toggling[inv.id]}
+                          type="button" className="btn primary press"
+                          onClick={sendWhatsApp}
+                          disabled={!compose.inv.client_phone}
                         >
-                          {toggling[inv.id] ? '…' : isOn ? '● Auto' : '○ Auto'}
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={WA_PATH}/></svg>
+                          Open in WhatsApp
                         </button>
-                        <button className="compose-btn" onClick={e => { e.stopPropagation(); openCompose(inv) }}>
-                          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12l1-4L11 2l3 3-8 6-4 1z"/><path d="M9 4l3 3"/></svg>
-                          Send
-                        </button>
-                      </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="m-body">
+                  <div className="done">
+                    <div className="tick">
+                      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>
                     </div>
-                  )
-                })
+                    <h3>{compose.sentVia === 'whatsapp' ? 'Ready in WhatsApp' : 'Reminder sent'}</h3>
+                    <p>
+                      {compose.sentVia === 'whatsapp'
+                        ? `WhatsApp opened for ${compose.inv.client_phone}. Tap send there to deliver it.`
+                        : `Emailed to ${compose.emailTo}.`}
+                    </p>
+                    <button type="button" className="btn" onClick={() => setCompose(null)}>Close</button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
-
-          {/* Right — schedule card */}
-          <div className="sched-card">
-            <div className="sched-header">
-              <div className="sched-title">Auto-reminder schedule</div>
-              <div className="sched-sub">Applies to scheduled auto-reminders</div>
-            </div>
-            {SCHEDULE_RULES.map(rule => (
-              <div key={rule.day} className="sched-rule">
-                <div className="sched-rule-left">
-                  <div className="sched-day-badge" style={{ background: rule.badgeBg, color: rule.badgeColor }}>{rule.day}</div>
-                  <div>
-                    <div className="sched-rule-name">{rule.label}</div>
-                    <div className="sched-rule-desc">{rule.desc}</div>
-                  </div>
-                </div>
-                <div className={`toggle-sw${schedule[rule.day] ? ' on' : ''}`} onClick={() => setSchedule(p => ({ ...p, [rule.day]: !p[rule.day] }))}/>
-              </div>
-            ))}
-            <div className="sched-channel-row">
-              <div className="sched-channel-label">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="#25D366">
-                  <path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97zm4.15 11.17c-.17.48-.99.92-1.37.98-.35.06-.79.08-1.27-.08-.29-.1-.67-.23-1.15-.45-2.02-.87-3.34-2.91-3.44-3.05-.1-.13-.82-1.09-.82-2.08 0-.99.52-1.48.71-1.68.18-.2.4-.25.53-.25h.38c.12 0 .29-.05.45.34.17.4.57 1.39.62 1.49.05.1.08.22.02.35-.06.13-.1.21-.2.32-.1.11-.21.25-.3.33-.1.1-.2.2-.09.4.12.2.52.85 1.12 1.38.77.68 1.42.89 1.62.99.2.1.32.08.44-.05.12-.13.5-.58.63-.78.13-.2.27-.17.45-.1.18.07 1.14.54 1.34.63.2.1.33.14.38.22.05.08.05.47-.12.95z"/>
-                </svg>
-                WhatsApp reminders
-                <span className="wa-badge">Channel</span>
-              </div>
-              <div className={`toggle-sw${waOn ? ' on' : ''}`} onClick={() => {
-                const next = !waOn
-                setWaOn(next)
-                fetch('/api/profile', {
-                  method: 'PATCH', credentials: 'include',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ whatsapp_reminders_enabled: next }),
-                }).catch(() => {})
-              }}/>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Add contact details modal */}
-      {contactModal && (
-        <div className="modal-backdrop" onClick={() => !contactSaving && setContactModal(null)}>
-          <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <div className="modal-title">Add contact details</div>
-                <div className="modal-sub">{contactModal.inv.client_name} · {contactModal.inv.invoice_number}</div>
-              </div>
-              <button className="modal-close" onClick={() => setContactModal(null)}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
-                Auto-reminders need at least an email or phone number. Add them here and they will be saved to the invoice.
-              </div>
-              <div className="modal-field">
-                <div className="modal-label">Email</div>
-                <input id="rm-contact-email" name="contact_email" className="modal-input" type="email" placeholder="client@example.com"
-                  value={contactModal.email}
-                  onChange={e => setContactModal(p => p ? { ...p, email: e.target.value } : null)} />
-              </div>
-              <div className="modal-field">
-                <div className="modal-label">Phone (with country code)</div>
-                <input id="rm-contact-phone" name="contact_phone" className="modal-input" type="tel" placeholder="+267 71 234 567"
-                  value={contactModal.phone}
-                  onChange={e => setContactModal(p => p ? { ...p, phone: e.target.value } : null)} />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-btn modal-btn-secondary" onClick={() => setContactModal(null)}>Cancel</button>
-              <button
-                className="modal-btn modal-btn-primary"
-                onClick={saveContact}
-                disabled={contactSaving || (!contactModal.email && !contactModal.phone)}
-              >{contactSaving ? 'Saving…' : 'Save & enable auto-reminders'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Compose modal */}
-      {compose && (
-        <div className="modal-backdrop" onClick={() => !compose.sending && setCompose(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="modal-title">
-                  <span>Send reminder — {compose.inv.invoice_number}</span>
-                  <button className="modal-close" onClick={() => setCompose(null)}>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
-                  </button>
-                </div>
-                <div className="modal-sub">
-                  {compose.inv.client_name} · {fmt(compose.inv.total, compose.inv.currency || 'P')}
-                  {compose.inv.due_date ? ` · Due ${compose.inv.due_date}` : ''}
-                </div>
-              </div>
-            </div>
-
-            {!compose.sent ? (
-              <>
-                <div className="modal-tabs">
-                  <button className={`modal-tab${compose.tab === 'email' ? ' active' : ''}`} onClick={() => setCompose(p => p ? { ...p, tab: 'email' } : null)}>
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ display:'inline',marginRight:5 }}><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 6l7 4 7-4"/></svg>
-                    Email
-                  </button>
-                  <button className={`modal-tab${compose.tab === 'whatsapp' ? ' active' : ''}`} onClick={() => setCompose(p => p ? { ...p, tab: 'whatsapp' } : null)}>
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="#25D366" style={{ display:'inline',marginRight:5 }}><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
-                    WhatsApp
-                  </button>
-                </div>
-
-                <div className="modal-body">
-                  {compose.tab === 'email' ? (
-                    <>
-                      <div className="modal-field">
-                        <div className="modal-label">To</div>
-                        <input id="rm-compose-email" name="compose_email" className="modal-input" type="email" placeholder="client@example.com"
-                          value={compose.emailTo} onChange={e => setCompose(p => p ? { ...p, emailTo: e.target.value } : null)} />
-                      </div>
-                      <div className="modal-field">
-                        <div className="modal-label" style={{ display:'flex', justifyContent:'space-between' }}>
-                          <span>Message</span>
-                          <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0 }}>Edit before sending</span>
-                        </div>
-                        <textarea id="rm-email-body" name="email_body" className="modal-textarea" value={compose.emailBody}
-                          onChange={e => setCompose(p => p ? { ...p, emailBody: e.target.value } : null)} />
-                      </div>
-                      {compose.err && <div style={{ fontSize:12, color:'var(--danger)', marginBottom:10 }}>{compose.err}</div>}
-                    </>
-                  ) : (
-                    <>
-                      <div className="wa-info">
-                        <strong>Send directly</strong> via WhatsApp or copy to paste manually.
-                        {!compose.inv.client_phone && <span style={{ color:'var(--warn)', display:'block', marginTop:4 }}>No phone number — add one to the invoice to enable sending.</span>}
-                      </div>
-                      <div className="modal-field">
-                        <div className="modal-label" style={{ display:'flex', justifyContent:'space-between' }}>
-                          <span>Message</span>
-                          <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0 }}>Edit if needed</span>
-                        </div>
-                        <textarea id="rm-wa-body" name="wa_body" className="modal-textarea" value={compose.waBody}
-                          onChange={e => setCompose(p => p ? { ...p, waBody: e.target.value } : null)} />
-                      </div>
-                      {compose.inv.client_phone && (
-                        <div style={{ fontSize:12, color:'var(--t3)', marginTop:4 }}>
-                          Client phone: <strong style={{ color:'var(--t2)' }}>{compose.inv.client_phone}</strong>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div className="modal-footer">
-                  <button className="modal-btn modal-btn-secondary" onClick={() => setCompose(null)}>Cancel</button>
-                  {compose.tab === 'email' ? (
-                    <button className="modal-btn modal-btn-primary" onClick={sendEmail} disabled={compose.sending || !compose.emailTo}>
-                      {compose.sending ? 'Sending…' : (
-                        <>
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
-                          Send Email
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <>
-                      <button className="modal-btn modal-btn-secondary" onClick={copyWa} style={{ marginRight: 'auto' }}>
-                        {compose.copied ? (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="1" width="9" height="11" rx="1"/><rect x="1" y="4" width="9" height="11" rx="1"/></svg>
-                            Copy
-                          </>
-                        )}
-                      </button>
-                      <button
-                        className="modal-btn modal-btn-primary"
-                        onClick={sendWhatsApp}
-                        disabled={compose.sending || !compose.inv.client_phone}
-                        title={!compose.inv.client_phone ? 'No phone number on this invoice' : ''}
-                      >
-                        {compose.sending ? 'Sending…' : (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="#1F2A44"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
-                            Send WhatsApp
-                          </>
-                        )}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="modal-body">
-                <div className="modal-success">
-                  <div style={{ width:48, height:48, borderRadius:'50%', background:'rgba(242,169,0,.12)', border:'1px solid rgba(242,169,0,.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>
-                  </div>
-                  <div style={{ fontSize:15, fontWeight:600, color:'var(--t1)', marginBottom:6 }}>Reminder sent!</div>
-                  <div style={{ fontSize:12, color:'var(--t3)', marginBottom:16 }}>
-                    {compose.sentVia === 'whatsapp'
-                      ? `WhatsApp message sent to ${compose.inv.client_phone}`
-                      : `Email delivered to ${compose.emailTo}`}
-                  </div>
-                  <button className="modal-btn modal-btn-secondary" onClick={() => setCompose(null)}>Close</button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </>, document.body)}
     </>
   )
 }
