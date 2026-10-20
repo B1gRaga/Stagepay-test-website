@@ -277,6 +277,7 @@ export default function NewInvoiceClient({
   initialClients,
   editId,
   initialInvoice = null,
+  initialClientId = null,
   lastByClient = {},
   knownItems = [],
 }: {
@@ -284,18 +285,21 @@ export default function NewInvoiceClient({
   initialClients: Client[]
   editId: string | null
   initialInvoice?: Record<string, any> | null
+  initialClientId?: string | null
   lastByClient?: Record<string, LastInvoice>
   knownItems?: KnownItem[]
 }) {
   const router = useRouter()
   const profile = initialProfile
   const inv = editId ? initialInvoice : null
+  // Arriving from a client's "New invoice" link fills in who it is for.
+  const preset = !inv && initialClientId ? initialClients.find(c => c.id === initialClientId) ?? null : null
 
   // Form state, filled from the invoice being edited or from the profile's defaults.
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(inv?.client_id ?? null)
-  const [clientName,  setClientName]  = useState<string>(inv?.client_name ?? '')
-  const [clientEmail, setClientEmail] = useState<string>(inv?.client_email ?? '')
-  const [clientPhone, setClientPhone] = useState<string>(inv?.client_phone ?? '')
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(inv?.client_id ?? preset?.id ?? null)
+  const [clientName,  setClientName]  = useState<string>(inv?.client_name ?? preset?.name ?? '')
+  const [clientEmail, setClientEmail] = useState<string>(inv?.client_email ?? preset?.email ?? '')
+  const [clientPhone, setClientPhone] = useState<string>(inv?.client_phone ?? preset?.phone ?? '')
   const [project,     setProject]     = useState<string>(inv?.project ?? '')
   const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
   const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())

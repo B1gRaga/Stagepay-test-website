@@ -193,10 +193,10 @@ function PendingBar() {
   return <span className="row-pending" data-on={pending} aria-hidden="true" />
 }
 
-export default function InvoicesTable({ initialInvoices, totalCount }: { initialInvoices: Invoice[], totalCount: number }) {
+export default function InvoicesTable({ initialInvoices, totalCount, initialSearch = '' }: { initialInvoices: Invoice[], totalCount: number, initialSearch?: string }) {
   const [invoices, setInvoices]   = useState<Invoice[]>(initialInvoices)
   const [filter, setFilter]       = useState<string>('all')
-  const [search, setSearch]       = useState('')
+  const [search, setSearch]       = useState(initialSearch)
   const [deleteId, setDeleteId]   = useState<string | null>(null)
   const [deleting, setDeleting]   = useState(false)
   const [nextPage, setNextPage]   = useState(1)

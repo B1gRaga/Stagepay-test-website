@@ -1,6 +1,8 @@
 ﻿'use client'
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { waLink } from '@/lib/wa-link'
+import { STATUS_CSS } from './InvoiceStatus'
 
 export type Client = {
   id: string
@@ -13,192 +15,163 @@ export type Client = {
   created_at: string
 }
 
-export type ClientStats = { count: number; total: number; currency: string }
+// Per client, in the currency of their latest invoice. Drafts are not "billed";
+// sent, pending and overdue invoices are what they owe.
+export type ClientStats = {
+  currency: string
+  invoices: number
+  billed: number
+  owes: number
+  late: number
+  lateCount: number
+  lastIssued: string | null
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function initials(name: string) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '??'
+  return name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
 }
-
-function fmt(n: number, sym: string) {
-  if (n >= 1_000_000) return `${sym}${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1000) return `${sym}${(n / 1000).toFixed(0)}k`
-  return `${sym}${Math.round(n).toLocaleString()}`
-}
-
-const AVATAR_COLORS = [
-  { bg: 'rgba(242,169,0,.15)',  border: 'rgba(242,169,0,.3)',  text: '#F2A900' },
-  { bg: 'rgba(59,130,246,.15)',  border: 'rgba(59,130,246,.3)',  text: '#60A5FA' },
-  { bg: 'rgba(245,158,11,.15)',  border: 'rgba(245,158,11,.3)',  text: '#FBBF24' },
-  { bg: 'rgba(168,85,247,.15)',  border: 'rgba(168,85,247,.3)',  text: '#C084FC' },
-  { bg: 'rgba(239,68,68,.15)',   border: 'rgba(239,68,68,.3)',   text: '#F87171' },
-  { bg: 'rgba(20,184,166,.15)',  border: 'rgba(20,184,166,.3)',  text: '#2DD4BF' },
-]
-
-function avatarColor(name: string) {
+// The same stable hue the New invoice screen gives each person.
+function hue(name: string) {
   let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
-  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+  for (const c of name.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) % 360
+  return h
 }
+function money(n: number, sym: string) {
+  return `${sym}${Math.round(n).toLocaleString('en')}`
+}
+function shortDate(d: string | null) {
+  if (!d) return '—'
+  const [y, m, day] = d.split('-').map(Number)
+  const thisYear = new Date().getFullYear()
+  return `${day} ${MONTHS[m - 1]}${y !== thisYear ? ` ${y}` : ''}`
+}
+
+const EMPTY: ClientStats = { currency: 'P', invoices: 0, billed: 0, owes: 0, late: 0, lateCount: 0, lastIssued: null }
 
 const CSS = `
-:root{
-  --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
-  --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
-  --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-  --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
-  --danger:#EF4444;--warn:#F59E0B;
-}
-html[data-theme="light"]{
-  --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
-  --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-  --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
-  --g-dim:rgba(242,169,0,.12);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
+${STATUS_CSS}
+  .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
+  .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
+  .btn-new{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:8px;background:var(--g);color:#1F2A44;font-size:14px;font-weight:700;text-decoration:none;}
+  .btn-new:hover{background:#FFB81C;}
+  .content{padding:24px 28px 48px;max-width:1180px;}
+  .finding{font-size:15px;color:var(--t1);margin-bottom:18px;}
+  .finding b{font-variant-numeric:tabular-nums;}
+  .finding .late{color:var(--st-late);}
 
-/* Topbar */
-.topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
-.page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
-.topbar-right{display:flex;align-items:center;gap:10px;}
-.topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;}
-.btn-primary{background:var(--g);color:#1F2A44;box-shadow:0 0 14px rgba(242,169,0,.35);}
-.btn-primary:hover{background:#C98C00;transform:translateY(-1px);}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .search{position:relative;flex:1;max-width:380px;min-width:220px;}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;}
+  .search input{width:100%;height:38px;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:0 12px 0 36px;font:500 14px var(--font-manrope),sans-serif;color:var(--t1);outline:none;transition:border-color var(--dur-1) var(--ease);}
+  .search input:focus{border-color:var(--g);}
+  .search input::placeholder{color:var(--t3);}
+  .seg{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:var(--bg2);border:1px solid var(--line);}
+  .seg button{height:30px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:var(--t2);font:600 13px var(--font-manrope),sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .seg button:hover{color:var(--t1);}
+  .seg button[aria-pressed="true"]{background:var(--surface2);color:var(--t1);}
+  html[data-theme="light"] .seg button[aria-pressed="true"]{background:var(--surface);}
+  .seg .n{color:var(--t3);font-weight:500;font-variant-numeric:tabular-nums;}
 
-/* Content */
-.content{padding:20px 28px;}
+  .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .grid{display:grid;grid-template-columns:36px minmax(0,1.6fr) 130px 150px 96px 176px;column-gap:16px;align-items:center;padding:0 20px;}
+  .head{height:40px;border-bottom:1px solid var(--line);font-size:12px;font-weight:500;color:var(--t3);}
+  .head .r,.c-owes,.c-billed{text-align:right;}
+  .row{position:relative;min-height:66px;border-bottom:1px solid var(--line);transition:background-color var(--dur-1) var(--ease);animation:cl-in var(--dur-3) var(--ease) both;animation-delay:calc(var(--i,0) * 35ms);}
+  .row:last-child{border-bottom:0;}
+  .row:hover{background:color-mix(in srgb,var(--t1) 4%,transparent);}
+  .av{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;font-size:12px;font-weight:700;background:hsl(var(--h) 70% 90%);color:hsl(var(--h) 45% 28%);}
+  html:not([data-theme="light"]) .av{background:hsl(var(--h) 30% 30%);color:hsl(var(--h) 70% 85%);}
+  .c-who{min-width:0;padding:12px 0;}
+  .name{display:block;font-size:14px;font-weight:600;color:var(--t1);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .name::after{content:"";position:absolute;inset:0;}
+  .name:hover{text-decoration:underline;text-decoration-color:var(--t3);text-underline-offset:3px;}
+  .contact{display:block;font-size:13px;color:var(--t2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
+  .c-owes{font-size:15px;font-weight:700;color:var(--t1);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .c-owes small,.c-billed small{display:block;font-size:12px;font-weight:500;color:var(--t2);}
+  .c-owes.late{color:var(--st-late);}
+  .c-owes.late small{color:inherit;opacity:.85;}
+  .c-owes.clear{font-weight:500;color:var(--t2);font-size:13px;}
+  .c-billed{font-size:14px;color:var(--t1);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .c-last{font-size:13px;color:var(--t2);white-space:nowrap;}
+  .c-act{position:relative;z-index:1;display:flex;gap:6px;justify-content:flex-end;}
+  .act{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line2);background:var(--bg2);color:var(--t1);font:600 13px var(--font-manrope),sans-serif;text-decoration:none;white-space:nowrap;}
+  .act:hover{border-color:var(--t3);}
+  .act.wa{width:34px;padding:0;color:#1DA851;}
+  html:not([data-theme="light"]) .act.wa{color:#3DDC84;}
+  .act[aria-disabled="true"]{opacity:.35;pointer-events:none;}
+  .name:focus-visible,.act:focus-visible,.seg button:focus-visible,.btn-new:focus-visible{outline:2px solid var(--g);outline-offset:2px;border-radius:6px;}
 
-/* Toolbar */
-.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-.search-wrap{position:relative;flex:1;min-width:200px;max-width:380px;}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;}
-.search-input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 14px 9px 34px;font-family:var(--font-archivo),sans-serif;font-size:13px;color:var(--t1);outline:none;transition:border-color .15s;}
-.search-input:focus{border-color:rgba(242,169,0,.4);}
-.search-input::placeholder{color:var(--t3);}
-.toolbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
-.view-toggle{display:flex;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;overflow:hidden;}
-.view-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--t3);cursor:pointer;transition:all .15s;}
-.view-btn.active{background:var(--g-dim);color:var(--g);}
-.view-btn:hover:not(.active){color:var(--t2);}
-.count-badge{font-size:12px;color:var(--t3);white-space:nowrap;}
+  .empty{padding:56px 24px;text-align:center;}
+  .empty h2{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:6px;}
+  .empty p{font-size:14px;color:var(--t2);max-width:360px;margin:0 auto 18px;}
+  @keyframes cl-in{from{opacity:0;transform:translateY(6px)}}
+  @media (prefers-reduced-motion: reduce){.row{animation:none;}}
 
-/* ── GRID VIEW ── */
-.clients-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-@media(max-width:1100px){.clients-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:640px){.clients-grid{grid-template-columns:1fr;}}
-
-.client-card{
-  background:var(--bg2);border:1px solid var(--line);border-radius:14px;
-  padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
-}
-.client-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  opacity:0;transition:opacity .2s;
-}
-.client-card:hover{border-color:rgba(242,169,0,.25);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2);}
-.client-card:hover::before{opacity:1;}
-html[data-theme="light"] .client-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-html[data-theme="light"] .client-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);}
-
-.card-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
-.card-av{
-  width:46px;height:46px;border-radius:12px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:17px;letter-spacing:1px;
-  border:1px solid transparent;
-}
-.card-info{flex:1;min-width:0;}
-.card-name{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.card-contact{font-size:12px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-.card-divider{height:1px;background:var(--line);margin-bottom:14px;}
-
-.card-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.card-stat{background:var(--surface);border-radius:8px;padding:10px 12px;}
-.card-stat-val{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:22px;color:var(--t1);line-height:1;}
-.card-stat-label{font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-top:3px;}
-
-.card-footer{margin-top:14px;display:flex;align-items:center;gap:6px;}
-.card-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--t3);background:var(--surface);border-radius:4px;padding:3px 8px;}
-
-/* ── LIST VIEW ── */
-.clients-list{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
-html[data-theme="light"] .clients-list{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);}
-html[data-theme="light"] .list-head{background:rgba(31,42,68,.03);}
-.list-head{
-  display:grid;grid-template-columns:44px 1fr 160px 100px 120px 36px;
-  gap:12px;padding:10px 20px;
-  border-bottom:1px solid var(--line);background:var(--surface);
-}
-.list-th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;}
-.list-row{
-  display:grid;grid-template-columns:44px 1fr 160px 100px 120px 36px;
-  gap:12px;padding:13px 20px;border-bottom:1px solid var(--line);
-  align-items:center;cursor:pointer;transition:background .12s;
-}
-.list-row:last-child{border-bottom:none;}
-.list-row:hover{background:var(--surface);}
-.list-av{
-  width:36px;height:36px;border-radius:9px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px;
-  border:1px solid transparent;
-}
-.list-name{font-size:13px;font-weight:600;color:var(--t1);}
-.list-contact{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-td{font-size:13px;color:var(--t2);}
-.list-amt{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:16px;color:var(--t1);}
-.list-inv-count{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:26px;height:22px;border-radius:6px;
-  font-size:12px;font-weight:700;
-  background:var(--g-dim);color:var(--g);border:1px solid rgba(242,169,0,.2);
-  padding:0 6px;
-}
-.list-wa{width:28px;height:28px;border-radius:7px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;text-decoration:none;}
-.list-wa:hover{background:rgba(37,211,102,.2);}
-
-/* Empty */
-.empty-state{text-align:center;padding:72px 20px;}
-.empty-icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
-.empty-title{font-size:17px;font-weight:600;color:var(--t1);margin-bottom:8px;}
-.empty-sub{font-size:13px;color:var(--t3);margin-bottom:22px;max-width:300px;margin-left:auto;margin-right:auto;line-height:1.6;}
-.empty-cta{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#1F2A44;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;font-family:var(--font-archivo),sans-serif;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 0 14px rgba(242,169,0,.35);}
-.empty-cta:hover{background:#C98C00;}
-
-@media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
-@media(max-width:700px){
-  .list-head,.list-row{grid-template-columns:36px 1fr 90px 36px;}
-  .list-head>*:nth-child(3),.list-row>*:nth-child(3),
-  .list-head>*:nth-child(5),.list-row>*:nth-child(5){display:none;}
-  .content{padding:16px;}
-}
+  @media(max-width:1000px){
+    .grid{grid-template-columns:36px minmax(0,1fr) 120px 140px 176px;}
+    .c-last,.head .h-last{display:none;}
+  }
+  @media(max-width:768px){
+    .topbar{padding:0 16px;}
+    .btn-new{display:none;}
+    .content{padding:16px 16px 32px;}
+    .toolbar{flex-direction:column;align-items:stretch;}
+    .search{max-width:none;}
+    .seg{display:flex;}
+    .seg button{flex:1;justify-content:center;}
+    .head{display:none;}
+    .grid{grid-template-columns:36px minmax(0,1fr) auto;grid-template-areas:"av who owes" "av act act";row-gap:10px;column-gap:12px;padding:14px 16px;}
+    .row{min-height:0;}
+    .av{grid-area:av;align-self:start;}
+    .c-who{grid-area:who;padding:0;}
+    .c-owes{grid-area:owes;}
+    .c-billed{display:none;}
+    .c-act{grid-area:act;justify-content:flex-start;}
+    .act{height:36px;}
+    .act.new{flex:1;}
+  }
 `
 
 export default function ClientsGrid({
   clients,
-  statsMap,
+  stats,
+  currency,
 }: {
   clients: Client[]
-  statsMap: Record<string, ClientStats>
+  stats: Record<string, ClientStats>
+  currency: string
 }) {
   const [search, setSearch] = useState('')
-  const [view, setView]     = useState<'grid' | 'list'>('grid')
+  const [filter, setFilter] = useState<'all' | 'owes'>('all')
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return clients
-    const q = search.toLowerCase()
-    return clients.filter(c =>
-      c.name?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q)
-    )
-  }, [clients, search])
+  // Who owes the most (late first) at the top, then whoever you billed most recently.
+  const sorted = useMemo(() => [...clients].sort((a, b) => {
+    const sa = stats[a.id] ?? EMPTY, sb = stats[b.id] ?? EMPTY
+    return (sb.late - sa.late) || (sb.owes - sa.owes) || (sb.lastIssued ?? '').localeCompare(sa.lastIssued ?? '') || a.name.localeCompare(b.name)
+  }), [clients, stats])
 
-  const totalBilled = useMemo(() =>
-    clients.reduce((s, c) => s + (statsMap[c.id]?.total || 0), 0), [clients, statsMap])
+  const owing = sorted.filter(c => (stats[c.id]?.owes ?? 0) > 0)
 
-  const topCurrency = clients[0] ? (statsMap[clients[0].id]?.currency || 'P') : 'P'
+  const shown = useMemo(() => {
+    let list = filter === 'owes' ? owing : sorted
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      const digits = q.replace(/\D/g, '')
+      list = list.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        (digits.length > 2 && c.phone?.replace(/\D/g, '').includes(digits))
+      )
+    }
+    return list
+  }, [sorted, owing, filter, search])
+
+  // The summary only adds up money in the account's main currency.
+  const owedHere = owing.filter(c => stats[c.id].currency === currency)
+  const owedSum = owedHere.reduce((s, c) => s + stats[c.id].owes, 0)
+  const lateSum = owedHere.reduce((s, c) => s + stats[c.id].late, 0)
 
   return (
     <>
@@ -206,184 +179,92 @@ export default function ClientsGrid({
 
       <div className="topbar">
         <h1 className="page-title">Clients</h1>
-        <div className="topbar-right">
-          <Link href="/new-invoice" className="topbar-btn btn-primary" style={{ textDecoration: 'none' }}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
-            New Invoice
-          </Link>
-        </div>
+        <Link href="/new-invoice" className="btn-new press">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+          New invoice
+        </Link>
       </div>
 
       <div className="content">
-
-        {/* Summary strip */}
         {clients.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 20 }}>
-            {[
-              { label: 'Total Clients',   val: clients.length, mono: true },
-              { label: 'Total Billed',    val: fmt(totalBilled, topCurrency), mono: true },
-              { label: 'Avg per Client',  val: clients.length ? fmt(totalBilled / clients.length, topCurrency) : '—', mono: true },
-            ].map(({ label, val }) => (
-              <div key={label} style={{ background: 'var(--bg2)', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 18px' }}>
-                <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 6 }}>{label}</div>
-                <div style={{ fontFamily: "var(--font-bebas),sans-serif", fontSize: 26, color: 'var(--t1)', letterSpacing: 1 }}>{val}</div>
-              </div>
-            ))}
-          </div>
+          <p className="finding">
+            {owing.length === 0
+              ? <>All {clients.length} clients are paid up.</>
+              : <>
+                  {owing.length === 1 ? '1' : owing.length} of your {clients.length} clients {owing.length === 1 ? 'owes' : 'owe'} you <b>{money(owedSum, currency)}</b>
+                  {lateSum > 0 ? <>, and <b className="late">{money(lateSum, currency)}</b> of it is late.</> : '.'}
+                </>}
+          </p>
         )}
 
-        {/* Toolbar */}
         <div className="toolbar">
-          <div className="search-wrap">
-            <svg className="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/>
-            </svg>
-            <input
-              className="search-input"
-              placeholder="Search clients…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="toolbar-right">
-            <span className="count-badge">{filtered.length} client{filtered.length !== 1 ? 's' : ''}</span>
-            <div className="view-toggle">
-              <button className={`view-btn${view === 'grid' ? ' active' : ''}`} onClick={() => setView('grid')} title="Grid view">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-              </button>
-              <button className={`view-btn${view === 'list' ? ' active' : ''}`} onClick={() => setView('list')} title="List view">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 4h10M3 8h10M3 12h10"/></svg>
-              </button>
-            </div>
+          <label className="search">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+            <input type="search" aria-label="Search clients" placeholder="Search name, number or email" value={search} onChange={e => setSearch(e.target.value)} />
+          </label>
+          <div className="seg" role="group" aria-label="Show">
+            <button type="button" className="press" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All <span className="n">{clients.length}</span></button>
+            <button type="button" className="press" aria-pressed={filter === 'owes'} onClick={() => setFilter('owes')}>Owe you <span className="n">{owing.length}</span></button>
           </div>
         </div>
 
-        {/* Empty state */}
-        {filtered.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon" style={{ background: 'rgba(242,169,0,.1)', border: '1px solid rgba(242,169,0,.2)' }}>
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#F2A900" strokeWidth="1.8">
-                <circle cx="14" cy="8" r="5"/><path d="M4 24c0-5.523 4.477-10 10-10s10 4.477 10 10"/>
-              </svg>
+        <div className="sheet">
+          {shown.length > 0 && (
+            <div className="grid head" aria-hidden="true">
+              <span />
+              <span>Client</span>
+              <span className="r">Owes you</span>
+              <span className="r">Billed</span>
+              <span className="h-last">Last invoice</span>
+              <span />
             </div>
-            <div className="empty-title">{search ? 'No matches' : 'No clients yet'}</div>
-            <div className="empty-sub">
-              {search ? `No clients match "${search}".` : 'Clients are added automatically when you save an invoice.'}
+          )}
+
+          {shown.length === 0 ? (
+            <div className="empty">
+              <h2>{search.trim() ? 'No matches' : filter === 'owes' ? 'Nobody owes you anything' : 'No clients yet'}</h2>
+              <p>{search.trim() ? `No client matches “${search.trim()}”.` : filter === 'owes' ? 'Every sent invoice has been paid.' : 'A client is added the first time you send them an invoice.'}</p>
+              {!search.trim() && filter === 'all' && <Link href="/new-invoice" className="btn-new press">New invoice</Link>}
             </div>
-            {!search && (
-              <Link href="/new-invoice" className="empty-cta">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
-                Create First Invoice
-              </Link>
-            )}
-          </div>
-
-        ) : view === 'grid' ? (
-          /* ── GRID VIEW ── */
-          <div className="clients-grid">
-            {filtered.map((c) => {
-              const col   = avatarColor(c.name)
-              const ini   = initials(c.name)
-              const stats = statsMap[c.id] ?? { count: 0, total: 0, currency: 'P' }
-              const sym   = stats.currency || 'P'
-              return (
-                <div key={c.id} className="client-card">
-                  <div className="client-card" style={{ display: 'contents' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${col.text},transparent 70%)`, opacity: 0.6 }}/>
-                  </div>
-                  <div className="card-top">
-                    <div className="card-av" style={{ background: col.bg, borderColor: col.border, color: col.text }}>{ini}</div>
-                    <div className="card-info">
-                      <div className="card-name">{c.name}</div>
-                      <div className="card-contact">{c.email || c.phone || '—'}</div>
-                    </div>
-                  </div>
-
-                  <div className="card-divider"/>
-
-                  <div className="card-stats">
-                    <div className="card-stat">
-                      <div className="card-stat-val">{stats.count}</div>
-                      <div className="card-stat-label">Invoices</div>
-                    </div>
-                    <div className="card-stat">
-                      <div className="card-stat-val" style={{ fontSize: stats.total >= 10000 ? 18 : 22 }}>{fmt(stats.total, sym)}</div>
-                      <div className="card-stat-label">Total Billed</div>
-                    </div>
-                  </div>
-
-                  {(c.phone || c.address) && (
-                    <div className="card-footer">
-                      {c.phone && (
-                        <a
-                          href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
-                          target="_blank" rel="noreferrer"
-                          className="card-tag"
-                          style={{ color: '#25D366', background: 'rgba(37,211,102,.08)', textDecoration: 'none' }}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
-                          {c.phone}
-                        </a>
-                      )}
-                      {c.address && (
-                        <span className="card-tag">
-                          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M8 1a5 5 0 015 5c0 4-5 9-5 9S3 10 3 6a5 5 0 015-5z"/><circle cx="8" cy="6" r="1.5"/></svg>
-                          {c.address.split(',')[0]}
-                        </span>
-                      )}
-                    </div>
+          ) : shown.map((c, i) => {
+            const s = stats[c.id] ?? { ...EMPTY, currency }
+            const contact = [c.phone, c.email].filter(Boolean).join(' · ')
+            return (
+              <div key={c.id} className="grid row" style={{ ['--i' as string]: Math.min(i, 12) }}>
+                <span className="av" style={{ ['--h' as string]: hue(c.name) }} aria-hidden="true">{initials(c.name)}</span>
+                <div className="c-who">
+                  <Link href={`/invoices?q=${encodeURIComponent(c.name)}`} className="name">{c.name}</Link>
+                  <span className="contact">{contact || 'No contact details'}</span>
+                </div>
+                {s.owes > 0 ? (
+                  <span className={`c-owes${s.late > 0 ? ' late' : ''}`}>
+                    {money(s.owes, s.currency)}
+                    <small>{s.late > 0 ? `${s.lateCount === 1 ? '1 invoice' : `${s.lateCount} invoices`} late` : 'not due yet'}</small>
+                  </span>
+                ) : (
+                  <span className="c-owes clear">{s.invoices ? 'Paid up' : '—'}</span>
+                )}
+                <span className="c-billed">
+                  {s.billed > 0 ? money(s.billed, s.currency) : '—'}
+                  <small>{s.invoices === 1 ? '1 invoice' : `${s.invoices} invoices`}</small>
+                </span>
+                <span className="c-last">{shortDate(s.lastIssued)}</span>
+                <span className="c-act">
+                  {c.phone ? (
+                    <a className="act wa press" href={waLink(c.phone)} target="_blank" rel="noreferrer" aria-label={`WhatsApp ${c.name}`} title={`WhatsApp ${c.name}`}>
+                      <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M2 14l1.3-3.9A6 6 0 1 1 6.3 13L2 14z"/></svg>
+                    </a>
+                  ) : (
+                    <span className="act wa" aria-disabled="true" title="No WhatsApp number">
+                      <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M2 14l1.3-3.9A6 6 0 1 1 6.3 13L2 14z"/></svg>
+                    </span>
                   )}
-                </div>
-              )
-            })}
-          </div>
-
-        ) : (
-          /* ── LIST VIEW ── */
-          <div className="clients-list">
-            <div className="list-head">
-              <div/>
-              <div className="list-th">Client</div>
-              <div className="list-th">Contact</div>
-              <div className="list-th">Invoices</div>
-              <div className="list-th">Total Billed</div>
-              <div/>
-            </div>
-            {filtered.map((c) => {
-              const col   = avatarColor(c.name)
-              const ini   = initials(c.name)
-              const stats = statsMap[c.id] ?? { count: 0, total: 0, currency: 'P' }
-              const sym   = stats.currency || 'P'
-              return (
-                <div key={c.id} className="list-row">
-                  <div className="list-av" style={{ background: col.bg, borderColor: col.border, color: col.text }}>{ini}</div>
-                  <div>
-                    <div className="list-name">{c.name}</div>
-                    <div className="list-contact">{c.email || '—'}</div>
-                  </div>
-                  <div className="list-td" style={{ fontSize: 12, color: 'var(--t3)' }}>{c.phone || '—'}</div>
-                  <div>
-                    <span className="list-inv-count">{stats.count}</span>
-                  </div>
-                  <div className="list-amt">{fmt(stats.total, sym)}</div>
-                  <div>
-                    {c.phone && (
-                      <a
-                        href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
-                        target="_blank" rel="noreferrer"
-                        className="list-wa"
-                        title="Message on WhatsApp"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 16 16" fill="#25D366"><path d="M8 0C3.582 0 0 3.582 0 8c0 1.4.367 2.715 1.007 3.853L0 16l4.247-1.108A7.96 7.96 0 008 16c4.418 0 8-3.582 8-8S12.418 0 8 0zm4.078 11.248c-.172.484-1.003.932-1.374.99-.353.054-.8.077-1.29-.08a11.7 11.7 0 01-1.167-.44c-2.051-.889-3.39-2.965-3.493-3.103-.102-.138-.83-1.106-.83-2.11 0-1.003.525-1.497.712-1.7.186-.204.406-.255.541-.255.135 0 .271 0 .39.007.125.007.293-.047.458.35.169.403.574 1.394.624 1.496.05.102.084.221.017.356-.067.135-.1.22-.2.338l-.289.34c-.101.101-.207.21-.09.41.118.203.522.861 1.122 1.393.77.69 1.42.9 1.62.999.2.098.317.082.434-.05.118-.13.504-.591.638-.794.134-.204.268-.17.45-.102.184.068 1.165.553 1.365.654.2.1.334.15.384.234.05.084.05.486-.122.97z"/></svg>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+                  <Link className="act new press" href={`/new-invoice?client=${c.id}`}>New invoice</Link>
+                </span>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </>
   )

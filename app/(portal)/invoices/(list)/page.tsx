@@ -1,7 +1,7 @@
 import { createClient, getCachedUser } from '@/lib/supabase/server'
 import InvoicesTable from '@/components/portal/InvoicesTable'
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await getCachedUser()
   if (!user) return null
 
@@ -26,5 +26,6 @@ export default async function InvoicesPage() {
   }
 
   const rows = (invoices ?? []).map(i => ({ ...i, reminders_sent: remindersSent[i.id] ?? 0 }))
-  return <InvoicesTable initialInvoices={rows} totalCount={count ?? 0} />
+  const { q } = await searchParams
+  return <InvoicesTable initialInvoices={rows} totalCount={count ?? 0} initialSearch={q ?? ''} />
 }

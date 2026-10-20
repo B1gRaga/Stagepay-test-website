@@ -6,14 +6,14 @@ import type { LastInvoice } from '@/components/portal/invoice-draft'
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>
+  searchParams: Promise<{ edit?: string; client?: string }>
 }) {
   const user = await getCachedUser()
   if (!user) redirect('/auth/login')
 
   const supabase = await createClient()
 
-  const { edit: editId } = await searchParams
+  const { edit: editId, client: clientParam } = await searchParams
 
   const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }] = await Promise.all([
     supabase
@@ -77,6 +77,7 @@ export default async function NewInvoicePage({
       initialClients={clients ?? []}
       editId={editId ?? null}
       initialInvoice={initialInvoice ?? null}
+      initialClientId={!editId && clientParam ? clientParam : null}
       lastByClient={lastByClient}
       knownItems={[...known.values()].slice(0, 80)}
     />

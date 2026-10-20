@@ -2,9 +2,16 @@
 // so manual sends come from the freelancer's real number at no cost and
 // aren't limited by Meta's 24h window / template rules.
 
-export function waLink(phone: string, text: string) {
+// wa.me needs the full international number. Botswana mobiles are often saved
+// as the local 8 digits (7X XXX XXX), so those get the 267 country code.
+export function waNumber(phone: string) {
   const digits = phone.replace(/^whatsapp:/, '').replace(/\D/g, '').replace(/^00/, '')
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
+  return /^7\d{7}$/.test(digits) ? `267${digits}` : digits
+}
+
+export function waLink(phone: string, text?: string) {
+  const base = `https://wa.me/${waNumber(phone)}`
+  return text ? `${base}?text=${encodeURIComponent(text)}` : base
 }
 
 // Must be called synchronously inside the click handler — browsers block
