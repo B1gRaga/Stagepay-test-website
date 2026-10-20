@@ -36,6 +36,8 @@ export interface Database {
           default_currency: string
           tax_label: string
           default_vat_rate: number
+          payment_methods: Json
+          default_due_days: number
           pending_plan: string | null
           business_type: BusinessType | null
           team_id: string | null
@@ -66,6 +68,8 @@ export interface Database {
           default_currency?: string
           tax_label?: string
           default_vat_rate?: number
+          payment_methods?: Json
+          default_due_days?: number
           pending_plan?: string | null
           business_type?: BusinessType | null
           team_id?: string | null
@@ -93,6 +97,8 @@ export interface Database {
           default_currency?: string
           tax_label?: string
           default_vat_rate?: number
+          payment_methods?: Json
+          default_due_days?: number
           pending_plan?: string | null
           business_type?: BusinessType | null
           team_id?: string | null

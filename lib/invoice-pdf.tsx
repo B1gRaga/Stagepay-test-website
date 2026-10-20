@@ -1,5 +1,6 @@
 import { renderToBuffer, Document, Page, Text, View, Image, Svg, Path, Rect } from '@react-pdf/renderer'
 import { resolveTheme, type InvoiceTheme } from './invoice-themes'
+import { paymentBlocks } from './payment-methods'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const PAD     = 36           // page padding (pt)
@@ -114,6 +115,7 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
   const firmAddress = [profile.address, profile.city, profile.country].filter(Boolean).join(', ')
   const firmContact = [profile.email, profile.phone].filter(Boolean).join('  ·  ')
   const subLabel    = profile.vat_number ? `VAT No: ${profile.vat_number}` : 'Professional Services'
+  const payBlocks   = paymentBlocks(profile.payment_methods)
 
   // Meta
   // Invoices store issue and due dates, not a terms field: derive "Net N" from the gap.
@@ -307,6 +309,29 @@ function InvoicePDF({ invoice, items, profile, showPaidStamp, theme: t }: {
             </Text>
           </View>
         )}
+
+        {/* ── PAYMENT DETAILS ────────────────────────────────────────────────── */}
+        {payBlocks.length > 0 && !showPaidStamp ? (
+          <View style={{ marginTop: 12 }}>
+            <Text style={{
+              fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: t.bodyText,
+              textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4,
+            }}>
+              Payment details
+            </Text>
+            {payBlocks.map((b, i) => (
+              <View key={i} style={{ marginBottom: 4 }} wrap={false}>
+                <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: t.bodyText, lineHeight: 1.5 }}>{b.title}</Text>
+                <Text style={{ fontSize: 7, color: t.bodyText, lineHeight: 1.5 }}>
+                  {b.rows.map(([label, value], j) => `${j ? '   ·   ' : ''}${label}: ${value}`).join('')}
+                </Text>
+              </View>
+            ))}
+            <Text style={{ fontSize: 6.5, color: MUTED, marginTop: 2 }}>
+              Please use {invoice.invoice_number} as the payment reference.
+            </Text>
+          </View>
+        ) : null}
 
         {/* ── TERMS & CONDITIONS ─────────────────────────────────────────────── */}
         {invoice.notes ? (

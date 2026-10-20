@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { paymentBlocks } from '@/lib/payment-methods'
 import { renderToBuffer, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
 type Params = { params: Promise<{ token: string }> }
@@ -47,13 +48,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data: profile } = await supabaseAny
     .from('profiles')
-    .select('firm_name, name, email, address, city, country, vat_number')
+    .select('firm_name, name, email, address, city, country, vat_number, payment_methods')
     .eq('id', invoice.user_id)
     .single()
 
   const sym = invoice.currency || 'P'
   const senderName = profile?.firm_name || profile?.name || 'StagePay'
   const items: any[] = invoice.invoice_items || []
+  const payBlocks = invoice.status === 'paid' ? [] : paymentBlocks(profile?.payment_methods)
 
   const buffer = await renderToBuffer(
     <Document>
@@ -128,6 +130,19 @@ export async function GET(_req: NextRequest, { params }: Params) {
             <Text style={styles.grandValue}>{fmt(invoice.total, sym)}</Text>
           </View>
         </View>
+
+        {payBlocks.length > 0 && (
+          <View style={{ marginTop: 24 }}>
+            <Text style={styles.label}>Payment details</Text>
+            {payBlocks.map((b, i) => (
+              <View key={i} style={{ marginTop: 6 }}>
+                <Text style={{ ...styles.value, fontFamily: 'Helvetica-Bold' }}>{b.title}</Text>
+                {b.rows.map(([l, v]) => <Text key={l} style={{ ...styles.value, marginTop: 2 }}>{l}: {v}</Text>)}
+              </View>
+            ))}
+            <Text style={{ ...styles.value, color: '#64748B', marginTop: 6 }}>Please use {invoice.invoice_number} as the payment reference.</Text>
+          </View>
+        )}
 
         {invoice.notes && (
           <View style={{ marginTop: 24 }}>

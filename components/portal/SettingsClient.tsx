@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
+import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,20 +29,39 @@ type Profile = {
   invoice_theme: string | null
   brand_color_primary: string | null
   brand_color_header: string | null
+  payment_methods?: unknown
+  default_due_days?: number | null
 }
 
 type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'team' | 'security'
 
-const PANELS: { id: Panel; label: string; dot: string; businessOnly?: boolean }[] = [
-  { id: 'brand',    label: 'Branding',          dot: '#F2A900' },
-  { id: 'firm',     label: 'Firm details',       dot: '#3B82F6' },
-  { id: 'invoice',  label: 'Invoice defaults',   dot: '#F59E0B' },
-  { id: 'payment',  label: 'Payment & banking',  dot: '#F2A900' },
-  { id: 'notifs',   label: 'Notifications',      dot: '#8B5CF6' },
-  { id: 'plan',     label: 'Plan & billing',     dot: '#F2A900' },
-  { id: 'team',     label: 'Team members',       dot: '#F2A900', businessOnly: true },
-  { id: 'security', label: 'Security',           dot: '#EF4444' },
+const PANELS: { id: Panel; label: string; businessOnly?: boolean }[] = [
+  { id: 'brand',    label: 'Branding' },
+  { id: 'firm',     label: 'Firm details' },
+  { id: 'invoice',  label: 'Invoice defaults' },
+  { id: 'payment',  label: 'Getting paid' },
+  { id: 'notifs',   label: 'Notifications' },
+  { id: 'plan',     label: 'Plan & billing' },
+  { id: 'team',     label: 'Team members', businessOnly: true },
+  { id: 'security', label: 'Security' },
 ]
+
+// Payment terms offered for new invoices; the same choices as the New invoice form.
+const TERM_CHOICES = [
+  { days: 0,  label: 'On receipt' },
+  { days: 7,  label: '7 days' },
+  { days: 14, label: '14 days' },
+  { days: 30, label: '30 days' },
+]
+
+function PanelHead({ title, sub }: { title: React.ReactNode; sub: React.ReactNode }) {
+  return (
+    <header className="panel-head">
+      <h2>{title}</h2>
+      <p>{sub}</p>
+    </header>
+  )
+}
 
 const VAT_COUNTRIES = [
   { g: 'Southern Africa', opts: [
@@ -116,55 +136,79 @@ const SEC_RISKS = [
 ]
 
 const CSS = `
-:root{
-    --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);
-    --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
-    --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
-    --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
-  }
-  html[data-theme="light"]{
-    --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
-    --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
-    --g-dim:rgba(242,169,0,.12);
-  }
-  html[data-theme="light"] .settings-layout{box-shadow:0 1px 6px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);}
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(--t1);}
   @keyframes spin{to{transform:rotate(360deg)}}
-  @keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes panelIn{from{opacity:0;transform:translateY(6px)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
   .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
 
-  .settings-wrap{padding:0 28px 24px;height:calc(100vh - 80px);}
-  .settings-layout{
-    display:grid;grid-template-columns:190px 1fr;gap:0;
-    height:100%;border:1px solid var(--line);border-radius:10px;
-    overflow:hidden;background:var(--bg2);
-  }
-  .settings-nav{border-right:1px solid var(--line);padding:12px 0;overflow-y:auto;flex-shrink:0;}
-  .settings-nav-item{
-    display:flex;align-items:center;gap:10px;
-    padding:10px 16px;font-size:13px;color:var(--t2);
-    cursor:pointer;transition:all .15s;
-    border-left:3px solid transparent;
-  }
-  .settings-nav-item:hover{background:var(--surface);color:var(--t1);}
-  .settings-nav-item.active{background:var(--g-dim);color:var(--g);border-left-color:var(--g);}
-  .settings-panel{display:none;padding:28px 32px;overflow-y:auto;height:100%;}
-  .settings-panel.active{display:block;animation:panelIn .25s ease both;}
+  /* Frame: a quiet menu on the left, one panel at a time on the right */
+  .settings-wrap{padding:24px 28px 48px;max-width:1180px;}
+  .settings-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start;}
+  .settings-nav{position:sticky;top:24px;display:flex;flex-direction:column;gap:2px;}
+  .settings-nav-item{display:flex;align-items:center;height:38px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--t2);font:500 14px var(--font-manrope),sans-serif;text-align:left;cursor:pointer;transition:background-color var(--dur-1) var(--ease),color var(--dur-1) var(--ease);}
+  .settings-nav-item:hover{color:var(--t1);background:color-mix(in srgb,var(--t1) 5%,transparent);}
+  .settings-nav-item[aria-current="page"]{color:var(--t1);font-weight:700;background:var(--bg2);box-shadow:inset 3px 0 0 var(--g);}
+  .settings-nav-item:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
+  .settings-panel{display:none;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:28px 32px;}
+  .settings-panel.active{display:block;animation:panelIn var(--dur-3) var(--ease) both;}
+  @media (prefers-reduced-motion: reduce){.settings-panel.active{animation:none;}}
 
-  .settings-panel-hero{
-    display:flex;align-items:center;gap:16px;
-    padding:20px 24px;margin:-28px -32px 28px;
-    border-bottom:1px solid var(--line);
-  }
-  .settings-panel-hero-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .settings-panel-hero-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:24px;letter-spacing:2px;color:var(--t1);line-height:1;}
-  .settings-panel-hero-sub{font-size:12px;color:var(--t3);margin-top:3px;line-height:1.5;}
-  .settings-panel-hero-badge{margin-left:auto;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px;white-space:nowrap;}
+  .panel-head{margin:0 0 24px;padding-bottom:20px;border-bottom:1px solid var(--line);}
+  .panel-head h2{font-size:20px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
+  .panel-head p{font-size:14px;color:var(--t2);margin-top:4px;line-height:1.5;}
+
+  /* Shared pieces for rebuilt panels */
+  .fld{display:flex;flex-direction:column;gap:6px;}
+  .fld label{font-size:13px;font-weight:600;color:var(--t1);}
+  .fld .help{font-size:12px;color:var(--t2);}
+  .in{height:42px;width:100%;padding:0 12px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--t1);font:500 14px var(--font-manrope),sans-serif;outline:none;transition:border-color var(--dur-1) var(--ease);}
+  .in:focus{border-color:var(--g);}
+  .in::placeholder{color:var(--t3);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid2 .full{grid-column:1 / -1;}
+  .block{margin-bottom:28px;}
+  .block h3{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px;}
+  .block > p{font-size:14px;color:var(--t2);margin-bottom:16px;line-height:1.5;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t2);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .chip:hover{border-color:var(--t3);color:var(--t1);}
+  .chip[aria-pressed="true"]{background:var(--t1);border-color:var(--t1);color:var(--bg2);}
+  .chip:focus-visible,.save:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
+  .savebar{display:flex;align-items:center;gap:14px;padding-top:20px;border-top:1px solid var(--line);}
+  .save{height:40px;padding:0 20px;border:0;border-radius:8px;background:var(--g);color:#1F2A44;font:700 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .save:hover{background:#FFB81C;}
+  .save:disabled{opacity:.45;cursor:default;background:var(--g);}
+  .save-note{font-size:13px;color:var(--t2);}
+  .save-note.ok{color:var(--t1);font-weight:600;}
+  .save-note.err{color:#DC4B3E;}
+  .fld label .opt{font-weight:500;color:var(--t2);}
+
+  .pay-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start;}
+  .pay-preview{margin:0;position:sticky;top:24px;}
+  .pay-preview figcaption{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;}
+  .pp-card{background:#FFFFFF;color:#1F2A44;border-radius:10px;padding:16px 18px;border:1px solid rgba(31,42,68,.12);font-size:13px;}
+  .pp-title{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+  .pp-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;}
+  .pp-row span{color:#64748B;}
+  .pp-row b{font-weight:600;text-align:right;font-variant-numeric:tabular-nums;word-break:break-word;}
+  .pp-block{padding:6px 0;border-top:1px solid rgba(31,42,68,.08);}
+  .pp-block:first-of-type{border-top:0;padding-top:0;}
+  .pp-name{font-weight:700;margin-bottom:2px;}
+  .pm-card{border:1px solid var(--line2);border-radius:10px;padding:16px;margin-bottom:12px;background:var(--bg2);animation:panelIn var(--dur-3) var(--ease) both;}
+  .pm-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .pm-head b{font-size:14px;color:var(--t1);}
+  .pm-pref{font-size:12px;font-weight:600;color:var(--t2);padding:2px 8px;border-radius:6px;background:color-mix(in srgb,var(--t1) 7%,transparent);}
+  .pm-link{border:0;background:none;padding:4px 0;font:600 13px var(--font-manrope),sans-serif;color:var(--t2);cursor:pointer;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px;}
+  .pm-link:hover{color:var(--t1);}
+  .pm-remove{margin-left:auto;}
+  .pm-link:focus-visible{outline:2px solid var(--g);outline-offset:2px;border-radius:4px;}
+  .pm-hint{font-size:12px;color:var(--t2);margin-top:10px;}
+  .pm-add{display:flex;flex-direction:column;gap:8px;padding:14px 0 0;}
+  .pm-add > span{font-size:13px;font-weight:600;color:var(--t1);}
+  .pp-ref{margin-top:8px;font-size:12px;color:#64748B;line-height:1.5;}
+  .pp-empty{font-size:13px;color:var(--t2);line-height:1.5;padding:16px;border:1px dashed var(--line2);border-radius:10px;}
+  @media(max-width:1100px){.pay-layout{grid-template-columns:minmax(0,1fr);}.pay-preview{position:static;}}
 
   .settings-section{margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid var(--line);position:relative;}
   .settings-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
@@ -231,19 +275,16 @@ const CSS = `
   .loading-spinner{display:flex;align-items:center;justify-content:center;padding:80px;gap:10px;color:var(--t3);font-size:13px;}
 
   @media(max-width:900px){
-    .settings-layout{grid-template-columns:1fr;grid-template-rows:auto 1fr;}
-    .settings-nav{border-right:none;border-bottom:1px solid var(--line);padding:6px;display:flex;overflow-x:auto;gap:0;}
-    .settings-nav-item{white-space:nowrap;border-left:none;border-radius:8px;padding:8px 14px;border-bottom:2px solid transparent;font-size:12px;min-width:auto;}
-    .settings-nav-item.active{border-left-color:transparent;border-bottom-color:var(--g);background:var(--g-dim);}
-    .settings-panel{max-height:none;padding:20px 16px;}
-    .settings-panel-hero{margin:-20px -16px 20px;padding:16px;}
+    .settings-layout{grid-template-columns:minmax(0,1fr);gap:14px;}
+    .settings-nav{position:static;flex-direction:row;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px;}
+    .settings-nav::-webkit-scrollbar{display:none;}
+    .settings-nav-item{flex:none;white-space:nowrap;}
+    .settings-nav-item[aria-current="page"]{box-shadow:inset 0 -2px 0 var(--g);}
+    .settings-panel{padding:20px 16px;}
     .settings-section::before{display:none;}
-    .form-grid{grid-template-columns:1fr;}
+    .form-grid,.grid2{grid-template-columns:1fr;}
   }
-  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}}
-  @media(max-width:600px){
-    .settings-wrap{padding:0 0 24px;}
-  }
+  @media(max-width:768px){.topbar{padding:0 16px;}.mob-hide{display:none !important;}.settings-wrap{padding:16px 16px 32px;}}
 
   .theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;}
   @media(max-width:700px){.theme-grid{grid-template-columns:repeat(3,1fr);}}
@@ -421,6 +462,17 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
   const billingStatus = searchParams.get('billing')
   const billingPlan   = searchParams.get('plan')
 
+  // ?panel=payment opens that panel; coming back from a plan payment opens Plan & billing.
+  useEffect(() => {
+    const want = billingStatus ? 'plan' : searchParams.get('panel')
+    if (want && PANELS.some(p => p.id === want)) setPanel(want as Panel)
+  }, [billingStatus, searchParams])
+
+  // On phones the menu is a sideways row; keep the open panel's tab in view.
+  useEffect(() => {
+    document.querySelector('.settings-nav-item[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [panel])
+
   // Branding state
   const [branding, setBranding] = useState({
     invoice_theme:       initialProfile?.invoice_theme       ?? 'dark-modern',
@@ -448,6 +500,36 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
     default_vat_rate: String(initialProfile?.default_vat_rate ?? 14),
     tax_label:        initialProfile?.tax_label ?? 'VAT',
   })
+
+  // Getting paid: the ways clients can pay, and the default payment terms
+  const methodKey = useRef(0)
+  const methodsFrom = (p: Profile | null) =>
+    (Array.isArray(p?.payment_methods) ? p.payment_methods as PaymentMethod[] : []).map(m => ({ ...m, key: methodKey.current++ }))
+  const [methods, setMethods] = useState(() => methodsFrom(initialProfile))
+  const [terms, setTerms] = useState(initialProfile?.default_due_days ?? 30)
+  const [payError, setPayError] = useState('')
+  const cleanList = (list: PaymentMethod[]) => JSON.stringify(list.map(cleanMethod).filter(Boolean))
+  const payDirty = terms !== (profile?.default_due_days ?? 30)
+    || cleanList(methods) !== cleanList(Array.isArray(profile?.payment_methods) ? profile.payment_methods as PaymentMethod[] : [])
+  const payPreview = paymentBlocks(methods)
+
+  function addMethod(kind: PaymentKind) {
+    setMethods(list => [...list, { kind, key: methodKey.current++ }])
+    // Put the cursor in the new method's first field.
+    requestAnimationFrame(() => (document.querySelector('.pm-card:last-of-type input') as HTMLInputElement | null)?.focus())
+  }
+  function updateMethod(key: number, patch: Partial<PaymentMethod>) {
+    setMethods(list => list.map(m => m.key === key ? { ...m, ...patch } : m))
+  }
+
+  async function savePay() {
+    setPayError('')
+    const ok = await save({
+      payment_methods:  methods.map(cleanMethod).filter(Boolean),
+      default_due_days: terms,
+    }, 'payment')
+    if (!ok) setPayError('Couldn’t save. Check your connection and try again.')
+  }
 
   // Notification toggles (local only for now)
   const [notifs, setNotifs] = useState({ viewed: true, paid: true, overdue: true, reminder: false, weekly: true })
@@ -493,7 +575,11 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
         setProfile(prev => prev ? { ...prev, ...data.profile } : data.profile)
         setSaved(panelId)
         setTimeout(() => setSaved(null), 2500)
+        return true
       }
+      return false
+    } catch {
+      return false
     } finally {
       setSaving(false)
     }
@@ -666,37 +752,29 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
       <style>{CSS}</style>
       <div className="topbar"><h1 className="page-title">Settings</h1></div>
 
-      <div className="settings-wrap" style={{ paddingTop: 24 }}>
+      <div className="settings-wrap">
         <div className="settings-layout">
           {/* Left nav */}
-          <div className="settings-nav">
+          <nav className="settings-nav" aria-label="Settings sections">
             {PANELS.filter(p => !p.businessOnly || profile?.plan === 'business').map(p => (
-              <div
+              <button
                 key={p.id}
-                className={`settings-nav-item${panel === p.id ? ' active' : ''}`}
+                type="button"
+                className="settings-nav-item"
+                aria-current={panel === p.id ? 'page' : undefined}
                 onClick={() => {
                   setPanel(p.id)
                   if (p.id === 'team' && !teamLoaded) fetchTeamMembers()
                 }}
               >
-                <span style={{ width: 8, height: 8, borderRadius: p.id === 'plan' ? 2 : '50%', background: p.dot, flexShrink: 0, display: 'inline-block', transform: p.id === 'plan' ? 'rotate(45deg)' : undefined, opacity: p.id === 'payment' ? .7 : 1 }}/>
                 {p.label}
-              </div>
+              </button>
             ))}
-          </div>
+          </nav>
 
           {/* ── BRANDING ── */}
           <div className={`settings-panel${panel === 'brand' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.08) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.12)', border: '1px solid rgba(242,169,0,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M3 20c0-4 4-7 9-7s9 3 9 7"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Branding</div>
-                <div className="settings-panel-hero-sub">Your logo, colour and invoice template · Visible on every invoice you send</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(242,169,0,.2)' }}>Visual identity</span>
-            </div>
+            <PanelHead title={<>Branding</>} sub={<>Your logo, colour and invoice template · Visible on every invoice you send</>} />
             <div className="settings-section">
               <div className="settings-section-title">Logo <span className="settings-section-badge" style={{ background: 'rgba(242,169,0,.1)', color: 'var(--g)' }}>Upload</span></div>
               <div className="settings-section-desc">Upload your company logo. PNG, JPG, or WebP recommended. Shows on all invoices and emails.</div>
@@ -843,16 +921,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── FIRM DETAILS ── */}
           <div className={`settings-panel${panel === 'firm' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(59,130,246,.07) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Firm details</div>
-                <div className="settings-panel-hero-sub">Business name, address, registration · Printed on every invoice</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'rgba(59,130,246,.1)', color: '#3B82F6', border: '1px solid rgba(59,130,246,.2)' }}>Business info</span>
-            </div>
+            <PanelHead title={<>Firm details</>} sub={<>Business name, address, registration · Printed on every invoice</>} />
             <div className="settings-section">
               <div className="settings-section-title">Business information</div>
               <div className="settings-section-desc">This information appears on every invoice you send.</div>
@@ -904,16 +973,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── INVOICE DEFAULTS ── */}
           <div className={`settings-panel${panel === 'invoice' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,.07) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="1.8"><path d="M4 2h12l4 4v16H4V2z"/><path d="M16 2v4h4"/><path d="M8 10h8M8 14h5"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Invoice defaults</div>
-                <div className="settings-panel-hero-sub">Currency, VAT rate, payment terms · Pre-fills every new invoice automatically</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'rgba(245,158,11,.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,.2)' }}>Auto-fill</span>
-            </div>
+            <PanelHead title={<>Invoice defaults</>} sub={<>Currency, VAT rate, payment terms · Pre-fills every new invoice automatically</>} />
             <div className="settings-section">
               <div className="settings-section-title">Invoice defaults</div>
               <div className="settings-section-desc">These values pre-fill every new invoice. You can always override them per invoice.</div>
@@ -971,49 +1031,106 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── PAYMENT & BANKING ── */}
           <div className={`settings-panel${panel === 'payment' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.07) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.1)', border: '1px solid rgba(242,169,0,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+            <PanelHead title="Getting paid" sub="Where clients send the money, and how long they get to pay." />
+
+            <section className="block" aria-labelledby="pay-terms">
+              <h3 id="pay-terms">Payment terms</h3>
+              <p>New invoices fall due this long after they’re issued. You can still change it on any invoice.</p>
+              <div className="chips" role="group" aria-label="Default payment terms">
+                {TERM_CHOICES.map(t => (
+                  <button key={t.days} type="button" className="chip press" aria-pressed={terms === t.days} onClick={() => setTerms(t.days)}>{t.label}</button>
+                ))}
+                {!TERM_CHOICES.some(t => t.days === terms) && (
+                  <button type="button" className="chip" aria-pressed="true">{terms} days</button>
+                )}
               </div>
-              <div>
-                <div className="settings-panel-hero-title">Payment &amp; banking</div>
-                <div className="settings-panel-hero-sub">Bank account details · Appear in invoice footer so clients know where to pay</div>
+            </section>
+
+            <section className="block" aria-labelledby="pay-ways">
+              <h3 id="pay-ways">Ways to pay you</h3>
+              <p>All of these print on every unpaid invoice, in this order, with the invoice number as the reference. They’re left off once an invoice is paid.</p>
+              <div className="pay-layout">
+                <div>
+                  {methods.map((m, i) => {
+                    const id = `pm-${m.key}`
+                    const field = (f: keyof Omit<PaymentMethod, 'kind'>, label: React.ReactNode, opts: { full?: boolean; numeric?: boolean; upper?: boolean } = {}) => (
+                      <div className={`fld${opts.full ? ' full' : ''}`}>
+                        <label htmlFor={`${id}-${f}`}>{label}</label>
+                        <input id={`${id}-${f}`} name={`${id}-${f}`} className="in" autoComplete="off" inputMode={opts.numeric ? 'numeric' : undefined}
+                          value={m[f] ?? ''} onChange={e => updateMethod(m.key, { [f]: opts.upper ? e.target.value.toUpperCase() : e.target.value })} />
+                      </div>
+                    )
+                    return (
+                      <div key={m.key} className="pm-card">
+                        <div className="pm-head">
+                          <b>{KIND_LABEL[m.kind]}</b>
+                          {i === 0
+                            ? <span className="pm-pref">Preferred</span>
+                            : <button type="button" className="pm-link" onClick={() => setMethods(list => [m, ...list.filter(x => x.key !== m.key)])}>Make preferred</button>}
+                          <button type="button" className="pm-link pm-remove" aria-label={`Remove ${KIND_LABEL[m.kind]}`} onClick={() => setMethods(list => list.filter(x => x.key !== m.key))}>Remove</button>
+                        </div>
+                        {m.kind === 'bank' ? (
+                          <div className="grid2">
+                            {field('bank', 'Bank', { full: true })}
+                            {field('account_name', 'Account name', { full: true })}
+                            {field('number', 'Account number', { numeric: true })}
+                            {field('branch_code', 'Branch code', { numeric: true })}
+                            {field('swift', <>SWIFT code <span className="opt">for clients paying from abroad</span></>, { full: true, upper: true })}
+                          </div>
+                        ) : (
+                          <div className="grid2">
+                            {field('number', 'Number or merchant code', { numeric: true })}
+                            {field('account_name', 'Registered name')}
+                          </div>
+                        )}
+                        {!m.number?.trim() && <p className="pm-hint">Add the {m.kind === 'bank' ? 'account number' : 'number'} or this won’t print.</p>}
+                      </div>
+                    )
+                  })}
+
+                  {methods.length < MAX_METHODS ? (
+                    <div className="pm-add">
+                      <span>{methods.length ? 'Add another' : 'Add a way to pay'}</span>
+                      <div className="chips">
+                        {(Object.keys(KIND_LABEL) as PaymentKind[]).map(k => (
+                          <button key={k} type="button" className="chip press" onClick={() => addMethod(k)}>+ {KIND_LABEL[k]}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : <p className="pm-hint">That’s the most an invoice has room for ({MAX_METHODS}).</p>}
+                </div>
+
+                <figure className="pay-preview" aria-label="How it appears on your invoices">
+                  <figcaption>On your invoices</figcaption>
+                  {payPreview.length ? (
+                    <div className="pp-card">
+                      <div className="pp-title">Payment details</div>
+                      {payPreview.map((b, i) => (
+                        <div key={i} className="pp-block">
+                          <div className="pp-name">{b.title}</div>
+                          {b.rows.map(([l, v]) => <div key={l} className="pp-row"><span>{l}</span><b>{v}</b></div>)}
+                        </div>
+                      ))}
+                      <div className="pp-ref">Please use INV-{new Date().getFullYear()}{String(new Date().getMonth() + 1).padStart(2, '0')}-001 as the payment reference.</div>
+                    </div>
+                  ) : (
+                    <p className="pp-empty">Add a bank account or mobile money number and it will print here on every unpaid invoice.</p>
+                  )}
+                </figure>
               </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'var(--g-dim)', color: 'var(--g)', border: '1px solid rgba(242,169,0,.2)' }}>Get paid</span>
+            </section>
+
+            <div className="savebar">
+              <button type="button" className="save press" disabled={!payDirty || saving} onClick={savePay}>{saving ? 'Saving…' : 'Save'}</button>
+              {saved === 'payment' ? <span className="save-note ok" role="status">Saved</span>
+                : payError ? <span className="save-note err" role="alert">{payError}</span>
+                : payDirty ? <span className="save-note">Unsaved changes</span> : null}
             </div>
-            <div className="settings-section">
-              <div className="settings-section-title">Bank account details <span className="settings-section-badge" style={{ background: 'rgba(242,169,0,.1)', color: 'var(--g)' }}>Invoice footer</span></div>
-              <div className="settings-section-desc">These appear in your invoice footer so clients know exactly where to pay. Managed in the app.</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(242,169,0,.06)', border: '1px solid rgba(242,169,0,.15)', borderRadius: 8, marginBottom: 16 }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="1.5" style={{ flexShrink: 0 }}><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
-                <span style={{ fontSize: 12, color: 'var(--t2)' }}>Your bank details are included automatically in every PDF export and client email.</span>
-              </div>
-              <div className="form-grid" style={{ maxWidth: 520 }}>
-                <div className="form-group full"><label className="form-label" htmlFor="s-bank-name">Bank name</label><input id="s-bank-name" name="bank_name" className="form-input" placeholder="e.g. First National Bank Botswana"/></div>
-                <div className="form-group"><label className="form-label" htmlFor="s-account-name">Account name</label><input id="s-account-name" name="account_name" className="form-input" placeholder="e.g. Acme Corp Pty Ltd"/></div>
-                <div className="form-group"><label className="form-label" htmlFor="s-account-number">Account number</label><input id="s-account-number" name="account_number" className="form-input" placeholder="e.g. 62123456789"/></div>
-                <div className="form-group"><label className="form-label" htmlFor="s-branch-code">Branch code</label><input id="s-branch-code" name="branch_code" className="form-input" placeholder="e.g. 282672"/></div>
-                <div className="form-group"><label className="form-label" htmlFor="s-swift">Swift / BIC (international)</label><input id="s-swift" name="swift_bic" className="form-input" placeholder="e.g. FIRNBWGX"/></div>
-              </div>
-              <div style={{ marginTop: 20 }} className="settings-section-desc">
-                <strong style={{ color: 'var(--t2)' }}>Online payments</strong> — Stripe, PayFast and other payment gateway integrations are available on the Business plan.
-              </div>
-            </div>
-            <button className="topbar-btn btn-primary" style={{ opacity: .5, cursor: 'not-allowed' }} disabled>Payment settings coming soon</button>
           </div>
 
           {/* ── NOTIFICATIONS ── */}
           <div className={`settings-panel${panel === 'notifs' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(139,92,246,.07) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(139,92,246,.1)', border: '1px solid rgba(139,92,246,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8"><path d="M6 8a6 6 0 0112 0v4l2 3H4l2-3V8z"/><path d="M10 17a2 2 0 004 0"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Notifications</div>
-                <div className="settings-panel-hero-sub">Payment alerts, overdue reminders · Stay informed without checking the app</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'rgba(139,92,246,.1)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,.2)' }}>Alerts</span>
-            </div>
+            <PanelHead title={<>Notifications</>} sub={<>Payment alerts, overdue reminders · Stay informed without checking the app</>} />
             <div className="settings-section">
               <div className="settings-section-title">Email notifications</div>
               <div className="settings-section-desc">Choose which events trigger an email notification to you.</div>
@@ -1037,16 +1154,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── PLAN & BILLING ── */}
           <div className={`settings-panel${panel === 'plan' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.15)', border: '1px solid rgba(242,169,0,.25)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Plan &amp; billing</div>
-                <div className="settings-panel-hero-sub">{profile?.plan === 'pro' ? 'Pro plan' : profile?.plan === 'business' ? 'Business plan' : 'Starter · Free · 5 invoices/month'}</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'var(--g)', color: 'var(--bg)', fontWeight: 700 }}>{(profile?.plan ?? 'free').toUpperCase()}</span>
-            </div>
+            <PanelHead title={<>Plan &amp; billing</>} sub={<>{profile?.plan === 'pro' ? 'Pro plan' : profile?.plan === 'business' ? 'Business plan' : 'Starter · Free · 5 invoices/month'}</>} />
             {billingStatus === 'success' && (
               <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'rgba(242,169,0,.12)', border:'1px solid rgba(242,169,0,.3)', borderRadius:8, marginBottom:20 }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M3 8l3.5 3.5L13 5"/></svg>
@@ -1135,16 +1243,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── TEAM MEMBERS ── */}
           <div className={`settings-panel${panel === 'team' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(242,169,0,.1) 0%,rgba(59,130,246,.05) 100%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(242,169,0,.15)', border: '1px solid rgba(242,169,0,.25)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Team members</div>
-                <div className="settings-panel-hero-sub">{teamMembers.length + 1} / 5 seats used (you + {teamMembers.length} {teamMembers.length === 1 ? 'member' : 'members'})</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'var(--g)', color: 'var(--bg)', fontWeight: 700 }}>BUSINESS</span>
-            </div>
+            <PanelHead title={<>Team members</>} sub={<>{teamMembers.length + 1} / 5 seats used (you + {teamMembers.length} {teamMembers.length === 1 ? 'member' : 'members'})</>} />
 
             {/* Invite form */}
             <div className="settings-section">
@@ -1269,16 +1368,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
 
           {/* ── SECURITY ── */}
           <div className={`settings-panel${panel === 'security' ? ' active' : ''}`}>
-            <div className="settings-panel-hero" style={{ background: 'linear-gradient(135deg,rgba(239,68,68,.07) 0%,transparent 60%)' }}>
-              <div className="settings-panel-hero-icon" style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z"/><path d="M9 12l2 2 4-4" stroke="#EF4444"/></svg>
-              </div>
-              <div>
-                <div className="settings-panel-hero-title">Security</div>
-                <div className="settings-panel-hero-sub">Two-factor authentication · Session control · Security assessment</div>
-              </div>
-              <span className="settings-panel-hero-badge" style={{ background: 'rgba(239,68,68,.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,.2)' }}>Account protection</span>
-            </div>
+            <PanelHead title={<>Security</>} sub={<>Two-factor authentication · Session control · Security assessment</>} />
 
             {/* 2FA */}
             <div className="settings-section">

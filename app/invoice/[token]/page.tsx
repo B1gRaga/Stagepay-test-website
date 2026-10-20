@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import InvoiceActions from './InvoiceActions'
+import { paymentBlocks } from '@/lib/payment-methods'
 
 type Props = { params: Promise<{ token: string }> }
 
@@ -22,13 +23,14 @@ export default async function PublicInvoicePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_name, name, email, address, city, country, vat_number')
+    .select('firm_name, name, email, address, city, country, vat_number, payment_methods')
     .eq('id', invoice.user_id)
     .single()
 
   const sym = invoice.currency || 'P'
   const senderName = profile?.firm_name || profile?.name || 'StagePay'
   const items: any[] = invoice.invoice_items || []
+  const payBlocks = invoice.status === 'paid' ? [] : paymentBlocks(profile?.payment_methods)
 
   return (
     <>
@@ -138,6 +140,19 @@ export default async function PublicInvoicePage({ params }: Props) {
               <div className="sp-grand"><span>Balance Due</span><span>{fmt(invoice.total, sym)}</span></div>
             </div>
           </div>
+
+          {payBlocks.length > 0 && (
+            <div className="sp-notes">
+              <div className="sp-label">How to pay</div>
+              {payBlocks.map((b, i) => (
+                <p key={i}>
+                  <strong style={{ color: '#1e293b' }}>{b.title}</strong>
+                  {b.rows.map(([l, v]) => <span key={l} style={{ display: 'block' }}>{l}: <strong style={{ color: '#1e293b' }}>{v}</strong></span>)}
+                </p>
+              ))}
+              <p style={{ marginTop: 4 }}>Please use {invoice.invoice_number} as the payment reference.</p>
+            </div>
+          )}
 
           {invoice.notes && (
             <div className="sp-notes">

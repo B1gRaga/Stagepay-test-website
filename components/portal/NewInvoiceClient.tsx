@@ -9,7 +9,7 @@ import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Client  = { id: string; name: string; email: string | null; phone: string | null }
-type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string }
+type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null }
 
 const CURRENCIES = [
   { v: 'P',   l: 'BWP — Pula (P)' },
@@ -303,7 +303,7 @@ export default function NewInvoiceClient({
   const [project,     setProject]     = useState<string>(inv?.project ?? '')
   const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
   const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())
-  const initialDue = inv?.due_date || addDays(inv?.issue_date || today(), 30)
+  const initialDue = inv?.due_date || addDays(inv?.issue_date || today(), profile?.default_due_days ?? 30)
   const initialTerm = daysBetween(inv?.issue_date || today(), initialDue)
   const [termDays,    setTermDays]    = useState<number | null>(TERMS.some(t => t.days === initialTerm) ? initialTerm : null)
   const [customDue,   setCustomDue]   = useState<string>(initialDue)
