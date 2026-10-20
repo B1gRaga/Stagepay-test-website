@@ -59,7 +59,7 @@ body{font-family:var(--font-archivo),sans-serif;background:var(--bg);color:var(-
 
 /* Topbar */
 .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--bg2);}
-.page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+.page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
 .topbar-right{display:flex;align-items:center;gap:10px;}
 .topbar-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;}
 .btn-primary{background:var(--g);color:#1F2A44;box-shadow:0 0 14px rgba(242,169,0,.35);}
@@ -205,7 +205,7 @@ export default function ClientsGrid({
       <style>{CSS}</style>
 
       <div className="topbar">
-        <div className="page-title">CLIENTS</div>
+        <h1 className="page-title">Clients</h1>
         <div className="topbar-right">
           <Link href="/new-invoice" className="topbar-btn btn-primary" style={{ textDecoration: 'none' }}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>

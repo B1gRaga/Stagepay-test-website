@@ -136,7 +136,7 @@ const CSS = `
   @keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
 
   .settings-wrap{padding:0 28px 24px;height:calc(100vh - 80px);}
   .settings-layout{
@@ -653,7 +653,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
   if (loading) return (
     <>
       <style>{CSS}</style>
-      <div className="topbar"><div className="page-title">SETTINGS</div></div>
+      <div className="topbar"><h1 className="page-title">Settings</h1></div>
       <div className="loading-spinner">
         <span style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,.1)', borderTopColor: 'var(--g)', animation: 'spin .7s linear infinite', display: 'inline-block' }}/>
         Loading settings…
@@ -664,7 +664,7 @@ export function SettingsClient({ initialProfile = null }: { initialProfile?: Pro
   return (
     <>
       <style>{CSS}</style>
-      <div className="topbar"><div className="page-title">SETTINGS</div></div>
+      <div className="topbar"><h1 className="page-title">Settings</h1></div>
 
       <div className="settings-wrap" style={{ paddingTop: 24 }}>
         <div className="settings-layout">

@@ -55,10 +55,7 @@ const CSS = `
     display:flex;align-items:center;justify-content:space-between;
     padding:0 28px;background:var(--bg2);
   }
-  .page-title{
-    font-family:var(--font-bebas),sans-serif;font-weight:700;
-    font-size:20px;letter-spacing:2.5px;color:var(--t1);
-  }
+  .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
   .topbar-right{display:flex;align-items:center;gap:10px;}
   .topbar-btn{
     display:flex;align-items:center;gap:7px;
@@ -199,7 +196,7 @@ export default async function DashboardPage({
 
       {/* Topbar */}
       <div className="topbar">
-        <div className="page-title">DASHBOARD</div>
+        <h1 className="page-title">Dashboard</h1>
         <div className="topbar-right">
           <Link href="/invoices" className="topbar-btn btn-outline mob-hide" style={{ textDecoration: 'none' }}>
             View all invoices

@@ -25,7 +25,7 @@ const CSS = `
     display:flex;align-items:center;justify-content:space-between;
     padding:0 28px;background:var(--bg2);
   }
-  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
   .topbar-right{display:flex;align-items:center;gap:10px;}
   .topbar-btn{
     display:flex;align-items:center;gap:7px;
@@ -409,7 +409,7 @@ export default function TutorialPage() {
       <style>{CSS}</style>
 
       <div className="topbar">
-        <span className="page-title">Getting Started</span>
+        <h1 className="page-title">Getting started</h1>
         <div className="topbar-right">
           <Link href="/new-invoice" className="topbar-btn btn-primary">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M8 3v10M3 8h10"/></svg>

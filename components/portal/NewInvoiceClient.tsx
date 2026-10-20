@@ -60,7 +60,7 @@ const CSS = `
   @keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
   .topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;background:var(--bg2);}
-  .page-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2.5px;color:var(--t1);}
+  .page-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
 
   .gen-wrap{padding:16px 28px;height:calc(100vh - 56px);}
   .gen-layout{display:grid;grid-template-columns:1fr 400px;gap:16px;height:100%;}
@@ -527,7 +527,7 @@ export default function NewInvoiceClient({
     <>
       <style>{CSS}</style>
 
-      <div className="topbar"><div className="page-title">{editId ? 'EDIT INVOICE' : 'NEW INVOICE'}</div></div>
+      <div className="topbar"><h1 className="page-title">{editId ? 'Edit invoice' : 'New invoice'}</h1></div>
 
       <div className="gen-wrap">
         <div className="gen-layout">
