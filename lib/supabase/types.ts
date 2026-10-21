@@ -379,6 +379,7 @@ export interface Database {
           user_id: string | null
           email: string
           status: TeamMemberStatus
+          role: 'admin' | 'staff'
           invite_token: string | null
           invited_at: string
           joined_at: string | null
@@ -388,6 +389,7 @@ export interface Database {
           email: string
           user_id?: string | null
           status?: TeamMemberStatus
+          role?: 'admin' | 'staff'
           invite_token?: string | null
           invited_at?: string
           joined_at?: string | null
@@ -396,6 +398,7 @@ export interface Database {
         Update: {
           user_id?: string | null
           status?: TeamMemberStatus
+          role?: 'admin' | 'staff'
           invite_token?: string | null
           invited_at?: string
           joined_at?: string | null

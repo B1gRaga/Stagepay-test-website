@@ -71,6 +71,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!VALID_STATUSES.includes(body.status as typeof VALID_STATUSES[number])) {
       return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
     }
+    if (body.status === 'cancelled' && currentInvoice.status !== 'cancelled' && !canManage(account)) {
+      return NextResponse.json({ error: 'Only the owner or an admin can cancel invoices' }, { status: 403 })
+    }
     if (body.status !== currentInvoice.status) {
       const allowed = ALLOWED_TRANSITIONS[currentInvoice.status] ?? []
       if (!allowed.includes(body.status as string)) {

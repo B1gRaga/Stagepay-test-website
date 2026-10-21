@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedUser, createClient, createServiceClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 
 export async function POST(req: NextRequest) {
   const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Only the owner of the business being worked in manages its team.
+  const account = await getAccount()
+  if (account && account.role !== 'owner') {
+    return NextResponse.json({ error: 'Only the business owner can remove people' }, { status: 403 })
+  }
 
   let body: { memberId?: string }
   try { body = await req.json() } catch {

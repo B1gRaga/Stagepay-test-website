@@ -40,6 +40,16 @@ vi.mock('@/lib/supabase/server', () => ({
   createServiceClient: () => buildServiceClient(),
 }))
 
+
+// The business being worked in: the person's own (owner) unless a test sets a role.
+let mockRole: 'owner' | 'admin' | 'staff' = 'owner'
+vi.mock('@/lib/account', () => ({
+  getAccount: async () => {
+    const u = await mockGetCachedUser()
+    return u ? { userId: u.id, accountId: mockRole === 'owner' ? u.id : 'owner-1', role: mockRole } : null
+  },
+}))
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 function makeRequest(body: unknown) {
   return new NextRequest('http://localhost/api/team/remove', {
@@ -53,6 +63,7 @@ function makeRequest(body: unknown) {
 describe('POST /api/team/remove', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRole = 'owner'
     mockProfileUpdateEq.mockResolvedValue({ error: null })
     mockMemberDeleteEq.mockResolvedValue({ error: null })
   })
@@ -112,5 +123,15 @@ describe('POST /api/team/remove', () => {
     expect(res.status).toBe(200)
     expect(mockProfileUpdateEq).not.toHaveBeenCalled()
     expect(mockMemberDeleteEq).toHaveBeenCalledWith('id', 'm-2')
+  })
+
+  it('returns 403 for an admin or staff member of the business, before touching anything', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'admin-1' })
+    mockRole = 'admin'
+    const { POST } = await import('@/app/api/team/remove/route')
+    const res = await POST(makeRequest({ memberId: 'm-1' }))
+    expect(res.status).toBe(403)
+    expect(mockMemberSingle).not.toHaveBeenCalled()
+    expect(mockMemberDeleteEq).not.toHaveBeenCalled()
   })
 })

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedUser, createClient, createServiceClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 
 const MAX_TEAM_SIZE = 5
 
 export async function POST(req: NextRequest) {
   const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Only the owner of the business being worked in manages its team.
+  const account = await getAccount()
+  if (account && account.role !== 'owner') {
+    return NextResponse.json({ error: 'Only the business owner can invite people' }, { status: 403 })
+  }
 
   const supabase = await createClient()
 

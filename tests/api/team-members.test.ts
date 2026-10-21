@@ -12,6 +12,7 @@ function buildClient() {
         select: vi.fn().mockReturnThis(),
         eq:     vi.fn().mockReturnThis(),
         single: mockTeamSingle,
+        maybeSingle: mockTeamSingle,
       }
       if (table === 'team_members') return {
         select: vi.fn().mockReturnThis(),
@@ -28,10 +29,21 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient:  async () => buildClient(),
 }))
 
+
+// The business being worked in: the person's own (owner) unless a test sets a role.
+let mockRole: 'owner' | 'admin' | 'staff' = 'owner'
+vi.mock('@/lib/account', () => ({
+  getAccount: async () => {
+    const u = await mockGetCachedUser()
+    return u ? { userId: u.id, accountId: mockRole === 'owner' ? u.id : 'owner-1', role: mockRole } : null
+  },
+}))
+
 // ── Tests ──────────────────────────────────────────────────────────────────
 describe('GET /api/team/members', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRole = 'owner'
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -73,5 +85,18 @@ describe('GET /api/team/members', () => {
     const res = await GET()
     const json = await res.json()
     expect(json.members).toEqual([])
+  })
+
+  it('hides invite links from people who are not the owner', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'staff-1' })
+    mockRole = 'staff'
+    mockTeamSingle.mockResolvedValue({ data: { id: 'team-1', name: 'Acme' } })
+    mockMembersOrder.mockResolvedValue({
+      data: [{ id: 'm-1', email: 'a@b.com', status: 'pending', invited_at: '2026-01-01', joined_at: null, invite_token: 'secret-token' }],
+    })
+    const { GET } = await import('@/app/api/team/members/route')
+    const body = await (await GET()).json()
+    expect(body.members[0].email).toBe('a@b.com')
+    expect(body.members[0].invite_token).toBeNull()
   })
 })
