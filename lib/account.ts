@@ -36,6 +36,35 @@ export const getAccount = cache(async (): Promise<Account | null> => {
   return resolveAccount(await createClient(), user.id)
 })
 
+// The businesses a person can work in: their own, then each team they've joined.
+// `paused` = the team's owner isn't on the Business plan, so it can't be opened now.
+export type Business = { accountId: string; name: string; role: Role; paused: boolean }
+
+export const listBusinesses = cache(async (userId: string): Promise<Business[]> => {
+  const supabase = await createClient()
+  const service = createServiceClient()
+  const [{ data: own }, { data: memberships }] = await Promise.all([
+    service.from('profiles').select('firm_name, name').eq('id', userId).single(),
+    supabase
+      .from('team_members')
+      .select('role, teams!inner(owner_id, name)')
+      .eq('user_id', userId)
+      .eq('status', 'active'),
+  ])
+  const teams = (memberships ?? []).map(m => ({ role: m.role as Role, ...(m.teams as unknown as { owner_id: string; name: string }) }))
+  const { data: owners } = teams.length
+    ? await service.from('profiles').select('id, firm_name, name, plan').in('id', teams.map(t => t.owner_id))
+    : { data: [] as { id: string; firm_name: string | null; name: string | null; plan: string }[] }
+  const byId = new Map((owners ?? []).map(o => [o.id, o]))
+  return [
+    { accountId: userId, name: own?.firm_name || own?.name || 'My business', role: 'owner', paused: false },
+    ...teams.map(t => {
+      const o = byId.get(t.owner_id)
+      return { accountId: t.owner_id, name: o?.firm_name || t.name || o?.name || 'Team business', role: t.role, paused: o?.plan !== 'business' }
+    }),
+  ]
+})
+
 // Owners and admins may change the business's settings and delete invoices.
 export function canManage(account: Account) {
   return account.role === 'owner' || account.role === 'admin'

@@ -24,7 +24,8 @@ function buildServiceClient() {
   return {
     from: (table: string) => {
       if (table === 'profiles') return {
-        update: vi.fn(() => ({ eq: mockProfileUpdateEq })),
+        // update(...).eq('id', …).eq('current_account_id', …)
+        update: vi.fn(() => ({ eq: (...a: unknown[]) => { mockProfileUpdateEq(...a); return { eq: mockProfileUpdateEq } } })),
       }
       if (table === 'team_members') return {
         delete: vi.fn(() => ({ eq: mockMemberDeleteEq })),
@@ -101,7 +102,7 @@ describe('POST /api/team/remove', () => {
     expect(mockMemberDeleteEq).not.toHaveBeenCalled()
   })
 
-  it('removes the member and reverts their plan to free when they have a linked account', async () => {
+  it('removes the member and sends them back to their own business if they were working in this one', async () => {
     mockGetCachedUser.mockResolvedValue({ id: 'owner-1' })
     mockMemberSingle.mockResolvedValue({
       data: { id: 'm-1', user_id: 'user-2', team_id: 'team-1', teams: { owner_id: 'owner-1' } },
@@ -110,6 +111,7 @@ describe('POST /api/team/remove', () => {
     const res = await POST(makeRequest({ memberId: 'm-1' }))
     expect(res.status).toBe(200)
     expect(mockProfileUpdateEq).toHaveBeenCalledWith('id', 'user-2')
+    expect(mockProfileUpdateEq).toHaveBeenCalledWith('current_account_id', 'owner-1')
     expect(mockMemberDeleteEq).toHaveBeenCalledWith('id', 'm-1')
   })
 

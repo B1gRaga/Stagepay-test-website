@@ -7,6 +7,7 @@ import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/l
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { firmLines } from '@/lib/firm-details'
 import { PLANS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName } from '@/lib/plans'
+import { TEAMS_ENABLED, ROLE_LABEL, ROLE_HELP, type TeamRole } from '@/lib/teams'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 
 const supabase = createBrowserClient(
@@ -57,9 +58,6 @@ const TERM_CHOICES = [
   { days: 14, label: '14 days' },
   { days: 30, label: '30 days' },
 ]
-
-// Team invites wait for shared team accounts, so nobody builds a team on separate accounts.
-const TEAM_INVITES_OPEN = false
 
 function PanelHead({ title, sub }: { title: React.ReactNode; sub: React.ReactNode }) {
   return (
@@ -214,6 +212,7 @@ const CSS = `
   .tm-note{font-size:14px;color:var(--t1);line-height:1.5;padding:12px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--line);margin-bottom:24px;}
   .tm-invite{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
   .tm-invite .save{height:42px;}
+  .tm-role{width:auto;height:34px;padding:0 8px;font-size:13px;}
   @media(max-width:600px){.tm-invite{flex-direction:column;align-items:stretch;}}
   .tm-link{margin-top:14px;padding:14px 16px;border-radius:10px;background:color-mix(in srgb,var(--g) 10%,transparent);}
   .tm-link p{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:8px;}
@@ -486,16 +485,23 @@ function InvoicePreviewMock({ theme: t, logoUrl, firm, taxLabel, vatRate, curren
   )
 }
 
-export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, memberOf = null }: { initialProfile?: Profile | null; invoicesThisMonth?: number; memberOf?: string | null }) {
+export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, role = 'owner' }: { initialProfile?: Profile | null; invoicesThisMonth?: number; role?: 'owner' | 'admin' | 'staff' }) {
   const [profile, setProfile]   = useState<Profile | null>(initialProfile)
   const [loading, setLoading]   = useState(initialProfile === null)
-  const [panel,   setPanel]     = useState<Panel>('brand')
+  // Admin sees everything but billing; Staff sees the team (read-only) and their own security.
+  const panelAllowed = (id: Panel) => role === 'owner' ? true : role === 'admin' ? id !== 'plan' : id === 'team' || id === 'security'
+  const visiblePanels = PANELS.filter(p => panelAllowed(p.id) && (!p.businessOnly || profile?.plan === 'business' || (TEAMS_ENABLED && role !== 'owner')))
+  const [panel,   setPanel]     = useState<Panel>(() => visiblePanels[0]?.id ?? 'security')
+  const businessName = profile?.firm_name || profile?.name || 'this business'
   const [saving,    setSaving]    = useState(false)
   const [saved,     setSaved]     = useState<Panel | null>(null)
   const [upgrading, setUpgrading] = useState<string | null>(null)
 
   // Team state
-  type TeamMember = { id: string; email: string; status: 'pending' | 'active'; invited_at: string; joined_at: string | null; invite_token: string | null }
+  type TeamMember = { id: string; email: string; status: 'pending' | 'active'; role: TeamRole; invited_at: string; joined_at: string | null; invite_token: string | null }
+  const [inviteRole, setInviteRole] = useState<TeamRole>('staff')
+  const [roleSaving, setRoleSaving] = useState<string | null>(null)
+  const [roleError, setRoleError] = useState('')
   const [teamMembers, setTeamMembers]     = useState<TeamMember[]>([])
   const [teamLoaded,  setTeamLoaded]      = useState(false)
   const [inviteEmail, setInviteEmail]     = useState('')
@@ -521,7 +527,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
   // ?panel=payment opens that panel; coming back from a plan payment opens Plan & billing.
   useEffect(() => {
     const want = billingStatus ? 'plan' : searchParams.get('panel')
-    if (want && PANELS.some(p => p.id === want)) setPanel(want as Panel)
+    if (want && visiblePanels.some(p => p.id === want)) setPanel(want as Panel)
   }, [billingStatus, searchParams])
 
   // On phones the menu is a sideways row; keep the open panel's tab in view.
@@ -758,7 +764,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
     const res = await fetch('/api/team/invite', {
       method: 'POST', credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: inviteEmail.trim() }),
+      body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
     })
     const data = await res.json().catch(() => ({}))
     if (res.ok) {
@@ -797,9 +803,23 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
     }
   }
 
+  async function changeRole(memberId: string, next: TeamRole) {
+    setRoleSaving(memberId); setRoleError('')
+    const before = teamMembers
+    setTeamMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: next } : m))
+    try {
+      const res = await fetch('/api/team/role', { method: 'PATCH', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ memberId, role: next }) })
+      if (!res.ok) { setTeamMembers(before); setRoleError('Couldn’t change the role. Please try again.') }
+    } catch {
+      setTeamMembers(before); setRoleError('Couldn’t reach StagePay. Check your connection and try again.')
+    } finally {
+      setRoleSaving(null)
+    }
+  }
+
   // The team list loads when the panel opens, including from a ?panel=team link.
   useEffect(() => {
-    if (panel === 'team' && !teamLoaded && !memberOf) fetchTeamMembers()
+    if (panel === 'team' && !teamLoaded) fetchTeamMembers()
   }, [panel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function copyLink(text: string, id: string) {
@@ -938,7 +958,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
         <div className="settings-layout">
           {/* Left nav */}
           <nav className="settings-nav" aria-label="Settings sections">
-            {PANELS.filter(p => !p.businessOnly || profile?.plan === 'business').map(p => (
+            {visiblePanels.map(p => (
               <button
                 key={p.id}
                 type="button"
@@ -1107,7 +1127,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
                     <div className="fld">
                       <label htmlFor="s-email">Email</label>
                       <input id="s-email" name="email" className="in" value={profile?.email ?? ''} readOnly aria-describedby="s-email-help" />
-                      <span className="help" id="s-email-help">The email you sign in with.</span>
+                      <span className="help" id="s-email-help">{role === 'owner' ? 'The email you sign in with.' : 'The business owner’s sign-in email.'}</span>
                     </div>
                     <div className="fld">
                       <label htmlFor="s-phone">Phone</label>
@@ -1413,76 +1433,72 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
           <div className={`settings-panel${panel === 'team' ? ' active' : ''}`}>
             <PanelHead title="Team members" sub="Work on one business with the people you employ." />
 
-            {!memberOf && !TEAM_INVITES_OPEN ? (
-              <>
-                <section className="pl-now" style={{ gridTemplateColumns: '1fr' }} aria-labelledby="tm-soon">
-                  <div className="pl-usage">
-                    <div className="pl-kicker">Coming soon</div>
-                    <p id="tm-soon"><b>Shared team accounts</b></p>
-                    <p className="help">Up to {TEAM_SEATS} people working on the same business: one client list, one set of invoices and one brand. Everyone signs in with their own email, each invoice shows who created it, and you choose who can change settings and billing. It comes with the Business plan.</p>
-                  </div>
-                </section>
-                {teamMembers.length > 0 && (
-                  <section className="block" aria-labelledby="tm-list">
-                    <h3 id="tm-list">People already invited</h3>
-                    <ul className="tm-list">
-                      {teamMembers.map(m => (
-                        <li key={m.id}>
-                          <span className="tm-av" aria-hidden="true">{m.email[0].toUpperCase()}</span>
-                          <div className="tm-who"><b>{m.email}</b><span>{m.status === 'active' ? 'Joined' : 'Invited, hasn’t joined yet'}</span></div>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                )}
-              </>
-            ) : memberOf ? (
-              <section className="pl-now" style={{ gridTemplateColumns: '1fr' }}>
+            {!TEAMS_ENABLED ? (
+              <section className="pl-now" style={{ gridTemplateColumns: '1fr' }} aria-labelledby="tm-soon">
                 <div className="pl-usage">
-                  <p><b>You’re on {memberOf}’s team.</b></p>
-                  <p className="help">Your Business plan comes from them. If they remove you, your account moves to the Free plan; your invoices and clients stay yours either way.</p>
+                  <div className="pl-kicker">Coming soon</div>
+                  <p id="tm-soon"><b>Shared team accounts</b></p>
+                  <p className="help">Up to {TEAM_SEATS} people working on the same business: one client list, one set of invoices and one brand. Everyone signs in with their own email, each invoice shows who created it, and you choose who can change settings and billing. It comes with the Business plan.</p>
                 </div>
               </section>
             ) : (
               <>
-                <p className="tm-note">Each person signs in with their own email and keeps their own invoices and clients. Nothing is shared between accounts.</p>
+                {role !== 'owner' ? (
+                  <p className="tm-note">You’re {ROLE_LABEL[role]} in {businessName}. Only the owner can invite or remove people and change roles.</p>
+                ) : profile?.plan !== 'business' ? (
+                  <p className="tm-note">Team accounts come with the Business plan. <button type="button" className="pm-link" onClick={() => setPanel('plan')}>See plans</button></p>
+                ) : (
+                  <p className="tm-note">Everyone you add works in {businessName}: the same clients, invoices and brand. They sign in with their own email, and their own StagePay business, if they have one, stays separate.</p>
+                )}
 
-                <section className="block" aria-labelledby="tm-seats">
-                  <h3 id="tm-seats">Places</h3>
-                  <div className="pl-meter" role="img" aria-label={`${seatsUsed} of ${TEAM_SEATS} places used`} style={{ maxWidth: 320 }}>
-                    {Array.from({ length: TEAM_SEATS }, (_, i) => <span key={i} className={i < seatsUsed ? 'on' : ''} />)}
-                  </div>
-                  <p className="help">{seatsUsed} of {TEAM_SEATS} used, counting you{teamMembers.some(m => m.status === 'pending') ? ' and invites not yet accepted' : ''}.</p>
-                </section>
+                {role === 'owner' && profile?.plan === 'business' && (
+                  <>
+                    <section className="block" aria-labelledby="tm-seats">
+                      <h3 id="tm-seats">Places</h3>
+                      <div className="pl-meter" role="img" aria-label={`${seatsUsed} of ${TEAM_SEATS} places used`} style={{ maxWidth: 320 }}>
+                        {Array.from({ length: TEAM_SEATS }, (_, i) => <span key={i} className={i < seatsUsed ? 'on' : ''} />)}
+                      </div>
+                      <p className="help">{seatsUsed} of {TEAM_SEATS} used, counting you{teamMembers.some(m => m.status === 'pending') ? ' and invites not yet accepted' : ''}.</p>
+                    </section>
 
-                <section className="block" aria-labelledby="tm-invite">
-                  <h3 id="tm-invite">Invite someone</h3>
-                  <p>StagePay doesn’t email the invite. You get a link to send them yourself, on WhatsApp or anywhere else.</p>
-                  {teamFull ? (
-                    <p className="help">Your team is full. Remove someone to free a place.</p>
-                  ) : (
-                    <form className="tm-invite" method="post" onSubmit={e => { e.preventDefault(); sendInvite() }}>
-                      <div className="fld" style={{ flex: 1 }}>
-                        <label htmlFor="invite-email">Their email</label>
-                        <input id="invite-email" name="invite-email" type="email" className="in" autoComplete="off"
-                          value={inviteEmail} disabled={inviting}
-                          onChange={e => { setInviteEmail(e.target.value); setInviteError(''); setInviteLink(null) }} />
-                      </div>
-                      <button type="submit" className="save press" disabled={inviting || !inviteEmail.trim()}>{inviting ? 'Creating…' : 'Create invite link'}</button>
-                    </form>
-                  )}
-                  {inviteError && <p className="save-note err" role="alert" style={{ marginTop: 10 }}>{inviteError}</p>}
-                  {inviteLink && (
-                    <div className="tm-link" role="status">
-                      <p>Invite ready. Send this link; it works once.</p>
-                      <code>{inviteLink}</code>
-                      <div className="sec-actions">
-                        <button type="button" className="btn-line press" onClick={() => copyLink(inviteLink, 'new')}>{copiedId === 'new' ? 'Copied' : 'Copy link'}</button>
-                        <a className="btn-line press tm-wa" href={`https://wa.me/?text=${encodeURIComponent(`Join my team on StagePay: ${inviteLink}`)}`} target="_blank" rel="noreferrer">Share on WhatsApp</a>
-                      </div>
-                    </div>
-                  )}
-                </section>
+                    <section className="block" aria-labelledby="tm-invite">
+                      <h3 id="tm-invite">Invite someone</h3>
+                      <p>StagePay doesn’t email the invite. You get a link to send them yourself, on WhatsApp or anywhere else.</p>
+                      {teamFull ? (
+                        <p className="help">Your team is full. Remove someone to free a place.</p>
+                      ) : (
+                        <form className="tm-invite" method="post" onSubmit={e => { e.preventDefault(); sendInvite() }}>
+                          <div className="fld" style={{ flex: 1 }}>
+                            <label htmlFor="invite-email">Their email</label>
+                            <input id="invite-email" name="invite-email" type="email" className="in" autoComplete="off"
+                              value={inviteEmail} disabled={inviting}
+                              onChange={e => { setInviteEmail(e.target.value); setInviteError(''); setInviteLink(null) }} />
+                          </div>
+                          <div className="fld">
+                            <label htmlFor="invite-role">Role</label>
+                            <select id="invite-role" name="invite-role" className="in" value={inviteRole} onChange={e => setInviteRole(e.target.value as TeamRole)}>
+                              <option value="staff">Staff</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </div>
+                          <button type="submit" className="save press" disabled={inviting || !inviteEmail.trim()}>{inviting ? 'Creating…' : 'Create invite link'}</button>
+                        </form>
+                      )}
+                      {!teamFull && <p className="help" style={{ marginTop: 8 }}>{ROLE_LABEL[inviteRole]}: {ROLE_HELP[inviteRole]}</p>}
+                      {inviteError && <p className="save-note err" role="alert" style={{ marginTop: 10 }}>{inviteError}</p>}
+                      {inviteLink && (
+                        <div className="tm-link" role="status">
+                          <p>Invite ready. Send this link; it works once.</p>
+                          <code>{inviteLink}</code>
+                          <div className="sec-actions">
+                            <button type="button" className="btn-line press" onClick={() => copyLink(inviteLink, 'new')}>{copiedId === 'new' ? 'Copied' : 'Copy link'}</button>
+                            <a className="btn-line press tm-wa" href={`https://wa.me/?text=${encodeURIComponent(`Join ${businessName} on StagePay: ${inviteLink}`)}`} target="_blank" rel="noreferrer">Share on WhatsApp</a>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  </>
+                )}
 
                 <section className="block" aria-labelledby="tm-list">
                   <h3 id="tm-list">People</h3>
@@ -1491,10 +1507,10 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
                   ) : (
                     <ul className="tm-list">
                       <li>
-                        <span className="tm-av" aria-hidden="true">{(profile?.name || profile?.email || '?')[0].toUpperCase()}</span>
+                        <span className="tm-av" aria-hidden="true">{(role === 'owner' ? (profile?.name || profile?.email || '?') : businessName)[0].toUpperCase()}</span>
                         <div className="tm-who">
-                          <b>{profile?.name || 'You'}</b>
-                          <span>{profile?.email}</span>
+                          <b>{role === 'owner' ? (profile?.name || 'You') : `${businessName}’s owner`}</b>
+                          <span>{role === 'owner' ? profile?.email : 'Manages billing and the team'}</span>
                         </div>
                         <span className="pm-pref">Owner</span>
                       </li>
@@ -1507,9 +1523,18 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
                               ? `Joined ${m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}`
                               : `Invited ${new Date(m.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, hasn’t joined yet`}</span>
                           </div>
-                          {confirmRemove === m.id ? (
+                          {role === 'owner' ? (
+                            <select className="in tm-role" aria-label={`Role for ${m.email}`} value={m.role} disabled={roleSaving === m.id}
+                              onChange={e => changeRole(m.id, e.target.value as TeamRole)}>
+                              <option value="staff">Staff</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          ) : (
+                            <span className="pm-pref">{ROLE_LABEL[m.role]}</span>
+                          )}
+                          {role === 'owner' && (confirmRemove === m.id ? (
                             <div className="tm-confirm">
-                              <span className="help">{m.status === 'active' ? 'They’ll move to the Free plan.' : 'The invite link will stop working.'}</span>
+                              <span className="help">{m.status === 'active' ? 'They lose access to this business.' : 'The invite link will stop working.'}</span>
                               <button type="button" className="btn-line" onClick={() => setConfirmRemove(null)}>Keep</button>
                               <button type="button" className="sec-danger press" disabled={removingId === m.id} onClick={() => removeMember(m.id)}>{removingId === m.id ? 'Removing…' : m.status === 'active' ? 'Remove' : 'Cancel invite'}</button>
                             </div>
@@ -1520,12 +1545,12 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, m
                               )}
                               <button type="button" className="pm-link" onClick={() => setConfirmRemove(m.id)}>{m.status === 'active' ? 'Remove' : 'Cancel invite'}</button>
                             </div>
-                          )}
+                          ))}
                         </li>
                       ))}
                     </ul>
                   )}
-                  {removeError && <p className="save-note err" role="alert" style={{ marginTop: 10 }}>{removeError}</p>}
+                  {(removeError || roleError) && <p className="save-note err" role="alert" style={{ marginTop: 10 }}>{removeError || roleError}</p>}
                   {teamLoaded && teamMembers.length === 0 && <p className="help" style={{ marginTop: 10 }}>Nobody else yet.</p>}
                 </section>
               </>

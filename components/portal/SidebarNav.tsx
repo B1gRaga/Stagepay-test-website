@@ -93,6 +93,15 @@ const CSS = `
   .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
   .profile-popup-item:hover{background:var(--surface);color:var(--t1);}
   .profile-popup-item.danger{color:var(--danger);}
+  .biz-switch{padding:6px 0 0;}
+  .biz-label{padding:4px 14px 6px;font-size:11px;font-weight:600;color:var(--t3);}
+  .biz-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:9px 14px;border:0;background:transparent;font:600 13px var(--font-manrope),sans-serif;color:var(--t2);cursor:pointer;text-align:left;}
+  .biz-item:hover:not(:disabled){background:var(--surface);color:var(--t1);}
+  .biz-item[aria-current="true"]{color:var(--t1);box-shadow:inset 3px 0 0 var(--g);}
+  .biz-item:disabled{opacity:.55;cursor:default;}
+  .biz-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .biz-role{flex:none;font-size:11px;font-weight:600;color:var(--t3);}
+  .biz-error{padding:4px 14px 8px;font-size:12px;color:var(--danger);}
   .profile-popup-item.danger:hover{background:rgba(224,85,64,.08);color:var(--danger);}
   .profile-popup-divider{height:1px;background:var(--line);margin:2px 0;}
 
@@ -228,14 +237,55 @@ const CSS = `
   }
 `
 
+type Business = { accountId: string; name: string; role: 'owner' | 'admin' | 'staff'; paused: boolean }
+
 interface Props {
   displayName: string
   userEmail: string
   plan?: string
   overdueCt?: number
+  // Every business the person can work in, and the one open now. The switcher
+  // shows only when there's more than one.
+  businesses?: Business[]
+  currentAccountId?: string
+  role?: 'owner' | 'admin' | 'staff'
 }
 
-export default function SidebarNav({ displayName, userEmail, plan = 'free', overdueCt = 0 }: Props) {
+const ROLE_NAME = { owner: 'Owner', admin: 'Admin', staff: 'Staff' } as const
+
+function BusinessSwitcher({ businesses, current, onDone }: { businesses: Business[]; current?: string; onDone: () => void }) {
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  async function switchTo(accountId: string) {
+    if (accountId === current) return onDone()
+    setBusy(accountId); setError('')
+    try {
+      const res = await fetch('/api/account/switch', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId }) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(data.error ?? 'Couldn’t switch business'); return }
+      // A full load, so every page re-reads the business it's now in.
+      window.location.href = '/dashboard'
+    } finally {
+      setBusy(null)
+    }
+  }
+  return (
+    <div className="biz-switch" role="group" aria-label="Switch business">
+      <div className="biz-label">Businesses</div>
+      {businesses.map(b => (
+        <button key={b.accountId} type="button" className="biz-item" aria-current={b.accountId === current ? 'true' : undefined}
+          disabled={!!busy || (b.paused && b.accountId !== current)} onClick={() => switchTo(b.accountId)}>
+          <span className="biz-name">{b.name}</span>
+          <span className="biz-role">{busy === b.accountId ? 'Opening…' : b.paused ? 'Paused' : ROLE_NAME[b.role]}</span>
+        </button>
+      ))}
+      {error && <div className="biz-error" role="alert">{error}</div>}
+      <div className="profile-popup-divider"/>
+    </div>
+  )
+}
+
+export default function SidebarNav({ displayName, userEmail, plan = 'free', overdueCt = 0, businesses = [], currentAccountId, role = 'owner' }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const [popupOpen, setPopupOpen] = useState(false)
@@ -265,7 +315,9 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
     return pathname === path || pathname.startsWith(path + '/')
   }
 
-  const planLabel = plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan'
+  // In a team business, the role says more than the owner's plan does.
+  const planLabel = role !== 'owner' ? ROLE_NAME[role] : plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan'
+  const showSwitcher = businesses.length > 1
 
   return (
     <>
@@ -300,6 +352,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
               <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userEmail}</div>
             </div>
           </div>
+          {showSwitcher && <BusinessSwitcher businesses={businesses} current={currentAccountId} onDone={() => setMobMenuOpen(false)} />}
           <button className="profile-popup-item" onClick={() => { setMobMenuOpen(false); router.push('/settings') }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             Settings
@@ -387,6 +440,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
                     <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userEmail}</div>
                   </div>
                 </div>
+                {showSwitcher && <BusinessSwitcher businesses={businesses} current={currentAccountId} onDone={() => setPopupOpen(false)} />}
                 <button className="profile-popup-item" onClick={() => { setPopupOpen(false); router.push('/settings') }}>
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
                   Edit profile

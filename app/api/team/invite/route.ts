@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedUser, createClient, createServiceClient } from '@/lib/supabase/server'
 import { getAccount } from '@/lib/account'
+import { TEAMS_ENABLED, isTeamRole } from '@/lib/teams'
 
 const MAX_TEAM_SIZE = 5
 
 export async function POST(req: NextRequest) {
   const user = await getCachedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!TEAMS_ENABLED) return NextResponse.json({ error: 'Team accounts aren’t open yet' }, { status: 403 })
 
   // Only the owner of the business being worked in manages its team.
   const account = await getAccount()
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Team members require the Business plan' }, { status: 403 })
   }
 
-  let body: { email?: string }
+  let body: { email?: string; role?: unknown }
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -36,6 +38,11 @@ export async function POST(req: NextRequest) {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: 'Valid email required' }, { status: 400 })
   }
+
+  if (body.role !== undefined && !isTeamRole(body.role)) {
+    return NextResponse.json({ error: 'Role must be admin or staff' }, { status: 400 })
+  }
+  const role = isTeamRole(body.role) ? body.role : 'staff'
 
   if (email === user.email?.toLowerCase()) {
     return NextResponse.json({ error: 'You cannot invite yourself' }, { status: 400 })
@@ -92,7 +99,7 @@ export async function POST(req: NextRequest) {
   const { data: member, error: memberErr } = await service
     .from('team_members')
     .upsert(
-      { team_id: teamId, email, status: 'pending', invited_at: new Date().toISOString() },
+      { team_id: teamId, email, role, status: 'pending', invited_at: new Date().toISOString() },
       { onConflict: 'team_id,email', ignoreDuplicates: false }
     )
     .select('invite_token')

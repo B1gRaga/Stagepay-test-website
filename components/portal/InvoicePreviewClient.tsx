@@ -144,7 +144,7 @@ type Step = { key: string; title: string; when?: string; state: 'done' | 'todo' 
 
 // Only what StagePay records: created, sent (dated for email; WhatsApp sends go
 // through wa.me and can't be timed), reminders sent or booked, and paid / due.
-function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[]): Step[] {
+function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?: string | null): Step[] {
   const sentAt = inv.email_sent_at ?? undefined
   const via = sentAt ? ' by email' : ''
   const isSent = !['draft', 'cancelled'].includes(inv.status) || !!sentAt
@@ -153,7 +153,7 @@ function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[]): Step[] {
   const times = done.length === 1 ? 'once' : done.length === 2 ? 'twice' : `${done.length} times`
 
   const steps: Step[] = [
-    { key: 'created', title: 'Created', when: fmtDate(inv.issue_date), state: 'done', mark: 'sent' },
+    { key: 'created', title: createdBy ? `Created by ${createdBy}` : 'Created', when: fmtDate(inv.issue_date), state: 'done', mark: 'sent' },
     isSent
       ? { key: 'sent', title: `Sent${via}`, when: sentAt ? fmtDate(sentAt) : undefined, state: 'done', mark: 'sent' }
       : { key: 'sent', title: 'Not sent yet', when: 'Send it on WhatsApp', state: 'todo', mark: 'draft' },
@@ -168,7 +168,7 @@ function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[]): Step[] {
   return steps
 }
 
-export default function InvoicePreviewClient({ invoice: initial, reminders = [] }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[] }) {
+export default function InvoicePreviewClient({ invoice: initial, reminders = [], createdBy = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; createdBy?: string | null }) {
   const router = useRouter()
   const [invoice, setInvoice] = useState(initial)
   const [panel, setPanel] = useState<'email' | 'whatsapp' | null>(null)
@@ -322,7 +322,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [] 
   }
 
   const canMarkPaid = invoice.status === 'sent' || invoice.status === 'pending' || invoice.status === 'overdue'
-  const steps = timeline(invoice, reminders)
+  const steps = timeline(invoice, reminders, createdBy)
   const reminderCount = reminders.filter(r => r.status === 'sent').length
 
   return (

@@ -10,6 +10,7 @@ export default function JoinPage() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'joining' | 'done' | 'error' | 'auth'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
   const [authed, setAuthed] = useState(false)
+  const [business, setBusiness] = useState('')
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -32,6 +33,7 @@ export default function JoinPage() {
     })
     const data = await res.json()
     if (res.ok) {
+      setBusiness(data.business ?? '')
       setStatus('done')
       setTimeout(() => router.push('/dashboard'), 2000)
     } else {
@@ -74,7 +76,7 @@ export default function JoinPage() {
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#FAF7F0', marginBottom: 8 }}>You&apos;ve been invited</h1>
             <p style={{ fontSize: 13, color: 'rgba(250,247,240,.55)', lineHeight: 1.6, marginBottom: 24 }}>
-              Sign in or create a StagePay account to join the team. Your account will automatically be upgraded to Business.
+              Sign in or create a StagePay account to join the team. You&apos;ll work in their business with your own sign-in.
             </p>
             <Link
               href={`/auth/login?redirect=/join/${token}`}
@@ -108,7 +110,7 @@ export default function JoinPage() {
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#FAF7F0', marginBottom: 8 }}>Join the team</h1>
             <p style={{ fontSize: 13, color: 'rgba(250,247,240,.55)', lineHeight: 1.6, marginBottom: 24 }}>
-              Accept this invite to join the team on StagePay. You&apos;ll get access to all Business plan features.
+              Accept to work in this business on StagePay. Anything you already have on StagePay stays in your own business, and you can switch between the two from your avatar menu.
             </p>
             <button
               onClick={handleJoin}
@@ -133,7 +135,7 @@ export default function JoinPage() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2A900" strokeWidth="2"><path d="M5 13l4 4L19 7"/></svg>
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#FAF7F0', marginBottom: 8 }}>You&apos;re in!</h1>
-            <p style={{ fontSize: 13, color: 'rgba(250,247,240,.55)' }}>Redirecting to your dashboard…</p>
+            <p style={{ fontSize: 13, color: 'rgba(250,247,240,.55)' }}>Opening {business || 'the business'}…</p>
           </>
         )}
 

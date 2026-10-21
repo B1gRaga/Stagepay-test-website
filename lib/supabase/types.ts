@@ -110,6 +110,7 @@ export interface Database {
       }
       clients: {
         Row: {
+          created_by: string | null
           id: string
           user_id: string
           name: string
@@ -125,6 +126,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
+          created_by?: string | null
           user_id: string
           name: string
           email?: string | null
@@ -137,6 +139,7 @@ export interface Database {
           deleted_at?: string | null
         }
         Update: {
+          created_by?: string | null
           name?: string
           email?: string | null
           phone?: string | null
@@ -159,6 +162,7 @@ export interface Database {
       }
       invoices: {
         Row: {
+          created_by: string | null
           id: string
           user_id: string
           client_id: string | null
@@ -190,6 +194,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
+          created_by?: string | null
           user_id: string
           invoice_number: string
           status: InvoiceStatus
@@ -217,6 +222,7 @@ export interface Database {
           email_to?: string | null
         }
         Update: {
+          created_by?: string | null
           status?: InvoiceStatus
           client_id?: string | null
           client_name?: string
@@ -298,6 +304,7 @@ export interface Database {
       }
       reminders: {
         Row: {
+          created_by: string | null
           id: string
           user_id: string
           invoice_id: string
@@ -314,6 +321,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
+          created_by?: string | null
           user_id: string
           invoice_id: string
           send_at: string
@@ -327,6 +335,7 @@ export interface Database {
           message_preview?: string | null
         }
         Update: {
+          created_by?: string | null
           send_at?: string
           days_after_due?: number | null
           channel?: ReminderChannel

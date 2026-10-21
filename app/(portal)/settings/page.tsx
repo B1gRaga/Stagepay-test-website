@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   startOfMonth.setHours(0, 0, 0, 0)
-  const [{ count: invoicesThisMonth }, { data: profile }, { data: me }, { data: ownTeam }] = await Promise.all([
+  const [{ count: invoicesThisMonth }, { data: profile }] = await Promise.all([
     supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
@@ -26,21 +26,11 @@ export default async function SettingsPage() {
       .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, payment_methods, default_due_days, subscription_expires_at, team_id')
       .eq('id', account.accountId)
       .single(),
-    // The person's own team link, for the Team panel.
-    supabase.from('profiles').select('team_id').eq('id', account.userId).single(),
-    supabase.from('teams').select('id').eq('owner_id', account.userId).maybeSingle(),
   ])
-
-  // Someone who joined another business's team sees that team's name instead of invite controls.
-  let memberOf: string | null = null
-  if (!ownTeam && me?.team_id) {
-    const { data: team } = await supabase.from('teams').select('name').eq('id', me.team_id).maybeSingle()
-    memberOf = team?.name || 'a team'
-  }
 
   return (
     <Suspense>
-      <SettingsClient initialProfile={profile ?? null} invoicesThisMonth={invoicesThisMonth ?? 0} memberOf={memberOf} />
+      <SettingsClient initialProfile={profile ?? null} invoicesThisMonth={invoicesThisMonth ?? 0} role={account.role} />
     </Suspense>
   )
 }

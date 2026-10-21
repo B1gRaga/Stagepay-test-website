@@ -37,12 +37,13 @@ export async function POST(req: NextRequest) {
 
   const service = createServiceClient()
 
-  // If the member has a user account, revert their plan to free and clear team_id
+  // Anyone working in this business right now goes back to their own.
   if (member.user_id) {
     await service
       .from('profiles')
-      .update({ plan: 'free', team_id: null })
+      .update({ current_account_id: null })
       .eq('id', member.user_id)
+      .eq('current_account_id', team.owner_id)
   }
 
   await service.from('team_members').delete().eq('id', body.memberId)

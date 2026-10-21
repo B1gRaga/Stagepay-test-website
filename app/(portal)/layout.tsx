@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { getCachedProfile, createClient } from '@/lib/supabase/server'
-import { getAccount } from '@/lib/account'
+import { getAccount, listBusinesses } from '@/lib/account'
+import { TEAMS_ENABLED } from '@/lib/teams'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
 import PullToRefresh from '@/components/portal/PullToRefresh'
@@ -15,7 +16,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   const supabase = await createClient()
   // The sidebar shows the business being worked in; first-time setup is the person's own.
-  const [profile, own, { count: overdueCount }] = await Promise.all([
+  const [profile, own, { count: overdueCount }, businesses] = await Promise.all([
     getCachedProfile(account.accountId),
     getCachedProfile(account.userId),
     supabase
@@ -23,6 +24,7 @@ export default async function PortalLayout({ children }: { children: React.React
       .select('id', { count: 'exact', head: true })
       .eq('user_id', account.accountId)
       .eq('status', 'overdue'),
+    TEAMS_ENABLED ? listBusinesses(account.userId) : Promise.resolve([]),
   ])
 
   const displayName = profile?.firm_name || profile?.name || userEmail.split('@')[0]
@@ -49,7 +51,7 @@ export default async function PortalLayout({ children }: { children: React.React
       `}</style>
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflowX: 'hidden' }}>
-        <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} overdueCt={overdueCount ?? 0} />
+        <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} overdueCt={overdueCount ?? 0} businesses={businesses} currentAccountId={account.accountId} role={account.role} />
         <PullToRefresh>{children}</PullToRefresh>
       </div>
       <SupportBtn />

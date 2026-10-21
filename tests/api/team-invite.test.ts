@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
+vi.stubEnv('NEXT_PUBLIC_TEAMS_ENABLED', '1')
+
 // ── Mocks ──────────────────────────────────────────────────────────────────
 const mockGetCachedUser     = vi.fn()
 const mockProfileSingle     = vi.fn()
