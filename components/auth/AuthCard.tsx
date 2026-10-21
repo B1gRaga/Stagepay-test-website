@@ -1,12 +1,6 @@
-import Link from 'next/link'
-import { LogoFull } from '@/components/Logo'
-
-// Form parts shared by every auth screen: this card, and the split
-// sign-in / sign-up layout.
+// Form parts shared by every auth screen (sign in, sign up, password reset).
 export const FORM_CSS = `
   @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
-  .ac-logo{display:inline-block;margin-bottom:28px;color:#1F2A44;}
-  .ac-logo svg{height:28px;width:auto;display:block;}
   .ac-title{font-size:24px;font-weight:800;letter-spacing:-.015em;line-height:1.2;margin-bottom:6px;color:#1F2A44;}
   .ac-sub{font-size:14px;color:#475569;line-height:1.55;margin-bottom:22px;}
   .ac-title + .ac-form,.ac-title + .ac-ok,.ac-title + .ac-btn{margin-top:18px;}
@@ -28,44 +22,6 @@ export const FORM_CSS = `
   .ac-foot{font-size:13px;color:#64748B;text-align:center;margin-top:22px;}
   .ac-foot a{color:#1F2A44;font-weight:600;text-decoration:underline;text-decoration-color:rgba(31,42,68,.3);text-underline-offset:3px;}
 `
-
-// A single white card on the brand background, for the short auth steps
-// (forgot password, reset password).
-const CSS = `
-  .ac-page{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:#18213A;font-family:var(--font-manrope),sans-serif;}
-  .ac-card{width:100%;max-width:420px;background:#FFFFFF;color:#1F2A44;border-radius:16px;padding:36px 36px 28px;}
-  @media(max-width:480px){.ac-card{padding:28px 22px 22px;}}
-`
-
-export function AuthLogo() {
-  return (
-    <Link href="/" className="ac-logo" aria-label="StagePay home">
-      <LogoFull tone="default" />
-    </Link>
-  )
-}
-
-export function AuthCard({ title, sub, children, foot }: {
-  title: string
-  sub?: React.ReactNode
-  children: React.ReactNode
-  foot?: React.ReactNode
-}) {
-  return (
-    <>
-      <style>{FORM_CSS + CSS}</style>
-      <main className="ac-page">
-        <div className="ac-card">
-          <AuthLogo />
-          <h1 className="ac-title">{title}</h1>
-          {sub && <p className="ac-sub">{sub}</p>}
-          {children}
-          {foot && <p className="ac-foot">{foot}</p>}
-        </div>
-      </main>
-    </>
-  )
-}
 
 export function Spinner() {
   return (

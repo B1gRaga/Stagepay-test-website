@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
-import { AuthCard, Spinner } from '@/components/auth/AuthCard'
+import { Spinner } from '@/components/auth/AuthCard'
+import { AuthHead } from '@/components/auth/AuthStairs'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,35 +67,33 @@ export default function ResetPasswordPage() {
   }
 
   if (step === 'checking') {
-    return <AuthCard title="Reset your password"><p className="ac-hint" role="status">Checking your link…</p></AuthCard>
+    return <AuthHead title={<>Reset your<br/>password</>}><p className="ac-hint" role="status">Checking your link…</p></AuthHead>
   }
 
   if (step === 'no-session') {
     return (
-      <AuthCard
-        title="This link has expired"
-        sub="Reset links work once and expire after an hour. Ask for a new one and use the latest email."
-        foot={<Link href="/auth/login">Back to log in</Link>}
+      <AuthHead
+        title={<>This link<br/>has expired</>}
+        lede="Reset links work once and expire after an hour. Ask for a new one and use the latest email."
       >
         <Link href="/auth/forgot-password" className="ac-btn">Send a new link</Link>
-      </AuthCard>
+      </AuthHead>
     )
   }
 
   if (step === 'done') {
     return (
-      <AuthCard title="Password changed" sub="You’re signed in. Use your new password next time you log in.">
+      <AuthHead title={<>Password<br/>changed</>} lede="You’re signed in. Use your new password next time you sign in.">
         <a href="/dashboard" className="ac-btn">Go to your dashboard</a>
-      </AuthCard>
+      </AuthHead>
     )
   }
 
   if (step === 'code') {
     return (
-      <AuthCard
-        title="Confirm it’s you"
-        sub="Your account uses two-step sign-in. Enter the 6-digit code from your authenticator app to continue."
-        foot={<Link href="/auth/login">Back to log in</Link>}
+      <AuthHead
+        title={<>Confirm<br/>it’s you</>}
+        lede="Your account uses two-step sign-in. Enter the 6-digit code from your authenticator app."
       >
         <form method="post" className="ac-form" onSubmit={verifyCode}>
           {error && <div className="ac-error" role="alert">{error}</div>}
@@ -107,12 +106,12 @@ export default function ResetPasswordPage() {
             {loading ? <><Spinner /> Checking…</> : 'Continue'}
           </button>
         </form>
-      </AuthCard>
+      </AuthHead>
     )
   }
 
   return (
-    <AuthCard title="Choose a new password" foot={<Link href="/auth/login">Back to log in</Link>}>
+    <AuthHead title={<>Choose a new<br/>password</>}>
       <form method="post" className="ac-form" onSubmit={savePassword}>
         {error && <div className="ac-error" role="alert">{error}</div>}
         <div className="ac-group">
@@ -130,6 +129,6 @@ export default function ResetPasswordPage() {
           {loading ? <><Spinner /> Saving…</> : 'Save new password'}
         </button>
       </form>
-    </AuthCard>
+    </AuthHead>
   )
 }

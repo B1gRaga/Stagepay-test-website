@@ -6,8 +6,8 @@ import { animate, stagger, utils } from 'animejs'
 import { LogoFull } from '@/components/Logo'
 import { FORM_CSS } from './AuthCard'
 
-// Sign in and sign up share this shell (app/auth/(stairs)/layout.tsx), so the
-// stairs stay put while the form changes. The logo's three rising bars, at the
+// Sign in, sign up and the password pages share this shell
+// (app/auth/(stairs)/layout.tsx), so the stairs stay put while the form changes. The logo's three rising bars, at the
 // size of the room: an invoice climbs them from sent, to reminded, to paid.
 // Click a step to move it there.
 const CSS = `
@@ -120,13 +120,13 @@ const PARTS = '.st-h1, .st-lede, .st-form-wrap .ac-form > *, .st-form-wrap > :no
 
 export function AuthHead({ title, lede, children }: {
   title: React.ReactNode
-  lede: string
+  lede?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
     <>
       <h1 className="st-h1">{title}</h1>
-      <p className="st-lede">{lede}</p>
+      {lede && <p className="st-lede">{lede}</p>}
       <div className="st-form-wrap">{children}</div>
     </>
   )
@@ -136,6 +136,7 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? ''
   const router = useRouter()
   const onSignup = pathname.startsWith('/auth/signup')
+  const onLogin = pathname.startsWith('/auth/login')
   const pageRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const leaving = useRef(false)
@@ -210,7 +211,7 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
     leaving.current = false
     const main = mainRef.current
     if (!main || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const dir = onSignup ? 1 : -1
+    const dir = onLogin ? -1 : 1
     const a = animate(main.querySelectorAll(PARTS), { opacity: [0, 1], x: [48 * dir, 0], duration: 560, ease: 'outQuart', delay: stagger(45) })
     const b = animate(pageRef.current!.querySelectorAll('.st-switch'), { opacity: [0, 1], y: [-8, 0], duration: 400, ease: 'outQuart' })
     return () => { a.revert(); b.revert() }
@@ -223,7 +224,7 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
     leaving.current = true
     const main = mainRef.current
     if (!main || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { router.push(href); return }
-    const dir = onSignup ? 1 : -1
+    const dir = onLogin ? -1 : 1
     animate(main.querySelectorAll(PARTS), {
       opacity: 0, x: 40 * dir, duration: 220, ease: 'inQuad', delay: stagger(25),
       onComplete: () => router.push(href),
@@ -258,9 +259,9 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
       <div className="st-page" ref={pageRef}>
         <header className="st-top">
           <Link href="/" className="st-logo" aria-label="StagePay home"><LogoFull tone="default" /></Link>
-          {onSignup
-            ? <p className="st-switch"><span>Already have an account? </span><Link href="/auth/login" onClick={e => switchTo(e, '/auth/login')}>Sign in</Link></p>
-            : <p className="st-switch"><span>New to StagePay? </span><Link href="/auth/signup" onClick={e => switchTo(e, '/auth/signup')}>Create an account</Link></p>}
+          {onLogin
+            ? <p className="st-switch"><span>New to StagePay? </span><Link href="/auth/signup" onClick={e => switchTo(e, '/auth/signup')}>Create an account</Link></p>
+            : <p className="st-switch"><span>{onSignup ? 'Already have an account? ' : 'Remembered it? '}</span><Link href="/auth/login" onClick={e => switchTo(e, '/auth/login')}>Sign in</Link></p>}
         </header>
 
         <main className="st-main" ref={mainRef}>{children}</main>

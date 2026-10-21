@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import Link from 'next/link'
-import { AuthCard, Spinner } from '@/components/auth/AuthCard'
+import { Spinner } from '@/components/auth/AuthCard'
+import { AuthHead } from '@/components/auth/AuthStairs'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,10 +41,9 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthCard
-      title="Reset your password"
-      sub={sent ? undefined : 'Enter the email you sign in with and we’ll send you a link to choose a new password.'}
-      foot={<>Remembered it? <Link href="/auth/login">Back to log in</Link></>}
+    <AuthHead
+      title={sent ? 'Check your email' : <>Reset your<br/>password</>}
+      lede={sent ? undefined : 'Enter the email you sign in with and we’ll send you a link to choose a new one.'}
     >
       {sent ? (
         <div className="ac-ok" role="status">
@@ -55,7 +54,7 @@ export default function ForgotPasswordPage() {
           {expired && <div className="ac-error" role="alert">That reset link has expired or was already used. Ask for a new one below.</div>}
           {error && <div className="ac-error" role="alert">{error}</div>}
           <div className="ac-group">
-            <label htmlFor="fp-email">Email</label>
+            <label htmlFor="fp-email">Email address</label>
             <input id="fp-email" name="email" className="ac-input" type="email" required autoComplete="email" autoFocus
               value={email} onChange={e => setEmail(e.target.value)} />
           </div>
@@ -64,6 +63,6 @@ export default function ForgotPasswordPage() {
           </button>
         </form>
       )}
-    </AuthCard>
+    </AuthHead>
   )
 }
