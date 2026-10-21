@@ -1,5 +1,6 @@
 ﻿import { redirect } from 'next/navigation'
-import { createClient, getCachedUser, getCachedProfile } from '@/lib/supabase/server'
+import { createClient, getCachedProfile } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import Link from 'next/link'
 import { PeriodSelect } from '@/components/portal/PeriodSelect'
 import { PERIODS, type PeriodId } from '@/components/portal/periods'
@@ -222,8 +223,8 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ period?: string }>
 }) {
-  const user = await getCachedUser()
-  if (!user) redirect('/auth/login')
+  const account = await getAccount()
+  if (!account) redirect('/auth/login')
 
   const { period: periodParam } = await searchParams
   const period: PeriodId = PERIODS.some(p => p.id === periodParam) ? (periodParam as PeriodId) : '30d'
@@ -242,17 +243,17 @@ export default async function DashboardPage({
 
   const COLS = 'id, invoice_number, client_name, project, total, status, issue_date, due_date, currency'
   const [{ data: openRaw }, { data: periodRaw }, { data: sixRaw }, profile] = await Promise.all([
-    supabase.from('invoices').select(COLS).eq('user_id', user.id)
+    supabase.from('invoices').select(COLS).eq('user_id', account.accountId)
       .in('status', ['draft', 'sent', 'pending', 'overdue'])
       .order('due_date', { ascending: true, nullsFirst: false }).limit(300),
     (() => {
-      let q = supabase.from('invoices').select(COLS).eq('user_id', user.id).neq('status', 'cancelled')
+      let q = supabase.from('invoices').select(COLS).eq('user_id', account.accountId).neq('status', 'cancelled')
       if (since) q = q.gte('issue_date', since)
       return q.order('created_at', { ascending: false }).limit(500)
     })(),
-    supabase.from('invoices').select('total, status, issue_date, currency').eq('user_id', user.id)
+    supabase.from('invoices').select('total, status, issue_date, currency').eq('user_id', account.accountId)
       .neq('status', 'cancelled').gte('issue_date', `${months[0].key}-01`).limit(2000),
-    getCachedProfile(user.id),
+    getCachedProfile(account.accountId),
   ])
   const open = (openRaw ?? []) as Inv[]
   const inPeriod = (periodRaw ?? []) as Inv[]

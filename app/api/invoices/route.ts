@@ -1,14 +1,15 @@
 import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { getAccount, accountProfileClient } from '@/lib/account'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 
 const PAGE_SIZE = 50
 
 // GET /api/invoices — list invoices for the authenticated user (paginated)
 export async function GET(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   const { searchParams } = new URL(req.url)
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('invoices')
     .select('*, invoice_items(*)', { count: 'exact' })
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .order('created_at', { ascending: false })
     .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
 
@@ -36,11 +37,12 @@ const FREE_PLAN_MONTHLY_LIMIT = FREE_MONTHLY_LIMIT
 
 // POST /api/invoices — create a new invoice with its line items
 export async function POST(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
-  const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const profileDb = await accountProfileClient(account)
+  const { data: profile } = await profileDb.from('profiles').select('plan').eq('id', account.accountId).single()
   if ((profile?.plan ?? 'free') === 'free') {
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
     const { count } = await supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .gte('created_at', startOfMonth.toISOString())
 
     if ((count ?? 0) >= FREE_PLAN_MONTHLY_LIMIT) {
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
   // Atomically generate invoice number via service-role client.
   // next_invoice_number is revoked from authenticated; only service_role may call it.
   const svcClient = createServiceClient()
-  const { data: invoiceNumber, error: numErr } = await svcClient.rpc('next_invoice_number', { p_user_id: user.id })
+  const { data: invoiceNumber, error: numErr } = await svcClient.rpc('next_invoice_number', { p_user_id: account.accountId })
   if (numErr || !invoiceNumber) {
     return NextResponse.json({ error: 'Failed to generate invoice number' }, { status: 500 })
   }
@@ -137,7 +139,7 @@ export async function POST(req: NextRequest) {
   const { data: invoice, error: invErr } = await supabase
     .from('invoices')
     .insert({
-      user_id:              user.id,
+      user_id:              account.accountId,
       invoice_number:       invoiceNumber,
       status:               'draft',
       client_id:            (body.client_id as string | null | undefined) ?? null,
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
     const { error: itemsErr } = await supabase.from('invoice_items').insert(
       items.map((item, idx) => ({
         invoice_id:  invoice.id,
-        user_id:     user.id,
+        user_id:     account.accountId,
         description: item.description,
         quantity:    item.quantity,
         unit_price:  item.unit_price,

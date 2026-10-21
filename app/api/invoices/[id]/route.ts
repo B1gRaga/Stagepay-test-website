@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount, canManage } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 
 type Params = { params: Promise<{ id: string }> }
@@ -24,15 +25,15 @@ const ALLOWED_FIELDS = [
 // GET /api/invoices/[id]
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('invoices')
     .select('*, invoice_items(*)')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -42,8 +43,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // PATCH /api/invoices/[id]
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   // Fetch current invoice upfront — verifies ownership and gives us the
@@ -52,7 +53,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .from('invoices')
     .select('id, status')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (fetchErr || !currentInvoice) {
@@ -135,7 +136,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { error: itemsErr } = await supabase.from('invoice_items').insert(
       items.map((item: { description: string; quantity: number; unit_price: number }, idx: number) => ({
         invoice_id:  id,
-        user_id:     user.id,
+        user_id:     account.accountId,
         description: item.description,
         quantity:    item.quantity,
         unit_price:  item.unit_price,
@@ -154,7 +155,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .from('invoices')
       .update(fields as import('@/lib/supabase/types').InvoiceUpdate)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .select('*, invoice_items(*)')
       .single()
 
@@ -167,7 +168,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .from('invoices')
     .select('*, invoice_items(*)')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (error) return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 })
@@ -177,15 +178,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/invoices/[id]
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canManage(account)) return NextResponse.json({ error: 'Only the owner or an admin can delete invoices' }, { status: 403 })
   const supabase = await createClient()
 
   const { error } = await supabase
     .from('invoices')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
 
   if (error) return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 })
   return NextResponse.json({ success: true })

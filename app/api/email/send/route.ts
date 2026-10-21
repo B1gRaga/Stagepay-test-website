@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/supabase/server'
+import { resolveAccount, accountProfileClient } from '@/lib/account'
 import { Resend } from 'resend'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { generateInvoicePDF } from '@/lib/invoice-pdf'
@@ -22,7 +23,8 @@ export async function POST(req: NextRequest) {
   const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = _supabase 
-  if (!(await rateLimit(user.id, 10, 60_000))) {
+  const account = await resolveAccount(supabase, user.id)
+  if (!(await rateLimit(account.userId, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -45,8 +47,8 @@ export async function POST(req: NextRequest) {
   }
 
   const [{ data: invoice }, { data: profile }] = await Promise.all([
-    supabase.from('invoices').select('*, invoice_items(*)').eq('id', invoice_id).eq('user_id', user.id).single(),
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('invoices').select('*, invoice_items(*)').eq('id', invoice_id).eq('user_id', account.accountId).single(),
+    (await accountProfileClient(account)).from('profiles').select('*').eq('id', account.accountId).single(),
   ])
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })

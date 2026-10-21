@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { getAccount, canManage, accountProfileClient } from '@/lib/account'
 
 const MAX_BYTES = 2 * 1024 * 1024 // 2 MB
 
@@ -18,9 +18,10 @@ const MAGIC: Record<string, (b: Uint8Array) => boolean> = {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await createClient()
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canManage(account)) return NextResponse.json({ error: 'Only the owner or an admin can change the logo' }, { status: 403 })
+  const supabase = await accountProfileClient(account)
 
   let formData: FormData
   try {
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = file.name.split('.').pop() ?? 'png'
-  const path = `${user.id}/logo.${ext}`
+  const path = `${account.accountId}/logo.${ext}`
 
   const { error: uploadErr } = await supabase.storage
     .from('logos')
@@ -54,21 +55,22 @@ export async function POST(req: NextRequest) {
   const { error: dbErr } = await supabase
     .from('profiles')
     .update({ logo_url: publicUrl })
-    .eq('id', user.id)
+    .eq('id', account.accountId)
 
   if (dbErr) return NextResponse.json({ error: 'Saved file but failed to update profile' }, { status: 500 })
   return NextResponse.json({ logo_url: publicUrl })
 }
 
 export async function DELETE() {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await createClient()
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canManage(account)) return NextResponse.json({ error: 'Only the owner or an admin can change the logo' }, { status: 403 })
+  const supabase = await accountProfileClient(account)
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('logo_url')
-    .eq('id', user.id)
+    .eq('id', account.accountId)
     .single()
 
   if (profile?.logo_url) {
@@ -76,6 +78,6 @@ export async function DELETE() {
     if (path) await supabase.storage.from('logos').remove([path])
   }
 
-  await supabase.from('profiles').update({ logo_url: null }).eq('id', user.id)
+  await supabase.from('profiles').update({ logo_url: null }).eq('id', account.accountId)
   return NextResponse.json({ ok: true })
 }

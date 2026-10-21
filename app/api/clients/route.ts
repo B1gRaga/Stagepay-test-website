@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 
 const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes'] as const
@@ -7,14 +8,14 @@ type ClientField = typeof ALLOWED_FIELDS[number]
 
 // GET /api/clients — returns only non-deleted clients
 export async function GET() {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, email, phone, address, vat_number, notes, created_at')
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .is('deleted_at', null)
     .order('name')
 
@@ -26,8 +27,8 @@ export async function GET() {
 
 // POST /api/clients
 export async function POST(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   let body: Record<string, unknown>
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('clients')
-    .insert({ ...(safe as Record<string, string>), user_id: user.id } as import('@/lib/supabase/types').ClientInsert)
+    .insert({ ...(safe as Record<string, string>), user_id: account.accountId } as import('@/lib/supabase/types').ClientInsert)
     .select()
     .single()
 

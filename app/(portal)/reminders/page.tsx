@@ -1,28 +1,30 @@
 import { redirect } from 'next/navigation'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount, accountProfileClient } from '@/lib/account'
 import { isWhatsAppConfigured } from '@/lib/whatsapp'
 import RemindersClient from '@/components/portal/RemindersClient'
 
 export default async function RemindersPage() {
-  const user = await getCachedUser()
-  if (!user) redirect('/auth/login')
+  const account = await getAccount()
+  if (!account) redirect('/auth/login')
 
   const supabase = await createClient()
+  const profileDb = await accountProfileClient(account)
   const [{ data: invoices }, { data: reminders }, { data: profile }] = await Promise.all([
     (supabase )
       .from('invoices')
       .select('id, invoice_number, client_name, client_phone, client_email, project, due_date, total, currency, status, public_token')
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .in('status', ['sent', 'overdue'])
       .order('due_date'),
     (supabase )
       .from('reminders')
       .select('id, invoice_id, status, send_at, channel, sent_at, days_after_due, error_message')
-      .eq('user_id', user.id),
-    (supabase )
+      .eq('user_id', account.accountId),
+    profileDb
       .from('profiles')
       .select('firm_name, name, whatsapp_reminders_enabled, default_currency')
-      .eq('id', user.id)
+      .eq('id', account.accountId)
       .single(),
   ])
 

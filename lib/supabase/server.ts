@@ -41,11 +41,12 @@ export const getCachedUser = cache(async () => {
   return user
 })
 
-// Per-request cached profile — deduplicates across layout + page within the same render.
-// Uses React cache() instead of unstable_cache because createClient() calls cookies(),
-// which is a request-scoped API that unstable_cache forbids.
+// Per-request cached profile of a business — deduplicates across layout + page within
+// the same render. Callers pass a server-derived id (getAccount().accountId), and a team
+// member may read their team's business, which the access rules don't allow, so this
+// uses the service client and only the columns below.
 export const getCachedProfile = cache(async (userId: string) => {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const { data } = await supabase
     .from('profiles')
     .select('name, firm_name, plan, business_type, default_currency')

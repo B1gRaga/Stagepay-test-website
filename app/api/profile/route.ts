@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { getAccount, canManage, accountProfileClient } from '@/lib/account'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 import { cleanMethod, MAX_METHODS } from '@/lib/payment-methods'
 
@@ -17,14 +17,14 @@ const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
 const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-amber'])
 
 export async function GET() {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await createClient()
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = await accountProfileClient(account)
 
   const { data, error } = await supabase
     .from('profiles')
     .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type, payment_methods, default_due_days')
-    .eq('id', user.id)
+    .eq('id', account.accountId)
     .single()
 
   if (error) return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
@@ -34,9 +34,10 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = await createClient()
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canManage(account)) return NextResponse.json({ error: 'Only the owner or an admin can change business settings' }, { status: 403 })
+  const supabase = await accountProfileClient(account)
 
   let body: Record<string, unknown>
   try {
@@ -89,7 +90,7 @@ export async function PATCH(req: NextRequest) {
   const { data, error } = await supabase
     .from('profiles')
     .update(updates as import('@/lib/supabase/types').ProfileUpdate)
-    .eq('id', user.id)
+    .eq('id', account.accountId)
     .select()
     .single()
 

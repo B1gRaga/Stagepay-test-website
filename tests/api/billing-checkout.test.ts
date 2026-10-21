@@ -14,6 +14,15 @@ vi.mock('@/lib/supabase/server', () => ({
   createServiceClient: () => ({ from: mockFrom }),
 }))
 
+// The person's business: their own unless the test makes them a team member.
+let mockAccountId: string | null = null
+vi.mock('@/lib/account', () => ({
+  getAccount: async () => {
+    const u = await mockGetCachedUser()
+    return u ? { userId: u.id, accountId: mockAccountId ?? u.id, role: mockAccountId ? 'admin' : 'owner' } : null
+  },
+}))
+
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
 }))
@@ -35,8 +44,18 @@ function makeRequest(body: unknown) {
 describe('POST /api/billing/checkout', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockAccountId = null
     mockCheckRateLimit.mockResolvedValue(true)
     mockEq.mockResolvedValue({ error: null })
+  })
+
+  it('returns 403 when working in another person’s business, even as an admin', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'member-1' })
+    mockAccountId = 'owner-1'
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    const res = await POST(makeRequest({ plan: 'pro' }))
+    expect(res.status).toBe(403)
+    expect(mockCreatePaymentToken).not.toHaveBeenCalled()
   })
 
   it('returns 401 when not authenticated', async () => {

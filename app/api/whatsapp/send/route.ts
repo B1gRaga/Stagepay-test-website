@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext, createServiceClient } from '@/lib/supabase/server'
+import { resolveAccount, accountProfileClient } from '@/lib/account'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 
@@ -11,7 +12,8 @@ export async function POST(req: NextRequest) {
   const { supabase: _supabase, user } = await getAuthContext(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = _supabase 
-  if (!(await rateLimit(user.id, 10, 60_000))) {
+  const account = await resolveAccount(supabase, user.id)
+  if (!(await rateLimit(account.userId, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -48,15 +50,15 @@ export async function POST(req: NextRequest) {
     .from('invoices')
     .select('id, status, invoice_number, client_name, total, currency, due_date, public_token')
     .eq('id', invoice_id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
 
-  const { data: profile } = await supabase
+  const { data: profile } = await (await accountProfileClient(account))
     .from('profiles')
     .select('firm_name, name')
-    .eq('id', user.id)
+    .eq('id', account.accountId)
     .single()
 
   if (!isWhatsAppConfigured()) {
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
       // Storage key is always server-generated — never derived from the
       // client-supplied filename, so there's no attacker-controlled input
       // anywhere near the storage path.
-      const storagePath = `${user.id}/${invoice_id}_${Date.now()}.pdf`
+      const storagePath = `${account.accountId}/${invoice_id}_${Date.now()}.pdf`
 
       const { error: uploadErr } = await serviceClient.storage
         .from('invoice-pdfs')

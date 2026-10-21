@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount, accountProfileClient } from '@/lib/account'
 import { Resend } from 'resend'
 import { sendWhatsApp as sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib/whatsapp'
 
@@ -7,8 +8,8 @@ import { sendWhatsApp as sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib
 // Sends a reminder immediately (bypasses cron) and logs it as status='sent'.
 // Used when toggling auto-reminders on an already-overdue invoice.
 export async function POST(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   let body: Record<string, unknown>
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     .from('invoices')
     .select('id, invoice_number, client_name, total, currency, due_date, status, user_id')
     .eq('id', invoice_id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
@@ -44,10 +45,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cannot send reminder for a paid or cancelled invoice' }, { status: 400 })
   }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await (await accountProfileClient(account))
     .from('profiles')
     .select('firm_name, name, email')
-    .eq('id', user.id)
+    .eq('id', account.accountId)
     .single()
 
   const senderName = profile?.firm_name || profile?.name || 'Your service provider'
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     const { data: reminder } = await supabase
       .from('reminders')
       .insert({
-        user_id:         user.id,
+        user_id:         account.accountId,
         invoice_id,
         send_at:         now,
         days_after_due:  days_after_due ?? null,

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount, accountProfileClient } from '@/lib/account'
 import NewInvoiceClient from '@/components/portal/NewInvoiceClient'
 import type { LastInvoice } from '@/components/portal/invoice-draft'
 
@@ -8,23 +9,24 @@ export default async function NewInvoicePage({
 }: {
   searchParams: Promise<{ edit?: string; client?: string }>
 }) {
-  const user = await getCachedUser()
-  if (!user) redirect('/auth/login')
+  const account = await getAccount()
+  if (!account) redirect('/auth/login')
 
   const supabase = await createClient()
+  const profileDb = await accountProfileClient(account)
 
   const { edit: editId, client: clientParam } = await searchParams
 
   const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }] = await Promise.all([
-    supabase
+    profileDb
       .from('profiles')
       .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label, default_due_days')
-      .eq('id', user.id)
+      .eq('id', account.accountId)
       .single(),
     supabase
       .from('clients')
       .select('id, name, email, phone')
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .is('deleted_at', null)
       .order('name'),
     editId
@@ -32,14 +34,14 @@ export default async function NewInvoicePage({
           .from('invoices')
           .select('*, invoice_items(*)')
           .eq('id', editId)
-          .eq('user_id', user.id)
+          .eq('user_id', account.accountId)
           .single()
       : Promise.resolve({ data: null, error: null }),
     // Recent invoices with their items: "same as last time" per client, and remembered items.
     supabase
       .from('invoices')
       .select('id, client_id, client_name, project, invoice_number, issue_date, currency, total, invoice_items(description, quantity, unit_price, sort_order)')
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .neq('status', 'cancelled')
       .order('created_at', { ascending: false })
       .limit(120),

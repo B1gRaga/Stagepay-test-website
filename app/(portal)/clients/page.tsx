@@ -1,28 +1,29 @@
 import { redirect } from 'next/navigation'
-import { createClient, getCachedUser, getCachedProfile } from '@/lib/supabase/server'
+import { createClient, getCachedProfile } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import ClientsGrid from '@/components/portal/ClientsGrid'
 import type { ClientStats } from '@/components/portal/ClientsGrid'
 
 export default async function ClientsPage() {
-  const user = await getCachedUser()
-  if (!user) redirect('/auth/login')
+  const account = await getAccount()
+  if (!account) redirect('/auth/login')
 
   const supabase = await createClient()
   const [{ data: clients }, { data: invoices }, profile] = await Promise.all([
     supabase
       .from('clients')
       .select('id, name, email, phone, address, vat_number, notes, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .is('deleted_at', null)
       .order('name'),
     supabase
       .from('invoices')
       .select('client_id, client_name, total, currency, status, issue_date, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', account.accountId)
       .neq('status', 'cancelled')
       .order('created_at', { ascending: false })
       .limit(2000),
-    getCachedProfile(user.id),
+    getCachedProfile(account.accountId),
   ])
 
   // Invoices created before the client record existed are linked by name.

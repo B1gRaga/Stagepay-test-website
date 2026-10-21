@@ -1,15 +1,16 @@
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import InvoicesTable from '@/components/portal/InvoicesTable'
 
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const user = await getCachedUser()
-  if (!user) return null
+  const account = await getAccount()
+  if (!account) return null
 
   const supabase = await createClient()
   const { data: invoices, count } = await supabase
     .from('invoices')
     .select('id, invoice_number, client_name, project, issue_date, due_date, total, status, currency', { count: 'estimated' })
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .order('created_at', { ascending: false })
     .range(0, 49)
 

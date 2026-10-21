@@ -41,6 +41,7 @@ export interface Database {
           pending_plan: string | null
           business_type: BusinessType | null
           team_id: string | null
+          current_account_id: string | null
           created_at: string
           updated_at: string
         }
@@ -73,6 +74,7 @@ export interface Database {
           pending_plan?: string | null
           business_type?: BusinessType | null
           team_id?: string | null
+          current_account_id?: string | null
         }
         Update: {
           email?: string | null
@@ -102,6 +104,7 @@ export interface Database {
           pending_plan?: string | null
           business_type?: BusinessType | null
           team_id?: string | null
+          current_account_id?: string | null
         }
         Relationships: []
       }
@@ -446,6 +449,14 @@ export interface Database {
     Functions: {
       next_invoice_number: {
         Args: { p_user_id: string }
+        Returns: string
+      }
+      current_account_id: {
+        Args: Record<string, never>
+        Returns: string
+      }
+      current_account_role: {
+        Args: Record<string, never>
         Returns: string
       }
     }

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount, accountProfileClient } from '@/lib/account'
 import { generateInvoicePDF } from '@/lib/invoice-pdf'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   const { searchParams } = new URL(req.url)
@@ -16,8 +17,8 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const supabaseAny = supabase
   const [{ data: invoice }, { data: profile }] = await Promise.all([
-    supabaseAny.from('invoices').select('*, invoice_items(*)').eq('id', id).eq('user_id', user.id).single(),
-    supabaseAny.from('profiles').select('*').eq('id', user.id).single(),
+    supabaseAny.from('invoices').select('*, invoice_items(*)').eq('id', id).eq('user_id', account.accountId).single(),
+    (await accountProfileClient(account)).from('profiles').select('*').eq('id', account.accountId).single(),
   ])
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })

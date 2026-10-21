@@ -1,12 +1,13 @@
 import { redirect, notFound } from 'next/navigation'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import InvoicePreviewClient from '@/components/portal/InvoicePreviewClient'
 
 type Params = { params: Promise<{ id: string }> }
 
 export default async function InvoicePreviewPage({ params }: Params) {
-  const user = await getCachedUser()
-  if (!user) redirect('/auth/login')
+  const account = await getAccount()
+  if (!account) redirect('/auth/login')
 
   const { id } = await params
   const supabase = await createClient()
@@ -14,7 +15,7 @@ export default async function InvoicePreviewPage({ params }: Params) {
     .from('invoices')
     .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, due_date, total, status, currency, public_token, email_sent_at')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (!invoice) notFound()

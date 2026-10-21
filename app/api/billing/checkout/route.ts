@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCachedUser, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import { createPaymentToken, type DpoPlan } from '@/lib/dpo'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 const VALID_PLANS: DpoPlan[] = ['pro', 'business']
 
 export async function POST(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!(await checkRateLimit(`billing:${user.id}`, 5, 60_000))) {
+  if (account.accountId !== account.userId) {
+    return NextResponse.json({ error: 'Only the business owner can change the plan' }, { status: 403 })
+  }
+
+  if (!(await checkRateLimit(`billing:${account.userId}`, 5, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -26,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { token, paymentUrl } = await createPaymentToken(user.id, plan as DpoPlan)
+    const { token, paymentUrl } = await createPaymentToken(account.userId, plan as DpoPlan)
 
     // Store the pending token AND plan server-side so verify/callback
     // can read the plan from the DB rather than trusting CompanyRef.
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
         pending_plan: plan,
         dpo_token_created_at: new Date().toISOString(),
       })
-      .eq('id', user.id)
+      .eq('id', account.userId)
 
     return NextResponse.json({ paymentUrl })
   } catch (err) {

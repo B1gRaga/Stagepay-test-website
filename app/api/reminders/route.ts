@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 
 const VALID_CHANNELS = ['whatsapp', 'email'] as const
 
 // GET /api/reminders?invoice_id=xxx
 export async function GET(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   const { searchParams } = new URL(req.url)
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('reminders')
     .select('*, invoices(invoice_number, client_name, total, currency)')
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .order('send_at')
 
   if (invoice_id) query = query.eq('invoice_id', invoice_id)
@@ -27,8 +28,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/reminders — schedule a reminder
 export async function POST(req: NextRequest) {
-  const user = await getCachedUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const account = await getAccount()
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = await createClient()
 
   let body: Record<string, unknown>
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     .from('invoices')
     .select('id, client_phone, client_email, due_date')
     .eq('id', body.invoice_id as string)
-    .eq('user_id', user.id)
+    .eq('user_id', account.accountId)
     .single()
 
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from('reminders')
     .insert({
-      user_id:         user.id,
+      user_id:         account.accountId,
       invoice_id:      body.invoice_id as string,
       send_at:         body.send_at as string,
       days_after_due:  (body.days_after_due as number | null | undefined) ?? null,

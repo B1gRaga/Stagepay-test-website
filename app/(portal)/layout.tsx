@@ -1,25 +1,27 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { getCachedProfile, createClient } from '@/lib/supabase/server'
+import { getAccount } from '@/lib/account'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
 import PullToRefresh from '@/components/portal/PullToRefresh'
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   // Middleware has already verified auth and forwarded the identity.
-  // Reading from headers is synchronous (no network call).
   const h = await headers()
-  const userId = h.get('x-user-id')
   const userEmail = h.get('x-user-email') ?? ''
-  if (!userId) redirect('/auth/login')
+  const account = await getAccount()
+  if (!account) redirect('/auth/login')
 
   const supabase = await createClient()
-  const [profile, { count: overdueCount }] = await Promise.all([
-    getCachedProfile(userId),
+  // The sidebar shows the business being worked in; first-time setup is the person's own.
+  const [profile, own, { count: overdueCount }] = await Promise.all([
+    getCachedProfile(account.accountId),
+    getCachedProfile(account.userId),
     supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
+      .eq('user_id', account.accountId)
       .eq('status', 'overdue'),
   ])
 
@@ -27,7 +29,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   // First-time users: send to onboarding to pick business type.
   // /onboarding is outside the (portal) group so there is no redirect loop.
-  if (profile && !profile.business_type) {
+  if (own && !own.business_type) {
     redirect('/onboarding')
   }
 
