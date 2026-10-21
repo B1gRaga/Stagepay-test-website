@@ -26,7 +26,7 @@ const CSS = `
 .lp :focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:8px}
 .band{padding:88px clamp(20px,5vw,48px);position:relative}
 .wrap{max-width:1120px;margin-inline:auto;position:relative;z-index:1}
-.dotfx{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none}
+.dotfx{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 50%,#000 35%,transparent 100%);mask-image:radial-gradient(ellipse 75% 70% at 50% 50%,#000 35%,transparent 100%)}
 .ink{background:var(--ink);color:var(--on-ink)}
 .p2{background:var(--paper-2)}
 .mark{display:flex;align-items:flex-end;height:10px;width:60px;margin-bottom:18px}
@@ -117,11 +117,12 @@ const CSS = `
 .toast .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--ink);flex:none}
 .toast .ic svg{width:16px;height:16px}
 .t1{left:-4%;top:6px;animation-delay:1.6s}
-.t2{right:-2%;top:300px;animation-delay:2.2s}
+.t2{right:-4%;top:118px;animation-delay:2.2s}
 .t3{left:4%;bottom:6px;animation-delay:2.8s}
 .t3 .ic{background:var(--amber)}
 @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.9)}to{opacity:1;transform:none}}
-@media (max-width:420px){.stage{height:500px}.t2{right:0}}
+@media (max-width:600px){.t2{display:none}}
+@media (max-width:420px){.stage{height:560px}}
 
 /* invoice */
 .invoice{width:100%;background:var(--white);color:var(--ink);border-radius:18px;overflow:hidden;box-shadow:var(--sh-3);font-size:13px}
@@ -164,7 +165,7 @@ const CSS = `
 .tabs button[aria-selected="true"]{color:var(--on-ink)}
 .tabs .pill{position:absolute;top:5px;bottom:5px;left:5px;width:calc(50% - 5px);background:var(--ink);border-radius:999px;transition:transform .35s cubic-bezier(.3,1.3,.5,1);box-shadow:var(--sh-1)}
 .tabs.after .pill{transform:translateX(100%)}
-.panel{height:330px;position:relative;margin-top:16px;border-radius:18px;overflow:hidden;background:var(--paper)}
+.panel{height:440px;position:relative;margin-top:16px;border-radius:18px;overflow:hidden;background:var(--paper)}
 .panel > div{position:absolute;inset:0;display:grid;place-items:center;padding:20px;transition:opacity .35s ease, transform .35s ease}
 .panel .before{background:repeating-linear-gradient(0deg,#F3EEE3 0 28px,#EFE8DA 28px 29px)}
 .panel [aria-hidden="true"]{opacity:0;transform:scale(.96);pointer-events:none}
@@ -176,7 +177,9 @@ const CSS = `
 .paper.two{position:absolute;transform:rotate(5deg) translate(26px,-18px);opacity:.7;z-index:-1}
 .mini{width:84%;max-width:320px;transform:rotate(-1.5deg)}
 .mini .invoice{box-shadow:var(--sh-2)}
-.badge-ok{position:absolute;right:8%;top:14%;background:var(--ink);color:var(--on-ink);font-size:12px;font-weight:800;padding:7px 12px;border-radius:999px;display:flex;gap:6px;align-items:center;box-shadow:var(--sh-2)}
+.mini .inv-tag{display:none}
+.panel > .after{padding-top:60px}
+.badge-ok{position:absolute;right:50%;translate:50% 0;top:16px;background:var(--ink);color:var(--on-ink);font-size:12px;font-weight:800;padding:7px 12px;border-radius:999px;display:flex;gap:6px;align-items:center;box-shadow:var(--sh-2)}
 .badge-ok i{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 
 /* features */
@@ -316,7 +319,7 @@ const CSS = `
 }
 `
 
-const CONTACT = { whatsapp: '73205678', email: 'getstagepay@gmail.com' }
+const CONTACT = { whatsapp: '73998627', email: 'getstagepay@gmail.com' }
 
 function fmt(n: number) {
   return 'P' + Math.round(n).toLocaleString('en-US')
@@ -459,6 +462,9 @@ export default function Home() {
 
   const subtotal = items.reduce((s, r) => s + (r.amount || 0), 0)
   const vatAmount = vat ? Math.round(subtotal * 0.14) : 0
+
+  // The demo invoice always shows its real total; Generate replays the count-up.
+  useEffect(() => { setPreviewTotal(subtotal + vatAmount) }, [subtotal, vatAmount])
 
   // scroll progress bar
   useEffect(() => {
@@ -757,7 +763,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="after" role="tabpanel" aria-hidden={tab !== 'after'}>
-                  <div className="mini"><div className="invoice"><div className="steps-bar"><i></i><i></i><i></i></div><div className="inv-body"><div className="inv-top"><div><div className="inv-biz">Thuto Tutoring Centre</div><div className="inv-sub">INV-202605-015</div></div><div className="inv-tag">INVOICE</div></div><table className="inv-rows" style={{ marginTop: 10 }}><tbody><tr><td>Mathematics</td><td>P300</td></tr><tr><td>Science Double Award</td><td>P500</td></tr><tr><td>English</td><td>P300</td></tr></tbody></table><div className="inv-total"><span>TOTAL DUE</span><b>P1,425</b></div></div></div></div>
+                  <div className="mini"><div className="invoice"><div className="steps-bar"><i></i><i></i><i></i></div><div className="inv-body"><div className="inv-top"><div><div className="inv-biz">Thuto Tutoring Centre</div><div className="inv-sub">INV-202605-015</div></div><div className="inv-tag">INVOICE</div></div><table className="inv-rows" style={{ marginTop: 10 }}><tbody><tr><td>Mathematics</td><td>P300</td></tr><tr><td>Science Double Award</td><td>P500</td></tr><tr><td>English</td><td>P300</td></tr><tr><td>Registration fee</td><td>P150</td></tr><tr className="muted"><td>VAT (14%)</td><td>P175</td></tr></tbody></table><div className="inv-total"><span>TOTAL DUE</span><b>P1,425</b></div></div></div></div>
                   <div className="badge-ok"><i></i>Sent on WhatsApp</div>
                 </div>
               </div>

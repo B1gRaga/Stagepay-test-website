@@ -7,8 +7,8 @@ import { useEffect } from 'react'
 // static-HTML design, scoped to whichever page mounts it (so it doesn't reach
 // into the portal). One canvas per section, one shared rAF loop, culled by
 // IntersectionObserver, and fully static (no pointer reactivity) under
-// prefers-reduced-motion.
-export function DotGridBackground() {
+// prefers-reduced-motion. `selector` picks the sections that get a canvas.
+export function DotGridBackground({ selector = '.lp .band' }: { selector?: string }) {
   useEffect(() => {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     const AMBER = [242, 169, 0]
@@ -57,14 +57,14 @@ export function DotGridBackground() {
         const target = reduce ? 0 : Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / R)
         p.v += (target - p.v) * (dt ? Math.min(1, dt * 10) : 1)
         const idle = 0.5 + 0.5 * Math.sin(t * 0.8 + p.x * 0.02 + p.y * 0.015)
-        ctx.fillStyle = p.v > 0.15 ? rgba(AMBER, (0.3 + p.v * 0.7) * L.amberA) : rgba(L.base, L.baseA + idle * 0.12)
+        ctx.fillStyle = p.v > 0.15 ? rgba(AMBER, (0.2 + p.v * 0.6) * L.amberA) : rgba(L.base, L.baseA + idle * 0.06)
         ctx.beginPath()
-        ctx.arc(p.x, p.y - p.v * 4, 1.1 + p.v * 3 + idle * 0.35, 0, Math.PI * 2)
+        ctx.arc(p.x, p.y - p.v * 2, 1 + p.v * 1.6 + idle * 0.25, 0, Math.PI * 2)
         ctx.fill()
       }
     }
 
-    const sections = Array.from(document.querySelectorAll<HTMLElement>('.lp .band'))
+    const sections = Array.from(document.querySelectorAll<HTMLElement>(selector))
 
     sections.forEach(sec => {
       const canvas = document.createElement('canvas')
@@ -78,8 +78,8 @@ export function DotGridBackground() {
       const L: Layer = {
         sec, ctx, canvas,
         base: ink ? [139, 149, 171] : [167, 158, 140],
-        baseA: ink ? 0.32 : 0.24,
-        amberA: ink ? 1 : 0.75,
+        baseA: ink ? 0.16 : 0.14,
+        amberA: ink ? 0.5 : 0.45,
         dots: [], W: 0, H: 0, mx: -9999, my: -9999, tx: 0, ty: 0,
         live: false, visible: true, t: Math.random() * 10, last: 0,
       }
@@ -156,7 +156,7 @@ export function DotGridBackground() {
       io?.disconnect()
       cleanupFns.forEach(fn => fn())
     }
-  }, [])
+  }, [selector])
 
   return null
 }
