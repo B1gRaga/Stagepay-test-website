@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
-import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
+import { THEME_PRESETS, THEME_ORDER, resolveTheme, tint, type InvoiceTheme } from '@/lib/invoice-themes'
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { firmLines } from '@/lib/firm-details'
 import { PLANS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName } from '@/lib/plans'
@@ -303,7 +303,8 @@ const CSS = `
   .brand-layout{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:28px;align-items:start;}
   .brand-preview{margin:0;position:sticky;top:24px;}
   .brand-preview figcaption{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;}
-  .brand-preview .stage{background:#E9E5DC;border-radius:12px;padding:14px;}
+  .brand-preview .stage{background:#E9E5DC;border-radius:12px;padding:10px;}
+  .brand-pdf{display:block;width:100%;aspect-ratio:210/297;border:0;border-radius:4px;background:#FFFFFF;}
   html:not([data-theme="light"]) .brand-preview .stage{background:#111827;}
   @media(max-width:1200px){.brand-layout{grid-template-columns:minmax(0,1fr);}.brand-preview{position:static;max-width:460px;}}
 
@@ -361,128 +362,44 @@ function BrandingColorField({
   )
 }
 
-const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-function sampleDate(d: Date) {
-  return `${d.getDate()} ${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`
-}
-
-// A small copy of the invoice PDF, drawn from the account's real details
-// with a sample client and items, so template changes can be judged at a glance.
-function InvoicePreviewMock({ theme: t, logoUrl, firm, taxLabel, vatRate, currency, dueDays, payBlocks: blocks }: {
-  theme: InvoiceTheme
-  logoUrl: string | null | undefined
-  firm: { name: string; address: string; contact: string; vat: string }
-  taxLabel: string
-  vatRate: number
-  currency: string
-  dueDays: number
-  payBlocks: { title: string; rows: [string, string][] }[]
-}) {
-  const fw = (n: number) => ({ fontWeight: n } as const)
-  const uc = { textTransform: 'uppercase' as const }
-  const money = (n: number) => `${currency}${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  const today = new Date()
-  const due = new Date(today.getTime() + dueDays * 86400000)
-  const number = `INV-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}-001`
-  const items = [
-    { desc: 'Lessons, 1 hour each', qty: 4, rate: 250 },
-    { desc: 'Study materials', qty: 1, rate: 150 },
-  ]
-  const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0)
-  const vat = subtotal * vatRate / 100
-  const name = firm.name || 'Your business name'
-  const meta: [string, string][] = [
-    ['Issue date', sampleDate(today)],
-    ['Due date', dueDays === 0 ? 'On receipt' : sampleDate(due)],
-    ['Terms', dueDays === 0 ? 'On receipt' : `Net ${dueDays} days`],
-    ['Status', 'Sent'],
-  ]
-  return (
-    <div aria-hidden="true" style={{ background: t.pageBg, borderRadius: 6, overflow: 'hidden', fontFamily: 'Arial,sans-serif', width: '100%', fontSize: 9, color: t.bodyText }}>
-      {/* Header */}
-      <div style={{ background: t.headerBg, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          {logoUrl
-            ? <img src={logoUrl} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'contain', flex: 'none' }} />
-            : <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.accentColor, flex: 'none' }} />}
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: t.headerFirmColor, ...fw(700), fontSize: 13, lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-            {firm.vat && <div style={{ color: t.accentColor, fontSize: 7.5, marginTop: 2 }}>{firm.vat}</div>}
-            {firm.address && <div style={{ color: t.headerSubColor, fontSize: 6.5, marginTop: 2 }}>{firm.address}</div>}
-            {firm.contact && <div style={{ color: t.headerSubColor, fontSize: 6.5, marginTop: 1 }}>{firm.contact}</div>}
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', flex: 'none' }}>
-          <div style={{ color: t.invoiceLabelColor, ...fw(700), fontSize: 20, letterSpacing: 1.5 }}>INVOICE</div>
-          <div style={{ color: t.headerSubColor, fontSize: 7.5, marginTop: 1 }}>{number}</div>
-        </div>
-      </div>
-
-      <div style={{ padding: '10px 14px 12px' }}>
-        {/* Meta */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-          {meta.map(([l, v]) => (
-            <div key={l} style={{ flex: 1, background: t.metaCardBg, border: t.metaCardBorder ? `1px solid ${t.metaCardBorder}` : undefined, borderRadius: 4, padding: '4px 6px' }}>
-              <div style={{ fontSize: 5.5, color: '#64748B', ...uc, letterSpacing: .4 }}>{l}</div>
-              <div style={{ fontSize: 7.5, ...fw(700), marginTop: 1 }}>{v}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* From / Bill to */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-          {[['From', name, firm.address], ['Bill to', 'Sample client', 'client@email.com']].map(([lbl, n, line]) => (
-            <div key={lbl} style={{ flex: 1, background: t.boxBg, padding: '5px 7px', borderRadius: 4, minWidth: 0 }}>
-              <div style={{ color: t.accentColor, fontSize: 6, ...fw(700), ...uc, letterSpacing: .6, marginBottom: 2 }}>{lbl}</div>
-              <div style={{ ...fw(700), fontSize: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</div>
-              {line && <div style={{ color: '#64748B', fontSize: 6.5, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line}</div>}
-            </div>
-          ))}
-        </div>
-
-        {/* Items */}
-        <div style={{ background: t.tableHeadBg, padding: '4px 7px', display: 'flex', borderRadius: '3px 3px 0 0' }}>
-          {(['Description', 'Qty', 'Amount'] as const).map((h, i) => (
-            <span key={h} style={{ flex: i === 0 ? 4 : i === 1 ? 1 : 1.6, color: t.tableHeadText, fontSize: 7, ...fw(700), textAlign: i ? 'right' : 'left' }}>{h}</span>
-          ))}
-        </div>
-        {items.map((it, i) => (
-          <div key={it.desc} style={{ padding: '4px 7px', display: 'flex', background: i % 2 ? t.tableRowAltBg : t.pageBg, borderBottom: `1px solid ${t.lineColor}` }}>
-            <span style={{ flex: 4, fontSize: 7.5 }}>{it.desc}</span>
-            <span style={{ flex: 1, fontSize: 7.5, color: '#64748B', textAlign: 'right' }}>{it.qty}</span>
-            <span style={{ flex: 1.6, fontSize: 7.5, textAlign: 'right' }}>{money(it.qty * it.rate)}</span>
-          </div>
-        ))}
-
-        {/* Totals */}
-        <div style={{ marginLeft: 'auto', width: '56%', marginTop: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 7.5, padding: '1px 0' }}><span style={{ color: '#64748B' }}>Subtotal</span><span>{money(subtotal)}</span></div>
-          {vatRate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 7.5, padding: '1px 0' }}><span style={{ color: '#64748B' }}>{taxLabel} ({vatRate}%)</span><span>{money(vat)}</span></div>}
-          <div style={{ background: t.grandRowBg, color: t.grandRowText, borderRadius: 5, padding: '4px 8px', marginTop: 5, display: 'flex', justifyContent: 'space-between', ...fw(700) }}>
-            <span style={{ fontSize: 7.5 }}>TOTAL DUE</span><span style={{ fontSize: 10 }}>{money(subtotal + vat)}</span>
-          </div>
-        </div>
-
-        {/* Payment details */}
-        {blocks.length > 0 && (
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 6.5, ...fw(700), ...uc, letterSpacing: .5, marginBottom: 3 }}>Payment details</div>
-            {blocks.map((b, i) => (
-              <div key={i} style={{ fontSize: 7, lineHeight: 1.5 }}>
-                <b>{b.title}</b>{'  '}<span style={{ color: '#475569' }}>{b.rows.map(([l, v]) => `${l}: ${v}`).join('  ·  ')}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div style={{ background: t.footerBg, padding: '6px 14px', display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ color: t.footerBrandColor, fontSize: 6, ...fw(700) }}>STAGEPAY</span>
-        <span style={{ color: t.footerTextColor, fontSize: 6 }}>Page 1 of 1 · {number}</span>
-      </div>
+// A small sketch of each template's layout for the template picker: where the
+// big INVOICE, the colour and the amount sit. The real thing is in the preview.
+function TemplateSketch({ id, t }: { id: string; t: InvoiceTheme }) {
+  const ink = '#1F2A44', line = '#E5E7EB', soft = '#CBD5E1'
+  const bar = (w: string | number, h = 3, c = soft, extra: React.CSSProperties = {}) => <div style={{ width: w, height: h, background: c, borderRadius: 1, ...extra }} />
+  const rows = (n: number, gap = 4) => <div style={{ display: 'grid', gap }}>{Array.from({ length: n }, (_, i) => <div key={i} style={{ height: 1, background: line }} />)}</div>
+  const accent = t.accentColor, header = t.headerBg
+  const box: React.CSSProperties = { background: '#FFFFFF', height: 96, padding: 8, display: 'flex', flexDirection: 'column', gap: 5, position: 'relative', overflow: 'hidden' }
+  if (id === 'charcoal') return (
+    <div style={{ ...box, padding: 0, flexDirection: 'row', gap: 0 }}>
+      <div style={{ width: '36%', background: header, padding: 7, display: 'grid', alignContent: 'start', gap: 4 }}>{bar('80%', 3, '#FFFFFF')}{bar('60%', 2, '#FFFFFF', { opacity: .5 })}{bar('70%', 5, accent, { marginTop: 8 })}{bar('50%', 2, '#FFFFFF', { opacity: .5 })}</div>
+      <div style={{ flex: 1, padding: 7, display: 'grid', alignContent: 'start', gap: 5 }}>{bar('70%', 9, ink)}{bar('40%', 2)}{rows(4)}{bar('45%', 3, ink, { justifySelf: 'end' })}</div>
     </div>
   )
+  if (id === 'clean-light') return (
+    <div style={box}>{bar('75%', 12, ink)}<div style={{ display: 'flex', gap: 6 }}><div style={{ flex: 1 }}>{rows(3, 4)}</div><div style={{ flex: 1 }}>{rows(3, 4)}</div></div>{rows(3)}<div style={{ alignSelf: 'flex-end', width: '45%' }}>{bar('100%', 4, ink)}{bar('100%', 2, accent, { marginTop: 2 })}</div></div>
+  )
+  if (id === 'minimal') return (
+    <div style={{ ...box, padding: '8px 12px' }}>{bar('35%', 2)}{bar('60%', 10, ink, { marginTop: 4 })}{bar(10, 2, accent)}{bar('85%', 3, ink, { opacity: .7 })}<div style={{ marginTop: 2 }}>{rows(3)}</div></div>
+  )
+  if (id === 'bold-amber') return (
+    <div style={box}><div style={{ display: 'flex', justifyContent: 'space-between' }}>{bar('50%', 10, ink)}{bar('25%', 3)}</div>{rows(3)}{bar('40%', 3, ink, { alignSelf: 'flex-end' })}<div style={{ borderTop: `1px dashed ${soft}`, marginTop: 'auto' }} /><div style={{ height: 18, background: /^#[0-9a-f]{6}$/i.test(accent) ? tint(accent, .82) : '#FCEFC7', borderRadius: 2, padding: 4 }}>{bar('35%', 4, ink)}</div></div>
+  )
+  return (
+    <div style={box}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>{bar('30%', 3, ink)}{bar('45%', 9, ink)}</div><div style={{ margin: '0 -8px', height: 16, background: header, padding: '4px 8px' }}>{bar('35%', 6, accent)}</div>{rows(3)}{bar('40%', 3, ink, { alignSelf: 'flex-end' })}</div>
+  )
+}
+
+// The real PDF, in the template and colours being tried. It reloads a moment
+// after the last change so typing a colour doesn't fire a render per key.
+function BrandingPdfPreview({ theme, accent, header, logo }: { theme: string; accent: string; header: string; logo?: string | null }) {
+  const want = `/api/invoices/sample-pdf?${new URLSearchParams({ theme, ...(accent ? { accent } : {}), ...(header ? { header } : {}), v: logo ?? '' })}#toolbar=0&navpanes=0&view=FitH`
+  const [src, setSrc] = useState(want)
+  useEffect(() => {
+    const id = setTimeout(() => setSrc(want), 500)
+    return () => clearTimeout(id)
+  }, [want])
+  return <iframe className="brand-pdf" src={src} title="Sample invoice in the chosen template" />
 }
 
 export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, role = 'owner' }: { initialProfile?: Profile | null; invoicesThisMonth?: number; role?: 'owner' | 'admin' | 'staff' }) {
@@ -1024,27 +941,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                           aria-pressed={branding.invoice_theme === id}
                           onClick={() => setBranding(p => ({ ...p, invoice_theme: id }))}
                         >
-                          <div style={{ background: t.pageBg }} aria-hidden="true">
-                            <div style={{ background: t.headerBg, height: 26, padding: '4px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                <div style={{ width: 28, height: 5, background: t.headerFirmColor, borderRadius: 1 }}/>
-                                <div style={{ width: 18, height: 3, background: t.headerSubColor, borderRadius: 1, opacity: .6 }}/>
-                              </div>
-                              <div style={{ width: 22, height: 5, background: t.invoiceLabelColor, borderRadius: 1 }}/>
-                            </div>
-                            <div style={{ padding: '5px 6px 6px' }}>
-                              <div style={{ display: 'flex', gap: 3, marginBottom: 3 }}>
-                                <div style={{ flex: 1, height: 12, background: t.boxBg, borderRadius: 1, border: `1px solid ${t.lineColor}` }}/>
-                                <div style={{ flex: 1, height: 12, background: t.boxBg, borderRadius: 1, border: `1px solid ${t.lineColor}` }}/>
-                              </div>
-                              <div style={{ height: 7, background: t.tableHeadBg, borderRadius: 1, marginBottom: 1 }}/>
-                              <div style={{ height: 5, background: t.pageBg, borderBottom: `1px solid ${t.lineColor}` }}/>
-                              <div style={{ height: 5, background: t.tableRowAltBg, borderBottom: `1px solid ${t.lineColor}` }}/>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 3 }}>
-                                <div style={{ width: '45%', height: 9, background: t.grandRowBg, borderRadius: 2 }}/>
-                              </div>
-                            </div>
-                          </div>
+                          <div aria-hidden="true"><TemplateSketch id={id} t={t} /></div>
                           <span className="theme-card-name">{t.name}</span>
                         </button>
                       )
@@ -1075,17 +972,13 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
               </div>
 
               <figure className="brand-preview">
-                <figcaption><span>Your next invoice</span><span>Sample client and items</span></figcaption>
+                <figcaption><span>Your next invoice</span><span>The real PDF, with a sample client</span></figcaption>
                 <div className="stage">
-                  <InvoicePreviewMock
-                    theme={brandTheme}
-                    logoUrl={profile?.logo_url}
-                    firm={firmLines({ ...firm, email: profile?.email })}
-                    taxLabel={inv.tax_label.trim() || 'VAT'}
-                    vatRate={vatOn ? rateNum : 0}
-                    currency={inv.default_currency}
-                    dueDays={terms}
-                    payBlocks={payPreview}
+                  <BrandingPdfPreview
+                    theme={branding.invoice_theme}
+                    accent={hexOk(branding.brand_color_primary) ? branding.brand_color_primary || '' : ''}
+                    header={hexOk(branding.brand_color_header) ? branding.brand_color_header || '' : ''}
+                    logo={profile?.logo_url}
                   />
                 </div>
               </figure>

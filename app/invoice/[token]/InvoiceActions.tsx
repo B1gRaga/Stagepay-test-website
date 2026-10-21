@@ -1,20 +1,28 @@
 'use client'
+import { useState } from 'react'
 
-export default function InvoiceActions({ token, invoiceNumber }: { token: string; invoiceNumber: string }) {
+// Copy an account number, phone number or reference with one tap; parents
+// paste these straight into their banking or mobile-money app.
+export function CopyButton({ value, label }: { value: string; label: string }) {
+  const [done, setDone] = useState(false)
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      const t = document.createElement('textarea')
+      t.value = value; document.body.appendChild(t); t.select()
+      try { document.execCommand('copy') } finally { t.remove() }
+    }
+    setDone(true)
+    setTimeout(() => setDone(false), 1600)
+  }
   return (
-    <div style={{ padding: '20px 40px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-      <a
-        href={`/invoice/${token}/pdf`}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', background: '#1F2A44', color: '#fff' }}
-      >
-        ↓ Download PDF
-      </a>
-      <button
-        onClick={() => window.print()}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, background: 'transparent', color: '#475569', border: '1px solid #e2e8f0', cursor: 'pointer' }}
-      >
-        🖨 Print
-      </button>
-    </div>
+    <button type="button" className="pi-copy" onClick={copy} aria-label={`Copy ${label}`}>
+      <span aria-live="polite">{done ? 'Copied' : 'Copy'}</span>
+    </button>
   )
+}
+
+export function PrintButton() {
+  return <button type="button" className="pi-btn pi-btn-2" onClick={() => window.print()}>Print</button>
 }

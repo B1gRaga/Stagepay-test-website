@@ -261,7 +261,7 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
           <Link href="/" className="st-logo" aria-label="StagePay home"><LogoFull tone="default" /></Link>
           {onLogin
             ? <p className="st-switch"><span>New to StagePay? </span><Link href="/auth/signup" onClick={e => switchTo(e, '/auth/signup')}>Create an account</Link></p>
-            : <p className="st-switch"><span>{onSignup ? 'Already have an account? ' : 'Remembered it? '}</span><Link href="/auth/login" onClick={e => switchTo(e, '/auth/login')}>Sign in</Link></p>}
+            : <p className="st-switch"><span>{onSignup ? 'Already have an account? ' : pathname.startsWith('/auth/mfa') ? 'Wrong account? ' : 'Remembered it? '}</span><Link href="/auth/login" onClick={e => switchTo(e, '/auth/login')}>Sign in</Link></p>}
         </header>
 
         <main className="st-main" ref={mainRef}>{children}</main>

@@ -28,6 +28,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/pdf',
+        'Cache-Control': 'private, no-store',
         'Content-Disposition': `attachment; filename="${invoice.invoice_number}.pdf"`,
       },
     })

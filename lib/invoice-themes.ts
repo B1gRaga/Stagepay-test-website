@@ -30,7 +30,7 @@ export interface InvoiceTheme {
 
 export const THEME_PRESETS: Record<string, InvoiceTheme> = {
   'dark-modern': {
-    name:              'Dark Modern',
+    name:              'Classic',
     headerBg:          '#1F2A44',
     headerFirmColor:   '#F2A900',
     headerSubColor:    '#9FBCC8',
@@ -52,7 +52,7 @@ export const THEME_PRESETS: Record<string, InvoiceTheme> = {
     pageBg:            '#FFFFFF',
   },
   'clean-light': {
-    name:              'Clean Light',
+    name:              'Ledger',
     headerBg:          '#F8FAFC',
     headerFirmColor:   '#1E2D3D',
     headerSubColor:    '#94A3B8',
@@ -74,7 +74,7 @@ export const THEME_PRESETS: Record<string, InvoiceTheme> = {
     pageBg:            '#FFFFFF',
   },
   'minimal': {
-    name:              'Minimal',
+    name:              'Letter',
     headerBg:          '#FFFFFF',
     headerFirmColor:   '#1F2A44',
     headerSubColor:    '#94A3B8',
@@ -96,7 +96,7 @@ export const THEME_PRESETS: Record<string, InvoiceTheme> = {
     pageBg:            '#FFFFFF',
   },
   'charcoal': {
-    name:              'Charcoal',
+    name:              'Sidebar',
     headerBg:          '#1F2A44',
     headerFirmColor:   '#F2A900',
     headerSubColor:    '#9FBCC8',
@@ -118,7 +118,7 @@ export const THEME_PRESETS: Record<string, InvoiceTheme> = {
     pageBg:            '#18213A',
   },
   'bold-amber': {
-    name:              'Bold Amber',
+    name:              'Statement',
     headerBg:          '#F2A900',
     headerFirmColor:   '#1F2A44',
     headerSubColor:    '#1F2A44',
