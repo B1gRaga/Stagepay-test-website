@@ -305,6 +305,7 @@ const CSS = `
   .brand-preview figcaption{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;}
   .brand-preview .stage{background:#E9E5DC;border-radius:12px;padding:10px;}
   .brand-pdf{display:block;width:100%;aspect-ratio:210/297;border:0;border-radius:4px;background:#FFFFFF;}
+  .brand-pdf-open{display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--t1);text-decoration:underline;text-underline-offset:3px;}
   html:not([data-theme="light"]) .brand-preview .stage{background:#111827;}
   @media(max-width:1200px){.brand-layout{grid-template-columns:minmax(0,1fr);}.brand-preview{position:static;max-width:460px;}}
 
@@ -399,7 +400,13 @@ function BrandingPdfPreview({ theme, accent, header, logo }: { theme: string; ac
     const id = setTimeout(() => setSrc(want), 500)
     return () => clearTimeout(id)
   }, [want])
-  return <iframe className="brand-pdf" src={src} title="Sample invoice in the chosen template" />
+  // Phones rarely show a PDF inside a page, so there's always a way to open it.
+  return (
+    <>
+      <iframe className="brand-pdf" src={src} title="Sample invoice in the chosen template" />
+      <a className="brand-pdf-open" href={src.split('#')[0]} target="_blank" rel="noreferrer">Open full size</a>
+    </>
+  )
 }
 
 export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, role = 'owner' }: { initialProfile?: Profile | null; invoicesThisMonth?: number; role?: 'owner' | 'admin' | 'staff' }) {

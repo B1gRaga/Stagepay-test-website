@@ -34,14 +34,15 @@ const nextConfig = {
     return [
       { source: '/(.*)', headers: securityHeaders },
       // Later rules override earlier ones for the same key: let only our own
-      // pages frame the invoice PDF (the preview on /invoices/[id]).
-      {
-        source: '/api/invoices/:id/pdf',
+      // pages frame the invoice PDF (the preview on /invoices/[id]) and the
+      // sample PDF (the template preview in Settings → Branding).
+      ...['/api/invoices/:id/pdf', '/api/invoices/sample-pdf'].map(source => ({
+        source,
         headers: [
           { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
           { key: 'Content-Security-Policy', value: csp("'self'") },
         ],
-      },
+      })),
     ]
   },
   async redirects() {
