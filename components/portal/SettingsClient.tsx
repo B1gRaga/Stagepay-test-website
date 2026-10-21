@@ -6,7 +6,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, type InvoiceTheme } from '@/lib/invoice-themes'
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { firmLines } from '@/lib/firm-details'
-import { PLANS, FREE_MONTHLY_LIMIT, planName } from '@/lib/plans'
+import { PLANS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName } from '@/lib/plans'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 
 const supabase = createBrowserClient(
@@ -35,16 +35,16 @@ type Profile = {
   payment_methods?: unknown
   default_due_days?: number | null
   subscription_expires_at?: string | null
+  team_id?: string | null
 }
 
-type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'notifs' | 'plan' | 'team' | 'security'
+type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'plan' | 'team' | 'security'
 
 const PANELS: { id: Panel; label: string; businessOnly?: boolean }[] = [
   { id: 'brand',    label: 'Branding' },
   { id: 'firm',     label: 'Firm details' },
   { id: 'invoice',  label: 'Invoice defaults' },
   { id: 'payment',  label: 'Getting paid' },
-  { id: 'notifs',   label: 'Notifications' },
   { id: 'plan',     label: 'Plan & billing' },
   { id: 'team',     label: 'Team members', businessOnly: true },
   { id: 'security', label: 'Security' },
@@ -57,6 +57,9 @@ const TERM_CHOICES = [
   { days: 14, label: '14 days' },
   { days: 30, label: '30 days' },
 ]
+
+// Team invites wait for shared team accounts, so nobody builds a team on separate accounts.
+const TEAM_INVITES_OPEN = false
 
 function PanelHead({ title, sub }: { title: React.ReactNode; sub: React.ReactNode }) {
   return (
@@ -208,6 +211,24 @@ const CSS = `
   .sec-danger{height:40px;padding:0 18px;border:0;border-radius:8px;background:#DC4B3E;color:#fff;font:700 14px var(--font-manrope),sans-serif;cursor:pointer;}
   .sec-danger:disabled{opacity:.5;}
   @media(max-width:600px){.sec-row{flex-direction:column;align-items:flex-start;}.sec-backdrop{align-items:flex-end;padding:0;}.sec-modal{max-width:none;border-radius:16px 16px 0 0;}}
+  .tm-note{font-size:14px;color:var(--t1);line-height:1.5;padding:12px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--line);margin-bottom:24px;}
+  .tm-invite{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
+  .tm-invite .save{height:42px;}
+  @media(max-width:600px){.tm-invite{flex-direction:column;align-items:stretch;}}
+  .tm-link{margin-top:14px;padding:14px 16px;border-radius:10px;background:color-mix(in srgb,var(--g) 10%,transparent);}
+  .tm-link p{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:8px;}
+  .tm-link code{display:block;font-size:13px;color:var(--t1);word-break:break-all;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;margin-bottom:10px;}
+  .tm-wa{display:inline-flex;align-items:center;text-decoration:none;}
+  .tm-list{list-style:none;border:1px solid var(--line2);border-radius:12px;overflow:hidden;}
+  .tm-list li{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap;}
+  .tm-list li:first-child{border-top:0;}
+  .tm-av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--bg);color:var(--t1);border:1px solid var(--line2);}
+  .tm-who{flex:1;min-width:0;}
+  .tm-who b{display:block;font-size:14px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tm-who span{display:block;font-size:12px;color:var(--t2);margin-top:2px;}
+  .tm-actions{display:flex;gap:14px;}
+  .tm-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .tm-confirm .btn-line,.tm-confirm .sec-danger{height:34px;padding:0 12px;}
   .pp-ref{margin-top:8px;font-size:12px;color:#64748B;line-height:1.5;}
   .pp-empty{font-size:13px;color:var(--t2);line-height:1.5;padding:16px;border:1px dashed var(--line2);border-radius:10px;}
   @media(max-width:1100px){.pay-layout{grid-template-columns:minmax(0,1fr);}.pay-preview{position:static;}}
@@ -243,14 +264,6 @@ const CSS = `
   .btn-primary:hover{background:#C98C00;border-color:#C98C00;color:var(--bg);}
   .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-  .notif-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);}
-  .notif-row:last-child{border-bottom:none;}
-  .notif-label{font-size:13px;font-weight:500;color:var(--t1);}
-  .notif-desc{font-size:11px;color:var(--t3);margin-top:2px;}
-  .toggle-sw{width:36px;height:20px;border-radius:10px;background:var(--surface);border:1px solid var(--line2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
-  .toggle-sw.on{background:var(--g);border-color:var(--g);}
-  .toggle-sw::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--t3);transition:transform .2s, background .2s;}
-  .toggle-sw.on::after{transform:translateX(16px);background:#fff;}
 
   .sec-risk-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line);}
   .sec-risk-row:last-child{border-bottom:none;}
@@ -473,7 +486,7 @@ function InvoicePreviewMock({ theme: t, logoUrl, firm, taxLabel, vatRate, curren
   )
 }
 
-export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }: { initialProfile?: Profile | null; invoicesThisMonth?: number }) {
+export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, memberOf = null }: { initialProfile?: Profile | null; invoicesThisMonth?: number; memberOf?: string | null }) {
   const [profile, setProfile]   = useState<Profile | null>(initialProfile)
   const [loading, setLoading]   = useState(initialProfile === null)
   const [panel,   setPanel]     = useState<Panel>('brand')
@@ -627,8 +640,6 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
     if (!ok) setPayError('Couldn’t save. Check your connection and try again.')
   }
 
-  // Notification toggles (local only for now)
-  const [notifs, setNotifs] = useState({ viewed: true, paid: true, overdue: true, reminder: false, weekly: true })
 
   useEffect(() => {
     // Skip if the server already provided initial profile data.
@@ -749,29 +760,47 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: inviteEmail.trim() }),
     })
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
     if (res.ok) {
       setInviteLink(data.inviteUrl)
       setInviteEmail('')
       fetchTeamMembers()
     } else {
-      setInviteError(data.error ?? 'Failed to create invite')
+      setInviteError(data.error ?? 'Couldn’t create the invite. Please try again.')
     }
     setInviting(false)
   }
 
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+  const [removeError, setRemoveError] = useState('')
+  const seatsUsed = teamMembers.length + 1
+  const teamFull = seatsUsed >= TEAM_SEATS
+
   async function removeMember(memberId: string) {
-    setRemovingId(memberId)
-    const res = await fetch('/api/team/remove', {
-      method: 'POST', credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ memberId }),
-    })
-    if (res.ok) {
-      setTeamMembers(prev => prev.filter(m => m.id !== memberId))
+    setRemovingId(memberId); setRemoveError('')
+    try {
+      const res = await fetch('/api/team/remove', {
+        method: 'POST', credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ memberId }),
+      })
+      if (res.ok) {
+        setTeamMembers(prev => prev.filter(m => m.id !== memberId))
+        setConfirmRemove(null)
+      } else {
+        setRemoveError('Couldn’t remove them. Please try again.')
+      }
+    } catch {
+      setRemoveError('Couldn’t reach StagePay. Check your connection and try again.')
+    } finally {
+      setRemovingId(null)
     }
-    setRemovingId(null)
   }
+
+  // The team list loads when the panel opens, including from a ?panel=team link.
+  useEffect(() => {
+    if (panel === 'team' && !teamLoaded && !memberOf) fetchTeamMembers()
+  }, [panel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function copyLink(text: string, id: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -917,7 +946,6 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
                 aria-current={panel === p.id ? 'page' : undefined}
                 onClick={() => {
                   setPanel(p.id)
-                  if (p.id === 'team' && !teamLoaded) fetchTeamMembers()
                 }}
               >
                 {p.label}
@@ -1315,30 +1343,6 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
             </div>
           </div>
 
-          {/* ── NOTIFICATIONS ── */}
-          <div className={`settings-panel${panel === 'notifs' ? ' active' : ''}`}>
-            <PanelHead title={<>Notifications</>} sub={<>Payment alerts, overdue reminders · Stay informed without checking the app</>} />
-            <div className="settings-section">
-              <div className="settings-section-title">Email notifications</div>
-              <div className="settings-section-desc">Choose which events trigger an email notification to you.</div>
-              {[
-                { k: 'viewed'   as const, label: 'Invoice viewed by client',  desc: 'Get notified when a client opens your invoice link' },
-                { k: 'paid'     as const, label: 'Payment received',           desc: 'Instant notification when a payment is confirmed' },
-                { k: 'overdue'  as const, label: 'Invoice overdue',            desc: 'Alert when an invoice passes its due date' },
-                { k: 'reminder' as const, label: 'Reminder sent',              desc: 'Confirm when an automated reminder email is dispatched' },
-                { k: 'weekly'   as const, label: 'Weekly summary',             desc: 'Monday morning report of paid, outstanding, and overdue totals' },
-              ].map(({ k, label, desc }) => (
-                <div key={k} className="notif-row">
-                  <div>
-                    <div className="notif-label">{label}</div>
-                    <div className="notif-desc">{desc}</div>
-                  </div>
-                  <div className={`toggle-sw${notifs[k] ? ' on' : ''}`} onClick={() => setNotifs(p => ({ ...p, [k]: !p[k] }))} />
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* ── PLAN & BILLING ── */}
           <div className={`settings-panel${panel === 'plan' ? ' active' : ''}`}>
             <PanelHead title="Plan & billing" sub="Your plan, what it costs, and when it ends." />
@@ -1407,127 +1411,125 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0 }:
 
           {/* ── TEAM MEMBERS ── */}
           <div className={`settings-panel${panel === 'team' ? ' active' : ''}`}>
-            <PanelHead title={<>Team members</>} sub={<>{teamMembers.length + 1} / 5 seats used (you + {teamMembers.length} {teamMembers.length === 1 ? 'member' : 'members'})</>} />
+            <PanelHead title="Team members" sub="Work on one business with the people you employ." />
 
-            {/* Invite form */}
-            <div className="settings-section">
-              <div className="settings-section-title">Invite a team member</div>
-              <div className="settings-section-desc">They'll receive a link to join your team. Each member gets full Business plan access at no extra cost (max 5 total).</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <input
-                  id="invite-email"
-                  name="invite-email"
-                  type="email"
-                  placeholder="colleague@email.com"
-                  value={inviteEmail}
-                  onChange={e => { setInviteEmail(e.target.value); setInviteError(''); setInviteLink(null) }}
-                  onKeyDown={e => e.key === 'Enter' && sendInvite()}
-                  disabled={inviting || teamMembers.length >= 4}
-                  style={{
-                    flex: 1, padding: '8px 12px', borderRadius: 7, fontSize: 13,
-                    background: 'var(--surface)', border: '1px solid var(--line2)',
-                    color: 'var(--t1)', fontFamily: 'var(--font-archivo),sans-serif', fontWeight: 700,
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  className="topbar-btn btn-primary"
-                  onClick={sendInvite}
-                  disabled={inviting || !inviteEmail.trim() || teamMembers.length >= 4}
-                  style={{ flexShrink: 0, padding: '8px 16px', fontSize: 13 }}
-                >
-                  {inviting ? 'Sending…' : 'Generate link'}
-                </button>
-              </div>
-              {inviteError && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 7 }}>{inviteError}</p>}
-              {teamMembers.length >= 4 && <p style={{ fontSize: 12, color: 'var(--t3)', marginTop: 7 }}>Team is full (5/5 seats used).</p>}
-
-              {/* Generated invite link */}
-              {inviteLink && (
-                <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(242,169,0,.08)', border: '1px solid rgba(242,169,0,.25)', borderRadius: 8 }}>
-                  <p style={{ fontSize: 11, color: '#F2A900', fontWeight: 600, marginBottom: 6 }}>Invite link generated — share this with your team member:</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <code style={{ flex: 1, fontSize: 11, color: 'var(--t2)', wordBreak: 'break-all', background: 'var(--surface)', padding: '6px 10px', borderRadius: 5, border: '1px solid var(--line2)' }}>{inviteLink}</code>
-                    <button
-                      className="topbar-btn"
-                      onClick={() => copyLink(inviteLink, 'new')}
-                      style={{ flexShrink: 0, fontSize: 11, padding: '5px 10px' }}
-                    >
-                      {copiedId === 'new' ? 'Copied!' : 'Copy'}
-                    </button>
+            {!memberOf && !TEAM_INVITES_OPEN ? (
+              <>
+                <section className="pl-now" style={{ gridTemplateColumns: '1fr' }} aria-labelledby="tm-soon">
+                  <div className="pl-usage">
+                    <div className="pl-kicker">Coming soon</div>
+                    <p id="tm-soon"><b>Shared team accounts</b></p>
+                    <p className="help">Up to {TEAM_SEATS} people working on the same business: one client list, one set of invoices and one brand. Everyone signs in with their own email, each invoice shows who created it, and you choose who can change settings and billing. It comes with the Business plan.</p>
                   </div>
+                </section>
+                {teamMembers.length > 0 && (
+                  <section className="block" aria-labelledby="tm-list">
+                    <h3 id="tm-list">People already invited</h3>
+                    <ul className="tm-list">
+                      {teamMembers.map(m => (
+                        <li key={m.id}>
+                          <span className="tm-av" aria-hidden="true">{m.email[0].toUpperCase()}</span>
+                          <div className="tm-who"><b>{m.email}</b><span>{m.status === 'active' ? 'Joined' : 'Invited, hasn’t joined yet'}</span></div>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </>
+            ) : memberOf ? (
+              <section className="pl-now" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="pl-usage">
+                  <p><b>You’re on {memberOf}’s team.</b></p>
+                  <p className="help">Your Business plan comes from them. If they remove you, your account moves to the Free plan; your invoices and clients stay yours either way.</p>
                 </div>
-              )}
-            </div>
+              </section>
+            ) : (
+              <>
+                <p className="tm-note">Each person signs in with their own email and keeps their own invoices and clients. Nothing is shared between accounts.</p>
 
-            {/* Member list */}
-            <div className="settings-section">
-              <div className="settings-section-title">Current members</div>
-              {!teamLoaded ? (
-                <p style={{ fontSize: 13, color: 'var(--t3)', marginTop: 8 }}>Loading…</p>
-              ) : (
-                <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', marginTop: 10 }}>
-                  {/* Owner row */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: teamMembers.length > 0 ? '1px solid var(--line)' : undefined }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(242,169,0,.15)', border: '1px solid rgba(242,169,0,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#F2A900', flexShrink: 0 }}>
-                        {(profile?.name ?? 'O')[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{profile?.name ?? 'You'}</div>
-                        <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>Account owner</div>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#F2A900', padding: '3px 8px', background: 'rgba(242,169,0,.1)', borderRadius: 4 }}>Owner</span>
+                <section className="block" aria-labelledby="tm-seats">
+                  <h3 id="tm-seats">Places</h3>
+                  <div className="pl-meter" role="img" aria-label={`${seatsUsed} of ${TEAM_SEATS} places used`} style={{ maxWidth: 320 }}>
+                    {Array.from({ length: TEAM_SEATS }, (_, i) => <span key={i} className={i < seatsUsed ? 'on' : ''} />)}
                   </div>
+                  <p className="help">{seatsUsed} of {TEAM_SEATS} used, counting you{teamMembers.some(m => m.status === 'pending') ? ' and invites not yet accepted' : ''}.</p>
+                </section>
 
-                  {/* Member rows */}
-                  {teamMembers.map((m, i) => (
-                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: i < teamMembers.length - 1 ? '1px solid var(--line)' : undefined }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--t2)', flexShrink: 0 }}>
-                          {m.email[0].toUpperCase()}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, color: 'var(--t1)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                            <span style={{
-                              fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3,
-                              background: m.status === 'active' ? 'rgba(242,169,0,.1)' : 'rgba(245,158,11,.1)',
-                              color: m.status === 'active' ? '#F2A900' : '#F59E0B',
-                            }}>
-                              {m.status === 'active' ? 'Active' : 'Pending'}
-                            </span>
-                            {m.status === 'pending' && (
-                              <button
-                                style={{ fontSize: 10, color: 'var(--t3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-                                onClick={() => copyLink(`${window.location.origin}/join/${m.invite_token}`, m.id)}
-                              >
-                                {copiedId === m.id ? 'Copied!' : 'Copy invite link'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                <section className="block" aria-labelledby="tm-invite">
+                  <h3 id="tm-invite">Invite someone</h3>
+                  <p>StagePay doesn’t email the invite. You get a link to send them yourself, on WhatsApp or anywhere else.</p>
+                  {teamFull ? (
+                    <p className="help">Your team is full. Remove someone to free a place.</p>
+                  ) : (
+                    <form className="tm-invite" method="post" onSubmit={e => { e.preventDefault(); sendInvite() }}>
+                      <div className="fld" style={{ flex: 1 }}>
+                        <label htmlFor="invite-email">Their email</label>
+                        <input id="invite-email" name="invite-email" type="email" className="in" autoComplete="off"
+                          value={inviteEmail} disabled={inviting}
+                          onChange={e => { setInviteEmail(e.target.value); setInviteError(''); setInviteLink(null) }} />
                       </div>
-                      <button
-                        className="topbar-btn"
-                        onClick={() => removeMember(m.id)}
-                        disabled={removingId === m.id}
-                        style={{ fontSize: 11, color: 'var(--danger)', borderColor: 'rgba(239,68,68,.25)', flexShrink: 0, padding: '4px 10px' }}
-                      >
-                        {removingId === m.id ? 'Removing…' : 'Remove'}
-                      </button>
-                    </div>
-                  ))}
-
-                  {teamMembers.length === 0 && (
-                    <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--t3)', fontSize: 13 }}>
-                      No team members yet. Invite someone above.
+                      <button type="submit" className="save press" disabled={inviting || !inviteEmail.trim()}>{inviting ? 'Creating…' : 'Create invite link'}</button>
+                    </form>
+                  )}
+                  {inviteError && <p className="save-note err" role="alert" style={{ marginTop: 10 }}>{inviteError}</p>}
+                  {inviteLink && (
+                    <div className="tm-link" role="status">
+                      <p>Invite ready. Send this link; it works once.</p>
+                      <code>{inviteLink}</code>
+                      <div className="sec-actions">
+                        <button type="button" className="btn-line press" onClick={() => copyLink(inviteLink, 'new')}>{copiedId === 'new' ? 'Copied' : 'Copy link'}</button>
+                        <a className="btn-line press tm-wa" href={`https://wa.me/?text=${encodeURIComponent(`Join my team on StagePay: ${inviteLink}`)}`} target="_blank" rel="noreferrer">Share on WhatsApp</a>
+                      </div>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
+                </section>
+
+                <section className="block" aria-labelledby="tm-list">
+                  <h3 id="tm-list">People</h3>
+                  {!teamLoaded ? (
+                    <p className="help" role="status">Loading…</p>
+                  ) : (
+                    <ul className="tm-list">
+                      <li>
+                        <span className="tm-av" aria-hidden="true">{(profile?.name || profile?.email || '?')[0].toUpperCase()}</span>
+                        <div className="tm-who">
+                          <b>{profile?.name || 'You'}</b>
+                          <span>{profile?.email}</span>
+                        </div>
+                        <span className="pm-pref">Owner</span>
+                      </li>
+                      {teamMembers.map(m => (
+                        <li key={m.id}>
+                          <span className="tm-av" aria-hidden="true">{m.email[0].toUpperCase()}</span>
+                          <div className="tm-who">
+                            <b>{m.email}</b>
+                            <span>{m.status === 'active'
+                              ? `Joined ${m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}`
+                              : `Invited ${new Date(m.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, hasn’t joined yet`}</span>
+                          </div>
+                          {confirmRemove === m.id ? (
+                            <div className="tm-confirm">
+                              <span className="help">{m.status === 'active' ? 'They’ll move to the Free plan.' : 'The invite link will stop working.'}</span>
+                              <button type="button" className="btn-line" onClick={() => setConfirmRemove(null)}>Keep</button>
+                              <button type="button" className="sec-danger press" disabled={removingId === m.id} onClick={() => removeMember(m.id)}>{removingId === m.id ? 'Removing…' : m.status === 'active' ? 'Remove' : 'Cancel invite'}</button>
+                            </div>
+                          ) : (
+                            <div className="tm-actions">
+                              {m.status === 'pending' && m.invite_token && (
+                                <button type="button" className="pm-link" onClick={() => copyLink(`${window.location.origin}/join/${m.invite_token}`, m.id)}>{copiedId === m.id ? 'Copied' : 'Copy link'}</button>
+                              )}
+                              <button type="button" className="pm-link" onClick={() => setConfirmRemove(m.id)}>{m.status === 'active' ? 'Remove' : 'Cancel invite'}</button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {removeError && <p className="save-note err" role="alert" style={{ marginTop: 10 }}>{removeError}</p>}
+                  {teamLoaded && teamMembers.length === 0 && <p className="help" style={{ marginTop: 10 }}>Nobody else yet.</p>}
+                </section>
+              </>
+            )}
           </div>
 
           {/* ── SECURITY ── */}

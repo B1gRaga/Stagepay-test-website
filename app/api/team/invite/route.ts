@@ -36,8 +36,14 @@ export async function POST(req: NextRequest) {
 
   const service = createServiceClient()
 
-  // Get or create the team
+  // Get or create the team. Members belong to someone else's team and can't invite into it.
   let teamId = profile.team_id as string | null
+  if (teamId) {
+    const { data: team } = await service.from('teams').select('owner_id').eq('id', teamId).single()
+    if (team?.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Only the team owner can invite people' }, { status: 403 })
+    }
+  }
   if (!teamId) {
     const { data: team, error: teamErr } = await service
       .from('teams')
@@ -61,6 +67,18 @@ export async function POST(req: NextRequest) {
   const totalWithOwner = (count ?? 0) + 1
   if (totalWithOwner >= MAX_TEAM_SIZE) {
     return NextResponse.json({ error: `Team is full (max ${MAX_TEAM_SIZE} members including owner)` }, { status: 400 })
+  }
+
+  // Someone who already joined keeps their place; re-inviting them must not reset it.
+  const { data: joined } = await service
+    .from('team_members')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('email', email)
+    .eq('status', 'active')
+    .maybeSingle()
+  if (joined) {
+    return NextResponse.json({ error: 'This person is already on your team' }, { status: 409 })
   }
 
   // Upsert invite (re-invite if already pending)

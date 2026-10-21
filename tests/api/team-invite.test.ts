@@ -8,6 +8,8 @@ const mockTeamInsertSingle  = vi.fn()
 const mockProfileUpdateEq   = vi.fn().mockResolvedValue({ error: null })
 const mockTeamMembersEq     = vi.fn()
 const mockUpsertSingle      = vi.fn()
+const mockTeamOwnerSingle   = vi.fn()
+const mockJoinedMaybeSingle = vi.fn()
 
 function buildAuthedClient() {
   return {
@@ -27,12 +29,20 @@ function buildServiceClient() {
     from: (table: string) => {
       if (table === 'teams') return {
         insert: vi.fn(() => ({ select: vi.fn(() => ({ single: mockTeamInsertSingle })) })),
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ single: mockTeamOwnerSingle })) })),
       }
       if (table === 'profiles') return {
         update: vi.fn(() => ({ eq: mockProfileUpdateEq })),
       }
       if (table === 'team_members') return {
-        select: vi.fn(() => ({ eq: mockTeamMembersEq })),
+        // The size check counts rows; the already-joined check looks one up.
+        select: vi.fn((_cols: string, opts?: { count?: string }) => {
+          if (opts?.count) return { eq: mockTeamMembersEq }
+          const chain: Record<string, unknown> = {}
+          chain.eq = vi.fn(() => chain)
+          chain.maybeSingle = mockJoinedMaybeSingle
+          return chain
+        }),
         upsert: vi.fn(() => ({ select: vi.fn(() => ({ single: mockUpsertSingle })) })),
       }
       return {}
@@ -60,6 +70,8 @@ describe('POST /api/team/invite', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockProfileUpdateEq.mockResolvedValue({ error: null })
+    mockTeamOwnerSingle.mockResolvedValue({ data: { owner_id: 'user-1' } })
+    mockJoinedMaybeSingle.mockResolvedValue({ data: null })
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -146,6 +158,27 @@ describe('POST /api/team/invite', () => {
     const res = await POST(makeRequest({ email: 'new@co.com' }))
     expect(res.status).toBe(400)
     expect(await res.json()).toMatchObject({ error: expect.stringContaining('Team is full') })
+  })
+
+  it('returns 403 when a team member (not the owner) tries to invite', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'member-1', email: 'member@co.com' })
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'business', firm_name: 'Acme', team_id: 'team-1' } })
+    mockTeamOwnerSingle.mockResolvedValue({ data: { owner_id: 'owner-1' } })
+    const { POST } = await import('@/app/api/team/invite/route')
+    const res = await POST(makeRequest({ email: 'friend@co.com' }))
+    expect(res.status).toBe(403)
+    expect(mockUpsertSingle).not.toHaveBeenCalled()
+  })
+
+  it('returns 409 and leaves them alone when re-inviting someone who already joined', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1', email: 'owner@co.com' })
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'business', firm_name: 'Acme', team_id: 'team-1' } })
+    mockTeamMembersEq.mockResolvedValue({ count: 1 })
+    mockJoinedMaybeSingle.mockResolvedValue({ data: { id: 'm-1' } })
+    const { POST } = await import('@/app/api/team/invite/route')
+    const res = await POST(makeRequest({ email: 'joined@co.com' }))
+    expect(res.status).toBe(409)
+    expect(mockUpsertSingle).not.toHaveBeenCalled()
   })
 
   it('builds the invite URL from the request origin header when present', async () => {
