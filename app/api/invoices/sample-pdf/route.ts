@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       theme: theme ?? p.invoice_theme,
       primaryColor: q.has('accent') ? hex(q.get('accent')) : p.brand_color_primary,
       headerColor: q.has('header') ? hex(q.get('header')) : p.brand_color_header,
+      paperSize: q.get('paper') === 'A5' || q.get('paper') === 'A4' ? q.get('paper') : p.invoice_paper_size,
     })
     return new NextResponse(new Uint8Array(buffer), {
       headers: {

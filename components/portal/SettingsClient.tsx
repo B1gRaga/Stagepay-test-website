@@ -31,6 +31,7 @@ type Profile = {
   default_vat_rate: number
   two_fa_enabled: boolean
   invoice_theme: string | null
+  invoice_paper_size?: string | null
   brand_color_primary: string | null
   brand_color_header: string | null
   payment_methods?: unknown
@@ -304,7 +305,7 @@ const CSS = `
   .brand-preview{margin:0;position:sticky;top:24px;}
   .brand-preview figcaption{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;}
   .brand-preview .stage{background:#E9E5DC;border-radius:12px;padding:10px;}
-  .brand-pdf{display:block;width:100%;aspect-ratio:210/297;border:0;border-radius:4px;background:#FFFFFF;}
+  .brand-pdf{display:block;width:100%;aspect-ratio:148/210;border:0;border-radius:4px;background:#FFFFFF;}
   .brand-pdf-open{display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--t1);text-decoration:underline;text-underline-offset:3px;}
   html:not([data-theme="light"]) .brand-preview .stage{background:#111827;}
   @media(max-width:1200px){.brand-layout{grid-template-columns:minmax(0,1fr);}.brand-preview{position:static;max-width:460px;}}
@@ -393,8 +394,8 @@ function TemplateSketch({ id, t }: { id: string; t: InvoiceTheme }) {
 
 // The real PDF, in the template and colours being tried. It reloads a moment
 // after the last change so typing a colour doesn't fire a render per key.
-function BrandingPdfPreview({ theme, accent, header, logo }: { theme: string; accent: string; header: string; logo?: string | null }) {
-  const want = `/api/invoices/sample-pdf?${new URLSearchParams({ theme, ...(accent ? { accent } : {}), ...(header ? { header } : {}), v: logo ?? '' })}#toolbar=0&navpanes=0&view=FitH`
+function BrandingPdfPreview({ theme, paper, accent, header, logo }: { theme: string; paper: string; accent: string; header: string; logo?: string | null }) {
+  const want = `/api/invoices/sample-pdf?${new URLSearchParams({ theme, paper, ...(accent ? { accent } : {}), ...(header ? { header } : {}), v: logo ?? '' })}#toolbar=0&navpanes=0&view=FitH`
   const [src, setSrc] = useState(want)
   useEffect(() => {
     const id = setTimeout(() => setSrc(want), 500)
@@ -464,6 +465,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
     invoice_theme:       p?.invoice_theme       ?? 'dark-modern',
     brand_color_primary: p?.brand_color_primary ?? '',
     brand_color_header:  p?.brand_color_header  ?? '',
+    invoice_paper_size:  p?.invoice_paper_size === 'A5' ? 'A5' : 'A4',
   })
   const [branding, setBranding] = useState(() => brandFrom(initialProfile))
   const [brandError, setBrandError] = useState('')
@@ -471,6 +473,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
   const hexOk = (v: string) => v === '' || /^#[0-9a-f]{6}$/i.test(v)
   const brandValid = hexOk(branding.brand_color_primary) && hexOk(branding.brand_color_header)
   const brandDirty = branding.invoice_theme !== savedBrand.invoice_theme
+    || branding.invoice_paper_size !== savedBrand.invoice_paper_size
     || branding.brand_color_primary.toUpperCase() !== savedBrand.brand_color_primary.toUpperCase()
     || branding.brand_color_header.toUpperCase() !== savedBrand.brand_color_header.toUpperCase()
   const brandTheme = resolveTheme(
@@ -483,6 +486,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
     setBrandError('')
     const ok = await save({
       invoice_theme:       branding.invoice_theme,
+      invoice_paper_size:  branding.invoice_paper_size,
       brand_color_primary: branding.brand_color_primary.toUpperCase() || null,
       brand_color_header:  branding.brand_color_header.toUpperCase()  || null,
     }, 'brand')
@@ -579,11 +583,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
       .then(d => {
         const p: Profile = d.profile
         setProfile(p)
-        setBranding({
-          invoice_theme:       p.invoice_theme       ?? 'dark-modern',
-          brand_color_primary: p.brand_color_primary ?? '',
-          brand_color_header:  p.brand_color_header  ?? '',
-        })
+        setBranding(brandFrom(p))
         setFirm(firmFrom(p))
         setInv({
           default_currency: p.default_currency ?? 'P',
@@ -956,6 +956,19 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                   </div>
                 </section>
 
+                <section className="block" aria-labelledby="br-paper">
+                  <h3 id="br-paper">Paper size</h3>
+                  <p>A4 is the usual size. A5 is half of it, handy for short invoices and receipt-sized printouts.</p>
+                  <div className="chips" role="group" aria-label="Paper size">
+                    {(['A4', 'A5'] as const).map(size => (
+                      <button key={size} type="button" className="chip press" aria-pressed={branding.invoice_paper_size === size}
+                        onClick={() => setBranding(p => ({ ...p, invoice_paper_size: size }))}>
+                        {size}{size === 'A4' ? ' · 210 × 297 mm' : ' · 148 × 210 mm'}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
                 <section className="block" aria-labelledby="br-col">
                   <h3 id="br-col">Colours</h3>
                   <p>Optional. Swap the template’s accent or header colour for your brand’s.</p>
@@ -983,6 +996,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                 <div className="stage">
                   <BrandingPdfPreview
                     theme={branding.invoice_theme}
+                    paper={branding.invoice_paper_size}
                     accent={hexOk(branding.brand_color_primary) ? branding.brand_color_primary || '' : ''}
                     header={hexOk(branding.brand_color_header) ? branding.brand_color_header || '' : ''}
                     logo={profile?.logo_url}

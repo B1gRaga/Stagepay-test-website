@@ -23,7 +23,7 @@ export default async function SettingsPage() {
     // The business's settings: the person's own, or their team's.
     profileDb
       .from('profiles')
-      .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, payment_methods, default_due_days, subscription_expires_at, team_id')
+      .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, payment_methods, default_due_days, subscription_expires_at, team_id, invoice_paper_size')
       .eq('id', account.accountId)
       .single(),
   ])

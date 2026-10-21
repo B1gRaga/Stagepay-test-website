@@ -25,6 +25,7 @@ export interface Database {
           logo_url: string | null
           plan: Plan
           invoice_theme: string | null
+          invoice_paper_size: string
           brand_color_primary: string | null
           brand_color_header: string | null
           whatsapp_reminders_enabled: boolean
@@ -58,6 +59,7 @@ export interface Database {
           logo_url?: string | null
           plan?: Plan
           invoice_theme?: string | null
+          invoice_paper_size?: string
           brand_color_primary?: string | null
           brand_color_header?: string | null
           whatsapp_reminders_enabled?: boolean
@@ -88,6 +90,7 @@ export interface Database {
           logo_url?: string | null
           plan?: Plan
           invoice_theme?: string | null
+          invoice_paper_size?: string
           brand_color_primary?: string | null
           brand_color_header?: string | null
           whatsapp_reminders_enabled?: boolean

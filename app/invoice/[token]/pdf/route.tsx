@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_name, name, email, phone, address, city, country, vat_number, logo_url, invoice_theme, brand_color_primary, brand_color_header, payment_methods, tax_label')
+    .select('firm_name, name, email, phone, address, city, country, vat_number, logo_url, invoice_theme, brand_color_primary, brand_color_header, payment_methods, tax_label, invoice_paper_size')
     .eq('id', invoice.user_id)
     .single()
 

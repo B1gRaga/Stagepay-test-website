@@ -8,7 +8,7 @@ const ALLOWED = [
   'vat_number', 'default_currency', 'tax_label', 'default_vat_rate',
   'invoice_theme', 'brand_color_primary', 'brand_color_header',
   'whatsapp_reminders_enabled', 'business_type',
-  'payment_methods', 'default_due_days',
+  'payment_methods', 'default_due_days', 'invoice_paper_size',
 ] as const
 
 const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
@@ -23,7 +23,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type, payment_methods, default_due_days')
+    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type, payment_methods, default_due_days, invoice_paper_size')
     .eq('id', account.accountId)
     .single()
 
@@ -62,6 +62,10 @@ export async function PATCH(req: NextRequest) {
       const n = Number(body[key])
       if (!Number.isInteger(n) || n < 0 || n > 365) return NextResponse.json({ error: 'default_due_days must be a whole number from 0 to 365' }, { status: 400 })
       updates[key] = n
+    } else if (key === 'invoice_paper_size') {
+      const v = String(body[key] ?? '')
+      if (v !== 'A4' && v !== 'A5') return NextResponse.json({ error: 'invoice_paper_size must be A4 or A5' }, { status: 400 })
+      updates[key] = v
     } else if (key === 'invoice_theme') {
       const v = String(body[key] ?? '')
       if (!VALID_THEMES.has(v)) return NextResponse.json({ error: 'Invalid invoice_theme' }, { status: 400 })
