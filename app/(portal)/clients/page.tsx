@@ -46,5 +46,5 @@ export default async function ClientsPage() {
     if (inv.status === 'overdue') { s.late += total; s.lateCount++ }
   }
 
-  return <ClientsGrid clients={clients ?? []} stats={stats} currency={profile?.default_currency || 'P'} />
+  return <ClientsGrid clients={clients ?? []} stats={stats} currency={profile?.default_currency || 'P'} role={account.role} />
 }

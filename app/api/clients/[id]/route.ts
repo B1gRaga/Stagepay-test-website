@@ -42,7 +42,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   return NextResponse.json({ client: data })
 }
 
-// DELETE /api/clients/[id] — soft delete: sets deleted_at, preserves invoice history
+// DELETE /api/clients/[id] — soft delete: sets deleted_at, preserves invoice history.
+// Goes through delete_client (migration 037): a plain update can't set
+// deleted_at, because the read rule hides deleted rows. The function checks
+// the business and the role itself as well.
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const account = await getAccount()
@@ -50,13 +53,9 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!canManage(account)) return NextResponse.json({ error: 'Only the owner or an admin can delete clients' }, { status: 403 })
   const supabase = await createClient()
 
-  const { error } = await supabase
-    .from('clients')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('user_id', account.accountId)
-    .is('deleted_at', null)
+  const { data: deleted, error } = await supabase.rpc('delete_client', { p_client_id: id })
 
   if (error) return NextResponse.json({ error: 'Failed to delete client' }, { status: 500 })
+  if (!deleted) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
   return NextResponse.json({ success: true })
 }

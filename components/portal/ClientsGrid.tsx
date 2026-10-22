@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { waLink } from '@/lib/wa-link'
 import { STATUS_CSS } from './InvoiceStatus'
@@ -48,6 +48,8 @@ function shortDate(d: string | null) {
   return `${day} ${MONTHS[m - 1]}${y !== thisYear ? ` ${y}` : ''}`
 }
 
+const UNDO_MS = 6000
+
 const EMPTY: ClientStats = { currency: 'P', invoices: 0, billed: 0, owes: 0, late: 0, lateCount: 0, lastIssued: null }
 
 const CSS = `
@@ -75,7 +77,7 @@ ${STATUS_CSS}
   .seg .n{color:var(--t3);font-weight:500;font-variant-numeric:tabular-nums;}
 
   .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
-  .grid{display:grid;grid-template-columns:36px minmax(0,1.6fr) 130px 150px 96px 176px;column-gap:16px;align-items:center;padding:0 20px;}
+  .grid{display:grid;grid-template-columns:36px minmax(0,1.6fr) 130px 150px 96px 216px;column-gap:16px;align-items:center;padding:0 20px;}
   .head{height:40px;border-bottom:1px solid var(--line);font-size:12px;font-weight:500;color:var(--t3);}
   .head .r,.c-owes,.c-billed{text-align:right;}
   .row{position:relative;min-height:66px;border-bottom:1px solid var(--line);transition:background-color var(--dur-1) var(--ease);animation:cl-in var(--dur-3) var(--ease) both;animation-delay:calc(var(--i,0) * 35ms);}
@@ -103,6 +105,33 @@ ${STATUS_CSS}
   .act[aria-disabled="true"]{opacity:.35;pointer-events:none;}
   .name:focus-visible,.act:focus-visible,.seg button:focus-visible,.btn-new:focus-visible{outline:2px solid var(--g);outline-offset:2px;border-radius:6px;}
 
+  .act.del{width:34px;padding:0;color:var(--t2);}
+  .act.del:hover{color:#DC2626;border-color:color-mix(in srgb,#DC2626 45%,transparent);}
+
+  .dlg{margin:auto;border:0;padding:0;border-radius:16px;background:var(--bg2);color:var(--t1);width:min(420px,calc(100vw - 32px));box-shadow:0 24px 64px rgba(0,0,0,.35);}
+  .dlg::backdrop{background:rgba(15,20,35,.55);}
+  .dlg[open]{animation:dlg-in var(--dur-2) var(--ease) both;}
+  .dlg-body{padding:24px 24px 20px;}
+  .dlg h2{font-size:18px;font-weight:800;letter-spacing:-.01em;}
+  .dlg p{font-size:14px;color:var(--t2);line-height:1.55;margin-top:8px;}
+  .dlg p b{color:var(--t1);}
+  .dlg-acts{display:flex;justify-content:flex-end;gap:8px;padding:0 24px 20px;}
+  .dlg-acts button{height:38px;padding:0 16px;border-radius:8px;font:700 14px var(--font-manrope),sans-serif;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--t1);}
+  .dlg-acts .danger{background:#DC2626;border-color:#DC2626;color:#FFFFFF;}
+  .dlg-acts .danger:hover{background:#B91C1C;}
+  .dlg-acts button:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
+  @keyframes dlg-in{from{opacity:0;transform:translateY(8px) scale(.98)}}
+
+  .toast{position:fixed;left:50%;bottom:24px;z-index:1300;transform:translateX(-50%);display:flex;align-items:center;gap:14px;min-width:300px;max-width:calc(100vw - 32px);padding:12px 12px 12px 16px;border-radius:12px;background:#111827;color:#FAF7F0;font-size:14px;box-shadow:0 12px 32px rgba(0,0,0,.3);overflow:hidden;animation:toast-in var(--dur-2) var(--ease) both;}
+  .toast .msg{flex:1;}
+  .toast button{height:32px;padding:0 12px;border-radius:8px;border:0;background:rgba(250,247,240,.12);color:#FAF7F0;font:700 13px var(--font-manrope),sans-serif;cursor:pointer;}
+  .toast button:hover{background:rgba(250,247,240,.2);}
+  .toast .timer{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--g);transform-origin:left;animation:toast-timer ${UNDO_MS}ms linear both;}
+  @media(max-width:768px){.toast{bottom:calc(72px + env(safe-area-inset-bottom,0px));}}
+  @keyframes toast-in{from{opacity:0;transform:translate(-50%,10px)}}
+  @keyframes toast-timer{to{transform:scaleX(0)}}
+  @media (prefers-reduced-motion: reduce){.dlg[open],.toast{animation:none;}.toast .timer{animation:none;opacity:0;}}
+
   .empty{padding:56px 24px;text-align:center;}
   .empty h2{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:6px;}
   .empty p{font-size:14px;color:var(--t2);max-width:360px;margin:0 auto 18px;}
@@ -110,7 +139,7 @@ ${STATUS_CSS}
   @media (prefers-reduced-motion: reduce){.row{animation:none;}}
 
   @media(max-width:1000px){
-    .grid{grid-template-columns:36px minmax(0,1fr) 120px 140px 176px;}
+    .grid{grid-template-columns:36px minmax(0,1fr) 120px 140px 216px;}
     .c-last,.head .h-last{display:none;}
   }
   @media(max-width:768px){
@@ -138,19 +167,70 @@ export default function ClientsGrid({
   clients,
   stats,
   currency,
+  role = 'owner',
 }: {
   clients: Client[]
   stats: Record<string, ClientStats>
   currency: string
+  role?: 'owner' | 'admin' | 'staff'
 }) {
   const [search, setSearch] = useState('')
+  const canDelete = role === 'owner' || role === 'admin'
+
+  // Deleting: confirm in a dialog, remove the row at once, offer Undo for a
+  // few seconds. Invoices are kept either way.
+  const [gone, setGone] = useState<Set<string>>(() => new Set())
+  const [asking, setAsking] = useState<Client | null>(null)
+  const [toast, setToast] = useState<{ msg: string; undo?: Client } | null>(null)
+  const dlgRef = useRef<HTMLDialogElement>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const d = dlgRef.current
+    if (!d) return
+    if (asking && !d.open) d.showModal()
+    if (!asking && d.open) d.close()
+  }, [asking])
+
+  function showToast(t: { msg: string; undo?: Client }) {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast(t)
+    toastTimer.current = setTimeout(() => setToast(null), UNDO_MS)
+  }
+
+  async function confirmDelete() {
+    const c = asking
+    if (!c) return
+    setAsking(null)
+    setGone(g => new Set(g).add(c.id))
+    try {
+      const res = await fetch(`/api/clients/${c.id}`, { method: 'DELETE', credentials: 'include' })
+      if (!res.ok) throw new Error()
+      showToast({ msg: `${c.name} deleted`, undo: c })
+    } catch {
+      setGone(g => { const n = new Set(g); n.delete(c.id); return n })
+      showToast({ msg: `Couldn’t delete ${c.name}. Try again.` })
+    }
+  }
+
+  async function undoDelete(c: Client) {
+    setToast(null)
+    setGone(g => { const n = new Set(g); n.delete(c.id); return n })
+    try {
+      const res = await fetch(`/api/clients/${c.id}/restore`, { method: 'POST', credentials: 'include' })
+      if (!res.ok) throw new Error()
+    } catch {
+      setGone(g => new Set(g).add(c.id))
+      showToast({ msg: `Couldn’t bring back ${c.name}.` })
+    }
+  }
   const [filter, setFilter] = useState<'all' | 'owes'>('all')
 
   // Who owes the most (late first) at the top, then whoever you billed most recently.
-  const sorted = useMemo(() => [...clients].sort((a, b) => {
+  const sorted = useMemo(() => clients.filter(c => !gone.has(c.id)).sort((a, b) => {
     const sa = stats[a.id] ?? EMPTY, sb = stats[b.id] ?? EMPTY
     return (sb.late - sa.late) || (sb.owes - sa.owes) || (sb.lastIssued ?? '').localeCompare(sa.lastIssued ?? '') || a.name.localeCompare(b.name)
-  }), [clients, stats])
+  }), [clients, stats, gone])
 
   const owing = sorted.filter(c => (stats[c.id]?.owes ?? 0) > 0)
 
@@ -186,12 +266,12 @@ export default function ClientsGrid({
       </div>
 
       <div className="content">
-        {clients.length > 0 && (
+        {sorted.length > 0 && (
           <p className="finding">
             {owing.length === 0
-              ? <>All {clients.length} clients are paid up.</>
+              ? <>All {sorted.length} clients are paid up.</>
               : <>
-                  {owing.length === 1 ? '1' : owing.length} of your {clients.length} clients {owing.length === 1 ? 'owes' : 'owe'} you <b>{money(owedSum, currency)}</b>
+                  {owing.length === 1 ? '1' : owing.length} of your {sorted.length} clients {owing.length === 1 ? 'owes' : 'owe'} you <b>{money(owedSum, currency)}</b>
                   {lateSum > 0 ? <>, and <b className="late">{money(lateSum, currency)}</b> of it is late.</> : '.'}
                 </>}
           </p>
@@ -203,7 +283,7 @@ export default function ClientsGrid({
             <input type="search" aria-label="Search clients" placeholder="Search name, number or email" value={search} onChange={e => setSearch(e.target.value)} />
           </label>
           <div className="seg" role="group" aria-label="Show">
-            <button type="button" className="press" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All <span className="n">{clients.length}</span></button>
+            <button type="button" className="press" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All <span className="n">{sorted.length}</span></button>
             <button type="button" className="press" aria-pressed={filter === 'owes'} onClick={() => setFilter('owes')}>Owe you <span className="n">{owing.length}</span></button>
           </div>
         </div>
@@ -260,12 +340,44 @@ export default function ClientsGrid({
                     </span>
                   )}
                   <Link className="act new press" href={`/new-invoice?client=${c.id}`}>New invoice</Link>
+                  {canDelete && (
+                    <button type="button" className="act del press" onClick={() => setAsking(c)} aria-label={`Delete ${c.name}`} title={`Delete ${c.name}`}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.6 6.5v4.5M9.4 6.5v4.5"/></svg>
+                    </button>
+                  )}
                 </span>
               </div>
             )
           })}
         </div>
       </div>
+
+      <dialog ref={dlgRef} className="dlg" aria-labelledby="del-h" onClose={() => setAsking(null)}>
+        {asking && (() => {
+          const s = stats[asking.id] ?? { ...EMPTY, currency }
+          return (
+            <>
+              <div className="dlg-body">
+                <h2 id="del-h">Delete {asking.name}?</h2>
+                <p>They’ll be removed from your clients. Their invoices stay, so your history and totals don’t change.</p>
+                {s.owes > 0 && <p>They still owe <b>{money(s.owes, s.currency)}</b>. Those invoices and their reminders carry on.</p>}
+              </div>
+              <div className="dlg-acts">
+                <button type="button" onClick={() => setAsking(null)} autoFocus>Cancel</button>
+                <button type="button" className="danger" onClick={confirmDelete}>Delete client</button>
+              </div>
+            </>
+          )
+        })()}
+      </dialog>
+
+      {toast && (
+        <div className="toast" role="status">
+          <span className="msg">{toast.msg}</span>
+          {toast.undo && <button type="button" onClick={() => undoDelete(toast.undo!)}>Undo</button>}
+          {toast.undo && <span className="timer" aria-hidden="true" />}
+        </div>
+      )}
     </>
   )
 }

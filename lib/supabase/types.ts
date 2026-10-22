@@ -474,6 +474,14 @@ export interface Database {
         Args: Record<string, never>
         Returns: string
       }
+      delete_client: {
+        Args: { p_client_id: string }
+        Returns: boolean
+      }
+      restore_client: {
+        Args: { p_client_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
