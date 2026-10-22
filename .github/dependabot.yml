@@ -9,6 +9,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    ignore:
+      # The PDF preview uses a worker and fonts copied into public/pdfjs-<version>,
+      # so a major upgrade means re-copying those files and updating the code.
+      - dependency-name: pdfjs-dist
+        update-types: [version-update:semver-major]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
