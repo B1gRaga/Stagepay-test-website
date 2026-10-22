@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const { withSentryConfig } = require('@sentry/nextjs')
+const { withSentryConfig } = require('@sentry/nextjs/config')
 
 // frameAncestors: who may embed this response. 'none' everywhere except the
 // invoice PDF, which the portal's own preview page embeds.
@@ -60,6 +60,4 @@ module.exports = withSentryConfig(nextConfig, {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
   hideSourceMaps: true,
-  disableLogger:  true,
-  automaticVercelMonitors: false,
 })

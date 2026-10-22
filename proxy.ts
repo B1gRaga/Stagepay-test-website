@@ -1,7 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/app', '/api/invoices/public', '/invoice', '/api/waitlist']
+// '/api/auth/check-password' is called by sign-up before an account exists;
+// it's rate-limited by IP and only ever sends a 5-character hash prefix out.
+const PUBLIC_PATHS = ['/', '/app', '/api/invoices/public', '/invoice', '/api/waitlist', '/api/auth/check-password']
 
 const PORTAL_PATHS = [
   '/dashboard', '/invoices', '/clients', '/reminders',
