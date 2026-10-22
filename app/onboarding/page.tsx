@@ -1,120 +1,57 @@
 ﻿'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Spinner } from '@/components/auth/AuthCard'
+import { AuthHead } from '@/components/auth/AuthStairs'
+import { BUSINESS_TYPES } from '@/lib/business-types'
 
-const BUSINESS_TYPES = [
-  { value: 'tuition_centre', label: 'Tuition Centre',  icon: '🎓' },
-  { value: 'contractor',     label: 'Contractor',       icon: '🔧' },
-  { value: 'freelancer',     label: 'Freelancer',       icon: '💻' },
-  { value: 'salon',          label: 'Salon',            icon: '✂️' },
-  { value: 'agency',         label: 'Agency',           icon: '🏢' },
-  { value: 'other',          label: 'Other',            icon: '⚡' },
-]
-
-const CSS = `
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  @keyframes barLoad{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-  .ob-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#18213A;}
-  .ob-card{width:100%;max-width:480px;background:rgba(31,42,68,.98);border:1px solid rgba(242,169,0,.12);border-radius:18px;padding:40px 36px;animation:fadeUp .35s ease both;}
-  @media(max-width:480px){.ob-card{padding:28px 20px;border-radius:12px;}}
-  .ob-logo{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:3px;color:#FAF7F0;display:flex;align-items:center;gap:8px;margin-bottom:32px;}
-  .ob-logo em{color:#F2A900;font-style:normal;}
-  .ob-heading{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:26px;letter-spacing:2px;color:#FAF7F0;margin-bottom:8px;}
-  .ob-sub{font-size:13px;color:rgba(250,247,240,.4);line-height:1.6;margin-bottom:28px;}
-  .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;}
-  @media(max-width:360px){.ob-grid{grid-template-columns:1fr;}}
-  .ob-tile{
-    padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.03);cursor:pointer;transition:all .15s;
-    font-family:var(--font-archivo),sans-serif;font-size:13px;font-weight:600;
-    color:rgba(250,247,240,.55);text-align:left;display:flex;align-items:center;gap:10px;
-  }
-  .ob-tile:hover{border-color:rgba(242,169,0,.4);color:rgba(250,247,240,.85);}
-  .ob-tile.selected{border-color:#F2A900;background:rgba(242,169,0,.1);color:#F2A900;}
-  .ob-tile-icon{font-size:18px;flex-shrink:0;}
-  .ob-btn{
-    width:100%;background:linear-gradient(135deg,#F2A900,#C98C00);color:#1F2A44;
-    padding:13px;border-radius:8px;border:none;font-size:13px;font-weight:700;
-    letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .2s;
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    font-family:var(--font-archivo),sans-serif;box-shadow:0 4px 20px rgba(242,169,0,.3);
-  }
-  .ob-btn:disabled{opacity:.45;cursor:not-allowed;}
-  .ob-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(242,169,0,.4);}
-  .ob-skip{display:block;text-align:center;margin-top:14px;font-size:12px;color:rgba(250,247,240,.25);cursor:pointer;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-weight:700;}
-  .ob-skip:hover{color:rgba(250,247,240,.5);}
-  .ob-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#F87171;margin-bottom:16px;}
-`
-
+// Shown once to accounts with no business type yet (older accounts; sign-up
+// asks this itself). The portal sends people here until one is saved.
 export default function OnboardingPage() {
-  const router = useRouter()
   const [selected, setSelected] = useState('')
-  const [loading,  setLoading]  = useState(false)
+  const [saving,   setSaving]   = useState<'' | 'pick' | 'skip'>('')
   const [error,    setError]    = useState('')
 
-  async function handleSave() {
-    if (!selected) return
-    setLoading(true); setError('')
+  async function save(type: string, how: 'pick' | 'skip') {
+    setSaving(how); setError('')
     try {
       const res = await fetch('/api/profile', {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ business_type: selected }),
+        body: JSON.stringify({ business_type: type }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to save') }
-      router.push('/dashboard')
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Couldn’t save. Try again.') }
+      window.location.href = '/dashboard'
     } catch (e: any) {
-      setError(e.message)
-      setLoading(false)
+      setError(e.message || 'Couldn’t save. Try again.')
+      setSaving('')
     }
   }
 
   return (
-    <>
-      <style>{CSS}</style>
-      <div className="ob-page">
-        <div className="ob-card">
-          <div className="ob-logo">
-            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-              <rect x="1" y="17" width="6" height="15" rx="2" fill="#F2A900"/>
-              <rect x="9" y="12" width="6" height="20" rx="2" fill="#F2A900" opacity=".82"/>
-              <rect x="17" y="6" width="6" height="26" rx="2" fill="#F2A900" opacity=".65"/>
-              <rect x="25" y="0" width="6" height="32" rx="2" fill="#F2A900" opacity=".48"/>
-            </svg>
-            Stage<em>Pay</em>
-          </div>
-
-          <div className="ob-heading">One quick question</div>
-          <div className="ob-sub">What type of business do you run? This helps us personalise your experience.</div>
-
-          {error && <div className="ob-error">{error}</div>}
-
-          <div className="ob-grid">
+    <AuthHead title={<>One quick<br/>question</>} lede="What kind of business do you run? One tap and you’re in.">
+      <form method="post" className="ac-form" onSubmit={e => { e.preventDefault(); if (selected) save(selected, 'pick') }}>
+        {error && <div className="ac-error" role="alert">{error}</div>}
+        <div className="ac-group" role="group" aria-labelledby="ob-label">
+          <span className="ac-label" id="ob-label">Business type</span>
+          <div className="as-choices">
             {BUSINESS_TYPES.map(bt => (
-              <button
-                key={bt.value}
-                className={`ob-tile${selected === bt.value ? ' selected' : ''}`}
-                onClick={() => setSelected(bt.value)}
-              >
-                <span className="ob-tile-icon">{bt.icon}</span>
+              <button key={bt.value} type="button" className="as-choice"
+                aria-pressed={selected === bt.value} onClick={() => setSelected(bt.value)}>
                 {bt.label}
               </button>
             ))}
           </div>
-
-          <button className="ob-btn" disabled={!selected || loading} onClick={handleSave}>
-            {loading
-              ? <><span aria-hidden="true" style={{display:'inline-flex',alignItems:'flex-end',gap:'2px',height:'13px',verticalAlign:'middle',marginRight:2}}>{[0,150,300,150].map((d,i)=><span key={i} style={{width:'3px',height:'100%',borderRadius:'1px',background:'#fff',opacity:[1,.82,.65,.48][i],animation:`barLoad .75s ${d}ms ease-in-out infinite`,transformOrigin:'bottom',display:'inline-block'}}/>)}</span> Saving…</>
-              : <>Continue to dashboard <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></>
-            }
-          </button>
-
-          <button className="ob-skip" onClick={() => router.push('/dashboard')}>
-            Skip for now
-          </button>
         </div>
-      </div>
-    </>
+        <button type="submit" className="ac-btn" disabled={!selected || !!saving}>
+          {saving === 'pick' ? <><Spinner /> Saving…</> : 'Continue to dashboard'}
+        </button>
+      </form>
+      {/* Skipping saves "Other", or the portal would send them straight back here. */}
+      <p className="ac-foot">
+        <button type="button" className="st-skip" disabled={!!saving} onClick={() => save('other', 'skip')}>
+          {saving === 'skip' ? 'Skipping…' : 'Skip for now'}
+        </button>
+      </p>
+    </AuthHead>
   )
 }

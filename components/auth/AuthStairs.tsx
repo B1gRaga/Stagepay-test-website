@@ -37,6 +37,9 @@ const CSS = `
   .as-choice:focus-visible,.as-back:focus-visible{outline:2px solid #1F2A44;outline-offset:2px;}
   .as-step{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#5B6475;}
   .as-back{background:transparent;border:0;padding:4px 0;cursor:pointer;display:flex;align-items:center;gap:6px;font:700 14px var(--font-manrope),sans-serif;color:#1F2A44;}
+  .st-skip{background:none;border:0;padding:4px 0;cursor:pointer;font:600 14px var(--font-manrope),sans-serif;color:#1F2A44;text-decoration:underline;text-decoration-color:rgba(31,42,68,.3);text-underline-offset:3px;}
+  .st-skip:disabled{opacity:.5;cursor:default;}
+  .st-skip:focus-visible{outline:2px solid #1F2A44;outline-offset:2px;}
   .as-done{display:flex;flex-direction:column;align-items:flex-start;gap:16px;}
   .as-done .ac-sub{margin:0;font-size:16px;}
   .as-done-ic{display:none;}
@@ -137,6 +140,7 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const onSignup = pathname.startsWith('/auth/signup')
   const onLogin = pathname.startsWith('/auth/login')
+  const onOnboarding = pathname.startsWith('/onboarding')
   const pageRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const leaving = useRef(false)
@@ -259,7 +263,7 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
       <div className="st-page" ref={pageRef}>
         <header className="st-top">
           <Link href="/" className="st-logo" aria-label="StagePay home"><LogoFull tone="default" /></Link>
-          {onLogin
+          {onOnboarding ? null : onLogin
             ? <p className="st-switch"><span>New to StagePay? </span><Link href="/auth/signup" onClick={e => switchTo(e, '/auth/signup')}>Create an account</Link></p>
             : <p className="st-switch"><span>{onSignup ? 'Already have an account? ' : pathname.startsWith('/auth/mfa') ? 'Wrong account? ' : 'Remembered it? '}</span><Link href="/auth/login" onClick={e => switchTo(e, '/auth/login')}>Sign in</Link></p>}
         </header>

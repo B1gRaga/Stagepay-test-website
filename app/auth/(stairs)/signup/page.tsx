@@ -5,20 +5,13 @@ import Link from 'next/link'
 import { AuthHead } from '@/components/auth/AuthStairs'
 import { EyeIcon, PW_TOGGLE_STYLE } from '@/components/auth/fields'
 import { Spinner } from '@/components/auth/AuthCard'
+import { BUSINESS_TYPES } from '@/lib/business-types'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-const BUSINESS_TYPES = [
-  { value: 'tuition_centre', label: 'Tuition Centre' },
-  { value: 'contractor',     label: 'Contractor' },
-  { value: 'freelancer',     label: 'Freelancer' },
-  { value: 'salon',          label: 'Salon' },
-  { value: 'agency',         label: 'Agency' },
-  { value: 'other',          label: 'Other' },
-]
 
 const LEDE = 'Free to start, no card needed.'
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { log, logError, cronitorPing } from '@/lib/logger'
 import { Resend } from 'resend'
+import { reminderEmail } from '@/lib/emails/reminder'
 import { withRetry } from '@/lib/retry'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
       .select(`
         *,
         invoices (
-          id, invoice_number, client_name, total, currency, due_date, status, user_id,
+          id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token,
           invoice_items (description, quantity, unit_price)
         )
       `)
@@ -87,7 +88,7 @@ async function processReminder(supabase: any, reminder: any) {
   // Fetch the sender profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_name, name, email')
+    .select('firm_name, name, email, logo_url, invoice_theme, brand_color_primary, brand_color_header')
     .eq('id', invoice.user_id)
     .single()
 
@@ -97,7 +98,7 @@ async function processReminder(supabase: any, reminder: any) {
 
   try {
     if (reminder.channel === 'email' && reminder.recipient_email) {
-      await sendReminderEmail(reminder, invoice, senderName, amount)
+      await sendReminderEmail(reminder, invoice, senderName, amount, profile)
     } else if (reminder.channel === 'whatsapp' && reminder.recipient_phone) {
       await sendReminderWhatsApp(reminder, invoice, senderName, amount)
     } else {
@@ -119,24 +120,20 @@ async function processReminder(supabase: any, reminder: any) {
   }
 }
 
-async function sendReminderEmail(reminder: any, invoice: any, senderName: string, amount: string) {
+async function sendReminderEmail(reminder: any, invoice: any, senderName: string, amount: string, profile: any) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) throw new Error('Email not configured')
 
   const resend = new Resend(apiKey)
   const from   = (process.env.RESEND_FROM_EMAIL || 'invoices@getstagepay.co').replace(/\.$/, '')
-  const body   = reminder.message_preview ||
-    `This is a friendly reminder that invoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. If you have already paid, please disregard this message.\n\nThank you.`
+  const { html, text } = reminderEmail({ senderName, profile, invoice, amount, message: reminder.message_preview })
 
   await withRetry(() => resend.emails.send({
     from:    `${senderName} via StagePay <${from}>`,
     to:      [reminder.recipient_email],
     subject: `Payment reminder: Invoice ${invoice.invoice_number}`,
-    html: `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#333;padding:32px">
-      <p style="font-size:16px">Hello,</p>
-      <div style="white-space:pre-wrap;line-height:1.6">${body.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-      <p style="margin-top:24px;font-size:12px;color:#aaa">Sent via StagePay</p>
-    </body></html>`,
+    html,
+    text,
   }))
 }
 

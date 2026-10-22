@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
 import { Resend } from 'resend'
+import { reminderEmail } from '@/lib/emails/reminder'
 import { sendWhatsApp as sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib/whatsapp'
 
 // POST /api/reminders/send-now
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   // Verify invoice ownership
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, total, currency, due_date, status, user_id')
+    .select('id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token')
     .eq('id', invoice_id)
     .eq('user_id', account.accountId)
     .single()
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await (await accountProfileClient(account))
     .from('profiles')
-    .select('firm_name, name, email')
+    .select('firm_name, name, email, logo_url, invoice_theme, brand_color_primary, brand_color_header')
     .eq('id', account.accountId)
     .single()
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   try {
     if (channel === 'email') {
-      await sendEmail(invoice, senderName, amount, recipient_email!)
+      await sendEmail(invoice, senderName, amount, recipient_email!, profile)
     } else {
       await sendWhatsApp(invoice, senderName, amount, recipient_phone!)
     }
@@ -87,23 +88,20 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function sendEmail(invoice: any, senderName: string, amount: string, to: string) {
+async function sendEmail(invoice: any, senderName: string, amount: string, to: string, profile: any) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) throw new Error('Email not configured — RESEND_API_KEY missing')
 
   const resend = new Resend(apiKey)
   const from   = (process.env.RESEND_FROM_EMAIL || 'invoices@getstagepay.co').replace(/\.$/, '')
-  const body   = `This is a friendly reminder that invoice ${invoice.invoice_number} for ${amount} is outstanding.\n\nPlease arrange payment at your earliest convenience. If you have already paid, please disregard this message.\n\nThank you.`
+  const { html, text } = reminderEmail({ senderName, profile, invoice, amount })
 
   await resend.emails.send({
     from:    `${senderName} via StagePay <${from}>`,
     to:      [to],
     subject: `Payment reminder: Invoice ${invoice.invoice_number}`,
-    html: `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#333;padding:32px">
-      <p style="font-size:16px">Hello,</p>
-      <div style="white-space:pre-wrap;line-height:1.6">${body.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-      <p style="margin-top:24px;font-size:12px;color:#aaa">Sent via StagePay</p>
-    </body></html>`,
+    html,
+    text,
   })
 }
 
