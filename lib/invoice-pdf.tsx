@@ -84,6 +84,7 @@ function facts(d: Doc) {
 
 function Logo({ url, size = 40 }: { url?: string | null; size?: number }) {
   if (!url) return null
+  // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image draws into the PDF; it has no alt prop
   return <Image src={url} style={{ width: size, height: size, objectFit: 'contain' }} />
 }
 

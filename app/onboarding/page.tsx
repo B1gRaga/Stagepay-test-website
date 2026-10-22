@@ -28,7 +28,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <AuthHead title={<>One quick<br/>question</>} lede="What kind of business do you run? One tap and you’re in.">
+    <AuthHead title={<>One quick <br/>question</>} lede="What kind of business do you run? One tap and you’re in.">
       <form method="post" className="ac-form" onSubmit={e => { e.preventDefault(); if (selected) save(selected, 'pick') }}>
         {error && <div className="ac-error" role="alert">{error}</div>}
         <div className="ac-group" role="group" aria-labelledby="ob-label">

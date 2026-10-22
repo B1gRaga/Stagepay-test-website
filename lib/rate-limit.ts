@@ -55,16 +55,8 @@ async function redisRateLimit(
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
-// Synchronous signature kept for compatibility — Redis path is async so callers
-// that need it must await. Existing callers pass results to if() which handles
-// both boolean and Promise<boolean> by evaluating the promise as truthy until
-// resolved. To properly gate on Redis, use awaitRateLimit() below.
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
-  return inMemoryRateLimit(key, limit, windowMs)
-}
-
-// Async version — uses Redis when configured, falls back to in-memory.
-// All route handlers should use this instead of rateLimit().
+// Uses Redis when configured, falls back to in-memory. Every route handler
+// awaits this.
 export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
   const url   = process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.UPSTASH_REDIS_REST_TOKEN

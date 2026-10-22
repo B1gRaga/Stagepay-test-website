@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthHead
-      title={sent ? 'Check your email' : <>Reset your<br/>password</>}
+      title={sent ? 'Check your email' : <>Reset your <br/>password</>}
       lede={sent ? undefined : 'Enter the email you sign in with and we’ll send you a link to choose a new one.'}
     >
       {sent ? (

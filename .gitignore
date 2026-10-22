@@ -36,3 +36,9 @@ token.json
 
 # taste-skill working files (screenshots, direction sheets)
 .taste-skill/
+
+# Test and audit output
+playwright-report/
+test-results/
+blob-report/
+.lighthouseci/

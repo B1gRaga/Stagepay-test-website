@@ -3,7 +3,7 @@
 // Requires: npm install -D sharp (dev-only, not added to main deps)
 
 import sharp from 'sharp'
-import { readFileSync, mkdirSync } from 'fs'
+import { mkdirSync } from 'fs'
 import { fileURLToPath } from 'url'
 import path from 'path'
 

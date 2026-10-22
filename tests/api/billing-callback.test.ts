@@ -5,7 +5,6 @@ import { NextRequest } from 'next/server'
 const mockVerifyPaymentToken = vi.fn()
 const mockConfirmPlanUpgrade = vi.fn()
 const mockSingle = vi.fn()
-const mockUpdate = vi.fn()
 const mockEq = vi.fn()
 
 function buildChain(overrides: Record<string, unknown> = {}) {

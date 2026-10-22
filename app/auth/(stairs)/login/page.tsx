@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthHead title={<>Sign in to<br/>StagePay</>}
+    <AuthHead title={<>Sign in to <br/>StagePay</>}
       lede="Your invoices, reminders and receipts are where you left them."
     >
       <form method="post" onSubmit={handleSubmit} className="ac-form">

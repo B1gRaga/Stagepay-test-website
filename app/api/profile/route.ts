@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccount, canManage, accountProfileClient } from '@/lib/account'
-import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
+import { stripTags } from '@/lib/sanitize'
 import { cleanMethod, MAX_METHODS } from '@/lib/payment-methods'
 
 const ALLOWED = [

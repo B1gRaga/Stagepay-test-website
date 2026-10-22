@@ -41,7 +41,7 @@ export default function MfaPage() {
 
   return (
     <AuthHead
-      title={<>Enter your<br/>code</>}
+      title={<>Enter your <br/>code</>}
       lede="Your account uses two-step sign-in. Enter the 6-digit code from your authenticator app."
     >
       <form method="post" className="ac-form" onSubmit={e => { e.preventDefault(); verify() }}>

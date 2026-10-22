@@ -1,0 +1,74 @@
+# Checks every push to main and every pull request.
+#   checks: lint, type check, unit tests (vitest), unused code (knip)
+#   e2e:    Playwright end-to-end + axe accessibility tests against a production
+#           build. Needs the Supabase secrets below; skipped until they're set.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY   required for e2e
+#   SUPABASE_SERVICE_ROLE_KEY   for the client invoice page tests
+#   E2E_INVOICE_TOKEN           optional: a real invoice link token
+#   E2E_EMAIL, E2E_PASSWORD     optional: a test account without two-step sign-in
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run knip
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      E2E_INVOICE_TOKEN: ${{ secrets.E2E_INVOICE_TOKEN }}
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - name: Skip until the Supabase secrets are set
+        if: env.NEXT_PUBLIC_SUPABASE_URL == ''
+        run: echo "::notice::E2E skipped — add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as repository secrets to run it."
+      - uses: actions/checkout@v4
+        if: env.NEXT_PUBLIC_SUPABASE_URL != ''
+      - uses: actions/setup-node@v4
+        if: env.NEXT_PUBLIC_SUPABASE_URL != ''
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: env.NEXT_PUBLIC_SUPABASE_URL != ''
+      - run: npx playwright install --with-deps chromium
+        if: env.NEXT_PUBLIC_SUPABASE_URL != ''
+      - run: npx playwright test
+        if: env.NEXT_PUBLIC_SUPABASE_URL != ''
+      - uses: actions/upload-artifact@v4
+        if: failure() && env.NEXT_PUBLIC_SUPABASE_URL != ''
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

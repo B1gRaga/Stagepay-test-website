@@ -15,6 +15,7 @@ export function logError(event: string, error: unknown, data: LogData = {}) {
   })
 }
 
+/** @public Kept for routes that want a Sentry warning rather than an error. */
 export function logWarn(event: string, data: LogData = {}) {
   console.warn(JSON.stringify({ event, ...data, ts: Date.now() }))
   Sentry.captureMessage(event, { level: 'warning', extra: data })

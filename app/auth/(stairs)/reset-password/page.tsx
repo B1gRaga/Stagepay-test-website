@@ -67,13 +67,13 @@ export default function ResetPasswordPage() {
   }
 
   if (step === 'checking') {
-    return <AuthHead title={<>Reset your<br/>password</>}><p className="ac-hint" role="status">Checking your link…</p></AuthHead>
+    return <AuthHead title={<>Reset your <br/>password</>}><p className="ac-hint" role="status">Checking your link…</p></AuthHead>
   }
 
   if (step === 'no-session') {
     return (
       <AuthHead
-        title={<>This link<br/>has expired</>}
+        title={<>This link <br/>has expired</>}
         lede="Reset links work once and expire after an hour. Ask for a new one and use the latest email."
       >
         <Link href="/auth/forgot-password" className="ac-btn">Send a new link</Link>
@@ -83,7 +83,7 @@ export default function ResetPasswordPage() {
 
   if (step === 'done') {
     return (
-      <AuthHead title={<>Password<br/>changed</>} lede="You’re signed in. Use your new password next time you sign in.">
+      <AuthHead title={<>Password <br/>changed</>} lede="You’re signed in. Use your new password next time you sign in.">
         <a href="/dashboard" className="ac-btn">Go to your dashboard</a>
       </AuthHead>
     )
@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
   if (step === 'code') {
     return (
       <AuthHead
-        title={<>Confirm<br/>it’s you</>}
+        title={<>Confirm <br/>it’s you</>}
         lede="Your account uses two-step sign-in. Enter the 6-digit code from your authenticator app."
       >
         <form method="post" className="ac-form" onSubmit={verifyCode}>
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthHead title={<>Choose a new<br/>password</>}>
+    <AuthHead title={<>Choose a new <br/>password</>}>
       <form method="post" className="ac-form" onSubmit={savePassword}>
         {error && <div className="ac-error" role="alert">{error}</div>}
         <div className="ac-group">

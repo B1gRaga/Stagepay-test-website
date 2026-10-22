@@ -4,6 +4,7 @@ import { CopyButton, PrintButton } from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
 import { firmLines } from '@/lib/firm-details'
 import { resolveTheme, contrast, tint } from '@/lib/invoice-themes'
+import Link from 'next/link'
 import { LogoFull } from '@/components/Logo'
 
 type Props = { params: Promise<{ token: string }> }
@@ -191,7 +192,7 @@ export default async function PublicInvoicePage({ params }: Props) {
 
         <footer className="pi-foot">
           <span>Sent with</span>
-          <a href="/" aria-label="StagePay"><LogoFull tone="default" /></a>
+          <Link href="/" aria-label="StagePay"><LogoFull tone="default" /></Link>
         </footer>
       </main>
     </>

@@ -1,0 +1,42 @@
+# Semgrep: fast security and bug-pattern scanning with the open rule sets for
+# TypeScript, React, Next.js and committed secrets. High-severity findings fail
+# the run; every finding is listed under Security → Code scanning.
+name: Semgrep
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 1' # Mondays
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan
+        run: >
+          semgrep scan --metrics=off
+          --config p/typescript --config p/react --config p/nextjs
+          --config p/secrets --config p/owasp-top-ten
+          --exclude public --exclude stagepay-landing --exclude .agents --exclude .claude
+          --sarif --output semgrep.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+      - name: Fail on high-severity findings
+        run: >
+          semgrep scan --metrics=off --error --severity ERROR
+          --config p/typescript --config p/react --config p/nextjs
+          --config p/secrets --config p/owasp-top-ten
+          --exclude public --exclude stagepay-landing --exclude .agents --exclude .claude

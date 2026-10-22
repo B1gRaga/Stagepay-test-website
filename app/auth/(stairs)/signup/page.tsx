@@ -90,7 +90,7 @@ export default function SignupPage() {
   }
 
   return (
-    <AuthHead title={<>Send your first<br/>invoice tonight</>} lede={LEDE}>
+    <AuthHead title={<>Send your first <br/>invoice tonight</>} lede={LEDE}>
 
       {step === 1 ? (
         <form method="post" onSubmit={handleStepOne} className="ac-form">
