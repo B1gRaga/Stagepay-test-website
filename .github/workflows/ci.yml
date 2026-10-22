@@ -66,7 +66,7 @@ jobs:
         if: env.NEXT_PUBLIC_SUPABASE_URL != ''
       - run: npx playwright test
         if: env.NEXT_PUBLIC_SUPABASE_URL != ''
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure() && env.NEXT_PUBLIC_SUPABASE_URL != ''
         with:
           name: playwright-report
