@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { Spinner } from '@/components/auth/AuthCard'
 import { AuthHead } from '@/components/auth/AuthStairs'
+import { safeRedirect } from '@/lib/safe-redirect'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,7 +30,7 @@ export default function MfaPage() {
 
       const { error: vErr } = await supabase.auth.mfa.verify({ factorId: totp.id, challengeId: challenge.id, code: value })
       if (vErr) { setError('That code didn’t match. Codes change every 30 seconds; try the current one.'); setCode('') }
-      else window.location.href = '/dashboard'
+      else window.location.href = safeRedirect(new URLSearchParams(window.location.search).get('redirect')) ?? '/dashboard'
     } finally {
       setLoading(false)
     }

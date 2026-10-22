@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { LogoIcon } from '@/components/Logo'
+import { LogoFull } from '@/components/Logo'
 
 const DURATION = 550
 const EASING   = 'cubic-bezier(0.76, 0, 0.24, 1)'
@@ -64,12 +64,9 @@ export default function ThemeToggleBtn() {
           opacity: phase === 'falling' ? 1 : 0,
           transition: `opacity ${Math.round(DURATION * 0.25)}ms ease`,
         }}>
-          <span style={{ display: 'inline-flex', width: 48, height: 48 }}>
-            <LogoIcon tone={curtainColor.current === '#18213A' ? 'on-ink' : 'default'} />
+          <span style={{ display: 'inline-flex', height: 44 }}>
+            <LogoFull tone={curtainColor.current === '#18213A' ? 'on-ink' : 'default'} className="sp-curtain-logo" />
           </span>
-          <div style={{ fontFamily: 'var(--font-bebas, sans-serif)', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: '#F2A900' }}>
-            STAGEPAY
-          </div>
         </div>
       )}
     </>,
@@ -87,6 +84,7 @@ export default function ThemeToggleBtn() {
           from { transform: scaleY(1); }
           to   { transform: scaleY(0); }
         }
+        .sp-curtain-logo { height: 44px; width: auto; display: block; }
         .sp-curtain-fall {
           animation: spCurtainFall ${DURATION}ms ${EASING} both;
         }

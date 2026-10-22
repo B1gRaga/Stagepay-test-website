@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AuthHead } from '@/components/auth/AuthStairs'
 import { EyeIcon, PW_TOGGLE_STYLE } from '@/components/auth/fields'
 import { Spinner } from '@/components/auth/AuthCard'
+import { safeRedirect, redirectQuery } from '@/lib/safe-redirect'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,7 +28,9 @@ export default function LoginPage() {
 
       const { data: factors } = await supabase.auth.mfa.listFactors()
       const hasMFA = factors?.totp?.some((f: any) => f.status === 'verified') ?? false
-      window.location.href = hasMFA ? '/auth/mfa' : '/dashboard'
+      // An invite link sent them here to sign in first; go back to it.
+      const next = new URLSearchParams(window.location.search).get('redirect')
+      window.location.href = hasMFA ? `/auth/mfa${redirectQuery(next)}` : (safeRedirect(next) ?? '/dashboard')
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)

@@ -10,7 +10,7 @@ const csp = (frameAncestors) => [
   "font-src 'self' data:",
   "img-src 'self' data: blob: https:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
-  "worker-src blob:",
+  "worker-src 'self' blob:",
   "frame-src 'self'",
   `frame-ancestors ${frameAncestors}`,
 ].join('; ')

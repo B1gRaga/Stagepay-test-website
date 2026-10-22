@@ -6,6 +6,7 @@ import { AuthHead } from '@/components/auth/AuthStairs'
 import { EyeIcon, PW_TOGGLE_STYLE } from '@/components/auth/fields'
 import { Spinner } from '@/components/auth/AuthCard'
 import { BUSINESS_TYPES } from '@/lib/business-types'
+import { safeRedirect } from '@/lib/safe-redirect'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,7 +67,7 @@ export default function SignupPage() {
       options: { data: { full_name: name.trim(), business_type: businessType } },
     })
     if (error) { setError(error.message); setLoading(false) }
-    else if (data.session) window.location.href = '/dashboard'
+    else if (data.session) window.location.href = safeRedirect(new URLSearchParams(window.location.search).get('redirect')) ?? '/dashboard'
     else setDone(true)
   }
 

@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { useState, useEffect } from 'react'
 import ThemeToggleBtn from './ThemeToggleBtn'
-import { LogoIcon } from '@/components/Logo'
+import { LogoFull } from '@/components/Logo'
 
 const CSS = `
   :root{
@@ -29,37 +29,19 @@ const CSS = `
     display:flex;flex-direction:column;
     height:100vh;position:relative;
   }
-  .sidebar::before{
-    content:'';position:absolute;top:0;left:0;right:0;height:2px;
-    background:linear-gradient(90deg,var(--g) 0%,transparent 60%);
-    opacity:.7;z-index:1;
-  }
-  .sidebar-logo{
-    padding:22px 20px 16px;
-    border-bottom:1px solid var(--line);
-    font-family:var(--font-bebas),sans-serif;font-weight:700;
-    font-size:23px;letter-spacing:3px;color:var(--t1);
-  }
-  .sidebar-logo em{color:var(--g);font-style:normal;}
-  .sidebar-logo small{
-    display:block;font-family:var(--font-archivo),sans-serif;
-    font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--t3);font-weight:500;margin-top:2px;
-  }
+  .sidebar-logo{display:block;padding:22px 20px 18px;border-bottom:1px solid var(--line);color:var(--t1);}
+  .sidebar-logo svg{height:28px;width:auto;display:block;}
+  .sidebar-logo:focus-visible{outline:2px solid var(--g);outline-offset:-4px;}
   .desk-nav{display:flex;flex-direction:column;flex:1;overflow-y:auto;scrollbar-width:none;}
   .desk-nav::-webkit-scrollbar{display:none;}
-  .nav-section{
-    padding:10px 14px 3px;font-size:10px;
-    letter-spacing:.14em;text-transform:uppercase;
-    color:var(--t3);font-weight:600;
-  }
+  .nav-section{padding:14px 20px 4px;font-size:12px;color:var(--t3);font-weight:600;}
   .nav-item{
     display:flex;align-items:center;gap:10px;
     padding:7px 12px;border-radius:6px;margin:1px 8px;
     font-size:13px;color:var(--t2);cursor:pointer;
     transition:all .15s;position:relative;
     text-decoration:none;background:transparent;border:none;
-    width:calc(100% - 16px);font-family:var(--font-archivo),sans-serif;font-weight:700;
+    width:calc(100% - 16px);font-family:var(--font-manrope),sans-serif;font-weight:700;
   }
   .nav-item:hover{background:var(--surface);color:var(--t1);}
   .nav-item.active{background:var(--g-dim);color:var(--g);}
@@ -79,7 +61,7 @@ const CSS = `
   .sidebar-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--line);}
   .user-pill{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s;position:relative;}
   .user-pill:hover{background:var(--surface);}
-  .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(242,169,0,.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:13px;color:var(--g);flex-shrink:0;}
+  .user-av{width:32px;height:32px;border-radius:50%;background:var(--g-dim);border:1px solid rgba(242,169,0,.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-manrope),sans-serif;font-weight:700;font-size:13px;color:var(--g);flex-shrink:0;}
   .user-name{font-size:13px;color:var(--t1);font-weight:500;}
   .user-plan{font-size:11px;color:var(--g);}
   .profile-popup{
@@ -90,7 +72,7 @@ const CSS = `
   }
   @keyframes popupIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   .profile-popup-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);}
-  .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
+  .profile-popup-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;font-family:var(--font-manrope),sans-serif;font-weight:700;font-size:13px;color:var(--t2);cursor:pointer;text-align:left;transition:background .12s,color .12s;}
   .profile-popup-item:hover{background:var(--surface);color:var(--t1);}
   .profile-popup-item.danger{color:var(--danger);}
   .biz-switch{padding:6px 0 0;}
@@ -132,16 +114,13 @@ const CSS = `
     html[data-theme="light"] .mob-tab.active::before{background:var(--g);}
     html[data-theme="light"] .mob-tab span{color:#3d3830 !important;}
     html[data-theme="light"] .mob-tab.active span{color:#F2A900 !important;font-weight:700;}
-    .mob-topbar-logo{
-      display:flex;align-items:center;gap:8px;text-decoration:none;
-      font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:20px;letter-spacing:2px;color:var(--t1);
-    }
-    .mob-topbar-logo em{color:var(--g);font-style:normal;}
+    .mob-topbar-logo{display:flex;align-items:center;text-decoration:none;color:var(--t1);}
+    .mob-topbar-logo svg{height:24px;width:auto;display:block;}
     .mob-topbar-av{
       width:30px;height:30px;border-radius:50%;
       background:var(--g-dim);border:1px solid rgba(242,169,0,.25);
       display:flex;align-items:center;justify-content:center;
-      font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:12px;color:var(--g);
+      font-family:var(--font-manrope),sans-serif;font-weight:700;font-size:12px;color:var(--g);
       cursor:pointer;-webkit-tap-highlight-color:transparent;
     }
     .mob-menu-popup{
@@ -188,7 +167,7 @@ const CSS = `
       display:flex;flex-direction:column;
       align-items:center;justify-content:center;
       flex:1;gap:3px;
-      font-size:10px;font-family:var(--font-archivo),sans-serif;font-weight:500;
+      font-size:10px;font-family:var(--font-manrope),sans-serif;font-weight:500;
       color:var(--t3);text-decoration:none;
       position:relative;cursor:pointer;
       background:transparent;border:none;padding:0;
@@ -316,7 +295,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
   }
 
   // In a team business, the role says more than the owner's plan does.
-  const planLabel = role !== 'owner' ? ROLE_NAME[role] : plan === 'business' ? 'Business Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan'
+  const planLabel = role !== 'owner' ? ROLE_NAME[role] : plan === 'business' ? 'Business plan' : plan === 'pro' ? 'Pro plan' : 'Free plan'
   const showSwitcher = businesses.length > 1
 
   return (
@@ -325,11 +304,8 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
 
       {/* ── MOBILE TOP BAR ── */}
       <div className="mob-topbar">
-        <Link href="/dashboard" className="mob-topbar-logo">
-          <span style={{ display: 'inline-flex', width: 22, height: 22, flexShrink: 0 }}>
-            <LogoIcon />
-          </span>
-          <span>STAGE<em>PAY</em></span>
+        <Link href="/dashboard" className="mob-topbar-logo" aria-label="StagePay dashboard">
+          <LogoFull />
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ThemeToggleBtn />
@@ -368,17 +344,9 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
       <aside className="sidebar">
 
         {/* ── DESKTOP SIDEBAR ── */}
-        <div className="sidebar-logo">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ display: 'inline-flex', width: 28, height: 28, flexShrink: 0 }}>
-              <LogoIcon />
-            </span>
-            <span style={{ fontFamily: "var(--font-bebas),sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: 3 }}>
-              Stage<em>Pay</em>
-            </span>
-          </div>
-          <small>Professional invoicing</small>
-        </div>
+        <Link href="/dashboard" className="sidebar-logo" aria-label="StagePay dashboard">
+          <LogoFull />
+        </Link>
 
         <div className="desk-nav">
           <div className="nav-section">Main</div>
@@ -390,7 +358,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
 
           <Link href="/new-invoice" className={`nav-item${is('/new-invoice') ? ' active' : ''}`}>
             <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3v10M3 8h10"/></svg>
-            <span>New Invoice</span>
+            <span>New invoice</span>
           </Link>
 
           <Link href="/invoices" className={`nav-item${is('/invoices') ? ' active' : ''}`}>
@@ -411,7 +379,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
 
           <Link href="/tutorial" className={`nav-item${is('/tutorial') ? ' active' : ''}`}>
             <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="7"/><path d="M8 5v4"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
-            <span>Getting Started</span>
+            <span>Getting started</span>
           </Link>
 
           <div className="nav-section">Account</div>
@@ -427,7 +395,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
 
         <div className="sidebar-footer">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 10px', marginBottom: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--t3)', letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 600 }}>Theme</span>
+            <span style={{ fontSize: 13, color: 'var(--t3)', fontWeight: 600 }}>Theme</span>
             <ThemeToggleBtn />
           </div>
           <div className="user-pill" onClick={() => setPopupOpen(p => !p)}>
@@ -490,7 +458,7 @@ export default function SidebarNav({ displayName, userEmail, plan = 'free', over
           </Link>
 
           {/* FAB — New Invoice */}
-          <Link href="/new-invoice" className="mob-fab" aria-label="New Invoice">
+          <Link href="/new-invoice" className="mob-fab" aria-label="New invoice">
             <div className="mob-fab-inner">
               <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#1F2A44" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M8 3v10M3 8h10"/>

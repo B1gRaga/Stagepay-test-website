@@ -41,11 +41,11 @@ const CSS = `
   .support-panel-title{
     font-size:13px;font-weight:600;
     color:var(--t1,#FAF7F0);
-    font-family:var(--font-archivo),sans-serif;
+    font-family:var(--font-manrope),sans-serif;
   }
   .support-panel-sub{
     font-size:11px;color:var(--t3,rgba(250,247,240,0.3));
-    margin-top:1px;font-family:var(--font-archivo),sans-serif;font-weight:700;
+    margin-top:1px;font-family:var(--font-manrope),sans-serif;font-weight:700;
   }
   .support-option{
     display:flex;align-items:center;gap:12px;
@@ -54,7 +54,7 @@ const CSS = `
     cursor:pointer;background:transparent;border-left:none;border-right:none;border-top:none;
     width:100%;text-align:left;
     transition:background .12s;text-decoration:none;
-    font-family:var(--font-archivo),sans-serif;font-weight:700;
+    font-family:var(--font-manrope),sans-serif;font-weight:700;
   }
   .support-option:last-child{border-bottom:none;}
   .support-option:hover{background:var(--surface,#1F2A44);}

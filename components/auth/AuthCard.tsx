@@ -13,6 +13,8 @@ export const FORM_CSS = `
   .ac-code{text-align:center;font-size:22px;letter-spacing:.4em;font-variant-numeric:tabular-nums;}
   .ac-btn{height:46px;border:0;border-radius:8px;background:#F2A900;color:#1F2A44;font:700 15px var(--font-manrope),sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;width:100%;}
   .ac-btn:hover:not(:disabled){background:#FFB81C;}
+  .ac-btn.ac-btn-2{background:transparent;box-shadow:inset 0 0 0 1.5px #1F2A44;}
+  .ac-btn.ac-btn-2:hover{background:rgba(31,42,68,.05);}
   .ac-btn:disabled{opacity:.5;cursor:not-allowed;}
   .ac-btn:focus-visible,.ac-input:focus-visible,.ac-foot a:focus-visible,.ac-link:focus-visible{outline:2px solid #1F2A44;outline-offset:2px;}
   .ac-hint{font-size:12px;color:#64748B;}

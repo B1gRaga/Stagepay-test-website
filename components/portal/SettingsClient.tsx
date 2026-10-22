@@ -139,7 +139,7 @@ const CSS = `
   .pay-preview{margin:0;position:sticky;top:24px;}
   .pay-preview figcaption{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;}
   .pp-card{background:#FFFFFF;color:#1F2A44;border-radius:10px;padding:16px 18px;border:1px solid rgba(31,42,68,.12);font-size:13px;}
-  .pp-title{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+  .pp-title{font-size:12px;font-weight:800;margin-bottom:8px;}
   .pp-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;}
   .pp-row span{color:#64748B;}
   .pp-row b{font-weight:600;text-align:right;font-variant-numeric:tabular-nums;word-break:break-word;}
@@ -157,7 +157,7 @@ const CSS = `
   .pm-hint{font-size:12px;color:var(--t2);margin-top:10px;}
   .pm-add{display:flex;flex-direction:column;gap:8px;padding:14px 0 0;}
   .pm-add > span{font-size:13px;font-weight:600;color:var(--t1);}
-  .fp-label{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748B;margin-bottom:6px;}
+  .fp-label{font-size:12px;font-weight:700;color:#64748B;margin-bottom:6px;}
   .fp-name{font-size:17px;font-weight:800;line-height:1.25;}
   .fp-vat{font-size:12px;font-weight:600;color:#B07A00;margin-top:2px;}
   .fp-line{font-size:12px;color:#475569;margin-top:4px;line-height:1.45;word-break:break-word;}
@@ -237,18 +237,15 @@ const CSS = `
   .settings-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
   .settings-section::before{content:'';position:absolute;left:-32px;top:0;width:3px;height:0;background:var(--g);border-radius:0 2px 2px 0;transition:height .3s ease;}
   .settings-section:hover::before{height:100%;}
-  .settings-section-title{font-family:var(--font-bebas),sans-serif;font-weight:700;font-size:17px;letter-spacing:1.5px;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
-  .settings-section-badge{font-family:var(--font-archivo),sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:3px;}
   .settings-section-desc{font-size:12px;color:var(--t3);margin-bottom:18px;line-height:1.6;}
 
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .form-group{display:flex;flex-direction:column;gap:5px;}
   .form-group.full{grid-column:1/-1;}
-  .form-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;}
   .form-input,.form-select,.form-textarea{
     background:var(--surface);border:1px solid var(--line2);
     border-radius:7px;padding:10px 12px;
-    font-family:var(--font-archivo),sans-serif;font-weight:700;font-size:13px;color:var(--t1);
+    font-family:var(--font-manrope),sans-serif;font-weight:700;font-size:13px;color:var(--t1);
     outline:none;transition:border-color .2s, box-shadow .2s;width:100%;
   }
   .form-input:focus,.form-select:focus,.form-textarea:focus{
@@ -258,8 +255,6 @@ const CSS = `
   .form-textarea{resize:vertical;min-height:80px;}
   .form-select option,.form-select optgroup{background:var(--bg2);color:var(--t1);}
 
-  .topbar-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--line2);letter-spacing:.05em;text-transform:uppercase;font-family:var(--font-archivo),sans-serif;text-decoration:none;background:transparent;color:var(--t2);}
-  .topbar-btn:hover{border-color:var(--g);color:var(--g);}
   .btn-primary{background:var(--g);color:var(--bg);border-color:var(--g);box-shadow:0 2px 8px rgba(242,169,0,.2);}
   .btn-primary:hover{background:#C98C00;border-color:#C98C00;color:var(--bg);}
   .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
@@ -267,11 +262,6 @@ const CSS = `
 
   .sec-risk-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line);}
   .sec-risk-row:last-child{border-bottom:none;}
-  .sec-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap;margin-top:2px;}
-  .sec-badge-high  {background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);}
-  .sec-badge-med   {background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.3);}
-  .sec-badge-low   {background:rgba(100,116,139,.12);color:#94A3B8;border:1px solid rgba(100,116,139,.3);}
-  .sec-badge-fixed {background:rgba(242,169,0,.12);color:#F2A900;border:1px solid rgba(242,169,0,.3);}
 
   .plan-card{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
 
@@ -305,7 +295,11 @@ const CSS = `
   .brand-preview{margin:0;position:sticky;top:24px;}
   .brand-preview figcaption{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;}
   .brand-preview .stage{background:#E9E5DC;border-radius:12px;padding:10px;}
-  .brand-pdf{display:block;width:100%;aspect-ratio:148/210;border:0;border-radius:4px;background:#FFFFFF;}
+  .brand-pdf-box{position:relative;min-height:120px;transition:opacity var(--dur-2) var(--ease);}
+  .brand-pdf-box:empty{aspect-ratio:210/297;background:#FFFFFF;border-radius:4px;}
+  .brand-pdf-box.loading{opacity:.55;}
+  .brand-pdf{display:block;width:100%;height:auto;border-radius:4px;background:#FFFFFF;}
+  .brand-pdf-note{font-size:13px;color:var(--t2);margin-top:10px;}
   .brand-pdf-open{display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--t1);text-decoration:underline;text-underline-offset:3px;}
   html:not([data-theme="light"]) .brand-preview .stage{background:#111827;}
   @media(max-width:1200px){.brand-layout{grid-template-columns:minmax(0,1fr);}.brand-preview{position:static;max-width:460px;}}
@@ -394,18 +388,62 @@ function TemplateSketch({ id, t }: { id: string; t: InvoiceTheme }) {
 
 // The real PDF, in the template and colours being tried. It reloads a moment
 // after the last change so typing a colour doesn't fire a render per key.
+// The sample PDF's first page, drawn into the page with pdf.js. Browsers on
+// phones won't show a PDF in a frame, so the page renders it itself, the same
+// way on every screen. It redraws a moment after the last change (so typing a
+// colour doesn't render on every key) and keeps the old picture until the new
+// one is ready. pdf.js loads only when this panel opens.
+const PDFJS = '/pdfjs-4.10.38'
+
 function BrandingPdfPreview({ theme, paper, accent, header, logo }: { theme: string; paper: string; accent: string; header: string; logo?: string | null }) {
-  const want = `/api/invoices/sample-pdf?${new URLSearchParams({ theme, paper, ...(accent ? { accent } : {}), ...(header ? { header } : {}), v: logo ?? '' })}#toolbar=0&navpanes=0&view=FitH`
+  const want = `/api/invoices/sample-pdf?${new URLSearchParams({ theme, paper, ...(accent ? { accent } : {}), ...(header ? { header } : {}), v: logo ?? '' })}`
   const [src, setSrc] = useState(want)
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const boxRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const id = setTimeout(() => setSrc(want), 500)
     return () => clearTimeout(id)
   }, [want])
-  // Phones rarely show a PDF inside a page, so there's always a way to open it.
+
+  useEffect(() => {
+    let cancelled = false
+    setState('loading')
+    ;(async () => {
+      try {
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+        pdfjs.GlobalWorkerOptions.workerSrc = `${PDFJS}/pdf.worker.min.mjs`
+        const res = await fetch(src, { credentials: 'same-origin', cache: 'no-store' })
+        if (!res.ok) throw new Error(`PDF ${res.status}`)
+        const doc = await pdfjs.getDocument({ data: new Uint8Array(await res.arrayBuffer()), standardFontDataUrl: `${PDFJS}/standard_fonts/`, isEvalSupported: false }).promise
+        const page = await doc.getPage(1)
+        const box = boxRef.current
+        if (!box || cancelled) return
+        const width = box.clientWidth || 360
+        const viewport = page.getViewport({ scale: (width / page.getViewport({ scale: 1 }).width) * Math.min(window.devicePixelRatio || 1, 2.5) })
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(viewport.width)
+        canvas.height = Math.round(viewport.height)
+        canvas.className = 'brand-pdf'
+        canvas.setAttribute('role', 'img')
+        canvas.setAttribute('aria-label', 'Sample invoice in the chosen template')
+        await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise
+        doc.destroy()
+        if (cancelled) return
+        box.replaceChildren(canvas)
+        setState('ready')
+      } catch {
+        if (!cancelled) setState('error')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [src])
+
   return (
     <>
-      <iframe className="brand-pdf" src={src} title="Sample invoice in the chosen template" />
-      <a className="brand-pdf-open" href={src.split('#')[0]} target="_blank" rel="noreferrer">Open full size</a>
+      <div ref={boxRef} className={`brand-pdf-box${state === 'loading' ? ' loading' : ''}`} aria-busy={state === 'loading'} />
+      {state === 'error' && <p className="brand-pdf-note" role="status">The preview didn’t load. Open it full size instead.</p>}
+      <a className="brand-pdf-open" href={src} target="_blank" rel="noreferrer">Open full size</a>
     </>
   )
 }

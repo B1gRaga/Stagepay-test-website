@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { animate, stagger, utils } from 'animejs'
 import { LogoFull } from '@/components/Logo'
 import { FORM_CSS } from './AuthCard'
+import { redirectQuery } from '@/lib/safe-redirect'
 
 // Sign in, sign up and the password pages share this shell
 // (app/auth/(stairs)/layout.tsx), so the stairs stay put while the form changes. The logo's three rising bars, at the
@@ -140,7 +141,8 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const onSignup = pathname.startsWith('/auth/signup')
   const onLogin = pathname.startsWith('/auth/login')
-  const onOnboarding = pathname.startsWith('/onboarding')
+  // Onboarding and invites are reached signed in: no sign-in/sign-up link.
+  const onOnboarding = pathname.startsWith('/onboarding') || pathname.startsWith('/join')
   const pageRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const leaving = useRef(false)
@@ -224,6 +226,8 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
   function switchTo(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
     e.preventDefault()
+    // Keep an invite link's redirect when switching between sign in and sign up.
+    href += redirectQuery(new URLSearchParams(window.location.search).get('redirect'))
     if (leaving.current) return
     leaving.current = true
     const main = mainRef.current
