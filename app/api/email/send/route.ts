@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { generateInvoicePDF } from '@/lib/invoice-pdf'
 import { withRetry } from '@/lib/retry'
+import { invoiceEmail } from '@/lib/emails/invoice'
 
 export const runtime = 'nodejs'
 
@@ -60,52 +61,18 @@ export async function POST(req: NextRequest) {
   const invoiceNum = escapeHtml(invoice.invoice_number)
   const sym        = escapeHtml(invoice.currency || 'P')
   const total      = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
-  const dueLine    = invoice.due_date
-    ? `<p style="margin:0 0 8px">Payment is due by <strong>${escapeHtml(invoice.due_date)}</strong>.</p>`
-    : ''
-
-  const paidBodyContent = `<p style="margin:0 0 16px;font-size:16px">Dear ${escapeHtml(invoice.client_name || 'Client')},</p>
-       <p style="margin:0 0 16px">This is to confirm that invoice <strong>${invoiceNum}</strong> for <strong>${total}</strong> has been received and is marked as <strong style="color:#C98C00">PAID</strong>.</p>
-       <p style="margin:0 0 16px;color:#555">Please find the paid invoice attached for your records.</p>
-       <p style="margin:0;color:#555">Thank you for your prompt payment.</p>`
-
-  const bodyContent = paid_stamp
-    ? paidBodyContent
-    : custom_body
-    ? `<p style="margin:0 0 16px;font-size:16px">Hello,</p>
-       <div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(custom_body)}</div>`
-    : `<p style="margin:0 0 16px;font-size:16px">Hello,</p>
-       <p style="margin:0 0 16px"><strong>${senderName}</strong> has sent you invoice <strong>${invoiceNum}</strong> for <strong>${total}</strong>.</p>
-       ${dueLine}
-       <p style="margin:16px 0 0;color:#555">Please find your invoice attached as a PDF to this email.</p>`
-
-  const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#333">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 0">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-        <tr>
-          <td style="background:#111;padding:24px 32px">
-            <p style="margin:0;color:#fff;font-size:20px;font-weight:bold">StagePay</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:32px">
-            ${bodyContent}
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#f9f9f9;padding:16px 32px;text-align:center">
-            <p style="margin:0;font-size:12px;color:#aaa">Sent via StagePay</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+  // The email body names the business in its own words; the sender line and
+  // subject keep using the values above.
+  const deposit = Number(invoice.deposit_amount) || 0
+  const { html, text } = invoiceEmail({
+    senderName: profile?.firm_name || profile?.name || 'Your service provider',
+    profile,
+    invoice,
+    amount: `${invoice.currency || 'P'}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`,
+    kind: paid_stamp ? 'receipt' : custom_body ? 'custom' : 'invoice',
+    message: custom_body,
+    depositText: !paid_stamp && deposit > 0 ? `A deposit of ${invoice.currency || 'P'}${deposit.toLocaleString('en', { minimumFractionDigits: 2 })} is due now.` : undefined,
+  })
 
   const fromAddress = (process.env.RESEND_FROM_EMAIL || 'invoices@stagepay.co.bw').replace(/\.$/, '')
   const subject     = paid_stamp
@@ -123,6 +90,7 @@ export async function POST(req: NextRequest) {
       to:      [to_email],
       subject,
       html,
+      text,
       attachments: [{ filename: `${invoiceNum}.pdf`, content: pdfBuffer }],
     }))
 
