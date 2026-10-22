@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -55,7 +55,7 @@ jobs:
         run: echo "::notice::E2E skipped — add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as repository secrets to run it."
       - uses: actions/checkout@v4
         if: env.NEXT_PUBLIC_SUPABASE_URL != ''
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: env.NEXT_PUBLIC_SUPABASE_URL != ''
         with:
           node-version: 22
