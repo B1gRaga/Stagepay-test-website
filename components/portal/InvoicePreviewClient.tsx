@@ -3,6 +3,7 @@ import { addTransitionType, startTransition, useEffect, useRef, useState, ViewTr
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
+import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import { InvoiceStatus, StatusMark, STATUS_CSS } from './InvoiceStatus'
 import { FROM_LIST_KEY } from './InvoicesTable'
 
@@ -76,6 +77,8 @@ ${STATUS_CSS}
   .panel-row{display:flex;gap:8px;flex-wrap:wrap;}
   .panel-input{flex:1;min-width:200px;max-width:340px;height:40px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 12px;font:600 14px var(--font-manrope),sans-serif;color:var(--t1);outline:none;transition:border-color var(--dur-1) var(--ease);}
   .panel-input:focus{border-color:var(--g);}
+  .panel-note{font-size:14px;color:var(--t2);margin:0 0 10px;}
+  .panel-note b{color:var(--t1);}
   .panel-err{color:#E5484D;font-size:13px;margin-top:8px;}
   .panel-ok{color:var(--t1);font-size:13px;margin-top:8px;font-weight:600;}
 
@@ -199,6 +202,14 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
   // Once an invoice is paid, Email/WhatsApp forward a paid receipt instead of the original invoice.
   const paidMode = invoice.status === 'paid'
 
+  // On phones the PDF itself is shared through the share menu; linkOnly after a failed share.
+  const [linkOnly, setLinkOnly] = useState(false)
+  const pdf = useSharablePdf(
+    panel === 'whatsapp' && !linkOnly ? `/api/invoices/${invoice.id}/pdf${paidMode ? '?paid=true' : ''}` : null,
+    `${invoice.invoice_number}.pdf`,
+  )
+  const sharing = !!pdf.file || pdf.preparing
+
   async function sendEmailNow() {
     setSending(true); setSendErr(''); setSendOk(false)
     try {
@@ -218,30 +229,45 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     }
   }
 
-  function sendWhatsAppNow() {
+  async function sendWhatsAppNow() {
     setSendErr(''); setSendOk(false)
+    const amount = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+    const link = publicInvoiceUrl(invoice.public_token)
+    const paidText = `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅\n\nThank you for your prompt payment. We appreciate your business!`
+    const intro = `Here is invoice *${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${invoice.due_date}` : ''}.`
+    const recordSend = () => {
+      setSendOk(true)
+      if (invoice.status === 'draft') {
+        setInvoice(prev => ({ ...prev, status: 'sent' }))
+        markInvoiceSent(invoice.id)
+      }
+    }
+
+    // Phone: share the PDF itself. The share must start before any await.
+    if (pdf.file) {
+      const text = paidMode ? paidText : [`Hi ${invoice.client_name} 👋`, ``, intro, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n')
+      const result = await sharePdf(pdf.file, text)
+      if (result === 'shared') recordSend()
+      else if (result === 'failed') {
+        setLinkOnly(true)
+        setSendErr('The share menu didn’t open. Tap the button again to send a link instead.')
+      }
+      return
+    }
+
     if (sendPhone.replace(/\D/g, '').length < 7) {
       setSendErr('Enter the number with country code, e.g. +267 71 234 567')
       return
     }
-    const amount = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
-    const link = publicInvoiceUrl(invoice.public_token)
-    const text = paidMode
-      ? `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅\n\nThank you for your prompt payment. We appreciate your business!`
-      : [
-          `Hi ${invoice.client_name} 👋`,
-          ``,
-          `Here is invoice *${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${invoice.due_date}` : ''}.`,
-          link ? `\nView and download it here:\n${link}` : '',
-          ``,
-          `Thank you for your business!`,
-        ].join('\n')
-    openWhatsApp(sendPhone, text)
-    setSendOk(true)
-    if (invoice.status === 'draft') {
-      setInvoice(prev => ({ ...prev, status: 'sent' }))
-      markInvoiceSent(invoice.id)
-    }
+    openWhatsApp(sendPhone, paidMode ? paidText : [
+      `Hi ${invoice.client_name} 👋`,
+      ``,
+      intro,
+      link ? `\nView and download it here:\n${link}` : '',
+      ``,
+      `Thank you for your business!`,
+    ].join('\n'))
+    recordSend()
   }
 
   function savePaid(keepalive = false) {
@@ -397,13 +423,24 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
 
         {panel === 'whatsapp' && (
           <div className="panel">
-            <label htmlFor="wa-to">{paidMode ? 'Send paid confirmation to WhatsApp number' : 'Send to WhatsApp number'}</label>
-            <div className="panel-row">
-              <input id="wa-to" className="panel-input" type="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" autoFocus />
-              <button type="button" className="btn primary press" onClick={sendWhatsAppNow} disabled={!sendPhone}>Open in WhatsApp</button>
-            </div>
+            {sharing ? (
+              <>
+                <p className="panel-note">Your phone’s share menu opens with the {paidMode ? 'paid receipt' : 'invoice'} PDF. Choose <b>WhatsApp</b>, then <b>{invoice.client_name}</b>{sendPhone ? <> ({sendPhone})</> : null}.</p>
+                <div className="panel-row">
+                  <button type="button" className="btn primary press" onClick={sendWhatsAppNow} disabled={pdf.preparing}>{pdf.preparing ? 'Preparing PDF…' : 'Share PDF'}</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <label htmlFor="wa-to">{paidMode ? 'Send paid confirmation to WhatsApp number' : 'Send to WhatsApp number'}</label>
+                <div className="panel-row">
+                  <input id="wa-to" className="panel-input" type="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" autoFocus />
+                  <button type="button" className="btn primary press" onClick={sendWhatsAppNow} disabled={!sendPhone}>Open in WhatsApp</button>
+                </div>
+              </>
+            )}
             {sendErr && <div className="panel-err">{sendErr}</div>}
-            {sendOk && <div className="panel-ok">WhatsApp opened. Tap send there to deliver it.</div>}
+            {sendOk && <div className="panel-ok">{sharing ? 'PDF shared. Finish sending in WhatsApp.' : 'WhatsApp opened. Tap send there to deliver it.'}</div>}
           </div>
         )}
         {panel === 'email' && (

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogoIcon } from '@/components/Logo'
 import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
+import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -346,6 +347,15 @@ export default function NewInvoiceClient({
   const [sending,   setSending]   = useState(false)
   const [sendDone,  setSendDone]  = useState(false)
   const [sendError, setSendError] = useState('')
+  // On phones the PDF is shared through the share menu; bumped on every save
+  // so an edited invoice never shares a stale PDF. linkOnly after a failed share.
+  const [pdfRev,    setPdfRev]    = useState(0)
+  const [linkOnly,  setLinkOnly]  = useState(false)
+  const pdf = useSharablePdf(
+    sendOpen && channel === 'wa' && savedInvoiceId && !linkOnly ? `/api/invoices/${savedInvoiceId}/pdf?rev=${pdfRev}` : null,
+    `${savedInvNum || 'invoice'}.pdf`,
+  )
+  const sharing = !!pdf.file || pdf.preparing
 
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -501,6 +511,8 @@ export default function NewInvoiceClient({
     if (!check(true)) return
     try {
       await saveInvoice('draft')
+      setPdfRev(r => r + 1)
+      setLinkOnly(false)
       setChannel(which)
       setSendEmail(clientEmail)
       setSendPhone(clientPhone)
@@ -518,22 +530,39 @@ export default function NewInvoiceClient({
     // WhatsApp opens the user's own app via wa.me — window.open has to run
     // before any await or the browser treats it as a popup and blocks it.
     if (channel !== 'email') {
+      const link = publicInvoiceUrl(savedToken)
+      const intro = `Here is invoice *${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.`
+      const finish = async () => {
+        setSendDone(true)
+        await markInvoiceSent(savedInvoiceId)
+        setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
+      }
+
+      // Phone: share the PDF itself. The share must start before any await.
+      if (pdf.file) {
+        const text = [`Hi ${clientName} 👋`, ``, intro, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n')
+        const result = await sharePdf(pdf.file, text)
+        if (result === 'shared') await finish()
+        else if (result === 'failed') {
+          setLinkOnly(true)
+          setSendError('The share menu didn’t open. Tap the button again to send a link instead.')
+        }
+        return
+      }
+
       if (sendPhone.replace(/\D/g, '').length < 7) {
         setSendError('Enter the number with country code, e.g. +267 71 234 567')
         return
       }
-      const link = publicInvoiceUrl(savedToken)
       openWhatsApp(sendPhone, [
         `Hi ${clientName} 👋`,
         ``,
-        `Here is invoice *${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.`,
+        intro,
         link ? `\nView and download it here:\n${link}` : '',
         ``,
         `Thank you for your business!`,
       ].join('\n'))
-      setSendDone(true)
-      await markInvoiceSent(savedInvoiceId)
-      setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
+      await finish()
       return
     }
 
@@ -879,7 +908,7 @@ export default function NewInvoiceClient({
             {sendDone ? (
               <div className="send-done" role="status">
                 <svg width="22" height="22" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="#F2A900"/><path d="M5.2 9.1l2.6 2.6 5.1-5.6" fill="none" stroke="#1F2A44" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span>{channel === 'email' ? 'Invoice sent!' : 'WhatsApp opened — tap send there'}<small>Taking you to the invoice…</small></span>
+                <span>{channel === 'email' ? 'Invoice sent!' : sharing ? 'PDF shared — finish sending in WhatsApp' : 'WhatsApp opened — tap send there'}<small>Taking you to the invoice…</small></span>
               </div>
             ) : (
               <>
@@ -893,6 +922,8 @@ export default function NewInvoiceClient({
                     <label className="lbl" htmlFor="ni-send-email">Their email</label>
                     <input id="ni-send-email" name="send_email" className="in" type="email" inputMode="email" value={sendEmail} onChange={e => setSendEmail(e.target.value)} placeholder="e.g. kefilwe@gmail.com" autoFocus />
                   </>
+                ) : sharing ? (
+                  <p className="sec-sub" style={{ fontSize: 14 }}>Your phone’s share menu opens with the invoice PDF. Choose <b>WhatsApp</b>, then <b>{clientName}</b>{sendPhone ? <> ({sendPhone})</> : null}.</p>
                 ) : (
                   <>
                     <label className="lbl" htmlFor="ni-send-phone">Their WhatsApp number</label>
@@ -904,8 +935,8 @@ export default function NewInvoiceClient({
                 <div className="sheet-actions">
                   <button type="button" className="btn ghost press" onClick={() => setSendOpen(false)} disabled={sending}>Not now</button>
                   <button type="button" className="btn primary press" onClick={handleSend}
-                    disabled={sending || (channel === 'email' ? !sendEmail.trim() : !sendPhone.trim())}>
-                    {sending ? 'Sending…' : channel === 'email' ? 'Send email' : 'Open in WhatsApp'}
+                    disabled={sending || (channel === 'email' ? !sendEmail.trim() : pdf.preparing || (!pdf.file && !sendPhone.trim()))}>
+                    {sending ? 'Sending…' : channel === 'email' ? 'Send email' : pdf.preparing ? 'Preparing PDF…' : pdf.file ? 'Share PDF' : 'Open in WhatsApp'}
                   </button>
                 </div>
               </>

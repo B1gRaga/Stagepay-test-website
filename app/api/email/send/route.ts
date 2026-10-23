@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     depositText: !paid_stamp && deposit > 0 ? `A deposit of ${invoice.currency || 'P'}${deposit.toLocaleString('en', { minimumFractionDigits: 2 })} is due now.` : undefined,
   })
 
-  const fromAddress = (process.env.RESEND_FROM_EMAIL || 'invoices@stagepay.co.bw').replace(/\.$/, '')
+  const fromAddress = (process.env.RESEND_FROM_EMAIL || 'invoices@getstagepay.co').replace(/\.$/, '')
   const subject     = paid_stamp
     ? `Payment Confirmation: Invoice ${invoiceNum}`
     : custom_body
