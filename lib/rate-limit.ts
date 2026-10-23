@@ -62,7 +62,13 @@ export async function checkRateLimit(key: string, limit: number, windowMs: numbe
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
 
   if (url && token) {
-    return redisRateLimit(url, token, key, limit, windowMs)
+    // A Redis that can't be reached at all (bad URL, deleted database, DNS)
+    // throws instead of returning !res.ok; fall back rather than fail the request.
+    try {
+      return await redisRateLimit(url, token, key, limit, windowMs)
+    } catch (err) {
+      console.error('[RateLimit] Redis unreachable, using in-memory limit:', err instanceof Error ? err.message : err)
+    }
   }
   return inMemoryRateLimit(key, limit, windowMs)
 }
