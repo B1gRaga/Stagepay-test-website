@@ -33,5 +33,7 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
+    // Sign-up is closed before launch (lib/launch.ts); the tests still cover it.
+    env: { NEXT_PUBLIC_SIGNUPS_OPEN: 'true' },
   },
 })

@@ -432,10 +432,14 @@ export interface Database {
           whatsapp: string
           email: string | null
           business_type: string
-          student_range: string | null
+          town: string | null
+          current_method: string | null
+          would_pay: string | null
           note: string | null
           consent: boolean
           source: string | null
+          referral_code: string
+          referred_by: string | null
           status: string
           created_at: string
         }
@@ -444,10 +448,14 @@ export interface Database {
           whatsapp: string
           email?: string | null
           business_type: string
-          student_range?: string | null
+          town?: string | null
+          current_method?: string | null
+          would_pay?: string | null
           note?: string | null
           consent: boolean
           source?: string | null
+          referral_code?: string
+          referred_by?: string | null
           status?: string
           id?: string
           created_at?: string

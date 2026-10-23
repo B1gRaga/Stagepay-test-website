@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { animate, stagger, utils } from 'animejs'
 import { LogoFull } from '@/components/Logo'
+import { SIGNUPS_OPEN } from '@/lib/launch'
 import { FORM_CSS } from './AuthCard'
 import { redirectQuery } from '@/lib/safe-redirect'
 
@@ -268,7 +269,9 @@ export function AuthStairs({ children }: { children: React.ReactNode }) {
         <header className="st-top">
           <Link href="/" className="st-logo" aria-label="StagePay home"><LogoFull tone="default" /></Link>
           {onOnboarding ? null : onLogin
-            ? <p className="st-switch"><span>New to StagePay? </span><Link href="/auth/signup" onClick={e => switchTo(e, '/auth/signup')}>Create an account</Link></p>
+            ? SIGNUPS_OPEN
+              ? <p className="st-switch"><span>New to StagePay? </span><Link href="/auth/signup" onClick={e => switchTo(e, '/auth/signup')}>Create an account</Link></p>
+              : <p className="st-switch"><span>New to StagePay? </span><Link href="/#waitlist">Join the waitlist</Link></p>
             : <p className="st-switch"><span>{onSignup ? 'Already have an account? ' : pathname.startsWith('/auth/mfa') ? 'Wrong account? ' : 'Remembered it? '}</span><Link href="/auth/login" onClick={e => switchTo(e, '/auth/login')}>Sign in</Link></p>}
         </header>
 

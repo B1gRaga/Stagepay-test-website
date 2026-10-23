@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { RevealObserver } from '@/components/landing/RevealObserver'
 import { DotGridBackground } from '@/components/landing/DotGridBackground'
 import { LogoFull } from '@/components/Logo'
+import { WaitlistForm } from '@/components/landing/WaitlistForm'
+import { SIGNUPS_OPEN } from '@/lib/launch'
 
 const CSS = `
 :root{
@@ -278,6 +280,36 @@ const CSS = `
 .swipe{font-size:13px;color:var(--muted)}
 @media (min-width:960px){.swipe{display:none}}
 
+/* waitlist */
+.wl{display:grid;gap:32px;margin-top:8px;align-items:start}
+@media (min-width:900px){.wl{grid-template-columns:1fr 1.1fr;gap:56px}}
+.wl .panel-card{color:var(--ink)}
+.wl-perks{display:grid;gap:12px;margin-top:24px;padding:0;list-style:none;color:var(--on-ink-muted)}
+.wl-perks li{display:flex;gap:12px;align-items:flex-start}
+.wl-perks li::before{content:"";flex:none;width:10px;height:10px;margin-top:8px;border-radius:2px;background:var(--amber)}
+.wl-perks b{color:var(--on-ink)}
+.wl-2{display:grid;gap:14px}
+@media (min-width:520px){.wl-2{grid-template-columns:1fr 1fr}}
+.wl-opt{font-weight:500;color:var(--muted)}
+.wl-opts{border:0;margin:0;padding:0;min-width:0}
+.wl-opts legend{font-weight:700;font-size:14px;margin-bottom:8px;padding:0}
+.wl-opts>div{display:flex;flex-wrap:wrap;gap:8px}
+.wl-opts label{cursor:pointer}
+.wl-opts input{position:absolute;opacity:0;pointer-events:none}
+.wl-opts span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid #CFC6B4;background:var(--white);font-weight:700;font-size:14px}
+.wl-opts input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.wl-opts input:focus-visible+span{outline:3px solid var(--amber);outline-offset:2px}
+.wl-consent{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.wl-consent input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--ink)}
+.wl-error{color:var(--error);font-weight:700;font-size:14px}
+.wl .btn[disabled]{opacity:.7;cursor:progress}
+.wl-done{display:grid;gap:12px}
+.wl-done h3{font-size:26px}
+.wl-done p{color:var(--muted)}
+.wl-share-lede{margin-top:8px}
+.wl-share{display:flex;flex-wrap:wrap;gap:10px}
+.wl-share .btn{flex:1;min-width:160px}
+
 /* faq */
 .faq{margin-top:32px;display:grid;gap:12px;max-width:820px}
 .faq details{background:var(--white);border:1px solid var(--line);border-radius:var(--r-md);padding:4px 22px;box-shadow:var(--sh-1);transition:box-shadow .2s ease}
@@ -320,6 +352,11 @@ const CSS = `
 `
 
 const CONTACT = { whatsapp: '73998627', email: 'getstagepay@gmail.com' }
+
+// Until launch every call to action points at the waitlist instead of sign-up.
+const CTA = SIGNUPS_OPEN
+  ? { href: '/auth/signup', label: 'Try it free' }
+  : { href: '#waitlist', label: 'Join the waitlist' }
 
 function fmt(n: number) {
   return 'P' + Math.round(n).toLocaleString('en-US')
@@ -624,12 +661,18 @@ export default function Home() {
     return () => { if (stepTimer.current) clearInterval(stepTimer.current) }
   }, [])
 
-  // sticky CTA once hero scrolls out of view
+  // sticky CTA once hero scrolls out of view, hidden again over the waitlist form
   useEffect(() => {
     const el = heroRef.current
     if (!el || !('IntersectionObserver' in window)) return
-    const obs = new IntersectionObserver(([e]) => setStickyShown(!e.isIntersecting))
+    const wl = document.getElementById('waitlist')
+    const visible = new Map<Element, boolean>()
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => visible.set(e.target, e.isIntersecting))
+      setStickyShown(!visible.get(el) && !(wl && visible.get(wl)))
+    })
     obs.observe(el)
+    if (wl) obs.observe(wl)
     return () => obs.disconnect()
   }, [])
 
@@ -679,7 +722,7 @@ export default function Home() {
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <a className="textlink" href="/auth/login" style={{ fontSize: 15, color: 'var(--ink)' }}>Sign in</a>
-            <a className="btn btn-amber" href="/auth/signup">Try it free</a>
+            <a className="btn btn-amber" href={CTA.href}>{CTA.label}</a>
           </div>
         </div>
       </header>
@@ -696,10 +739,10 @@ export default function Home() {
               <h1 ref={h1Ref}>You do the work. We send the invoice on <span className="wa">WhatsApp.</span></h1>
               <p className="lead">Fill in a few simple details. StagePay organises a professional invoice, sends it on WhatsApp and follows up until you&apos;re paid.</p>
               <div className="ctas">
-                <a className="btn btn-amber" href="/auth/signup">Try it free <span className="arr">→</span></a>
+                <a className="btn btn-amber" href={CTA.href}>{CTA.label} <span className="arr">→</span></a>
                 <a className="textlink" href="#how">See how it works →</a>
               </div>
-              <p className="small"><b>First 100 users</b> get Pro free for one month.</p>
+              <p className="small">{SIGNUPS_OPEN ? <><b>First 100 users</b> get Pro free for one month.</> : <><b>Coming soon.</b> The first 100 people on the waitlist get Pro free for one month.</>}</p>
             </div>
             <div>
               <div className="stage" ref={stageRef} aria-label="Sample StagePay invoice for May tuition fees, total due P1,425, with delivery and reminder notifications" role="img">
@@ -872,7 +915,9 @@ export default function Home() {
                   </div>
                 </div>
                 {sent && <div className="sentbox"><span className="ic"><WhatsAppCheckIcon stroke="#1F2A44" /></span><span><b>In the real app, this goes to your client&apos;s WhatsApp.</b><small>StagePay then follows up until it&apos;s paid.</small></span></div>}
-                <p className="demo-note">Demo preview. <a href="/auth/signup" style={{ color: 'var(--ink)', fontWeight: 700 }}>Sign up free</a> to send real invoices.</p>
+                <p className="demo-note">Demo preview. {SIGNUPS_OPEN
+                  ? <><a href="/auth/signup" style={{ color: 'var(--ink)', fontWeight: 700 }}>Sign up free</a> to send real invoices.</>
+                  : <><a href="#waitlist" style={{ color: 'var(--ink)', fontWeight: 700 }}>Join the waitlist</a> to send real invoices when we launch.</>}</p>
               </div>
             </div>
           </div>
@@ -892,19 +937,39 @@ export default function Home() {
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Simple plans</h2></div>
             <div className="plans">
-              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to 2 invoices a month.</p><a className="btn btn-ghost" href="/auth/signup">Get started</a></div>
-              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href="/auth/signup">Get started</a></div>
-              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><a className="btn btn-ghost" href="/auth/signup">Get started</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to 2 invoices a month.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
         </section>
+
+        {!SIGNUPS_OPEN && (
+          <section className="band ink" id="waitlist">
+            <div className="wrap wl">
+              <div className="reveal">
+                <div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
+                <p className="eyebrow">Coming soon</p>
+                <h2 className="h2">Join the waitlist</h2>
+                <p className="lead" style={{ marginTop: 18 }}>StagePay opens soon. Tell us a little about your business and we&apos;ll message you on WhatsApp the day it opens.</p>
+                <ul className="wl-perks">
+                  <li><span><b>Early access</b> before StagePay opens to everyone.</span></li>
+                  <li><span><b>Pro free for one month</b> for the first 100 people on the list.</span></li>
+                  <li><span><b>A say in what we build.</b> Your answers shape the first version.</span></li>
+                </ul>
+              </div>
+              <div className="reveal"><WaitlistForm /></div>
+            </div>
+          </section>
+        )}
 
         <section className="band" id="faq">
           <div className="wrap">
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Questions</h2></div>
             <div className="faq">
+              {!SIGNUPS_OPEN && <details className="reveal"><summary>When does StagePay open?</summary><p>Soon. We&apos;re finishing the last steps before launch. Join the waitlist and we&apos;ll message you on WhatsApp the day it opens.</p></details>}
               <details className="reveal" style={{ transitionDelay: '0ms' }}><summary>Do my clients need an app?</summary><p>No. Invoices arrive in their normal WhatsApp.</p></details>
               <details className="reveal" style={{ transitionDelay: '90ms' }}><summary>Is StagePay VAT-ready?</summary><p>VAT is calculated on every invoice. We&apos;re still confirming our invoices meet every BURS requirement, so please check with your accountant for now.</p></details>
               <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>You choose a plan: Pro at P100 a month for tutors and small businesses, or Business at P400 a month for teams.</p></details>
@@ -917,7 +982,7 @@ export default function Home() {
           <div className="wrap">
             <LogoFull tone="on-ink" className="logo-r" />
             <h2>Send your next invoice the easy way.</h2>
-            <div><a className="btn btn-amber" href="/auth/signup">Try it free <span className="arr">→</span></a></div>
+            <div><a className="btn btn-amber" href={CTA.href}>{CTA.label} <span className="arr">→</span></a></div>
             <ContactPills />
           </div>
         </section>
@@ -931,8 +996,8 @@ export default function Home() {
       </footer>
 
       <div className={`sticky ${stickyShown ? 'show' : ''}`} aria-hidden={!stickyShown}>
-        <span>Free month of Pro</span>
-        <a className="btn btn-amber" tabIndex={stickyShown ? 0 : -1} href="/auth/signup">Try it free</a>
+        <span>{SIGNUPS_OPEN ? 'Free month of Pro' : 'Coming soon'}</span>
+        <a className="btn btn-amber" tabIndex={stickyShown ? 0 : -1} href={CTA.href}>{CTA.label}</a>
       </div>
     </div>
   )

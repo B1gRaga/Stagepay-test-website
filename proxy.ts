@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { SIGNUPS_OPEN } from '@/lib/launch'
 
 // '/api/auth/check-password' is called by sign-up before an account exists;
 // it's rate-limited by IP and only ever sends a 5-character hash prefix out.
@@ -63,7 +64,13 @@ export async function proxy(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl
-  const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+
+  // Before launch the sign-up page sends people to the waitlist instead.
+  if (!SIGNUPS_OPEN && (pathname === '/auth/signup' || pathname.startsWith('/auth/signup/'))) {
+    return NextResponse.redirect(new URL('/#waitlist', request.url))
+  }
+
+  const isPublic =PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   // Portal route protection — redirect unauthenticated users at the Edge
   if (!user && isPortalPath(pathname)) {
