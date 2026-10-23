@@ -4,6 +4,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { Spinner } from '@/components/auth/AuthCard'
 import { AuthHead } from '@/components/auth/AuthStairs'
+import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from '@/lib/password-check'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,6 +56,7 @@ export default function ResetPasswordPage() {
     if (pw.length < 8 || pw !== again) return
     setLoading(true); setError('')
     try {
+      if (await isPasswordLeaked(pw)) { setError(LEAKED_PASSWORD_MESSAGE); return }
       const { error } = await supabase.auth.updateUser({ password: pw })
       if (error) {
         setError(/different from the old/i.test(error.message) ? 'Choose a password you haven’t used for StagePay before.' : error.message)

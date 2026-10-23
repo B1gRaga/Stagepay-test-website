@@ -8,6 +8,7 @@ import { firmLines } from '@/lib/firm-details'
 import { PLANS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName } from '@/lib/plans'
 import { TEAMS_ENABLED, ROLE_LABEL, ROLE_HELP, type TeamRole } from '@/lib/teams'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
+import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from '@/lib/password-check'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -867,6 +868,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
     if (pw.next.length < 8 || pw.next !== pw.again) return
     setPwBusy(true); setPwMsg(null)
     try {
+      if (await isPasswordLeaked(pw.next)) { setPwMsg({ ok: false, text: LEAKED_PASSWORD_MESSAGE }); return }
       const { error } = await supabase.auth.updateUser({ password: pw.next })
       if (error) {
         setPwMsg({ ok: false, text: /reauth|recent/i.test(error.message)

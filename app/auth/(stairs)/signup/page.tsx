@@ -7,6 +7,7 @@ import { EyeIcon, PW_TOGGLE_STYLE } from '@/components/auth/fields'
 import { Spinner } from '@/components/auth/AuthCard'
 import { BUSINESS_TYPES } from '@/lib/business-types'
 import { safeRedirect } from '@/lib/safe-redirect'
+import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from '@/lib/password-check'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,21 +46,11 @@ export default function SignupPage() {
     if (!businessType) { setError('Please select your business type'); return }
     setLoading(true); setError('')
 
-    try {
-      const hibp = await fetch('/api/auth/check-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-      const { pwned } = await hibp.json()
-      if (pwned) {
-        setError('This password has appeared in a known data breach. Please choose a different password.')
-        setLoading(false)
-        setStep(1)
-        return
-      }
-    } catch {
-      // HIBP check failed — continue with sign-up
+    if (await isPasswordLeaked(password)) {
+      setError(LEAKED_PASSWORD_MESSAGE)
+      setLoading(false)
+      setStep(1)
+      return
     }
 
     const { data, error } = await supabase.auth.signUp({
