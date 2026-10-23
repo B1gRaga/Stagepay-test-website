@@ -186,6 +186,24 @@ function Footer({ d, color = MUTED, left = 44, right = 44 }: { d: Doc; color?: s
   )
 }
 
+// A gold rubber stamp across the first page of a paid invoice, so "paid" can't
+// be missed at a glance. Same gold on every layout, whatever the brand colours.
+// Drawn first on the page so the figures print over it and stay readable.
+const GOLD = '#B8860B'
+function PaidStamp({ d }: { d: Doc }) {
+  const { s, fz } = d
+  return (
+    <View style={{ position: 'absolute', top: s(270), right: s(56), transform: 'rotate(-12deg)', opacity: 0.8 }}>
+      <View style={{ borderWidth: s(3), borderColor: GOLD, borderRadius: s(10), padding: s(3.5) }}>
+        <View style={{ borderWidth: s(1.2), borderColor: GOLD, borderRadius: s(7), paddingTop: s(8), paddingBottom: s(7), paddingHorizontal: s(20), alignItems: 'center' }}>
+          <Text style={{ fontSize: fz(42), fontFamily: 'Helvetica-Bold', color: GOLD, letterSpacing: 6, lineHeight: 1 }}>PAID</Text>
+          <Text style={{ fontSize: fz(8.5), fontFamily: 'Helvetica-Bold', color: GOLD, letterSpacing: 1.5, marginTop: s(4) }}>IN FULL · {money(d.invoice)(d.invoice.total)}</Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
 function DueLine({ d, color, sub }: { d: Doc; color: string; sub: string }) {
   const { s, fz } = d
   const f = facts(d)
@@ -209,6 +227,7 @@ function Classic(d: Doc) {
   const amount = contrast(t.accentColor, band) >= 3 ? t.accentColor : onBand
   return (
     <Page size={d.paper} style={{ fontFamily: 'Helvetica', padding: s(44), paddingBottom: s(64), color: BODY, backgroundColor: PAPER }}>
+      {d.paid && <PaidStamp d={d} />}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ maxWidth: s(260) }}>
           <Logo url={d.profile.logo_url} size={s(40)} />
@@ -278,6 +297,7 @@ function Ledger(d: Doc) {
   )
   return (
     <Page size={d.paper} style={{ fontFamily: 'Helvetica', padding: s(48), paddingBottom: s(64), color: BODY, backgroundColor: PAPER }}>
+      {d.paid && <PaidStamp d={d} />}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10) }}>
           <Logo url={d.profile.logo_url} size={s(30)} />
@@ -333,6 +353,7 @@ function Letter(d: Doc) {
   const accent = accentInk(t)
   return (
     <Page size={d.paper} style={{ fontFamily: 'Helvetica', paddingTop: s(56), paddingHorizontal: s(64), paddingBottom: s(64), color: BODY, backgroundColor: PAPER }}>
+      {d.paid && <PaidStamp d={d} />}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View>
           <Logo url={d.profile.logo_url} size={s(34)} />
@@ -396,6 +417,7 @@ function Sidebar(d: Doc) {
   const W = s(190)
   return (
     <Page size={d.paper} style={{ fontFamily: 'Helvetica', paddingTop: s(40), paddingBottom: s(64), paddingLeft: W + s(32), paddingRight: s(40), color: BODY, backgroundColor: PAPER }}>
+      {d.paid && <PaidStamp d={d} />}
       <View fixed style={{ position: 'absolute', top: s(0), bottom: s(0), left: s(0), width: W, backgroundColor: bg }} />
       <View style={{ position: 'absolute', top: s(40), left: s(26), width: W - s(52) }}>
         <Logo url={d.profile.logo_url} size={s(34)} />
@@ -442,6 +464,7 @@ function Statement(d: Doc) {
   const slipBg = /^#[0-9a-f]{6}$/i.test(t.accentColor) ? tint(t.accentColor, 0.86) : '#FCEFC7'
   return (
     <Page size={d.paper} style={{ fontFamily: 'Helvetica', padding: s(44), paddingBottom: s(64), color: BODY, backgroundColor: PAPER }}>
+      {d.paid && <PaidStamp d={d} />}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Text style={{ fontSize: fz(48), fontFamily: 'Helvetica-Bold', color: INK }}>INVOICE</Text>
         <View style={{ alignItems: 'flex-end', maxWidth: s(240) }}>

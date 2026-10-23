@@ -351,6 +351,7 @@ export default function NewInvoiceClient({
   // so an edited invoice never shares a stale PDF. linkOnly after a failed share.
   const [pdfRev,    setPdfRev]    = useState(0)
   const [linkOnly,  setLinkOnly]  = useState(false)
+  const [pdfShared, setPdfShared] = useState(false)
   const pdf = useSharablePdf(
     sendOpen && channel === 'wa' && savedInvoiceId && !linkOnly ? `/api/invoices/${savedInvoiceId}/pdf?rev=${pdfRev}` : null,
     `${savedInvNum || 'invoice'}.pdf`,
@@ -513,6 +514,7 @@ export default function NewInvoiceClient({
       await saveInvoice('draft')
       setPdfRev(r => r + 1)
       setLinkOnly(false)
+      setPdfShared(false)
       setChannel(which)
       setSendEmail(clientEmail)
       setSendPhone(clientPhone)
@@ -538,12 +540,26 @@ export default function NewInvoiceClient({
         setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
       }
 
+      // Step 2 after a PDF share: WhatsApp drops text that comes with a shared
+      // file, so the message goes to their chat by wa.me and lands under the PDF.
+      if (pdfShared) {
+        if (sendPhone.replace(/\D/g, '').length < 7) {
+          setSendError('Enter the number with country code, e.g. +267 71 234 567')
+          return
+        }
+        openWhatsApp(sendPhone, [`Hi ${clientName} 👋`, ``, `The PDF above is invoice *${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.`, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n'))
+        await finish()
+        return
+      }
+
       // Phone: share the PDF itself. The share must start before any await.
       if (pdf.file) {
         const text = [`Hi ${clientName} 👋`, ``, intro, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n')
         const result = await sharePdf(pdf.file, text)
-        if (result === 'shared') await finish()
-        else if (result === 'failed') {
+        if (result === 'shared') {
+          setPdfShared(true)
+          await markInvoiceSent(savedInvoiceId)
+        } else if (result === 'failed') {
           setLinkOnly(true)
           setSendError('The share menu didn’t open. Tap the button again to send a link instead.')
         }
@@ -908,8 +924,19 @@ export default function NewInvoiceClient({
             {sendDone ? (
               <div className="send-done" role="status">
                 <svg width="22" height="22" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="#F2A900"/><path d="M5.2 9.1l2.6 2.6 5.1-5.6" fill="none" stroke="#1F2A44" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span>{channel === 'email' ? 'Invoice sent!' : sharing ? 'PDF shared — finish sending in WhatsApp' : 'WhatsApp opened — tap send there'}<small>Taking you to the invoice…</small></span>
+                <span>{channel === 'email' ? 'Invoice sent!' : 'WhatsApp opened — tap send there'}<small>Taking you to the invoice…</small></span>
               </div>
+            ) : pdfShared ? (
+              <>
+                <p className="send-to">PDF shared. Now send the message, so it shows under the PDF in <b>{clientName}</b>’s chat.</p>
+                <label className="lbl" htmlFor="ni-send-phone2">Their WhatsApp number</label>
+                <input id="ni-send-phone2" name="send_phone" className="in" type="tel" inputMode="tel" value={sendPhone} onChange={e => setSendPhone(e.target.value)} placeholder="+267 71 234 567" />
+                {sendError && <p className="field-err" role="alert">{sendError}</p>}
+                <div className="sheet-actions">
+                  <button type="button" className="btn ghost press" onClick={() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }}>Skip</button>
+                  <button type="button" className="btn primary press" onClick={handleSend} disabled={!sendPhone.trim()}>Send the message</button>
+                </div>
+              </>
             ) : (
               <>
                 <p className="send-to"><b>{fmtAmt(total - depositAmt, currency)}</b> to <b>{clientName}</b>{dueDate ? <>, due {fmtDate(dueDate)}</> : null}.</p>
