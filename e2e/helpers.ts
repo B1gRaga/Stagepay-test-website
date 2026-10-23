@@ -8,6 +8,7 @@ const NOISE = [
   /\[HMR\]|\[Fast Refresh\]/,
   /Failed to load resource: the server responded with a status of 4\d\d/, // asserted separately where it matters
   /Encountered a script tag while rendering React component/, // dev-only warning from the theme script in the root layout
+  /_vercel\/(speed-)?insights\/script\.js/, // Vercel Analytics only exists once deployed on Vercel
 ]
 
 export function watchErrors(page: Page) {

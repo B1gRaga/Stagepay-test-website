@@ -1,13 +1,15 @@
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Manrope } from 'next/font/google'
+import localFont from 'next/font/local'
 import Script from 'next/script'
 import "./globals.css"
 
-const manrope = Manrope({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+// Manrope (Latin, variable 400–800) is kept in the repo so builds never
+// depend on downloading it from Google Fonts.
+const manrope = localFont({
+  src: './fonts/manrope-latin.woff2',
+  weight: '400 800',
   display: 'swap',
   variable: '--font-manrope',
 })

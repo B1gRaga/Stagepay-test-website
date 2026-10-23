@@ -26,6 +26,8 @@ test.describe('client invoice page', () => {
 })
 
 test('an invoice link that does not exist is a 404', async ({ request }) => {
+  // The page reads invoices with the service role key; without it the lookup itself fails.
+  test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'Needs SUPABASE_SERVICE_ROLE_KEY')
   const res = await request.get('/invoice/0000000000000000000000000000dead')
   expect(res.status()).toBe(404)
 })
