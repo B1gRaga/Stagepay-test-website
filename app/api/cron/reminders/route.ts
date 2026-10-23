@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { reminderEmail } from '@/lib/emails/reminder'
 import { withRetry } from '@/lib/retry'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -22,6 +23,9 @@ export async function GET(req: NextRequest) {
   const BATCH_SIZE   = 50
   const CHUNK_SIZE    = 10 // bound concurrent Supabase/WhatsApp/Resend calls per wave
   await cronitorPing('reminders', 'run')
+  // Upstash deletes free databases after 14 days unused; this daily touch keeps
+  // the rate-limit database alive while traffic is low.
+  await checkRateLimit('cron:keepalive', 1_000, 60_000)
   const supabase = createServiceClient()
 
   let sent   = 0
