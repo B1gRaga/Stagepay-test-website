@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { getAccount } from '@/lib/account'
+import { getAccount, accountProfileClient } from '@/lib/account'
 import InvoicePreviewClient from '@/components/portal/InvoicePreviewClient'
 
 type Params = { params: Promise<{ id: string }> }
@@ -13,12 +13,15 @@ export default async function InvoicePreviewPage({ params }: Params) {
   const supabase = await createClient()
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, client_email, client_phone, project, issue_date, due_date, total, status, currency, public_token, email_sent_at, created_by')
+    .select('id, invoice_number, client_name, client_email, client_phone, project, billed_for, issue_date, due_date, total, status, currency, public_token, email_sent_at, created_by')
     .eq('id', id)
     .eq('user_id', account.accountId)
     .single()
 
   if (!invoice) notFound()
+
+  // The business type names the invoice's "billed for" line (Student, Project).
+  const { data: profile } = await (await accountProfileClient(account)).from('profiles').select('business_type').eq('id', account.accountId).single()
 
   // Sent and upcoming reminders feed the invoice's timeline.
   const { data: reminders } = await supabase
@@ -37,5 +40,5 @@ export default async function InvoicePreviewPage({ params }: Params) {
     createdBy = person?.name || person?.email || 'a team member'
   }
 
-  return <InvoicePreviewClient invoice={invoice} reminders={reminders ?? []} createdBy={createdBy} />
+  return <InvoicePreviewClient invoice={invoice} reminders={reminders ?? []} createdBy={createdBy} businessType={profile?.business_type ?? null} />
 }

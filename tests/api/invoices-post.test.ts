@@ -177,6 +177,19 @@ describe('POST /api/invoices', () => {
     expect(res.status).toBe(201)
   })
 
+  it('saves who the invoice is billed for, without tags', async () => {
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM, client_name: 'Mrs Mosweu', billed_for: '<b>Thato Mosweu</b>' }))
+    expect(res.status).toBe(201)
+    expect(mockInvoicesInsert).toHaveBeenCalledWith(expect.objectContaining({ billed_for: 'Thato Mosweu' }))
+  })
+
+  it('returns 400 when billed_for is longer than 100 characters', async () => {
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM, client_name: 'Mrs Mosweu', billed_for: 'x'.repeat(101) }))
+    expect(res.status).toBe(400)
+  })
+
   it('blocks a free-plan user at the monthly invoice limit', async () => {
     mockProfileSingle.mockResolvedValue({ data: { plan: 'free' }, error: null })
     mockInvoicesCount.mockResolvedValue({ count: 2 })

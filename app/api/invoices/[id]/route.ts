@@ -17,7 +17,7 @@ const ALLOWED_TRANSITIONS: Record<string, readonly string[]> = {
 
 const ALLOWED_FIELDS = [
   'status', 'client_id', 'client_name', 'client_email', 'client_phone',
-  'client_address', 'client_vat', 'project', 'notes', 'issue_date',
+  'client_address', 'client_vat', 'project', 'billed_for', 'notes', 'issue_date',
   'due_date', 'currency', 'vat_rate', 'deposit_amount',
   'discount_amount', 'is_recurring', 'recurrence_interval', 'next_recurring_date',
 ] as const
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
-  const TEXT_FIELDS = new Set(['client_name', 'project', 'notes', 'client_address', 'client_email', 'client_phone', 'client_vat'])
+  const TEXT_FIELDS = new Set(['client_name', 'project', 'billed_for', 'notes', 'client_address', 'client_email', 'client_phone', 'client_vat'])
 
   const { items, ...rest } = body
   const fields = Object.fromEntries(

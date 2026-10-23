@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
 import { useSharablePdf, sharePdf } from '@/lib/wa-share'
+import { billedForLabel, billedForWaLine } from '@/lib/billed-for'
 import { InvoiceStatus, StatusMark, STATUS_CSS } from './InvoiceStatus'
 import { FROM_LIST_KEY } from './InvoicesTable'
 
@@ -14,6 +15,7 @@ export type PreviewInvoice = {
   client_email: string | null
   client_phone: string | null
   project: string | null
+  billed_for?: string | null
   issue_date: string | null
   due_date: string | null
   total: number
@@ -171,7 +173,7 @@ function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?:
   return steps
 }
 
-export default function InvoicePreviewClient({ invoice: initial, reminders = [], createdBy = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; createdBy?: string | null }) {
+export default function InvoicePreviewClient({ invoice: initial, reminders = [], createdBy = null, businessType = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; createdBy?: string | null; businessType?: string | null }) {
   const router = useRouter()
   const [invoice, setInvoice] = useState(initial)
   const [panel, setPanel] = useState<'email' | 'whatsapp' | null>(null)
@@ -234,8 +236,10 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     setSendErr(''); setSendOk(false)
     const amount = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
     const link = publicInvoiceUrl(invoice.public_token)
-    const paidText = `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅\n\nThank you for your prompt payment. We appreciate your business!`
-    const intro = `Here is invoice *${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${invoice.due_date}` : ''}.`
+    const bfLine = billedForWaLine(businessType, invoice.billed_for)
+    const paidText = `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅${bfLine ? `\n${bfLine}` : ''}\n\nThank you for your prompt payment. We appreciate your business!`
+    const amountLine = `*${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${invoice.due_date}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
+    const intro = `Here is invoice ${amountLine}`
     const recordSend = () => {
       setSendOk(true)
       if (invoice.status === 'draft') {
@@ -251,7 +255,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
         setSendErr('Enter the number with country code, e.g. +267 71 234 567')
         return
       }
-      openWhatsApp(sendPhone, paidMode ? paidText : [`Hi ${invoice.client_name} 👋`, ``, `The PDF above is invoice *${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${invoice.due_date}` : ''}.`, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n'))
+      openWhatsApp(sendPhone, paidMode ? paidText : [`Hi ${invoice.client_name} 👋`, ``, `The PDF above is invoice ${amountLine}`, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n'))
       setPdfShared(false)
       setSendOk(true)
       return
@@ -385,7 +389,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
       <div className="content">
         <div className="head">
           <div>
-            <div className="head-sub">{invoice.invoice_number}{invoice.project ? ` · ${invoice.project}` : ''}</div>
+            <div className="head-sub">{invoice.invoice_number}{invoice.billed_for ? ` · ${billedForLabel(businessType)}: ${invoice.billed_for}` : ''}{invoice.project ? ` · ${invoice.project}` : ''}</div>
             <ViewTransition name={`inv-client-${invoice.id}`} share="inv-shared">
               <h1>{invoice.client_name}</h1>
             </ViewTransition>

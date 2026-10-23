@@ -177,6 +177,7 @@ export interface Database {
           client_address: string | null
           client_vat: string | null
           project: string | null
+          billed_for: string | null
           notes: string | null
           issue_date: string
           due_date: string | null
@@ -217,6 +218,7 @@ export interface Database {
           client_address?: string | null
           client_vat?: string | null
           project?: string | null
+          billed_for?: string | null
           notes?: string | null
           due_date?: string | null
           recurrence_interval?: RecurrenceInterval | null
@@ -234,6 +236,7 @@ export interface Database {
           client_address?: string | null
           client_vat?: string | null
           project?: string | null
+          billed_for?: string | null
           notes?: string | null
           issue_date?: string
           due_date?: string | null

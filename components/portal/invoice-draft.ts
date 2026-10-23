@@ -6,6 +6,7 @@ export type LineItem = { desc: string; qty: number; rate: number }
 export type LastInvoice = {
   invoice_number: string
   project: string | null
+  billed_for: string | null
   issue_date: string | null
   currency: string | null
   total: number

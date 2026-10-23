@@ -20,7 +20,7 @@ export default async function NewInvoicePage({
   const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }] = await Promise.all([
     profileDb
       .from('profiles')
-      .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label, default_due_days')
+      .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label, default_due_days, business_type')
       .eq('id', account.accountId)
       .single(),
     supabase
@@ -40,7 +40,7 @@ export default async function NewInvoicePage({
     // Recent invoices with their items: "same as last time" per client, and remembered items.
     supabase
       .from('invoices')
-      .select('id, client_id, client_name, project, invoice_number, issue_date, currency, total, invoice_items(description, quantity, unit_price, sort_order)')
+      .select('id, client_id, client_name, project, billed_for, invoice_number, issue_date, currency, total, invoice_items(description, quantity, unit_price, sort_order)')
       .eq('user_id', account.accountId)
       .neq('status', 'cancelled')
       .order('created_at', { ascending: false })
@@ -48,7 +48,7 @@ export default async function NewInvoicePage({
   ])
 
   type Recent = {
-    id: string; client_id: string | null; client_name: string; project: string | null; invoice_number: string
+    id: string; client_id: string | null; client_name: string; project: string | null; billed_for: string | null; invoice_number: string
     issue_date: string | null; currency: string | null; total: number
     invoice_items: { description: string; quantity: number; unit_price: number; sort_order: number | null }[] | null
   }
@@ -60,7 +60,7 @@ export default async function NewInvoicePage({
     const key = r.client_id ?? `name:${r.client_name.toLowerCase()}`
     if (lastByClient[key] || !r.invoice_items?.length) continue
     lastByClient[key] = {
-      invoice_number: r.invoice_number, project: r.project, issue_date: r.issue_date, currency: r.currency, total: Number(r.total),
+      invoice_number: r.invoice_number, project: r.project, billed_for: r.billed_for, issue_date: r.issue_date, currency: r.currency, total: Number(r.total),
       items: [...r.invoice_items].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
         .map(i => ({ desc: i.description, qty: Number(i.quantity), rate: Number(i.unit_price) })),
     }

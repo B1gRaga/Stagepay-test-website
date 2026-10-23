@@ -7,10 +7,11 @@ import { LogoIcon } from '@/components/Logo'
 import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
 import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
+import { BILLED_FOR_MAX, billedForLabel, billedForPlaceholder, billedForWaLine } from '@/lib/billed-for'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Client  = { id: string; name: string; email: string | null; phone: string | null }
-type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null }
+type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null; business_type?: string | null }
 
 const CURRENCIES = [
   { v: 'P',   l: 'BWP — Pula (P)' },
@@ -109,6 +110,7 @@ const CSS = `
   .in.num{text-align:right;font-variant-numeric:tabular-nums;}
   .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;}
   .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px;}
+  .billed-for{margin-top:12px;max-width:340px;}
   .field-err{font-size:13px;color:#E5484D;margin-top:6px;}
 
   /* Clients: one tap fills the details. */
@@ -302,6 +304,8 @@ export default function NewInvoiceClient({
   const [clientEmail, setClientEmail] = useState<string>(inv?.client_email ?? preset?.email ?? '')
   const [clientPhone, setClientPhone] = useState<string>(inv?.client_phone ?? preset?.phone ?? '')
   const [project,     setProject]     = useState<string>(inv?.project ?? '')
+  const [billedFor,   setBilledFor]   = useState<string>(inv?.billed_for ?? '')
+  const bfLabel = billedForLabel(profile?.business_type)
   const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
   const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())
   const initialDue = inv?.due_date || addDays(inv?.issue_date || today(), profile?.default_due_days ?? 30)
@@ -402,6 +406,7 @@ export default function NewInvoiceClient({
   function useLastTime() {
     if (!last) return
     if (last.project) setProject(last.project)
+    if (last.billed_for) setBilledFor(last.billed_for)
     if (last.currency) setCurrency(last.currency)
     const keys: number[] = []
     setItems(last.items.map(i => { const key = nextKey.current++; keys.push(key); return { ...i, key } }))
@@ -442,6 +447,7 @@ export default function NewInvoiceClient({
         client_email:        clientEmail.trim() || null,
         client_phone:        clientPhone.trim() || null,
         project:             project.trim() || null,
+        billed_for:          billedFor.trim() || null,
         currency,
         issue_date:          issueDate,
         due_date:            dueDate || null,
@@ -533,7 +539,9 @@ export default function NewInvoiceClient({
     // before any await or the browser treats it as a popup and blocks it.
     if (channel !== 'email') {
       const link = publicInvoiceUrl(savedToken)
-      const intro = `Here is invoice *${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.`
+      const bfLine = billedForWaLine(profile?.business_type, billedFor)
+      const amountLine = `*${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
+      const intro = `Here is invoice ${amountLine}`
       const finish = async () => {
         setSendDone(true)
         await markInvoiceSent(savedInvoiceId)
@@ -547,7 +555,7 @@ export default function NewInvoiceClient({
           setSendError('Enter the number with country code, e.g. +267 71 234 567')
           return
         }
-        openWhatsApp(sendPhone, [`Hi ${clientName} 👋`, ``, `The PDF above is invoice *${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.`, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n'))
+        openWhatsApp(sendPhone, [`Hi ${clientName} 👋`, ``, `The PDF above is invoice ${amountLine}`, link ? `\nView it online: ${link}` : '', ``, `Thank you for your business!`].join('\n'))
         await finish()
         return
       }
@@ -644,6 +652,7 @@ export default function NewInvoiceClient({
           <span>Bill to</span>
           <b>{clientName.trim() || 'Client name'}</b>
           {(clientPhone || clientEmail) && <small>{[clientPhone, clientEmail].filter(Boolean).join(' · ')}</small>}
+          {billedFor.trim() && <small>{bfLabel}: {billedFor.trim()}</small>}
           {project && <small>{project}</small>}
         </div>
         <table className="paper-items">
@@ -727,6 +736,11 @@ export default function NewInvoiceClient({
                 </div>
               </div>
               {tried && problems.client && <p className="field-err">{problems.client}</p>}
+
+              <div className="billed-for">
+                <label className="lbl" htmlFor="ni-billed-for">{bfLabel} <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                <input id="ni-billed-for" name="billed_for" autoComplete="off" className="in" maxLength={BILLED_FOR_MAX} value={billedFor} onChange={e => setBilledFor(e.target.value)} placeholder={billedForPlaceholder(profile?.business_type)} />
+              </div>
 
               {last && (
                 <div className="again" aria-live="polite">

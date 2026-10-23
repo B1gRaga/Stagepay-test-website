@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { CopyButton, PrintButton } from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
 import { firmLines } from '@/lib/firm-details'
+import { billedForLabel } from '@/lib/billed-for'
 import { resolveTheme, contrast, tint } from '@/lib/invoice-themes'
 import Link from 'next/link'
 import { LogoFull } from '@/components/Logo'
@@ -42,7 +43,7 @@ export default async function PublicInvoicePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_name, name, email, phone, address, city, country, vat_number, logo_url, payment_methods, tax_label, invoice_theme, brand_color_primary, brand_color_header')
+    .select('firm_name, name, email, phone, address, city, country, vat_number, logo_url, payment_methods, tax_label, invoice_theme, brand_color_primary, brand_color_header, business_type')
     .eq('id', invoice.user_id)
     .single()
 
@@ -144,6 +145,7 @@ export default async function PublicInvoicePage({ params }: Props) {
             <div>
               <p className="pi-label">Bill to</p>
               <p className="pi-bill-name">{invoice.client_name}</p>
+              {invoice.billed_for && <p className="pi-small pi-ink">{billedForLabel(profile?.business_type)}: <b>{invoice.billed_for}</b></p>}
               <p className="pi-small">
                 {invoice.client_address && <>{invoice.client_address}<br /></>}
                 {invoice.client_email && <>{invoice.client_email}<br /></>}

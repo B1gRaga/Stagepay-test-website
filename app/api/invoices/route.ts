@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
+import { BILLED_FOR_MAX } from '@/lib/billed-for'
 
 const PAGE_SIZE = 50
 
@@ -84,6 +85,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const billedFor = stripTagsOrNull(body.billed_for)
+  if (billedFor && billedFor.length > BILLED_FOR_MAX) {
+    return NextResponse.json({ error: `billed_for must be ${BILLED_FOR_MAX} characters or fewer` }, { status: 400 })
+  }
+
   // Validate VAT rate
   const vat_rate = Number(body.vat_rate ?? 14)
   if (isNaN(vat_rate) || vat_rate < 0 || vat_rate > 100) {
@@ -149,6 +155,7 @@ export async function POST(req: NextRequest) {
       client_address:       stripTagsOrNull(body.client_address),
       client_vat:           stripTagsOrNull(body.client_vat),
       project:              stripTagsOrNull(body.project),
+      billed_for:           billedFor,
       notes:                stripTagsOrNull(body.notes),
       issue_date:           (body.issue_date as string | undefined) ?? new Date().toISOString().split('T')[0],
       due_date:             (body.due_date as string | null | undefined) ?? null,

@@ -84,6 +84,7 @@ export async function GET(req: NextRequest) {
           client_address: tmpl.client_address,
           client_vat:     tmpl.client_vat,
           project:        tmpl.project,
+          billed_for:     tmpl.billed_for ?? null,
           notes:          tmpl.notes,
           issue_date:     issueDate,
           due_date:       dueDate.toISOString().split('T')[0],

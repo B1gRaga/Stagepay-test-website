@@ -3,6 +3,7 @@ import { renderToBuffer, Document, Page, Text, View, Image, Font } from '@react-
 import { resolveTheme, contrast, tint, type InvoiceTheme } from './invoice-themes'
 import { paymentBlocks } from './payment-methods'
 import { firmLines } from './firm-details'
+import { billedForLabel } from './billed-for'
 
 // Five invoice templates, each its own layout. They share one reading order,
 // the same as the page a client opens from WhatsApp: who it's from, the big
@@ -78,6 +79,7 @@ function facts(d: Doc) {
     deposit: d.paid ? 0 : deposit,
     issued: longDate(d.invoice.issue_date),
     due: longDate(d.invoice.due_date),
+    billedFor: d.invoice.billed_for ? { label: billedForLabel(d.profile.business_type), value: String(d.invoice.billed_for) } : null,
     clientLines: [d.invoice.client_address, d.invoice.client_email, d.invoice.client_phone].filter(Boolean) as string[],
   }
 }
@@ -176,6 +178,13 @@ function Notes({ d, color = BODY, sub = MUTED }: { d: Doc; color?: string; sub?:
   )
 }
 
+// Who the invoice is for, under the client's name: "Student: Thato Mosweu".
+function BilledFor({ d, size = 10 }: { d: Doc; size?: number }) {
+  const b = facts(d).billedFor
+  if (!b) return null
+  return <Text style={{ fontSize: d.fz(size), color: INK, marginTop: d.s(3) }}>{b.label}: <Text style={{ fontFamily: 'Helvetica-Bold' }}>{b.value}</Text></Text>
+}
+
 function Footer({ d, color = MUTED, left = 44, right = 44 }: { d: Doc; color?: string; left?: number; right?: number }) {
   const { s, fz } = d
   return (
@@ -254,6 +263,7 @@ function Classic(d: Doc) {
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: fz(8.5), color: MUTED }}>Billed to</Text>
           <Text style={{ fontSize: fz(11.5), fontFamily: 'Helvetica-Bold', color: INK, marginTop: s(3) }}>{d.invoice.client_name}</Text>
+          <BilledFor d={d} />
           {f.clientLines.map(l => <Text key={l} style={{ fontSize: fz(9), color: MUTED, marginTop: s(2) }}>{l}</Text>)}
         </View>
         {d.invoice.project ? (
@@ -317,6 +327,7 @@ function Ledger(d: Doc) {
         </View>
         <View style={{ flex: 1 }}>
           {kv('Billed to', d.invoice.client_name, true)}
+          {f.billedFor ? kv(f.billedFor.label, f.billedFor.value, true) : null}
           {f.clientLines.slice(0, 2).map((l, i) => <View key={l}>{kv(i ? '' : 'Contact', l)}</View>)}
           {d.invoice.project ? kv('For', d.invoice.project) : null}
           {kv('From', [f.firm.address, f.firm.vat].filter(Boolean).join('  ·  ') || f.firmName)}
@@ -375,6 +386,7 @@ function Letter(d: Doc) {
           ? <>thank you. <Text style={{ fontFamily: 'Helvetica-Bold' }}>{f.fmt(d.invoice.total)}</Text> has been paid in full.</>
           : <><Text style={{ fontFamily: 'Helvetica-Bold', color: accent }}>{f.fmt(d.invoice.total)}</Text> is due{f.due ? <> on <Text style={{ fontFamily: 'Helvetica-Bold' }}>{f.due}</Text></> : ' on receipt'}{d.invoice.project ? ` for ${d.invoice.project}` : ''}.</>}
       </Text>
+      <BilledFor d={d} size={11} />
       {f.deposit > 0 && <Text style={{ fontSize: fz(11), color: BODY, marginTop: s(6) }}>A deposit of {f.fmt(f.deposit)} is due now.</Text>}
 
       <View style={{ marginTop: s(28) }}>
@@ -437,6 +449,7 @@ function Sidebar(d: Doc) {
       <View style={{ marginTop: s(28), marginBottom: s(22) }}>
         <Text style={{ fontSize: fz(8.5), color: MUTED }}>Billed to</Text>
         <Text style={{ fontSize: fz(12), fontFamily: 'Helvetica-Bold', color: INK, marginTop: s(3) }}>{d.invoice.client_name}</Text>
+        <BilledFor d={d} />
         {f.clientLines.map(l => <Text key={l} style={{ fontSize: fz(9), color: MUTED, marginTop: s(2) }}>{l}</Text>)}
         {d.invoice.project ? <Text style={{ fontSize: fz(9.5), color: INK, marginTop: s(8) }}>For {d.invoice.project}</Text> : null}
       </View>
@@ -478,6 +491,7 @@ function Statement(d: Doc) {
         <View style={{ flex: 2 }}>
           <Text style={{ fontSize: fz(8.5), color: MUTED }}>Billed to</Text>
           <Text style={{ fontSize: fz(11.5), fontFamily: 'Helvetica-Bold', color: INK, marginTop: s(3) }}>{d.invoice.client_name}</Text>
+          <BilledFor d={d} />
           {f.clientLines.map(l => <Text key={l} style={{ fontSize: fz(9), color: MUTED, marginTop: s(2) }}>{l}</Text>)}
         </View>
         <View style={{ flex: 1 }}>
@@ -512,6 +526,7 @@ function Statement(d: Doc) {
             <Text style={{ fontSize: fz(24), fontFamily: 'Helvetica-Bold', color: INK, marginTop: s(2) }}>{f.fmt(d.invoice.total)}</Text>
             <View style={{ marginTop: s(4) }}><DueLine d={d} color={INK} sub={INK} /></View>
             <Text style={{ fontSize: fz(9), color: INK, marginTop: s(10) }}>From {d.invoice.client_name}</Text>
+            {f.billedFor && <Text style={{ fontSize: fz(9), color: INK, marginTop: s(2) }}>{f.billedFor.label} {f.billedFor.value}</Text>}
             <Text style={{ fontSize: fz(9), color: INK, marginTop: s(2) }}>To {f.firmName}</Text>
             <Text style={{ fontSize: fz(9), color: INK, marginTop: s(2) }}>Reference <Text style={{ fontFamily: 'Helvetica-Bold' }}>{d.invoice.invoice_number}</Text></Text>
           </View>
