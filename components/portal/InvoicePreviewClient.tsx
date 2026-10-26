@@ -16,6 +16,8 @@ export type PreviewInvoice = {
   client_phone: string | null
   project: string | null
   billed_for?: string | null
+  payment_claimed_at?: string | null
+  payment_claim_ref?: string | null
   issue_date: string | null
   due_date: string | null
   total: number
@@ -79,6 +81,9 @@ ${STATUS_CSS}
   .panel-row{display:flex;gap:8px;flex-wrap:wrap;}
   .panel-input{flex:1;min-width:200px;max-width:340px;height:40px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 12px;font:600 14px var(--font-manrope),sans-serif;color:var(--t1);outline:none;transition:border-color var(--dur-1) var(--ease);}
   .panel-input:focus{border-color:var(--g);}
+  .claim{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:14px;color:var(--t2);line-height:1.5;}
+  .claim b{color:var(--t1);}
+  .claim-btns{display:flex;gap:8px;flex-wrap:wrap;}
   .panel-note{font-size:14px;color:var(--t2);margin:0 0 10px;}
   .panel-note b{color:var(--t1);}
   .panel-err{color:#E5484D;font-size:13px;margin-top:8px;}
@@ -315,6 +320,23 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     pendingPaid.current = { prev, timer: setTimeout(() => savePaid(), UNDO_MS) }
   }
 
+  // "Not received": clear the client's claim so reminders carry on.
+  function rejectClaim() {
+    const prev = { payment_claimed_at: invoice.payment_claimed_at, payment_claim_ref: invoice.payment_claim_ref }
+    setInvoice(i => ({ ...i, payment_claimed_at: null, payment_claim_ref: null }))
+    fetch(`/api/invoices/${invoice.id}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clear_payment_claim: true }),
+    }).then(res => {
+      if (!res.ok) throw new Error()
+      setToast({ msg: 'Cleared. Reminders carry on as planned.', undo: false })
+    }).catch(() => {
+      setInvoice(i => ({ ...i, ...prev }))
+      setToast({ msg: 'Couldn’t clear it. Try again.', undo: false })
+    })
+  }
+
   function undoPaid() {
     const p = pendingPaid.current
     if (!p) return
@@ -366,6 +388,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
   }
 
   const canMarkPaid = invoice.status === 'sent' || invoice.status === 'pending' || invoice.status === 'overdue'
+  const claimOpen = canMarkPaid && !!invoice.payment_claimed_at
   const steps = timeline(invoice, reminders, createdBy)
   const reminderCount = reminders.filter(r => r.status === 'sent').length
 
@@ -402,6 +425,19 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
             <InvoiceStatus status={invoice.status} due_date={invoice.due_date} reminders_sent={reminderCount} size={20} />
           </div>
         </div>
+
+        {claimOpen && (
+          <div className="claim" role="status">
+            <div>
+              <b>{invoice.client_name} says they’ve paid</b>{invoice.payment_claim_ref ? <> · reference <b>{invoice.payment_claim_ref}</b></> : null} · {fmtDate(invoice.payment_claimed_at)}
+              <br />Check your MyZaka, Orange Money or bank messages, then confirm. Reminders are on hold until you do.
+            </div>
+            <div className="claim-btns">
+              <button type="button" className="btn primary press" onClick={markAsPaid}>Confirm paid</button>
+              <button type="button" className="btn press" onClick={rejectClaim}>Not received</button>
+            </div>
+          </div>
+        )}
 
         <div className="actions">
           <button type="button" className="btn primary press" onClick={() => openPanel('whatsapp')} aria-expanded={panel === 'whatsapp'}>

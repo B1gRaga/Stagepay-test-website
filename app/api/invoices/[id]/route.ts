@@ -94,12 +94,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const TEXT_FIELDS = new Set(['client_name', 'project', 'billed_for', 'notes', 'client_address', 'client_email', 'client_phone', 'client_vat'])
 
   const { items, ...rest } = body
-  const fields = Object.fromEntries(
+  const fields: Record<string, unknown> = Object.fromEntries(
     ALLOWED_FIELDS.filter(k => rest[k] !== undefined).map(k => [
       k,
       TEXT_FIELDS.has(k) && typeof rest[k] === 'string' ? stripTags(rest[k]) : rest[k],
     ])
   )
+  // "Not received": the client's "I've paid" didn't match a payment. Only ever cleared here;
+  // the claim itself comes from the public invoice page.
+  if (body.clear_payment_claim === true) {
+    fields.payment_claimed_at = null
+    fields.payment_claim_ref  = null
+  }
 
   // Recalculate totals when items are being updated
   if (Array.isArray(items)) {

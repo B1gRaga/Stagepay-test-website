@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       .select(`
         *,
         invoices (
-          id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token,
+          id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token, payment_claimed_at,
           invoice_items (description, quantity, unit_price)
         )
       `)
@@ -86,6 +86,14 @@ async function processReminder(supabase: any, reminder: any) {
   if (invoice.status === 'paid' || invoice.status === 'cancelled') {
     await supabase.from('reminders').update({ status: 'cancelled' }).eq('id', reminder.id)
     log('cron.reminders.skipped', { reminderId: reminder.id, invoiceStatus: invoice.status })
+    return
+  }
+
+  // The client says they've paid and the business hasn't checked yet: no
+  // reminder for now. Try again tomorrow; confirming it cancels them for good.
+  if (invoice.payment_claimed_at) {
+    await supabase.from('reminders').update({ send_at: new Date(Date.now() + 86_400_000).toISOString() }).eq('id', reminder.id)
+    log('cron.reminders.held', { reminderId: reminder.id, reason: 'payment_claimed' })
     return
   }
 

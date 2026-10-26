@@ -13,7 +13,7 @@ export default async function InvoicePreviewPage({ params }: Params) {
   const supabase = await createClient()
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, client_email, client_phone, project, billed_for, issue_date, due_date, total, status, currency, public_token, email_sent_at, created_by')
+    .select('id, invoice_number, client_name, client_email, client_phone, project, billed_for, issue_date, due_date, total, status, currency, public_token, email_sent_at, created_by, payment_claimed_at, payment_claim_ref')
     .eq('id', id)
     .eq('user_id', account.accountId)
     .single()

@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { CopyButton, PrintButton } from './InvoiceActions'
+import { CopyButton, PaidClaim, PrintButton } from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
 import { firmLines } from '@/lib/firm-details'
 import { billedForLabel } from '@/lib/billed-for'
@@ -123,6 +123,12 @@ export default async function PublicInvoicePage({ params }: Props) {
           </section>
         )}
 
+        {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+          <section className="pi-pay pi-claim-sec" aria-label="Already paid?">
+            <PaidClaim token={token} senderName={senderName} claimedRef={invoice.payment_claimed_at ? invoice.payment_claim_ref ?? '' : null} />
+          </section>
+        )}
+
         <article className="pi-doc" aria-label={`Invoice ${invoice.invoice_number}`}>
           <header className="pi-doc-top">
             <div>
@@ -235,6 +241,15 @@ const CSS = `
   .pi-copy:active{transform:scale(.96);}
   .pi-ref{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;font-size:15px;color:#3D4659;}
   .pi-ref b{color:#1F2A44;}
+  .pi-claim p{font-size:15px;color:#3D4659;margin-top:6px;line-height:1.5;}
+  .pi-claim p b{color:#1F2A44;word-break:break-word;}
+  .pi-claim label{display:block;font-size:14px;font-weight:600;color:#3D4659;margin-top:12px;}
+  .pi-in{display:block;width:100%;max-width:420px;height:46px;margin-top:6px;padding:0 14px;border-radius:12px;border:1.5px solid #D8D2C6;background:#FFFFFF;color:#1F2A44;font:600 16px var(--font-manrope),sans-serif;}
+  .pi-in:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent;}
+  .pi-err{color:#B42318 !important;font-weight:600;}
+  .pi-claim-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .pi-btn-3{background:transparent;color:#1F2A44;box-shadow:inset 0 0 0 1.5px #1F2A44;}
+  .pi-btn:disabled{opacity:.6;cursor:default;}
 
   .pi-doc{background:#FFFFFF;border-radius:20px;padding:32px;}
   .pi-doc-top{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;}
@@ -284,7 +299,7 @@ const CSS = `
   @media print{
     body{background:#FFFFFF !important;}
     .pi{padding:0;max-width:none;}
-    .pi-actions,.pi-copy,.pi-foot,.pi-pay .pi-copy{display:none !important;}
+    .pi-actions,.pi-copy,.pi-foot,.pi-pay .pi-copy,.pi-claim-sec{display:none !important;}
     .pi-sum{border:1px solid #DDD;}
     .pi-sum,.pi-pay,.pi-doc{break-inside:avoid;}
   }
