@@ -928,7 +928,9 @@ export default function Home() {
             <div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
             <h2 className="h2">Built in Botswana, and just getting started</h2>
             <p className="lead" style={{ marginTop: 18 }}>StagePay is new. We built it after seeing tutors still invoice from paper receipt books. We&apos;re looking for our first users, and your feedback will shape what comes next.</p>
-            <a className="btn btn-ghost" href="mailto:getstagepay@gmail.com?subject=StagePay%20feedback" style={{ marginTop: 24 }}>Share feedback</a>
+            {/* WhatsApp first: mailto does nothing on phones with no mail app set up. */}
+            <a className="btn btn-ghost" href={`https://wa.me/267${CONTACT.whatsapp}?text=${encodeURIComponent('Hi StagePay, some feedback: ')}`} target="_blank" rel="noopener noreferrer" style={{ marginTop: 24 }}>Share feedback on WhatsApp</a>
+            <p className="lead" style={{ marginTop: 12, fontSize: 15 }}>Or email <a href={`mailto:${CONTACT.email}?subject=StagePay%20feedback`}>{CONTACT.email}</a></p>
           </div>
         </section>
 
