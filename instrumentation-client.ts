@@ -11,10 +11,20 @@ Sentry.init({
   // of text is masked and images blocked, so no client details are recorded.
   replaysOnErrorSampleRate: 1.0,
   replaysSessionSampleRate: 0.05,
-  integrations: [
-    Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true }),
-  ],
 })
+
+// Replay (rrweb) is the largest part of Sentry and records every DOM change,
+// so it's fetched from Sentry's CDN once the page is idle instead of being in
+// every page's first-load bundle.
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  const loadReplay = () => {
+    Sentry.lazyLoadIntegration('replayIntegration')
+      .then(replayIntegration => Sentry.addIntegration(replayIntegration({ maskAllText: true, blockAllMedia: true })))
+      .catch(() => {})
+  }
+  if ('requestIdleCallback' in window) window.requestIdleCallback(loadReplay, { timeout: 5000 })
+  else setTimeout(loadReplay, 3000)
+}
 
 // Page-to-page navigation timings in the app.
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart

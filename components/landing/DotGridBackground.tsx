@@ -7,10 +7,13 @@ import { useEffect } from 'react'
 // static-HTML design, scoped to whichever page mounts it (so it doesn't reach
 // into the portal). One canvas per section, one shared rAF loop, culled by
 // IntersectionObserver, and fully static (no pointer reactivity) under
-// prefers-reduced-motion. `selector` picks the sections that get a canvas.
+// prefers-reduced-motion and on touch screens: redrawing every dot each frame
+// costs a phone seconds of main-thread time, and there's no cursor to follow.
+// `selector` picks the sections that get a canvas.
 export function DotGridBackground({ selector = '.lp .band' }: { selector?: string }) {
   useEffect(() => {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      || !window.matchMedia?.('(pointer: fine)').matches
     const AMBER = [242, 169, 0]
     const rgba = (c: number[], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`
 
@@ -149,9 +152,15 @@ export function DotGridBackground({ selector = '.lp .band' }: { selector?: strin
       }
       raf = requestAnimationFrame(loop)
     }
-    raf = requestAnimationFrame(loop)
+    // Start once the page has settled so the drift doesn't compete with load.
+    const start = () => { last = performance.now(); raf = requestAnimationFrame(loop) }
+    const idle = window.requestIdleCallback
+      ? window.requestIdleCallback(start, { timeout: 2000 })
+      : window.setTimeout(start, 1000)
 
     return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idle)
+      else window.clearTimeout(idle)
       cancelAnimationFrame(raf)
       io?.disconnect()
       cleanupFns.forEach(fn => fn())

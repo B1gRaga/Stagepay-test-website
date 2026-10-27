@@ -133,8 +133,10 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
+// `.+` rather than `.*` leaves out the bare `/`: the landing page is static and
+// needs no session, so it's served straight from the CDN without a proxy hop.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon|icons|manifest|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon|icons|manifest|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).+)',
   ],
 }

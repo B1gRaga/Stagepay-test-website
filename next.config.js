@@ -5,7 +5,7 @@ const { withSentryConfig } = require('@sentry/nextjs/config')
 // invoice PDF, which the portal's own preview page embeds.
 const csp = (frameAncestors) => [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://va.vercel-scripts.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://va.vercel-scripts.com https://browser.sentry-cdn.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
   "img-src 'self' data: blob: https:",
@@ -60,4 +60,5 @@ module.exports = withSentryConfig(nextConfig, {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
   hideSourceMaps: true,
+  bundleSizeOptimizations: { excludeDebugStatements: true },
 })

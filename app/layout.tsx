@@ -39,8 +39,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Analytics />
         <SpeedInsights />
-        <Script strategy="afterInteractive" src="https://www.googletagmanager.com/gtag/js?id=G-BX4B6LZRYY" />
-        <Script id="ga4-init" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `
+        {/* lazyOnload: gtag is ~170KB, so it waits until the page has loaded. */}
+        <Script strategy="lazyOnload" src="https://www.googletagmanager.com/gtag/js?id=G-BX4B6LZRYY" />
+        <Script id="ga4-init" strategy="lazyOnload" dangerouslySetInnerHTML={{ __html: `
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());

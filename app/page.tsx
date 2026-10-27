@@ -63,9 +63,12 @@ const CSS = `
 .hero .ctas{animation:heroIn .7s .42s ease both}
 .hero .small{animation:heroIn .7s .52s ease both}
 
-/* word-by-word hero heading stagger (JS-enhanced; plain text is the no-JS fallback) */
-.hero h1 .w{display:inline-block;will-change:transform}
-@keyframes wordIn{from{opacity:0;transform:translateY(.6em) rotate(4deg)}to{opacity:1;transform:none}}
+/* word-by-word hero heading stagger. The words are split in the markup so it
+   runs from first paint with no JS. It starts at .01 opacity, not 0: the
+   heading is the page's LCP element, and an invisible start would hold LCP
+   back until the animation ends. */
+.hero h1 .w{display:inline-block;animation:wordIn .8s cubic-bezier(.2,1,.3,1) both}
+@keyframes wordIn{from{opacity:.01;transform:translateY(.6em) rotate(4deg)}to{opacity:1;transform:none}}
 
 /* cursor glow (fine-pointer only, added by JS) */
 .hero .glow{position:absolute;left:0;top:0;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;background:radial-gradient(circle, rgba(242,169,0,.18), rgba(242,169,0,0) 60%);pointer-events:none;opacity:0;transition:opacity .4s ease;z-index:0}
@@ -358,6 +361,8 @@ const CTA = SIGNUPS_OPEN
   ? { href: '/auth/signup', label: 'Try it free' }
   : { href: '#waitlist', label: 'Join the waitlist' }
 
+const HERO_WORDS = 'You do the work. We send the invoice on'.split(' ')
+
 function fmt(n: number) {
   return 'P' + Math.round(n).toLocaleString('en-US')
 }
@@ -489,7 +494,6 @@ export default function Home() {
   const stepTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const tabTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const h1Ref = useRef<HTMLHeadingElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const phoneRef = useRef<HTMLDivElement>(null)
@@ -513,39 +517,6 @@ export default function Home() {
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  // word-by-word hero heading stagger — splits the live text node into spans,
-  // each with a staggered inline animation. Plain text (no JS) stays fully
-  // visible, so this only enhances, never hides, the heading.
-  useEffect(() => {
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const h1 = h1Ref.current
-    if (reduce || !h1) return
-    let i = 0
-    function wrapWords(node: ChildNode) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const frag = document.createDocumentFragment()
-        const parts = (node.textContent || '').split(/(\s+)/)
-        parts.forEach(part => {
-          if (!part) return
-          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return }
-          const span = document.createElement('span')
-          span.className = 'w'
-          span.textContent = part
-          span.style.animation = `wordIn .8s ${(i * 55)}ms cubic-bezier(.2,1,.3,1) both`
-          i++
-          frag.appendChild(span)
-        })
-        node.parentNode?.replaceChild(frag, node)
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        // existing element children (e.g. the amber "WhatsApp." span) animate as one atomic word
-        ;(node as HTMLElement).classList.add('w')
-        ;(node as HTMLElement).style.animation = `wordIn .8s ${(i * 55)}ms cubic-bezier(.2,1,.3,1) both`
-        i++
-      }
-    }
-    Array.from(h1.childNodes).forEach(wrapWords)
   }, [])
 
   // cursor glow + magnetic buttons + scroll parallax (fine-pointer, motion-allowed only)
@@ -736,7 +707,10 @@ export default function Home() {
           <div className="wrap">
             <div>
               <p className="eyebrow"><span className="dot"></span>For tutors and education businesses in Botswana</p>
-              <h1 ref={h1Ref}>You do the work. We send the invoice on <span className="wa">WhatsApp.</span></h1>
+              <h1>
+                {HERO_WORDS.map((w, i) => <span key={i}><span className="w" style={{ animationDelay: `${i * 55}ms` }}>{w}</span> </span>)}
+                <span className="w wa" style={{ animationDelay: `${HERO_WORDS.length * 55}ms` }}>WhatsApp.</span>
+              </h1>
               <p className="lead">Fill in a few simple details. StagePay organises a professional invoice, sends it on WhatsApp and follows up until you&apos;re paid.</p>
               <div className="ctas">
                 <a className="btn btn-amber" href={CTA.href}>{CTA.label} <span className="arr">→</span></a>
