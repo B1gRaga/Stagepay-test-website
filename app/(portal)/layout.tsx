@@ -15,8 +15,10 @@ export default async function PortalLayout({ children }: { children: React.React
   if (!account) redirect('/auth/login')
 
   const supabase = await createClient()
+  // This calendar month in Gaborone, for the sidebar's "This month" block
+  const monthStart = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Gaborone' }).format(new Date()).slice(0, 8) + '01'
   // The sidebar shows the business being worked in; first-time setup is the person's own.
-  const [profile, own, { count: overdueCount }, businesses] = await Promise.all([
+  const [profile, own, { count: overdueCount }, businesses, { data: monthRows }] = await Promise.all([
     getCachedProfile(account.accountId),
     getCachedProfile(account.userId),
     supabase
@@ -25,9 +27,25 @@ export default async function PortalLayout({ children }: { children: React.React
       .eq('user_id', account.accountId)
       .eq('status', 'overdue'),
     TEAMS_ENABLED ? listBusinesses(account.userId) : Promise.resolve([]),
+    supabase
+      .from('invoices')
+      .select('total, status, currency')
+      .eq('user_id', account.accountId)
+      .neq('status', 'cancelled')
+      .gte('issue_date', monthStart)
+      .limit(2000),
   ])
 
   const displayName = profile?.firm_name || profile?.name || userEmail.split('@')[0]
+
+  // Same rule as the dashboard: invoices issued this month in the main currency
+  const sym = profile?.default_currency || 'P'
+  const rows = (monthRows ?? []).filter(i => (i.currency || sym) === sym)
+  const month = {
+    sym,
+    invoiced: rows.reduce((s, i) => s + Number(i.total || 0), 0),
+    paid: rows.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total || 0), 0),
+  }
 
   // First-time users: send to onboarding to pick business type.
   // /onboarding is outside the (portal) group so there is no redirect loop.
@@ -51,7 +69,7 @@ export default async function PortalLayout({ children }: { children: React.React
       `}</style>
 
       <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)', overflowX: 'hidden' }}>
-        <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} overdueCt={overdueCount ?? 0} businesses={businesses} currentAccountId={account.accountId} role={account.role} />
+        <SidebarNav displayName={displayName} userEmail={userEmail} plan={profile?.plan ?? 'free'} overdueCt={overdueCount ?? 0} month={month} businesses={businesses} currentAccountId={account.accountId} role={account.role} />
         <PullToRefresh>{children}</PullToRefresh>
       </div>
       <SupportBtn />
