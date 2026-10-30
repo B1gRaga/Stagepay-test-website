@@ -6,6 +6,7 @@ import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { generateInvoicePDF } from '@/lib/invoice-pdf'
 import { withRetry } from '@/lib/retry'
 import { invoiceEmail } from '@/lib/emails/invoice'
+import { scheduleRemindersOnSend } from '@/lib/reminder-schedule'
 
 export const runtime = 'nodejs'
 
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
       .eq('id', invoice_id)
 
     if (statusErr) console.error('[Email] invoice status update failed:', statusErr.message)
+    else if (invoice.status === 'draft') await scheduleRemindersOnSend(account.accountId, invoice_id, account.userId)
 
     return NextResponse.json({ success: true })
   } catch(err: any) {

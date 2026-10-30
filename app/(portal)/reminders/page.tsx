@@ -23,7 +23,7 @@ export default async function RemindersPage() {
       .eq('user_id', account.accountId),
     profileDb
       .from('profiles')
-      .select('firm_name, name, whatsapp_reminders_enabled, default_currency')
+      .select('firm_name, name, whatsapp_reminders_enabled, default_currency, reminder_days')
       .eq('id', account.accountId)
       .single(),
   ])
@@ -37,6 +37,7 @@ export default async function RemindersPage() {
       firmName={firmName}
       currency={profile?.default_currency || 'P'}
       initialWaOn={profile?.whatsapp_reminders_enabled ?? false}
+      initialDays={profile?.reminder_days ?? undefined}
       waConfigured={isWhatsAppConfigured()}
     />
   )

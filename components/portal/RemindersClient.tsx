@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { openWhatsApp, publicInvoiceUrl } from '@/lib/wa-link'
 import Link from 'next/link'
 import { STATUS_CSS } from './InvoiceStatus'
+import { DEFAULT_REMINDER_DAYS } from '@/lib/reminder-days'
 
 export type Invoice = {
   id: string
@@ -36,12 +37,11 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 // Days after the due date that automatic reminders can go out on.
 const STAGES = [
-  { day: 3,  desc: 'Gentle first nudge', defaultOn: true  },
-  { day: 7,  desc: 'Polite follow-up',   defaultOn: true  },
-  { day: 14, desc: 'Firm final notice',  defaultOn: true  },
-  { day: 30, desc: 'Final demand',       defaultOn: false },
+  { day: 3,  desc: 'Gentle first nudge' },
+  { day: 7,  desc: 'Polite follow-up'   },
+  { day: 14, desc: 'Firm final notice'  },
+  { day: 30, desc: 'Final demand'       },
 ]
-const SCHEDULE_KEY = 'stagepay.reminderDays'
 
 // The track runs from a week before the due date to 30 days after it.
 const TRACK_MIN = -7, TRACK_MAX = 30
@@ -325,6 +325,7 @@ export default function RemindersClient({
   firmName,
   currency = 'P',
   initialWaOn = false,
+  initialDays = DEFAULT_REMINDER_DAYS,
   waConfigured = false,
 }: {
   initialInvoices:  Invoice[]
@@ -332,6 +333,7 @@ export default function RemindersClient({
   firmName:         string
   currency?:        string
   initialWaOn?:     boolean
+  initialDays?:     number[]
   waConfigured?:    boolean
 }) {
   const [invoices,  setInvoices]  = useState<Invoice[]>(initialInvoices)
@@ -339,7 +341,7 @@ export default function RemindersClient({
   const [toggling,  setToggling]  = useState<Record<string, boolean>>({})
   const [remError,  setRemError]  = useState<string | null>(null)
   const [schedule,  setSchedule]  = useState<Record<number, boolean>>(
-    () => Object.fromEntries(STAGES.map(s => [s.day, s.defaultOn]))
+    () => Object.fromEntries(STAGES.map(s => [s.day, initialDays.includes(s.day)]))
   )
   const [waOn,      setWaOn]      = useState(initialWaOn)
   const [compose,   setCompose]   = useState<ComposeState | null>(null)
@@ -347,21 +349,17 @@ export default function RemindersClient({
   const [contactSaving, setContactSaving] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // The chosen days are remembered on this device.
-  useEffect(() => {
-    setMounted(true)
-    try {
-      const saved = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || 'null')
-      if (Array.isArray(saved)) setSchedule(Object.fromEntries(STAGES.map(s => [s.day, saved.includes(s.day)])))
-    } catch {}
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
 
+  // The chosen days are saved on the account; invoices sent from now on use them.
   function toggleDay(day: number) {
-    setSchedule(prev => {
-      const next = { ...prev, [day]: !prev[day] }
-      try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(STAGES.filter(s => next[s.day]).map(s => s.day))) } catch {}
-      return next
-    })
+    const next = { ...schedule, [day]: !schedule[day] }
+    setSchedule(next)
+    fetch('/api/profile', {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reminder_days: STAGES.filter(s => next[s.day]).map(s => s.day) }),
+    }).catch(() => {})
   }
 
   function toggleWa() {
@@ -637,7 +635,7 @@ export default function RemindersClient({
             </button>
           </span>
           <span className="aside">
-            New days apply the next time you turn Auto on for an invoice.
+            They start by themselves when you send an invoice. New days apply to invoices you send from now on.
             {!waConfigured && ' Automatic WhatsApp needs the WhatsApp Business setup; Chase still opens WhatsApp for you.'}
           </span>
         </div>

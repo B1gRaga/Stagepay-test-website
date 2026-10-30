@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAccount, canManage, accountProfileClient } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 import { cleanMethod, MAX_METHODS } from '@/lib/payment-methods'
+import { cleanReminderDays } from '@/lib/reminder-days'
 
 const ALLOWED = [
   'name', 'firm_name', 'phone', 'address', 'city', 'country',
   'vat_number', 'default_currency', 'tax_label', 'default_vat_rate',
   'invoice_theme', 'brand_color_primary', 'brand_color_header',
   'whatsapp_reminders_enabled', 'business_type',
-  'payment_methods', 'default_due_days', 'invoice_paper_size',
+  'payment_methods', 'default_due_days', 'invoice_paper_size', 'reminder_days',
 ] as const
 
 const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
@@ -75,6 +76,10 @@ export async function PATCH(req: NextRequest) {
       const v = String(body[key])
       if (v !== '' && !HEX_COLOR_RE.test(v)) return NextResponse.json({ error: `${key} must be a hex colour like #F2A900` }, { status: 400 })
       updates[key] = v === '' ? null : v
+    } else if (key === 'reminder_days') {
+      const days = cleanReminderDays(body[key])
+      if (!days) return NextResponse.json({ error: 'reminder_days must be a list of days from 3, 7, 14 and 30' }, { status: 400 })
+      updates[key] = days
     } else if (key === 'whatsapp_reminders_enabled') {
       updates[key] = Boolean(body[key])
     } else if (key === 'business_type') {

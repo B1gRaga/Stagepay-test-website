@@ -22,6 +22,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/mark-overdue",
+      "schedule": "5 22 * * *"
+    },
+    {
       "path": "/api/cron/archive-deleted",
       "schedule": "0 3 * * 0"
     }

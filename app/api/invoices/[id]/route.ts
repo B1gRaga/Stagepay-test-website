@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAccount, canManage } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
+import { scheduleRemindersOnSend } from '@/lib/reminder-schedule'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -169,6 +170,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .single()
 
     if (error) return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+    // Sent for the first time: reminders start on the person's chosen days
+    if (fields.status === 'sent' && currentInvoice.status === 'draft') {
+      await scheduleRemindersOnSend(account.accountId, id, account.userId)
+    }
     return NextResponse.json({ invoice: data })
   }
 
