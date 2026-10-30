@@ -269,7 +269,7 @@ export default function ClientsGrid({
         {sorted.length > 0 && (
           <p className="finding">
             {owing.length === 0
-              ? <>All {sorted.length} clients are paid up.</>
+              ? <>{sorted.length === 1 ? 'Your client is' : `All ${sorted.length} clients are`} paid up.</>
               : <>
                   {owing.length === 1 ? '1' : owing.length} of your {sorted.length} clients {owing.length === 1 ? 'owes' : 'owe'} you <b>{money(owedSum, currency)}</b>
                   {lateSum > 0 ? <>, and <b className="late">{money(lateSum, currency)}</b> of it is late.</> : '.'}

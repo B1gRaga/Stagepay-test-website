@@ -8,6 +8,7 @@ import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
 import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 import { BILLED_FOR_MAX, billedForLabel, billedForPlaceholder, billedForWaLine } from '@/lib/billed-for'
+import { dayMonthYear } from '@/lib/format-date'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Client  = { id: string; name: string; email: string | null; phone: string | null }
@@ -206,7 +207,7 @@ const CSS = `
   .paper-items tr:nth-child(even) td{background:#FCEFC7;}
   .paper-items .r{text-align:right;white-space:nowrap;}
   .paper-items tr.fresh td{animation:ni-flash 900ms var(--ease) both;}
-  .paper-empty{padding:14px 8px;color:#8A93A6;font-style:italic;font-size:11.5px;}
+  .paper-empty{padding:14px 8px;color:#646C7E;font-style:italic;font-size:11.5px;}
   .paper-sums{display:grid;grid-template-columns:1fr auto;gap:3px 16px;margin:10px 0 0 auto;width:60%;font-size:11.5px;color:#5B6475;font-variant-numeric:tabular-nums;}
   .paper-sums span:nth-child(even){text-align:right;color:#1F2A44;}
   .paper-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:9px 12px;border-radius:7px;background:#F2A900;color:#1F2A44;font-weight:800;font-variant-numeric:tabular-nums;}
@@ -540,7 +541,7 @@ export default function NewInvoiceClient({
     if (channel !== 'email') {
       const link = publicInvoiceUrl(savedToken)
       const bfLine = billedForWaLine(profile?.business_type, billedFor)
-      const amountLine = `*${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dueDate}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
+      const amountLine = `*${savedInvNum}* for *${fmtAmt(total - depositAmt, currency)}*${dueDate ? `, due ${dayMonthYear(dueDate)}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
       const intro = `Here is invoice ${amountLine}`
       const finish = async () => {
         setSendDone(true)

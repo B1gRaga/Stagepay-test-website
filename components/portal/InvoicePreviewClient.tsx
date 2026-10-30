@@ -7,6 +7,7 @@ import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import { billedForLabel, billedForWaLine } from '@/lib/billed-for'
 import { InvoiceStatus, StatusMark, STATUS_CSS } from './InvoiceStatus'
 import { FROM_LIST_KEY } from './InvoicesTable'
+import { dayMonthYear } from '@/lib/format-date'
 
 export type PreviewInvoice = {
   id: string
@@ -243,7 +244,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     const link = publicInvoiceUrl(invoice.public_token)
     const bfLine = billedForWaLine(businessType, invoice.billed_for)
     const paidText = `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅${bfLine ? `\n${bfLine}` : ''}\n\nThank you for your prompt payment. We appreciate your business!`
-    const amountLine = `*${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${invoice.due_date}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
+    const amountLine = `*${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${dayMonthYear(invoice.due_date)}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
     const intro = `Here is invoice ${amountLine}`
     const recordSend = () => {
       setSendOk(true)
@@ -387,7 +388,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     }
   }
 
-  const canMarkPaid = invoice.status === 'sent' || invoice.status === 'pending' || invoice.status === 'overdue'
+  const canMarkPaid = invoice.status === 'sent' || invoice.status === 'overdue'
   const claimOpen = canMarkPaid && !!invoice.payment_claimed_at
   const steps = timeline(invoice, reminders, createdBy)
   const reminderCount = reminders.filter(r => r.status === 'sent').length

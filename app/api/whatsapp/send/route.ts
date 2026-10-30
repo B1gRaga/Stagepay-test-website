@@ -3,6 +3,7 @@ import { getAuthContext, createServiceClient } from '@/lib/supabase/server'
 import { resolveAccount, accountProfileClient } from '@/lib/account'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
+import { dayMonthYear } from '@/lib/format-date'
 
 export const runtime = 'nodejs'
 
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
   const dbInvoiceNumber = invoice.invoice_number || ''
   const dbTotal         = invoice.total
   const dbCurrency      = invoice.currency || 'P'
-  const dbDueDate       = invoice.due_date || ''
+  const dbDueDate       = dayMonthYear(invoice.due_date)
 
   const amountFormatted = dbTotal != null
     ? `${dbCurrency}${Number(dbTotal).toLocaleString('en', { minimumFractionDigits: 2 })}`

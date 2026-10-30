@@ -31,14 +31,14 @@ export default async function PortalLayout({ children }: { children: React.React
       .from('invoices')
       .select('total, status, currency')
       .eq('user_id', account.accountId)
-      .neq('status', 'cancelled')
+      .not('status', 'in', '(draft,cancelled)')
       .gte('issue_date', monthStart)
       .limit(2000),
   ])
 
   const displayName = profile?.firm_name || profile?.name || userEmail.split('@')[0]
 
-  // Same rule as the dashboard: invoices issued this month in the main currency
+  // Invoices sent this month in the main currency; drafts aren't money on its way yet
   const sym = profile?.default_currency || 'P'
   const rows = (monthRows ?? []).filter(i => (i.currency || sym) === sym)
   const month = {

@@ -37,8 +37,7 @@ export function describeStatus({ status, due_date, reminders_sent = 0 }: StatusI
       const late = due_date ? -daysFromToday(due_date) : 0
       return { mark: 'late', label: late > 0 ? `${plural(late, 'day', 'days')} late` : 'Overdue' }
     }
-    case 'sent':
-    case 'pending': {
+    case 'sent': {
       if (reminders_sent > 0) return { mark: 'reminded', label: reminded }
       if (!due_date) return { mark: 'sent', label: 'Sent' }
       const d = daysFromToday(due_date)

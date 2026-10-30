@@ -32,7 +32,7 @@ const FILTERS = [
 
 function matches(filter: string, status: string) {
   if (filter === 'all') return true
-  if (filter === 'sent') return status === 'sent' || status === 'pending'
+  if (filter === 'sent') return status === 'sent'
   return status === filter
 }
 
@@ -51,7 +51,7 @@ function fmtDate(d: string | null) {
 function finding(list: Invoice[]): { text: string; filter?: string } | null {
   const late = list.filter(i => i.status === 'overdue')
   const drafts = list.filter(i => i.status === 'draft')
-  const waiting = list.filter(i => i.status === 'sent' || i.status === 'pending')
+  const waiting = list.filter(i => i.status === 'sent')
   const sum = (xs: Invoice[]) => {
     const cur = new Set(xs.map(i => i.currency || 'P'))
     return cur.size === 1 ? fmt(xs.reduce((s, i) => s + Number(i.total || 0), 0), [...cur][0]) : null

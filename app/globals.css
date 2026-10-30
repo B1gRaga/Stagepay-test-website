@@ -3,7 +3,7 @@
   --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,.12);
   --bg:#18213A;--bg2:#1F2A44;--surface:#1F2A44;--surface2:#2B3756;
   --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
-  --t1:#FAF7F0;--t2:rgba(250,247,240,.68);--t3:rgba(250,247,240,.38);
+  --t1:#FAF7F0;--t2:rgba(250,247,240,.74);--t3:rgba(250,247,240,.56);
   --warn:#F59E0B;
   --r:12px;
   /* legacy font-variable names alias to Manrope so anything that still
@@ -22,7 +22,7 @@ html:not(.dark) body{background:#FAF7F0;}
 html[data-theme="light"]{
   --bg:#FAF7F0;--bg2:#FFFFFF;--surface:#F1ECE1;--surface2:#E4DDCF;
   --line:rgba(31,42,68,.10);--line2:rgba(31,42,68,.16);
-  --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.42);
+  --t1:#1F2A44;--t2:rgba(31,42,68,.74);--t3:rgba(31,42,68,.67);
   --g-dim:rgba(242,169,0,.14);
 }
 

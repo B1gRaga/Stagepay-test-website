@@ -106,7 +106,7 @@ describe('GET /api/cron/reminders', () => {
         message_preview: 'Please pay invoice #001',
         invoices: {
           id: 'inv-1', invoice_number: '#001', client_name: 'Client Co',
-          total: 500, currency: 'P', due_date: '2025-06-01', status: 'pending',
+          total: 500, currency: 'P', due_date: '2025-06-01', status: 'sent',
           user_id: 'user-1', invoice_items: [],
         },
       }],
@@ -134,7 +134,7 @@ describe('GET /api/cron/reminders', () => {
         message_preview: null,
         invoices: {
           id: 'inv-2', invoice_number: '#002', client_name: 'Client Co',
-          total: 1200, currency: 'P', due_date: '2025-06-01', status: 'pending',
+          total: 1200, currency: 'P', due_date: '2025-06-01', status: 'sent',
           user_id: 'user-1', invoice_items: [],
         },
       }],

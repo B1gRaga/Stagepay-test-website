@@ -244,7 +244,7 @@ export default async function DashboardPage({
   const COLS = 'id, invoice_number, client_name, project, total, status, issue_date, due_date, currency'
   const [{ data: openRaw }, { data: periodRaw }, { data: sixRaw }, profile] = await Promise.all([
     supabase.from('invoices').select(COLS).eq('user_id', account.accountId)
-      .in('status', ['draft', 'sent', 'pending', 'overdue'])
+      .in('status', ['draft', 'sent', 'overdue'])
       .order('due_date', { ascending: true, nullsFirst: false }).limit(300),
     (() => {
       let q = supabase.from('invoices').select(COLS).eq('user_id', account.accountId).neq('status', 'cancelled')
@@ -273,7 +273,7 @@ export default async function DashboardPage({
 
   const sym = profile?.default_currency || 'P'
   const late = open.filter(i => i.status === 'overdue')
-  const waiting = open.filter(i => i.status === 'sent' || i.status === 'pending')
+  const waiting = open.filter(i => i.status === 'sent')
   const drafts = open.filter(i => i.status === 'draft')
   const otherCurrency = open.some(i => (i.currency || sym) !== sym)
   const needs = [...late, ...waiting, ...drafts].slice(0, 6)

@@ -42,7 +42,7 @@ export default async function ClientsPage() {
     if (cur !== s.currency) continue
     const total = Number(inv.total || 0)
     if (inv.status !== 'draft') s.billed += total
-    if (inv.status === 'sent' || inv.status === 'pending' || inv.status === 'overdue') s.owes += total
+    if (inv.status === 'sent' || inv.status === 'overdue') s.owes += total
     if (inv.status === 'overdue') { s.late += total; s.lateCount++ }
   }
 

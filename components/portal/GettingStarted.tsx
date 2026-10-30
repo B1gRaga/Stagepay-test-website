@@ -105,7 +105,7 @@ export function GettingStarted({ progress: g }: { progress: Progress }) {
         <ol className="gs-list">
           {steps.map((s, i) => (
             <li key={s.title} className={`gs-row${s.done ? ' done' : ''}${i === next ? ' next' : ''}`}>
-              <span className="gs-tick" aria-label={s.done ? 'Done' : 'Not done yet'}>
+              <span className="gs-tick" role="img" aria-label={s.done ? 'Done' : 'Not done yet'}>
                 {s.done && <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>}
               </span>
               <div>

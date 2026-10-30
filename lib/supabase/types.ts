@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
-export type InvoiceStatus      = 'draft' | 'pending' | 'sent' | 'overdue' | 'paid' | 'cancelled'
+export type InvoiceStatus      = 'draft' | 'sent' | 'overdue' | 'paid' | 'cancelled'
 export type ReminderStatus     = 'scheduled' | 'sent' | 'failed' | 'cancelled'
 export type ReminderChannel    = 'whatsapp' | 'email'
 export type Plan               = 'free' | 'pro' | 'business'
@@ -29,6 +29,7 @@ export interface Database {
           brand_color_primary: string | null
           brand_color_header: string | null
           whatsapp_reminders_enabled: boolean
+          reminder_days: number[]
           subscription_expires_at: string | null
           dpo_transaction_ref: string | null
           dpo_token_created_at: string | null
@@ -64,6 +65,7 @@ export interface Database {
           brand_color_primary?: string | null
           brand_color_header?: string | null
           whatsapp_reminders_enabled?: boolean
+          reminder_days?: number[]
           subscription_expires_at?: string | null
           dpo_transaction_ref?: string | null
           dpo_token_created_at?: string | null
@@ -96,6 +98,7 @@ export interface Database {
           brand_color_primary?: string | null
           brand_color_header?: string | null
           whatsapp_reminders_enabled?: boolean
+          reminder_days?: number[]
           subscription_expires_at?: string | null
           dpo_transaction_ref?: string | null
           dpo_token_created_at?: string | null

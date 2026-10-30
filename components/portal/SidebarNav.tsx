@@ -12,7 +12,7 @@ const CSS = `
     --g:#F2A900;--g2:#C98C00;--g-dim:rgba(242,169,0,0.1);--g-glow:rgba(242,169,0,0.2);
     --bg:#18213A;--bg2:#1F2A44;--bg3:#18213A;--surface:#1F2A44;--surface2:#2B3756;
     --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.11);
-    --t1:#FAF7F0;--t2:rgba(250,247,240,0.6);--t3:rgba(250,247,240,0.3);
+    --t1:#FAF7F0;--t2:rgba(250,247,240,.74);--t3:rgba(250,247,240,.56);
     --danger:#EF4444;--warn:#F59E0B;--info:#3B82F6;
     /* nav frame only */
     --nav-bg:#131B30;--nav-hover:rgba(250,247,240,.05);--nav-on:rgba(250,247,240,.08);
@@ -21,7 +21,7 @@ const CSS = `
   html[data-theme="light"]{
     --bg:#FAF7F0;--bg2:#ffffff;--surface:#F1ECE1;--surface2:#E4DDCF;
     --line:rgba(31,42,68,.08);--line2:rgba(31,42,68,.14);
-    --t1:#1F2A44;--t2:rgba(31,42,68,.65);--t3:rgba(31,42,68,.45);
+    --t1:#1F2A44;--t2:rgba(31,42,68,.74);--t3:rgba(31,42,68,.67);
     --g-dim:rgba(242,169,0,.12);
     --nav-bg:#F3EEE4;--nav-hover:rgba(31,42,68,.04);--nav-on:#FFFFFF;
     --nav-t:#3F4759;--nav-icon:#5C6476;--nav-late:#B0442A;
