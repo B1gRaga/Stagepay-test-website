@@ -100,12 +100,31 @@ describe('POST /api/billing/checkout', () => {
     const res = await POST(makeRequest({ plan: 'business' }))
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ paymentUrl: 'https://pay.example/tok-1' })
-    expect(mockCreatePaymentToken).toHaveBeenCalledWith('user-1', 'business')
+    expect(mockCreatePaymentToken).toHaveBeenCalledWith('user-1', 'business', 1)
     expect(mockFrom).toHaveBeenCalledWith('profiles')
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
       dpo_transaction_ref: 'tok-1',
       pending_plan: 'business',
+      pending_months: 1,
     }))
+  })
+
+  it('charges for the months chosen and stores them for when the payment is confirmed', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
+    mockCreatePaymentToken.mockResolvedValue({ token: 'tok-2', paymentUrl: 'https://pay.example/tok-2' })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    const res = await POST(makeRequest({ plan: 'pro', months: 12 }))
+    expect(res.status).toBe(200)
+    expect(mockCreatePaymentToken).toHaveBeenCalledWith('user-1', 'pro', 12)
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ pending_plan: 'pro', pending_months: 12 }))
+  })
+
+  it('returns 400 for a billing period that isn’t 1, 6 or 12 months', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    const res = await POST(makeRequest({ plan: 'pro', months: 3 }))
+    expect(res.status).toBe(400)
+    expect(mockCreatePaymentToken).not.toHaveBeenCalled()
   })
 
   it('returns 500 with the underlying error message when DPO token creation fails', async () => {

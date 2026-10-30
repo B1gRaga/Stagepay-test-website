@@ -40,6 +40,7 @@ export interface Database {
           payment_methods: Json
           default_due_days: number
           pending_plan: string | null
+          pending_months: number | null
           business_type: BusinessType | null
           team_id: string | null
           current_account_id: string | null
@@ -74,6 +75,7 @@ export interface Database {
           payment_methods?: Json
           default_due_days?: number
           pending_plan?: string | null
+          pending_months?: number | null
           business_type?: BusinessType | null
           team_id?: string | null
           current_account_id?: string | null
@@ -105,6 +107,7 @@ export interface Database {
           payment_methods?: Json
           default_due_days?: number
           pending_plan?: string | null
+          pending_months?: number | null
           business_type?: BusinessType | null
           team_id?: string | null
           current_account_id?: string | null

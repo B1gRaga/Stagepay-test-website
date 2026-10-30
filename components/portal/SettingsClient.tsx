@@ -5,7 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, tint, type InvoiceTheme } from '@/lib/invoice-themes'
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { firmLines } from '@/lib/firm-details'
-import { PLANS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName } from '@/lib/plans'
+import { PLANS, PERIODS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName, period, periodPrice, type Months } from '@/lib/plans'
 import { TEAMS_ENABLED, ROLE_LABEL, ROLE_HELP, type TeamRole } from '@/lib/teams'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from '@/lib/password-check'
@@ -180,16 +180,46 @@ const CSS = `
   .pl-meter{display:flex;gap:6px;margin-bottom:8px;max-width:240px;}
   .pl-meter span{flex:1;height:8px;border-radius:4px;background:var(--line2);}
   .pl-meter span.on{background:var(--g);}
-  .pl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
-  .pl-card{display:flex;flex-direction:column;gap:8px;padding:18px;border:1px solid var(--line2);border-radius:12px;background:var(--bg2);}
-  .pl-card[aria-current="true"]{border-color:var(--t1);box-shadow:inset 0 0 0 1px var(--t1);}
+  /* billing period switch */
+  .pl-period{display:inline-flex;gap:4px;padding:4px;margin-bottom:18px;border-radius:12px;background:var(--bg);border:1px solid var(--line);}
+  .pl-period button{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--t2);font:700 13px var(--font-manrope),sans-serif;cursor:pointer;white-space:nowrap;}
+  .pl-period button[aria-checked="true"]{background:var(--bg2);color:var(--t1);box-shadow:0 1px 2px rgba(31,42,68,.1),0 0 0 1px var(--line2);}
+  .pl-period button:focus-visible{outline:2px solid var(--g);outline-offset:1px;}
+  .pl-period em{font-style:normal;font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--g-dim);color:#8A5F00;}
+  html:not([data-theme="light"]) .pl-period em{color:var(--g);}
+
+  /* plans as tear-off tickets */
+  .pl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
+  .pl-card{--tk-bg:var(--bg);--tk-t1:var(--t1);--tk-t2:var(--t2);--tk-line:var(--line2);
+    position:relative;display:flex;flex-direction:column;border:1.5px solid var(--tk-line);border-radius:16px;background:var(--tk-bg);color:var(--tk-t1);}
+  .pl-card.feature{--tk-bg:#1F2A44;--tk-t1:#FAF7F0;--tk-t2:#C9CED8;--tk-line:#1F2A44;box-shadow:0 18px 36px rgba(31,42,68,.22);}
+  html:not([data-theme="light"]) .pl-card.feature{--tk-bg:#FAF7F0;--tk-t1:#1F2A44;--tk-t2:#5B6475;--tk-line:#FAF7F0;box-shadow:0 18px 40px rgba(0,0,0,.35);}
+  .pl-top{padding:18px 20px 16px;min-height:146px;}
   .pl-head{display:flex;align-items:center;gap:8px;}
-  .pl-head b{font-size:15px;color:var(--t1);}
-  .pl-price{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--t1);font-variant-numeric:tabular-nums;}
-  .pl-price small{font-size:13px;font-weight:500;color:var(--t2);letter-spacing:0;}
-  .pl-card > p{font-size:14px;color:var(--t2);line-height:1.5;flex:1;}
-  .pl-card .save,.pl-card .btn-line{width:100%;}
-  @media(max-width:900px){.pl-now{grid-template-columns:1fr;gap:12px;}.pl-grid{grid-template-columns:1fr;}}
+  .pl-head b{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--tk-t2);}
+  .pl-card.feature .pl-head b{color:var(--g);}
+  html:not([data-theme="light"]) .pl-card.feature .pl-head b{color:#8A5F00;}
+  .pl-price{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-top:8px;color:var(--tk-t1);font-variant-numeric:tabular-nums;}
+  .pl-price small{display:block;font-size:13px;font-weight:600;color:var(--tk-t2);letter-spacing:0;margin-top:4px;}
+  .pl-was{font-size:12px;font-weight:700;color:var(--tk-t2);margin-top:6px;}
+  .pl-was s{text-decoration-thickness:1.5px;}
+  .pl-was b{color:#2E8A57;font-weight:800;}
+  .pl-card.feature .pl-was b{color:var(--g);}
+  html:not([data-theme="light"]) .pl-was b{color:#4CC38A;}
+  html:not([data-theme="light"]) .pl-card.feature .pl-was b{color:#1E7A4A;}
+  /* the perforation, with a notch cut from each edge */
+  .pl-stub{position:relative;flex:1;display:flex;flex-direction:column;gap:10px;padding:16px 20px 20px;border-top:2px dashed color-mix(in srgb,var(--tk-t2) 35%,transparent);}
+  .pl-stub::before,.pl-stub::after{content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:var(--bg2);border:1.5px solid var(--line2);}
+  .pl-stub::before{left:-11.5px;clip-path:inset(0 0 0 50%);}
+  .pl-stub::after{right:-11.5px;clip-path:inset(0 50% 0 0);}
+  .pl-card.feature .pl-stub::before,.pl-card.feature .pl-stub::after{border-color:transparent;}
+  .pl-stub > p{font-size:14px;color:var(--tk-t2);line-height:1.5;flex:1;}
+  .pl-card .save,.pl-card .btn-line{width:100%;height:42px;}
+  .pl-card.feature .btn-line{border-color:color-mix(in srgb,var(--tk-t1) 30%,transparent);color:var(--tk-t1);}
+  .pl-card .help{color:var(--tk-t2);}
+  /* "Your plan", stamped on like a receipt */
+  .pl-stamp{position:absolute;top:14px;right:14px;rotate:-6deg;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:2px solid #C98C00;color:#6B4A00;background:rgba(252,239,199,.92);}
+  @media(max-width:900px){.pl-now{grid-template-columns:1fr;gap:12px;}.pl-grid{grid-template-columns:1fr;}.pl-top{min-height:0;}.pl-period{display:flex;}.pl-period button{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:3px;height:auto;padding:8px 4px;}}
   .sec-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border:1px solid var(--line2);border-radius:12px;background:var(--bg);}
   .sec-row b{display:block;font-size:16px;color:var(--t1);}
   .sec-row b.sec-on{color:var(--t1);}
@@ -459,6 +489,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
   const [saving,    setSaving]    = useState(false)
   const [saved,     setSaved]     = useState<Panel | null>(null)
   const [upgrading, setUpgrading] = useState<string | null>(null)
+  const [months, setMonths] = useState<Months>(1)
 
   // Team state
   type TeamMember = { id: string; email: string; status: 'pending' | 'active'; role: TeamRole; invited_at: string; joined_at: string | null; invite_token: string | null }
@@ -697,7 +728,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
     setUpgrading(plan)
     setUpgradeError('')
     try {
-      const res  = await fetch('/api/billing/checkout', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan }) })
+      const res  = await fetch('/api/billing/checkout', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan, months }) })
       const data = await res.json()
       if (res.ok && data.paymentUrl) {
         window.location.href = data.paymentUrl
@@ -1342,7 +1373,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
               ) : planEnd ? (
                 <div className="pl-usage">
                   <p><b>{daysLeft > 0 ? `Paid until ${longDay(planEnd)}` : 'Ends today'}</b>{daysLeft > 0 ? `, ${daysLeft === 1 ? '1 day' : `${daysLeft} days`} left.` : '.'}</p>
-                  <p className="help">Plans don’t renew on their own. Pay for another month before then to keep {planName(currentPlan)}; otherwise your account moves to Free. We email you 3 days before it ends.</p>
+                  <p className="help">Plans don’t renew on their own. Renew before then to keep {planName(currentPlan)}; otherwise your account moves to Free. We email you 3 days before it ends.</p>
                 </div>
               ) : (
                 <div className="pl-usage"><p>This plan has no end date.</p></div>
@@ -1351,34 +1382,52 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
 
             <section className="block" aria-labelledby="pl-all">
               <h3 id="pl-all">Plans</h3>
+              <div className="pl-period" role="radiogroup" aria-label="Pay for">
+                {PERIODS.map(per => (
+                  <button key={per.months} type="button" role="radio" aria-checked={months === per.months} onClick={() => setMonths(per.months)}>
+                    {per.label}{per.off > 0 && <em>Save {per.off}%</em>}
+                  </button>
+                ))}
+              </div>
               <div className="pl-grid">
                 {PLANS.map(p => {
                   const isCurrent = p.id === currentPlan
                   const paid = p.id !== 'free'
-                  const label = isCurrent ? `Pay for another month` : `Switch to ${p.name}`
+                  const per = period(months)
+                  const total = periodPrice(p.price, months)
+                  const full = p.price * months
+                  const label = isCurrent ? `Renew for ${per.months === 1 ? 'a month' : per.months === 12 ? 'a year' : '6 months'}` : `Switch to ${p.name}`
                   return (
-                    <div key={p.id} className="pl-card" aria-current={isCurrent ? 'true' : undefined}>
-                      <div className="pl-head">
-                        <b>{p.name}</b>
-                        {isCurrent && <span className="pm-pref">Your plan</span>}
+                    <div key={p.id} className={`pl-card${p.id === 'pro' ? ' feature' : ''}`} aria-current={isCurrent ? 'true' : undefined}>
+                      {isCurrent && <span className="pl-stamp">Your plan</span>}
+                      <div className="pl-top">
+                        <div className="pl-head"><b>{p.name}</b></div>
+                        <div className="pl-price">
+                          P{total.toLocaleString('en')}
+                          <small>{!paid ? 'Free for good' : months === 1 ? 'a month' : months === 12 ? 'for a year' : 'for 6 months'}</small>
+                        </div>
+                        {paid && per.off > 0 && (
+                          <div className="pl-was"><s>P{full.toLocaleString('en')}</s> · <b>You save P{(full - total).toLocaleString('en')}</b></div>
+                        )}
                       </div>
-                      <div className="pl-price">P{p.price}{p.price ? <small> a month</small> : null}</div>
-                      <p>{p.includes}</p>
-                      {paid && (isCurrent ? !!planEnd : true) && (
-                        <button type="button" className={isCurrent ? 'btn-line press' : 'save press'} disabled={!!upgrading} onClick={() => upgradePlan(p.id as 'pro' | 'business')}>
-                          {upgrading === p.id ? 'Opening payment…' : label}
-                        </button>
-                      )}
-                      {paid && !isCurrent && currentPlan !== 'free' && planEnd && daysLeft > 0 && (
-                        <span className="help">Starts today. The days left on {planName(currentPlan)} aren’t carried over.</span>
-                      )}
-                      {isCurrent && paid && planEnd && <span className="help">Adds 30 days to {longDay(planEnd)}.</span>}
+                      <div className="pl-stub">
+                        <p>{p.includes}</p>
+                        {paid && (isCurrent ? !!planEnd : true) && (
+                          <button type="button" className={isCurrent || p.id !== 'pro' ? 'btn-line press' : 'save press'} disabled={!!upgrading} onClick={() => upgradePlan(p.id as 'pro' | 'business')}>
+                            {upgrading === p.id ? 'Opening payment…' : label}
+                          </button>
+                        )}
+                        {paid && !isCurrent && currentPlan !== 'free' && planEnd && daysLeft > 0 && (
+                          <span className="help">Starts today. The days left on {planName(currentPlan)} aren’t carried over.</span>
+                        )}
+                        {isCurrent && paid && planEnd && <span className="help">Adds {per.days} days to {longDay(planEnd)}.</span>}
+                      </div>
                     </div>
                   )
                 })}
               </div>
               {upgradeError && <p className="save-note err" role="alert" style={{ marginTop: 12 }}>{upgradeError}</p>}
-              <p className="help" style={{ marginTop: 14 }}>You pay in Pula on DPO’s secure payment page, then come straight back here. Each payment covers 30 days.</p>
+              <p className="help" style={{ marginTop: 14 }}>You pay in Pula on DPO’s secure payment page, then come straight back here. A month covers 30 days, 6 months covers 183 days and a year covers 365 days.</p>
             </section>
           </div>
 

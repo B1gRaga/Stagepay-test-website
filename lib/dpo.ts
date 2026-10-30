@@ -1,14 +1,20 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
+import { PLANS, period, periodPrice, type Months } from '@/lib/plans'
 
 const DPO_API = 'https://secure.3gdirectpay.com/API/v6/'
 const DPO_PAY = 'https://secure.3gdirectpay.com/payv2.php'
 
 export type DpoPlan = 'pro' | 'business'
 
-const PLAN_CONFIG: Record<DpoPlan, { amount: string; description: string }> = {
-  pro:      { amount: '100.00', description: 'Stagepay Pro Plan — Monthly Subscription' },
-  business: { amount: '400.00', description: 'Stagepay Business Plan — Monthly Subscription' },
+// What DPO charges for a plan over a period; prices come from lib/plans.ts
+export function planCharge(plan: DpoPlan, months: Months = 1) {
+  const p = PLANS.find(x => x.id === plan)!
+  const length = months === 1 ? 'Monthly' : months === 12 ? '1 year' : `${months} months`
+  return {
+    amount: periodPrice(p.price, months).toFixed(2),
+    description: `Stagepay ${p.name} Plan — ${length}`,
+  }
 }
 
 function companyToken() {
@@ -45,8 +51,9 @@ function extractTag(xml: string, tag: string): string {
 export async function createPaymentToken(
   userId: string,
   plan: DpoPlan,
+  months: Months = 1,
 ): Promise<{ token: string; paymentUrl: string }> {
-  const { amount, description } = PLAN_CONFIG[plan]
+  const { amount, description } = planCharge(plan, months)
   const serviceDate = new Date().toISOString().split('T')[0]
   const companyRef = `stagepay-${plan}-${userId}-${Date.now()}`
 
@@ -102,8 +109,9 @@ export async function verifyPaymentToken(
 
 // Shared by /api/billing/verify, /api/billing/callback, and the
 // billing-reconcile cron — all three confirm a DPO payment the same way.
-// Each payment buys 30 days. Paying again for the same plan before it ends
-// adds the 30 days to the current end date, so renewing early loses nothing.
+// Each payment buys the period chosen at checkout (pending_months): 30 days,
+// 183 days or 365 days. Paying again for the same plan before it ends adds
+// the days to the current end date, so renewing early loses nothing.
 // The update only applies while this payment is still pending, so when two of
 // the callers confirm the same payment at once, Postgres lets only one through.
 export async function confirmPlanUpgrade(
@@ -114,14 +122,15 @@ export async function confirmPlanUpgrade(
 ): Promise<void> {
   const { data: current } = await serviceClient
     .from('profiles')
-    .select('plan, subscription_expires_at')
+    .select('plan, subscription_expires_at, pending_months')
     .eq('id', userId)
     .single()
 
   const now = Date.now()
   const currentEnd = current?.subscription_expires_at ? new Date(current.subscription_expires_at).getTime() : 0
   const from = current?.plan === plan && currentEnd > now ? currentEnd : now
-  const expiresAt = new Date(from + PLAN_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const days = period(current?.pending_months).days
+  const expiresAt = new Date(from + days * 24 * 60 * 60 * 1000).toISOString()
 
   await serviceClient
     .from('profiles')
@@ -129,10 +138,9 @@ export async function confirmPlanUpgrade(
       plan,
       subscription_expires_at: expiresAt,
       pending_plan: null,
+      pending_months: null,
     })
     .eq('id', userId)
     .eq('dpo_transaction_ref', transactionToken)
     .not('pending_plan', 'is', null)
 }
-
-export const PLAN_DAYS = 30

@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { getAccount } from '@/lib/account'
 import { createPaymentToken, type DpoPlan } from '@/lib/dpo'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { PERIODS, type Months } from '@/lib/plans'
 
 const VALID_PLANS: DpoPlan[] = ['pro', 'business']
 
@@ -30,8 +31,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
   }
 
+  // How many months this payment covers; older clients send none, which means one
+  const months = (body.months ?? 1) as Months
+  if (!PERIODS.some(p => p.months === months)) {
+    return NextResponse.json({ error: 'Invalid billing period' }, { status: 400 })
+  }
+
   try {
-    const { token, paymentUrl } = await createPaymentToken(account.userId, plan as DpoPlan)
+    const { token, paymentUrl } = await createPaymentToken(account.userId, plan as DpoPlan, months)
 
     // Store the pending token AND plan server-side so verify/callback
     // can read the plan from the DB rather than trusting CompanyRef.
@@ -43,6 +50,7 @@ export async function POST(req: NextRequest) {
       .update({
         dpo_transaction_ref: token,
         pending_plan: plan,
+        pending_months: months,
         dpo_token_created_at: new Date().toISOString(),
       })
       .eq('id', account.userId)
