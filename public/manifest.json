@@ -2,7 +2,7 @@
   "name": "StagePay",
   "short_name": "StagePay",
   "description": "StagePay organises a professional invoice, sends it on WhatsApp and follows up until you're paid.",
-  "start_url": "/dashboard",
+  "start_url": "/start",
   "scope": "/",
   "id": "/",
   "display": "standalone",
