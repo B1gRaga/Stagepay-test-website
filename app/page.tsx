@@ -6,6 +6,7 @@ import { DotGridBackground } from '@/components/landing/DotGridBackground'
 import { LogoFull } from '@/components/Logo'
 import { WaitlistForm } from '@/components/landing/WaitlistForm'
 import { SIGNUPS_OPEN } from '@/lib/launch'
+import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
 
 const CSS = `
 :root{
@@ -294,6 +295,7 @@ const CSS = `
 .wl-2{display:grid;gap:14px}
 @media (min-width:520px){.wl-2{grid-template-columns:1fr 1fr}}
 .wl-opt{font-weight:500;color:var(--muted)}
+p.wl-opt{font-size:13px;margin-top:6px}
 .wl-opts{border:0;margin:0;padding:0;min-width:0}
 .wl-opts legend{font-weight:700;font-size:14px;margin-bottom:8px;padding:0}
 .wl-opts>div{display:flex;flex-wrap:wrap;gap:8px}
@@ -338,8 +340,7 @@ const CSS = `
 .contact button{border:0;background:var(--on-ink);color:var(--ink);font-weight:700;font-size:12px;border-radius:999px;padding:6px 10px;cursor:pointer}
 .lp footer{background:var(--ink-3);color:var(--on-ink-muted);font-size:14px;padding:28px clamp(20px,5vw,48px) calc(28px + 76px)}
 .lp footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
-.lp footer details summary{cursor:pointer;color:var(--on-ink)}
-.lp footer details p{margin-top:8px;max-width:60ch}
+.lp footer a{color:var(--on-ink);font-weight:600;display:inline-flex;align-items:center;min-height:44px}
 @media (min-width:900px){.lp footer{padding-block:28px}}
 
 /* sticky mobile cta */
@@ -913,7 +914,7 @@ export default function Home() {
             <div className="reveal"><div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
               <h2 className="h2">Simple plans</h2></div>
             <div className="plans">
-              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to 2 invoices a month.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to {FREE_MONTHLY_LIMIT} invoices a month.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
               <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
               <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
             </div>
@@ -952,7 +953,7 @@ export default function Home() {
               <details className="reveal" style={{ transitionDelay: '270ms' }}><summary>How do the follow-ups work?</summary><p>Reminders go out automatically on WhatsApp, so you never have to chase anyone yourself. You choose the schedule. By default a friendly nudge goes 3 days after the due date, a polite follow-up at 7 days and a firm final notice at 14 days, and you can add one at 30 days. Reminders stop by themselves the moment the invoice is marked paid. If the client taps &ldquo;I&apos;ve paid&rdquo;, reminders pause until you check it, so nobody gets chased for money they&apos;ve already sent. StagePay keeps the reminders polite and consistent, but it can&apos;t force anyone to pay. What it does is take the awkward chasing off your hands.</p></details>
               <details className="reveal" style={{ transitionDelay: '0ms' }}><summary>Do my clients need an app?</summary><p>No. Invoices arrive in their normal WhatsApp.</p></details>
               <details className="reveal" style={{ transitionDelay: '90ms' }}><summary>Is StagePay VAT-ready?</summary><p>VAT is calculated on every invoice. We&apos;re still confirming our invoices meet every BURS requirement, so please check with your accountant for now.</p></details>
-              <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>You choose a plan: Pro at P100 a month for tutors and small businesses, or Business at P400 a month for teams.</p></details>
+              <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>No card is needed for the free month, and nothing is charged when it ends: your account moves to the Free plan ({FREE_MONTHLY_LIMIT} invoices a month). To keep Pro, choose a plan: Pro at P100 a month for tutors and small businesses, or Business at P400 a month for teams.</p></details>
             </div>
           </div>
         </section>
@@ -971,7 +972,7 @@ export default function Home() {
       <footer>
         <div className="wrap">
           <span>© 2026 StagePay</span>
-          <details><summary>Privacy</summary><p>We only use your details to run your StagePay account and keep you updated. We don&apos;t sell them. Email {CONTACT.email} at any time with questions.</p></details>
+          <a href="/privacy">Privacy notice</a>
         </div>
       </footer>
 

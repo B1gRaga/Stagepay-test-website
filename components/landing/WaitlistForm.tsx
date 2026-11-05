@@ -99,8 +99,8 @@ export function WaitlistForm() {
         ))}</div>
       </fieldset>
       <div className="field"><label htmlFor="w-note">What’s the hardest part of getting paid? <span className="wl-opt">Optional</span></label><textarea id="w-note" maxLength={600} value={note} onChange={e => setNote(e.target.value)} /></div>
-      <div className="field"><label htmlFor="w-email">Email <span className="wl-opt">Optional</span></label><input id="w-email" type="email" autoComplete="email" maxLength={200} value={email} onChange={e => setEmail(e.target.value)} /></div>
-      <label className="wl-consent"><input type="checkbox" required checked={consent} onChange={e => setConsent(e.target.checked)} /> StagePay can contact me on WhatsApp about the launch.</label>
+      <div className="field"><label htmlFor="w-email">Email <span className="wl-opt">Optional</span></label><input id="w-email" type="email" autoComplete="email" maxLength={200} aria-describedby="w-email-help" value={email} onChange={e => setEmail(e.target.value)} /><p id="w-email-help" className="wl-opt">Sign up later with this email and your free month of Pro starts on its own.</p></div>
+      <label className="wl-consent"><input type="checkbox" required checked={consent} onChange={e => setConsent(e.target.checked)} /> <span>StagePay can contact me on WhatsApp about the launch. <a href="/privacy" target="_blank" rel="noopener">Privacy notice</a></span></label>
       {error && <p className="wl-error" role="alert">{error}</p>}
       <button className="btn btn-amber" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Join the waitlist'}</button>
     </form>

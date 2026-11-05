@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import localFont from 'next/font/local'
-import Script from 'next/script'
 import "./globals.css"
 
 // Manrope (Latin, variable 400–800) is kept in the repo so builds never
@@ -39,14 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Analytics />
         <SpeedInsights />
-        {/* lazyOnload: gtag is ~170KB, so it waits until the page has loaded. */}
-        <Script strategy="lazyOnload" src="https://www.googletagmanager.com/gtag/js?id=G-BX4B6LZRYY" />
-        <Script id="ga4-init" strategy="lazyOnload" dangerouslySetInnerHTML={{ __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-BX4B6LZRYY');
-        `}} />
       </body>
     </html>
   )

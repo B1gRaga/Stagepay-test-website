@@ -9,6 +9,7 @@ import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 import { BILLED_FOR_MAX, billedForLabel, billedForPlaceholder, billedForWaLine } from '@/lib/billed-for'
 import { dayMonthYear } from '@/lib/format-date'
+import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Client  = { id: string; name: string; email: string | null; phone: string | null }
@@ -130,6 +131,14 @@ const CSS = `
   .again small{display:block;font-size:13px;color:var(--t2);margin-top:2px;}
   .again-btn{height:36px;padding:0 14px;border-radius:9px;border:0;background:var(--t1);color:var(--bg);font:700 14px var(--font-manrope),sans-serif;cursor:pointer;white-space:nowrap;}
   .again-done{font-size:14px;font-weight:600;color:var(--t1);}
+  .ni-form > .again{margin-top:0;}
+
+  /* Free plan: how many invoices are left, shown before any typing. */
+  .quota{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);}
+  .quota p{font-size:14px;font-weight:600;color:var(--t1);}
+  .quota small{display:block;font-size:13px;font-weight:400;color:var(--t2);margin-top:2px;}
+  .quota .again-btn{display:inline-flex;align-items:center;text-decoration:none;}
+  .quota.out{border-color:color-mix(in srgb,#E5484D 45%,transparent);background:color-mix(in srgb,#E5484D 8%,transparent);}
 
   /* Items. */
   .items-head,.item-row{display:grid;grid-template-columns:minmax(0,1fr) 76px 112px 112px 36px;gap:10px;align-items:center;}
@@ -284,6 +293,8 @@ export default function NewInvoiceClient({
   initialClientId = null,
   lastByClient = {},
   knownItems = [],
+  freeLeft = null,
+  draftKey = null,
 }: {
   initialProfile: Profile | null
   initialClients: Client[]
@@ -292,6 +303,10 @@ export default function NewInvoiceClient({
   initialClientId?: string | null
   lastByClient?: Record<string, LastInvoice>
   knownItems?: KnownItem[]
+  // Invoices a free account can still make this month; null on paid plans.
+  freeLeft?: number | null
+  // Where an unsaved new invoice is kept in this browser, so leaving the page loses nothing.
+  draftKey?: string | null
 }) {
   const router = useRouter()
   const profile = initialProfile
@@ -365,6 +380,59 @@ export default function NewInvoiceClient({
 
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
+
+  // ── Unsaved draft ──
+  // A new invoice is kept in this browser as it's typed, so checking the plans
+  // or closing the tab doesn't lose it. Saving moves it to the server and clears it.
+  const keepDraft = !!draftKey && !editId && !savedInvoiceId
+  const [draftRestored, setDraftRestored] = useState(false)
+  const draftReady = useRef(false)
+  useEffect(() => {
+    if (!draftKey || editId || initialClientId) { draftReady.current = true; return }
+    try {
+      const d = JSON.parse(localStorage.getItem(draftKey) || 'null')
+      if (d && Date.now() - d.at < 14 * 86_400_000 && (d.clientName || d.items?.some((i: LineItem) => i.desc))) {
+        setSelectedClientId(d.selectedClientId ?? null)
+        setClientName(d.clientName ?? ''); setClientEmail(d.clientEmail ?? ''); setClientPhone(d.clientPhone ?? '')
+        setProject(d.project ?? ''); setBilledFor(d.billedFor ?? ''); setNotes(d.notes ?? '')
+        if (d.currency) setCurrency(d.currency)
+        if (d.issueDate) setIssueDate(d.issueDate)
+        setTermDays(d.termDays ?? null); if (d.customDue) setCustomDue(d.customDue)
+        if (Number.isFinite(d.vatRate)) setVatRate(d.vatRate)
+        if (Array.isArray(d.items) && d.items.length) {
+          setItems(d.items.map((i: LineItem) => ({ desc: String(i.desc ?? ''), qty: Number(i.qty) || 0, rate: Number(i.rate) || 0, key: nextKey.current++ })))
+        }
+        setDiscountOn(!!d.discountOn); setDiscountAmt(Number(d.discountAmt) || 0)
+        setDepositOn(!!d.depositOn); setDepositPct(Number(d.depositPct) || 50)
+        setIsRecurring(!!d.isRecurring); if (d.recurInterval) setRecurInterval(d.recurInterval)
+        setDraftRestored(true)
+      }
+    } catch { /* no saved draft, or storage is blocked */ }
+    draftReady.current = true
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once, on arrival
+  }, [])
+  useEffect(() => {
+    if (!keepDraft || !draftReady.current) return
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey!, JSON.stringify({
+          at: Date.now(), selectedClientId, clientName, clientEmail, clientPhone, project, billedFor, currency, issueDate,
+          termDays, customDue, vatRate, items: items.map(({ desc, qty, rate }) => ({ desc, qty, rate })),
+          discountOn, discountAmt, depositOn, depositPct, isRecurring, recurInterval, notes,
+        }))
+      } catch { /* storage full or blocked: the form still works */ }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [keepDraft, draftKey, selectedClientId, clientName, clientEmail, clientPhone, project, billedFor, currency, issueDate,
+      termDays, customDue, vatRate, items, discountOn, discountAmt, depositOn, depositPct, isRecurring, recurInterval, notes])
+  function forgetDraft() {
+    if (!draftKey) return
+    try { localStorage.removeItem(draftKey) } catch { /* nothing to clear */ }
+  }
+  function startFresh() {
+    forgetDraft()
+    window.location.reload()
+  }
 
   const nameRef = useRef<HTMLInputElement>(null)
   const firstItemRef = useRef<HTMLInputElement>(null)
@@ -467,6 +535,7 @@ export default function NewInvoiceClient({
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Couldn’t save the invoice. Try again.')
       const saved = data.invoice
+      forgetDraft()
       setSavedInvoiceId(saved.id)
       if (saved.invoice_number) setSavedInvNum(saved.invoice_number)
       if (saved.public_token) setSavedToken(saved.public_token)
@@ -685,7 +754,7 @@ export default function NewInvoiceClient({
 
   const errorBox = saveError && (
     <p className="side-err" role="alert">
-      {saveError}{/limit|upgrade|plan/i.test(saveError) && <> <Link href="/settings">See plans</Link></>}
+      {saveError}{/limit|upgrade|plan/i.test(saveError) && <> <Link href="/settings?panel=plan">See plans</Link> (this invoice stays here)</>}
     </p>
   )
 
@@ -700,6 +769,26 @@ export default function NewInvoiceClient({
 
       <div className="ni">
         <div className="ni-form">
+
+          {freeLeft !== null && (
+            <div className={`quota${freeLeft === 0 ? ' out' : ''}`} role={freeLeft === 0 ? 'alert' : 'status'}>
+              <p>
+                {freeLeft === 0
+                  ? `You’ve used all ${FREE_MONTHLY_LIMIT} free invoices this month.`
+                  : `${freeLeft} of ${FREE_MONTHLY_LIMIT} free invoices left this month.`}
+                <small>{freeLeft === 0
+                  ? 'Pro gives you unlimited invoices. Or wait for the 1st, when your free invoices reset.'
+                  : 'Drafts count too. Pro gives you unlimited invoices.'}</small>
+              </p>
+              <Link href="/settings?panel=plan" className="again-btn">See plans</Link>
+            </div>
+          )}
+          {draftRestored && (
+            <div className="again" role="status">
+              <p>We kept the invoice you were working on.<small>It stays in this browser until you save it.</small></p>
+              <button type="button" className="btn ghost" onClick={startFresh}>Start a new one</button>
+            </div>
+          )}
 
           {/* Who */}
           <section className="sec" aria-labelledby="who-h">

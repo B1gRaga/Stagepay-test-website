@@ -5,11 +5,11 @@ const { withSentryConfig } = require('@sentry/nextjs/config')
 // invoice PDF, which the portal's own preview page embeds.
 const csp = (frameAncestors) => [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://va.vercel-scripts.com https://browser.sentry-cdn.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://va.vercel-scripts.com https://browser.sentry-cdn.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
   "worker-src 'self' blob:",
   "frame-src 'self'",
   `frame-ancestors ${frameAncestors}`,
@@ -48,6 +48,14 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/favicon.ico', destination: '/favicon.svg', permanent: true },
+      // getstagepay.co is the only public address. Pages on the old Vercel
+      // address move there; /api/ stays put so Vercel's cron calls still land.
+      {
+        source: '/:path((?!api/).*)',
+        has: [{ type: 'host', value: 'stagepay-test-website.vercel.app' }],
+        destination: 'https://getstagepay.co/:path',
+        permanent: true,
+      },
     ]
   },
 }

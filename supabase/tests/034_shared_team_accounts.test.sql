@@ -132,14 +132,15 @@ DO $$ BEGIN
   IF (SELECT count(*) FROM public.teams) <> 0 THEN RAISE EXCEPTION 'TEST 33: outsider sees % teams', (SELECT count(*) FROM public.teams); END IF;
 END $$;
 
--- Free plan: 2 invoices a month. B already has 1 this month.
+-- Free plan: 3 invoices a month (migration 045). B already has 1 this month.
 INSERT INTO public.invoices (user_id, invoice_number, client_name) VALUES ('00000000-0000-4000-8000-0000000000b1', 'T-B-2', 'Second this month');
+INSERT INTO public.invoices (user_id, invoice_number, client_name) VALUES ('00000000-0000-4000-8000-0000000000b1', 'T-B-3', 'Third this month');
 DO $$ BEGIN
   BEGIN
-    INSERT INTO public.invoices (user_id, invoice_number, client_name) VALUES ('00000000-0000-4000-8000-0000000000b1', 'T-B-3', 'Third this month');
-    RAISE EXCEPTION 'TEST 34: free plan could create a 3rd invoice this month';
+    INSERT INTO public.invoices (user_id, invoice_number, client_name) VALUES ('00000000-0000-4000-8000-0000000000b1', 'T-B-4', 'Fourth this month');
+    RAISE EXCEPTION 'TEST 34: free plan could create a 4th invoice this month';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  IF (SELECT count(*) FROM public.invoices) <> 2 THEN RAISE EXCEPTION 'TEST 35: free account has % invoices, expected 2', (SELECT count(*) FROM public.invoices); END IF;
+  IF (SELECT count(*) FROM public.invoices) <> 3 THEN RAISE EXCEPTION 'TEST 35: free account has % invoices, expected 3', (SELECT count(*) FROM public.invoices); END IF;
 END $$;
 
 -- ── Signed out ──────────────────────────────────────────────────────────────

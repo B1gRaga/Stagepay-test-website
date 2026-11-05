@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
 import { SettingsClient } from '@/components/portal/SettingsClient'
+import { startOfMonthUtc } from '@/lib/plans'
 
 export default async function SettingsPage() {
   const account = await getAccount()
@@ -11,15 +12,12 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const profileDb = await accountProfileClient(account)
   // Same count the free-plan limit uses: invoices created since the 1st.
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
   const [{ count: invoicesThisMonth }, { data: profile }] = await Promise.all([
     supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', account.accountId)
-      .gte('created_at', startOfMonth.toISOString()),
+      .gte('created_at', startOfMonthUtc()),
     // The business's settings: the person's own, or their team's.
     profileDb
       .from('profiles')

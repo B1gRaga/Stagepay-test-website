@@ -1,7 +1,12 @@
 // What each plan costs and includes, as the app actually enforces it.
 // Prices must match what DPO charges in lib/dpo.ts.
-export const FREE_MONTHLY_LIMIT = 2
+export const FREE_MONTHLY_LIMIT = 3
 export const TEAM_SEATS = 5
+
+// The free allowance resets on the 1st, UTC, as account_can_add_invoice() counts it.
+export function startOfMonthUtc(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+}
 
 export type PlanId = 'free' | 'pro' | 'business'
 

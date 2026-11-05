@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
 import NewInvoiceClient from '@/components/portal/NewInvoiceClient'
 import type { LastInvoice } from '@/components/portal/invoice-draft'
+import { FREE_MONTHLY_LIMIT, startOfMonthUtc } from '@/lib/plans'
 
 export default async function NewInvoicePage({
   searchParams,
@@ -17,10 +18,10 @@ export default async function NewInvoicePage({
 
   const { edit: editId, client: clientParam } = await searchParams
 
-  const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }] = await Promise.all([
+  const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }, { count: madeThisMonth }] = await Promise.all([
     profileDb
       .from('profiles')
-      .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label, default_due_days, business_type')
+      .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label, default_due_days, business_type, plan')
       .eq('id', account.accountId)
       .single(),
     supabase
@@ -45,7 +46,18 @@ export default async function NewInvoicePage({
       .neq('status', 'cancelled')
       .order('created_at', { ascending: false })
       .limit(120),
+    // Same count the free-plan limit uses: invoices created since the 1st.
+    supabase
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', account.accountId)
+      .gte('created_at', startOfMonthUtc()),
   ])
+
+  // Free accounts see how many invoices they have left before they start typing.
+  const freeLeft = !editId && (profile?.plan ?? 'free') === 'free'
+    ? Math.max(0, FREE_MONTHLY_LIMIT - (madeThisMonth ?? 0))
+    : null
 
   type Recent = {
     id: string; client_id: string | null; client_name: string; project: string | null; billed_for: string | null; invoice_number: string
@@ -82,6 +94,8 @@ export default async function NewInvoicePage({
       initialClientId={!editId && clientParam ? clientParam : null}
       lastByClient={lastByClient}
       knownItems={[...known.values()].slice(0, 80)}
+      freeLeft={freeLeft}
+      draftKey={`stagepay-invoice-draft:${account.userId}:${account.accountId}`}
     />
   )
 }

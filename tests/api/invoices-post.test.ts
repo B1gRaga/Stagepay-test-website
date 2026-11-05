@@ -192,19 +192,19 @@ describe('POST /api/invoices', () => {
 
   it('blocks a free-plan user at the monthly invoice limit', async () => {
     mockProfileSingle.mockResolvedValue({ data: { plan: 'free' }, error: null })
-    mockInvoicesCount.mockResolvedValue({ count: 2 })
+    mockInvoicesCount.mockResolvedValue({ count: 3 })
     const { POST } = await import('@/app/api/invoices/route')
     const res = await POST(makeRequest({ items: ONE_ITEM }))
     expect(res.status).toBe(403)
     expect(await res.json()).toMatchObject({
-      error: 'Free plan is limited to 2 invoices a month. Upgrade to Pro for unlimited invoices.',
+      error: 'Free plan is limited to 3 invoices a month. Upgrade to Pro for unlimited invoices.',
     })
     expect(mockInvoicesInsert).not.toHaveBeenCalled()
   })
 
   it('allows a free-plan user under the monthly invoice limit', async () => {
     mockProfileSingle.mockResolvedValue({ data: { plan: 'free' }, error: null })
-    mockInvoicesCount.mockResolvedValue({ count: 1 })
+    mockInvoicesCount.mockResolvedValue({ count: 2 })
     const { POST } = await import('@/app/api/invoices/route')
     const res = await POST(makeRequest({ items: ONE_ITEM }))
     expect(res.status).toBe(201)

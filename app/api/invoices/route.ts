@@ -1,4 +1,4 @@
-import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
+import { FREE_MONTHLY_LIMIT, startOfMonthUtc } from '@/lib/plans'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
@@ -45,15 +45,11 @@ export async function POST(req: NextRequest) {
   const profileDb = await accountProfileClient(account)
   const { data: profile } = await profileDb.from('profiles').select('plan').eq('id', account.accountId).single()
   if ((profile?.plan ?? 'free') === 'free') {
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-
     const { count } = await supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', account.accountId)
-      .gte('created_at', startOfMonth.toISOString())
+      .gte('created_at', startOfMonthUtc())
 
     if ((count ?? 0) >= FREE_PLAN_MONTHLY_LIMIT) {
       return NextResponse.json(
