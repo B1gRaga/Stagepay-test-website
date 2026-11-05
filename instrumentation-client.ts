@@ -11,6 +11,9 @@ Sentry.init({
   // of text is masked and images blocked, so no client details are recorded.
   replaysOnErrorSampleRate: 1.0,
   replaysSessionSampleRate: 0.05,
+  // Microsoft's link scanners (Outlook/Teams Safe Links) open shared links in a
+  // headless browser that throws this on every page; it isn't a StagePay error.
+  ignoreErrors: [/Object Not Found Matching Id:\d+, MethodName:\w+, ParamCount:\d+/],
 })
 
 // Replay (rrweb) is the largest part of Sentry and records every DOM change,

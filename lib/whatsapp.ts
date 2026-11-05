@@ -39,6 +39,8 @@ export async function sendWhatsApp(
   const token         = process.env.WHATSAPP_ACCESS_TOKEN
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
   if (!token || !phoneNumberId) throw new NonRetryableError('WhatsApp not configured')
+  // Meta's dashboard shows tokens shortened ("EAAG…"); a copied short form can't go in a header.
+  if (/[^\x21-\x7E]/.test(token)) throw new NonRetryableError('WHATSAPP_ACCESS_TOKEN is malformed (it contains "…" or spaces). Paste the full token from Meta.')
 
   const version = process.env.WHATSAPP_API_VERSION || 'v23.0'
   const payload: Record<string, unknown> = {
