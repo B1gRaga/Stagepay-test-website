@@ -2,6 +2,7 @@
 import { useState, useMemo, ViewTransition } from 'react'
 import Link, { useLinkStatus } from 'next/link'
 import { InvoiceStatus, StatusMark, describeStatus, STATUS_CSS } from './InvoiceStatus'
+import ReportsPanel from './ReportsPanel'
 
 export type Invoice = {
   id: string
@@ -74,6 +75,11 @@ ${STATUS_CSS}
   .page-h1{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--t1);}
   .btn-new{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:8px;background:var(--g);color:#1F2A44;font-size:14px;font-weight:700;text-decoration:none;}
   .btn-new:hover{background:#FFB81C;}
+  .top-actions{display:flex;align-items:center;gap:8px;}
+  .btn-rep{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t1);font:700 14px var(--font-manrope),sans-serif;cursor:pointer;}
+  .btn-rep:hover{border-color:var(--t3);}
+  .btn-rep[aria-expanded="true"]{background:color-mix(in srgb,var(--t1) 7%,transparent);}
+  .btn-rep:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
   .btn-new:focus-visible,.seg button:focus-visible,.row-link:focus-visible,.row-del:focus-visible,.more-btn:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
 
   .content{padding:24px 28px 40px;}
@@ -198,6 +204,7 @@ export default function InvoicesTable({ initialInvoices, totalCount, initialSear
   const [filter, setFilter]       = useState<string>('all')
   const [search, setSearch]       = useState(initialSearch)
   const [deleteId, setDeleteId]   = useState<string | null>(null)
+  const [reportsOpen, setReportsOpen] = useState(false)
   const [deleting, setDeleting]   = useState(false)
   const [nextPage, setNextPage]   = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -265,13 +272,20 @@ export default function InvoicesTable({ initialInvoices, totalCount, initialSear
 
       <div className="topbar">
         <h1 className="page-h1">Invoices</h1>
-        <Link href="/new-invoice" className="btn-new press">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
-          New invoice
-        </Link>
+        <div className="top-actions">
+          <button type="button" className="btn-rep press" onClick={() => setReportsOpen(o => !o)} aria-expanded={reportsOpen}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M2.5 13.5h11M4.5 11V7.5M8 11V3.5M11.5 11V6"/></svg>
+            Reports
+          </button>
+          <Link href="/new-invoice" className="btn-new press">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+            New invoice
+          </Link>
+        </div>
       </div>
 
       <div className="content">
+        {reportsOpen && <ReportsPanel />}
         {headline && (
           <p className="finding">
             {headline.text}

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAccount, canManage } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 import { scheduleRemindersOnSend } from '@/lib/reminder-schedule'
+import { balanceDue, todayIso } from '@/lib/payments'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -52,7 +53,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // current status so we can validate transitions before writing anything.
   const { data: currentInvoice, error: fetchErr } = await supabase
     .from('invoices')
-    .select('id, status')
+    .select('id, status, total, payment_claim_ref, invoice_payments(amount)')
     .eq('id', id)
     .eq('user_id', account.accountId)
     .single()
@@ -170,6 +171,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .single()
 
     if (error) return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+    // Marked paid: whatever was still owed came in today, so it counts as received.
+    if (fields.status === 'paid' && currentInvoice.status !== 'paid') {
+      const balance = balanceDue(currentInvoice.total, currentInvoice.invoice_payments)
+      if (balance > 0) {
+        await supabase.from('invoice_payments').insert({
+          invoice_id: id, user_id: account.accountId, amount: balance, paid_on: todayIso(),
+          note: currentInvoice.payment_claim_ref ? `Ref ${currentInvoice.payment_claim_ref}`.slice(0, 60) : null,
+        })
+      }
+    }
     // Sent for the first time: reminders start on the person's chosen days
     if (fields.status === 'sent' && currentInvoice.status === 'draft') {
       await scheduleRemindersOnSend(account.accountId, id, account.userId)

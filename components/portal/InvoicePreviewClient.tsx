@@ -8,6 +8,7 @@ import { billedForLabel, billedForWaLine } from '@/lib/billed-for'
 import { InvoiceStatus, StatusMark, STATUS_CSS } from './InvoiceStatus'
 import { FROM_LIST_KEY } from './InvoicesTable'
 import { dayMonthYear } from '@/lib/format-date'
+import { paidSoFar, balanceDue, todayIso } from '@/lib/payments'
 
 export type PreviewInvoice = {
   id: string
@@ -33,6 +34,14 @@ export type InvoiceReminder = {
   send_at: string
   sent_at: string | null
   channel: string
+}
+
+export type InvoicePayment = {
+  id: string
+  amount: number
+  paid_on: string
+  note: string | null
+  created_at: string
 }
 
 const UNDO_MS = 5000
@@ -89,6 +98,25 @@ ${STATUS_CSS}
   .panel-note b{color:var(--t1);}
   .panel-err{color:#E5484D;font-size:13px;margin-top:8px;}
   .panel-ok{color:var(--t1);font-size:13px;margin-top:8px;font-weight:600;}
+  .pay-fields{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+  .pay-fields label{margin-bottom:6px;}
+  .pay-fields .panel-input{min-width:0;}
+  .pay-amt{width:150px;flex:none;}
+  .pay-date{width:160px;flex:none;}
+  .pay-note{flex:1 1 180px;}
+  @media(max-width:600px){.pay-amt,.pay-date{flex:1 1 calc(50% - 4px);width:auto;}}
+
+  /* Payments received so far, oldest first. */
+  .pays{list-style:none;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:6px 18px;margin-bottom:16px;}
+  .pay{display:flex;align-items:center;gap:12px;min-height:44px;font-size:14px;color:var(--t2);border-bottom:1px solid var(--line);}
+  .pay:last-child{border-bottom:0;}
+  .pay .when{width:96px;flex:none;}
+  .pay .what{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pay .amt{color:var(--t1);font-weight:600;font-variant-numeric:tabular-nums;}
+  .pay.sum{color:var(--t1);font-weight:600;}
+  .pay .rm{border:0;background:transparent;color:var(--t3);font:600 13px var(--font-manrope),sans-serif;cursor:pointer;padding:6px 8px;margin-right:-8px;border-radius:6px;}
+  .pay .rm:hover{color:#E5484D;}
+  .pay .rm:focus-visible{outline:2px solid var(--g);outline-offset:2px;}
 
   /* Timeline: where this invoice is, in the order it happens. */
   .tl{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:20px;}
@@ -155,7 +183,7 @@ type Step = { key: string; title: string; when?: string; state: 'done' | 'todo' 
 
 // Only what StagePay records: created, sent (dated for email; WhatsApp sends go
 // through wa.me and can't be timed), reminders sent or booked, and paid / due.
-function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?: string | null): Step[] {
+function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?: string | null, owed?: string | null): Step[] {
   const sentAt = inv.email_sent_at ?? undefined
   const via = sentAt ? ' by email' : ''
   const isSent = !['draft', 'cancelled'].includes(inv.status) || !!sentAt
@@ -174,15 +202,21 @@ function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?:
   ]
   if (inv.status === 'paid') steps.push({ key: 'paid', title: 'Paid', state: 'done', mark: 'paid' })
   else if (inv.status === 'cancelled') steps.push({ key: 'paid', title: 'Cancelled', state: 'todo', mark: 'cancelled' })
+  else if (owed) steps.push({ key: 'paid', title: 'Part paid', when: `${owed} still owed`, state: inv.status === 'overdue' ? 'late' : 'todo', mark: inv.status === 'overdue' ? 'late' : 'draft' })
   else if (inv.status === 'overdue') steps.push({ key: 'paid', title: 'Not paid', when: inv.due_date ? `Was due ${fmtDate(inv.due_date)}` : undefined, state: 'late', mark: 'late' })
   else steps.push({ key: 'paid', title: 'Not paid yet', when: inv.due_date ? `Due ${fmtDate(inv.due_date)}` : undefined, state: 'todo', mark: 'draft' })
   return steps
 }
 
-export default function InvoicePreviewClient({ invoice: initial, reminders = [], createdBy = null, businessType = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; createdBy?: string | null; businessType?: string | null }) {
+export default function InvoicePreviewClient({ invoice: initial, reminders = [], payments: initialPayments = [], createdBy = null, businessType = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; payments?: InvoicePayment[]; createdBy?: string | null; businessType?: string | null }) {
   const router = useRouter()
   const [invoice, setInvoice] = useState(initial)
-  const [panel, setPanel] = useState<'email' | 'whatsapp' | null>(null)
+  const [panel, setPanel] = useState<'email' | 'whatsapp' | 'payment' | null>(null)
+  const [payments, setPayments] = useState(initialPayments)
+  const [payAmount, setPayAmount] = useState('')
+  const [payDate, setPayDate] = useState(todayIso())
+  const [payNote, setPayNote] = useState('')
+  const [paySaving, setPaySaving] = useState(false)
   const [sendEmail, setSendEmail] = useState(initial.client_email || '')
   const [sendPhone, setSendPhone] = useState(initial.client_phone || '')
   const [sending, setSending] = useState(false)
@@ -202,9 +236,47 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
 
   const sym = invoice.currency || 'P'
 
-  function openPanel(which: 'email' | 'whatsapp') {
+  const paid  = paidSoFar(payments)
+  const owing = balanceDue(invoice.total, payments)
+
+  function openPanel(which: 'email' | 'whatsapp' | 'payment') {
     setSendErr(''); setSendOk(false); setPdfShared(false)
+    if (which === 'payment') { setPayAmount(owing.toFixed(2)); setPayDate(todayIso()); setPayNote('') }
     setPanel(prev => prev === which ? null : which)
+  }
+
+  async function recordPayment() {
+    setPaySaving(true); setSendErr('')
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/payments`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ amount: Number(payAmount), paid_on: payDate, note: payNote }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Couldn’t record the payment')
+      setPayments(d.payments)
+      setInvoice(i => ({ ...i, status: d.status }))
+      setPanel(null)
+      setToast({ msg: d.status === 'paid' ? `${invoice.invoice_number} is paid in full.` : `${fmt(Number(payAmount), sym)} recorded.`, undo: false })
+    } catch (e: any) {
+      setSendErr(e.message)
+    } finally {
+      setPaySaving(false)
+    }
+  }
+
+  async function removePayment(p: InvoicePayment) {
+    const prev = payments
+    setPayments(list => list.filter(x => x.id !== p.id))
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/payments?payment=${p.id}`, { method: 'DELETE', credentials: 'include' })
+      if (!res.ok) throw new Error()
+      setToast({ msg: `Payment of ${fmt(p.amount, sym)} removed.`, undo: false })
+    } catch {
+      setPayments(prev)
+      setToast({ msg: 'Couldn’t remove it. Try again.', undo: false })
+    }
   }
 
   // Once an invoice is paid, Email/WhatsApp forward a paid receipt instead of the original invoice.
@@ -306,6 +378,11 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     }).then(res => {
       if (!res.ok) throw new Error()
       setToast(t => (t?.undo ? null : t))
+      // The server records whatever was still owed as received today
+      setPayments(list => {
+        const rest = balanceDue(invoice.total, list)
+        return rest > 0 ? [...list, { id: `paid-${Date.now()}`, amount: rest, paid_on: todayIso(), note: null, created_at: new Date().toISOString() }] : list
+      })
     }).catch(() => {
       setInvoice(prev => ({ ...prev, status: p.prev }))
       setToast({ msg: 'Couldn’t mark it as paid. Try again.', undo: false })
@@ -390,7 +467,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
 
   const canMarkPaid = invoice.status === 'sent' || invoice.status === 'overdue'
   const claimOpen = canMarkPaid && !!invoice.payment_claimed_at
-  const steps = timeline(invoice, reminders, createdBy)
+  const steps = timeline(invoice, reminders, createdBy, paid > 0 && invoice.status !== 'paid' ? fmt(owing, sym) : null)
   const reminderCount = reminders.filter(r => r.status === 'sent').length
 
   return (
@@ -421,6 +498,9 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
               <div className="amount"><span className="cur">{sym}</span>{fmt(Number(invoice.total || 0), '')}</div>
             </ViewTransition>
             <div className="head-meta">Issued {fmtDate(invoice.issue_date)}{invoice.due_date ? ` · Due ${fmtDate(invoice.due_date)}` : ''}</div>
+            {paid > 0 && invoice.status !== 'paid' && (
+              <div className="head-meta">{fmt(paid, sym)} paid · <b>{fmt(owing, sym)} still owed</b></div>
+            )}
           </div>
           <div className="head-status" aria-live="polite">
             <InvoiceStatus status={invoice.status} due_date={invoice.due_date} reminders_sent={reminderCount} size={20} />
@@ -453,6 +533,11 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
             <button type="button" className="btn press" onClick={markAsPaid}>
               <StatusMark mark="paid" size={16} />
               Mark as paid
+            </button>
+          )}
+          {canMarkPaid && (
+            <button type="button" className="btn press" onClick={() => openPanel('payment')} aria-expanded={panel === 'payment'}>
+              Record payment
             </button>
           )}
           <span className="spacer" />
@@ -516,6 +601,49 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
             {sendErr && <div className="panel-err">{sendErr}</div>}
             {sendOk && <div className="panel-ok">Sent.</div>}
           </div>
+        )}
+        {panel === 'payment' && (
+          <div className="panel">
+            <p className="panel-note">Record money {invoice.client_name} has paid. <b>{fmt(owing, sym)}</b> is still owed; when it’s all in, the invoice is marked paid.</p>
+            <form className="pay-fields" onSubmit={e => { e.preventDefault(); recordPayment() }}>
+              <div className="pay-amt">
+                <label htmlFor="pay-amt">Amount ({sym})</label>
+                <input id="pay-amt" className="panel-input" type="number" inputMode="decimal" min="0.01" step="0.01" max={owing} value={payAmount} onChange={e => setPayAmount(e.target.value)} autoFocus required />
+              </div>
+              <div className="pay-date">
+                <label htmlFor="pay-date">Paid on</label>
+                <input id="pay-date" className="panel-input" type="date" max={todayIso()} value={payDate} onChange={e => setPayDate(e.target.value)} required />
+              </div>
+              <div className="pay-note">
+                <label htmlFor="pay-note">Note (optional)</label>
+                <input id="pay-note" className="panel-input" type="text" maxLength={60} value={payNote} onChange={e => setPayNote(e.target.value)} placeholder="e.g. Orange Money ref" />
+              </div>
+              <button type="submit" className="btn primary press" disabled={paySaving || !(Number(payAmount) > 0)}>{paySaving ? 'Saving…' : 'Save payment'}</button>
+            </form>
+            {sendErr && <div className="panel-err">{sendErr}</div>}
+          </div>
+        )}
+
+        {payments.length > 0 && (
+          <ul className="pays" aria-label="Payments received">
+            {payments.map(p => (
+              <li key={p.id} className="pay">
+                <span className="when">{fmtDate(p.paid_on)}</span>
+                <span className="what">{p.note || 'Payment'}</span>
+                <span className="amt">{fmt(p.amount, sym)}</span>
+                {invoice.status !== 'paid' && !p.id.startsWith('paid-') && (
+                  <button type="button" className="rm" onClick={() => removePayment(p)} aria-label={`Remove payment of ${fmt(p.amount, sym)} on ${fmtDate(p.paid_on)}`}>Remove</button>
+                )}
+              </li>
+            ))}
+            {payments.length > 1 && (
+              <li className="pay sum">
+                <span className="when" />
+                <span className="what">Paid so far</span>
+                <span className="amt">{fmt(paid, sym)}</span>
+              </li>
+            )}
+          </ul>
         )}
 
         <ol className="tl" aria-label="Invoice timeline">

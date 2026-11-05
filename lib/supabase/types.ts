@@ -320,6 +320,36 @@ export interface Database {
           }
         ]
       }
+      invoice_payments: {
+        Row: {
+          id: string
+          invoice_id: string
+          user_id: string
+          amount: number
+          paid_on: string
+          note: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          invoice_id: string
+          user_id: string
+          amount: number
+          paid_on?: string
+          note?: string | null
+          created_by?: string | null
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_payments_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       reminders: {
         Row: {
           created_by: string | null
@@ -519,6 +549,7 @@ export interface Database {
 export type ProfileRow      = Database['public']['Tables']['profiles']['Row']
 export type InvoiceRow      = Database['public']['Tables']['invoices']['Row']
 export type InvoiceItemRow  = Database['public']['Tables']['invoice_items']['Row']
+export type InvoicePaymentRow = Database['public']['Tables']['invoice_payments']['Row']
 export type ClientRow       = Database['public']['Tables']['clients']['Row']
 export type ReminderRow     = Database['public']['Tables']['reminders']['Row']
 

@@ -6,6 +6,7 @@ import { reminderEmail } from '@/lib/emails/reminder'
 import { withRetry } from '@/lib/retry'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { balanceDue } from '@/lib/payments'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
         *,
         invoices (
           id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token, payment_claimed_at,
-          invoice_items (description, quantity, unit_price)
+          invoice_items (description, quantity, unit_price),
+          invoice_payments (amount)
         )
       `)
       .eq('status', 'scheduled')
@@ -106,7 +108,8 @@ async function processReminder(supabase: any, reminder: any) {
 
   const senderName = profile?.firm_name || profile?.name || 'Your service provider'
   const sym        = invoice.currency || 'P'
-  const amount     = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+  // After a part payment, only what's still owed
+  const amount     = `${sym}${balanceDue(invoice.total, invoice.invoice_payments).toLocaleString('en', { minimumFractionDigits: 2 })}`
 
   try {
     if (reminder.channel === 'email' && reminder.recipient_email) {

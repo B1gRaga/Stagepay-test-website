@@ -20,6 +20,13 @@ export default async function InvoicePreviewPage({ params }: Params) {
 
   if (!invoice) notFound()
 
+  const { data: payments } = await supabase
+    .from('invoice_payments')
+    .select('id, amount, paid_on, note, created_at')
+    .eq('invoice_id', id)
+    .order('paid_on', { ascending: true })
+    .order('created_at', { ascending: true })
+
   // The business type names the invoice's "billed for" line (Student, Project).
   const { data: profile } = await (await accountProfileClient(account)).from('profiles').select('business_type').eq('id', account.accountId).single()
 
@@ -40,5 +47,5 @@ export default async function InvoicePreviewPage({ params }: Params) {
     createdBy = person?.name || person?.email || 'a team member'
   }
 
-  return <InvoicePreviewClient invoice={invoice} reminders={reminders ?? []} createdBy={createdBy} businessType={profile?.business_type ?? null} />
+  return <InvoicePreviewClient invoice={invoice} reminders={reminders ?? []} payments={payments ?? []} createdBy={createdBy} businessType={profile?.business_type ?? null} />
 }

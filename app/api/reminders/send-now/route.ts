@@ -4,6 +4,7 @@ import { getAccount, accountProfileClient } from '@/lib/account'
 import { Resend } from 'resend'
 import { reminderEmail } from '@/lib/emails/reminder'
 import { sendWhatsApp as sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib/whatsapp'
+import { balanceDue } from '@/lib/payments'
 
 // POST /api/reminders/send-now
 // Sends a reminder immediately (bypasses cron) and logs it as status='sent'.
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
   // Verify invoice ownership
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token')
+    .select('id, invoice_number, client_name, total, currency, due_date, status, user_id, public_token, invoice_payments(amount)')
     .eq('id', invoice_id)
     .eq('user_id', account.accountId)
     .single()
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const senderName = profile?.firm_name || profile?.name || 'Your service provider'
   const sym        = invoice.currency || 'P'
-  const amount     = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+  const amount     = `${sym}${balanceDue(invoice.total, invoice.invoice_payments).toLocaleString('en', { minimumFractionDigits: 2 })}`
   const now        = new Date().toISOString()
 
   try {

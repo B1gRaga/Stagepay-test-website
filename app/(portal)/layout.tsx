@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { getCachedProfile, createClient } from '@/lib/supabase/server'
 import { getAccount, listBusinesses } from '@/lib/account'
 import { TEAMS_ENABLED } from '@/lib/teams'
+import { paidSoFar } from '@/lib/payments'
 import SidebarNav from '@/components/portal/SidebarNav'
 import SupportBtn from '@/components/portal/SupportBtn'
 import PullToRefresh from '@/components/portal/PullToRefresh'
@@ -29,7 +30,7 @@ export default async function PortalLayout({ children }: { children: React.React
     TEAMS_ENABLED ? listBusinesses(account.userId) : Promise.resolve([]),
     supabase
       .from('invoices')
-      .select('total, status, currency')
+      .select('total, status, currency, invoice_payments(amount)')
       .eq('user_id', account.accountId)
       .not('status', 'in', '(draft,cancelled)')
       .gte('issue_date', monthStart)
@@ -44,7 +45,8 @@ export default async function PortalLayout({ children }: { children: React.React
   const month = {
     sym,
     invoiced: rows.reduce((s, i) => s + Number(i.total || 0), 0),
-    paid: rows.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total || 0), 0),
+    // Part payments count as they come in
+    paid: rows.reduce((s, i) => s + Math.min(Number(i.total || 0), paidSoFar(i.invoice_payments)), 0),
   }
 
   // First-time users: send to onboarding to pick business type.
