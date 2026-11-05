@@ -7,6 +7,7 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf'
 import { withRetry } from '@/lib/retry'
 import { invoiceEmail } from '@/lib/emails/invoice'
 import { scheduleRemindersOnSend } from '@/lib/reminder-schedule'
+import { balanceDue } from '@/lib/payments'
 
 export const runtime = 'nodejs'
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   const [{ data: invoice }, { data: profile }] = await Promise.all([
-    supabase.from('invoices').select('*, invoice_items(*)').eq('id', invoice_id).eq('user_id', account.accountId).single(),
+    supabase.from('invoices').select('*, invoice_items(*), invoice_payments(amount)').eq('id', invoice_id).eq('user_id', account.accountId).single(),
     (await accountProfileClient(account)).from('profiles').select('*').eq('id', account.accountId).single(),
   ])
 
@@ -61,7 +62,9 @@ export async function POST(req: NextRequest) {
   const senderName = escapeHtml(profile?.firm_name || profile?.name || 'Your service provider')
   const invoiceNum = escapeHtml(invoice.invoice_number)
   const sym        = escapeHtml(invoice.currency || 'P')
-  const total      = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+  // A receipt shows the full amount; an invoice after a part payment shows what's still owed
+  const owed       = paid_stamp ? Number(invoice.total) : balanceDue(invoice.total, invoice.invoice_payments)
+  const total      = `${sym}${owed.toLocaleString('en', { minimumFractionDigits: 2 })}`
   // The email body names the business in its own words; the sender line and
   // subject keep using the values above.
   const deposit = Number(invoice.deposit_amount) || 0
@@ -69,10 +72,10 @@ export async function POST(req: NextRequest) {
     senderName: profile?.firm_name || profile?.name || 'Your service provider',
     profile,
     invoice,
-    amount: `${invoice.currency || 'P'}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`,
+    amount: `${invoice.currency || 'P'}${owed.toLocaleString('en', { minimumFractionDigits: 2 })}`,
     kind: paid_stamp ? 'receipt' : custom_body ? 'custom' : 'invoice',
     message: custom_body,
-    depositText: !paid_stamp && deposit > 0 ? `A deposit of ${invoice.currency || 'P'}${deposit.toLocaleString('en', { minimumFractionDigits: 2 })} is due now.` : undefined,
+    depositText: !paid_stamp && deposit > 0 && owed === Number(invoice.total) ? `A deposit of ${invoice.currency || 'P'}${deposit.toLocaleString('en', { minimumFractionDigits: 2 })} is due now.` : undefined,
   })
 
   const fromAddress = (process.env.RESEND_FROM_EMAIL || 'invoices@getstagepay.co').replace(/\.$/, '')

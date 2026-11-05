@@ -4,6 +4,7 @@ import { resolveTheme, contrast, tint, type InvoiceTheme } from './invoice-theme
 import { paymentBlocks } from './payment-methods'
 import { firmLines } from './firm-details'
 import { billedForLabel } from './billed-for'
+import { paidSoFar, balanceDue } from './payments'
 
 // Five invoice templates, each its own layout. They share one reading order,
 // the same as the page a client opens from WhatsApp: who it's from, the big
@@ -68,7 +69,9 @@ function facts(d: Doc) {
   const fmt = money(d.invoice)
   const firm = firmLines(d.profile)
   const deposit = Number(d.invoice.deposit_amount) || 0
+  const paidSoFar = Number(d.invoice.paid_so_far) || 0
   return {
+    paidSoFar,
     fmt,
     firm,
     firmName: firm.name || 'Your business',
@@ -76,7 +79,7 @@ function facts(d: Doc) {
     discount: Number(d.invoice.discount_amount) || 0,
     vatOn: Number(d.invoice.vat_rate) > 0,
     taxLabel: d.profile.tax_label || 'VAT',
-    deposit: d.paid ? 0 : deposit,
+    deposit: d.paid || paidSoFar > 0 ? 0 : deposit,
     issued: longDate(d.invoice.issue_date),
     due: longDate(d.invoice.due_date),
     billedFor: d.invoice.billed_for ? { label: billedForLabel(d.profile.business_type), value: String(d.invoice.billed_for) } : null,
@@ -129,6 +132,7 @@ function Sums({ d, width = '50%' }: { d: Doc; width?: string }) {
       {row('Subtotal', f.fmt(d.invoice.subtotal))}
       {f.discount > 0 && row('Discount', `– ${f.fmt(f.discount)}`)}
       {f.vatOn && row(`${f.taxLabel} (${Number(d.invoice.vat_rate)}%)`, f.fmt(d.invoice.vat_amount))}
+      {f.paidSoFar > 0 && row('Paid so far', `– ${f.fmt(f.paidSoFar)}`)}
     </View>
   )
 }
@@ -574,5 +578,8 @@ export async function generateInvoicePDF(
   const Layout = LAYOUTS[key] ?? Classic
   const paid = !!options?.showPaidStamp || invoice.status === 'paid'
   const paper: Paper = (options?.paperSize ?? profile.invoice_paper_size) === 'A5' ? 'A5' : 'A4'
-  return renderToBuffer(<Document><Layout invoice={invoice} items={items} profile={profile} paid={paid} t={t} paper={paper} {...scalers(paper)} /></Document>)
+  // Part paid: every "amount due" is the balance, and "Paid so far" sits under the tax line.
+  const paidSoFarAmt = paid ? 0 : paidSoFar(invoice.invoice_payments)
+  const doc = paidSoFarAmt > 0 ? { ...invoice, total: balanceDue(invoice.total, invoice.invoice_payments), paid_so_far: paidSoFarAmt } : invoice
+  return renderToBuffer(<Document><Layout invoice={doc} items={items} profile={profile} paid={paid} t={t} paper={paper} {...scalers(paper)} /></Document>)
 }

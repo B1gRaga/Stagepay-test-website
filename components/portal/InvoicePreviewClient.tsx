@@ -312,7 +312,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
 
   async function sendWhatsAppNow() {
     setSendErr(''); setSendOk(false)
-    const amount = `${sym}${Number(invoice.total).toLocaleString('en', { minimumFractionDigits: 2 })}`
+    const amount = `${sym}${(paidMode ? Number(invoice.total) : owing).toLocaleString('en', { minimumFractionDigits: 2 })}`
     const link = publicInvoiceUrl(invoice.public_token)
     const bfLine = billedForWaLine(businessType, invoice.billed_for)
     const paidText = `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅${bfLine ? `\n${bfLine}` : ''}\n\nThank you for your prompt payment. We appreciate your business!`

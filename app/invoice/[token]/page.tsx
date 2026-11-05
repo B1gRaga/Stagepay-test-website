@@ -4,6 +4,7 @@ import { CopyButton, PaidClaim, PrintButton } from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
 import { firmLines } from '@/lib/firm-details'
 import { billedForLabel } from '@/lib/billed-for'
+import { paidSoFar, balanceDue } from '@/lib/payments'
 import { resolveTheme, contrast, tint } from '@/lib/invoice-themes'
 import Link from 'next/link'
 import { LogoFull } from '@/components/Logo'
@@ -35,7 +36,7 @@ export default async function PublicInvoicePage({ params }: Props) {
 
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('*, invoice_items(*)')
+    .select('*, invoice_items(*), invoice_payments(amount)')
     .eq('public_token', token)
     .single()
 
@@ -56,6 +57,9 @@ export default async function PublicInvoicePage({ params }: Props) {
   const payBlocks = paid ? [] : paymentBlocks(profile?.payment_methods)
   const discount = Number(invoice.discount_amount) || 0
   const deposit = Number(invoice.deposit_amount) || 0
+  // After a part payment the client is asked for the balance
+  const received = paid ? 0 : paidSoFar(invoice.invoice_payments)
+  const due = paid ? Number(invoice.total) : balanceDue(invoice.total, invoice.invoice_payments)
   const days = paid ? null : daysUntil(invoice.due_date)
 
   const status = paid ? 'Paid. Thank you.'
@@ -87,11 +91,12 @@ export default async function PublicInvoicePage({ params }: Props) {
             {paid ? 'Invoice paid' : 'Invoice for you'}
             <span className="pi-num"> · {invoice.invoice_number}</span>
           </h1>
-          <p className="pi-amount">{fmt(invoice.total, sym)}</p>
+          <p className="pi-amount">{fmt(due, sym)}</p>
           <p className={`pi-status${late ? ' late' : ''}${paid ? ' paid' : ''}`}>
             {status}{!paid && invoice.due_date ? `${status ? ' · ' : ''}${fmtDate(invoice.due_date)}` : ''}
           </p>
-          {!paid && deposit > 0 && <p className="pi-deposit">A deposit of <b>{fmt(deposit, sym)}</b> is due now.</p>}
+          {received > 0 && <p className="pi-deposit"><b>{fmt(received, sym)}</b> received so far. Thank you.</p>}
+          {!paid && !received && deposit > 0 && <p className="pi-deposit">A deposit of <b>{fmt(deposit, sym)}</b> is due now.</p>}
           <div className="pi-actions">
             <a className="pi-btn" href={`/invoice/${token}/pdf`}>Download PDF</a>
             <PrintButton />
@@ -186,8 +191,9 @@ export default async function PublicInvoicePage({ params }: Props) {
             <div><dt>Subtotal</dt><dd>{fmt(invoice.subtotal, sym)}</dd></div>
             {discount > 0 && <div><dt>Discount</dt><dd>−{fmt(discount, sym)}</dd></div>}
             {Number(invoice.vat_rate) > 0 && <div><dt>{profile?.tax_label || 'VAT'} ({Number(invoice.vat_rate)}%)</dt><dd>{fmt(invoice.vat_amount, sym)}</dd></div>}
-            <div className="pi-grand"><dt>{paid ? 'Total paid' : 'Total due'}</dt><dd>{fmt(invoice.total, sym)}</dd></div>
-            {!paid && deposit > 0 && <div className="pi-dep"><dt>Deposit due now</dt><dd>{fmt(deposit, sym)}</dd></div>}
+            {received > 0 && <div><dt>Paid so far</dt><dd>−{fmt(received, sym)}</dd></div>}
+            <div className="pi-grand"><dt>{paid ? 'Total paid' : 'Total due'}</dt><dd>{fmt(due, sym)}</dd></div>
+            {!paid && !received && deposit > 0 && <div className="pi-dep"><dt>Deposit due now</dt><dd>{fmt(deposit, sym)}</dd></div>}
           </dl>
 
           {invoice.notes && (

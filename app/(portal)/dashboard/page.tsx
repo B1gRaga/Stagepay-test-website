@@ -6,6 +6,7 @@ import { PeriodSelect } from '@/components/portal/PeriodSelect'
 import { PERIODS, type PeriodId } from '@/components/portal/periods'
 import { InvoiceStatus, StatusMark, describeStatus, STATUS_CSS } from '@/components/portal/InvoiceStatus'
 import { CountUp, RevealOnView } from '@/components/portal/DashMotion'
+import { balanceDue, paidSoFar } from '@/lib/payments'
 
 // StagePay is Botswana-first and profiles carry no timezone; dates and greetings use Gaborone time.
 const TZ = 'Africa/Gaborone'
@@ -31,6 +32,7 @@ const PERIOD_WORDS: Record<PeriodId, string> = {
 type Inv = {
   id: string; invoice_number: string; client_name: string; project: string | null
   total: number; status: string; issue_date: string | null; due_date: string | null; currency: string | null
+  invoice_payments?: { amount: number }[] | null
 }
 
 const num = (n: number) => Math.round(n).toLocaleString('en')
@@ -40,8 +42,13 @@ const utc = (s: string) => { const [y, m, d] = s.slice(0, 10).split('-').map(Num
 const dayLabel = (s: string) => { const [, m, d] = s.slice(0, 10).split('-').map(Number); return `${d} ${MONTHS[m - 1]}` }
 const firstWord = (s: string) => (s || '').split(' ')[0]
 
-function sumIn(list: Inv[], sym: string) {
-  return list.filter(i => (i.currency || sym) === sym).reduce((s, i) => s + Number(i.total || 0), 0)
+const amount = (i: Pick<Inv, 'total'>) => Number(i.total || 0)
+// Still owed after part payments, and how much of an invoice has come in
+const left = (i: Pick<Inv, 'total' | 'invoice_payments'>) => balanceDue(i.total, i.invoice_payments)
+const got = (i: Pick<Inv, 'total' | 'invoice_payments'>) => Math.min(amount(i), paidSoFar(i.invoice_payments))
+
+function sumIn(list: Inv[], sym: string, val: (i: Inv) => number = amount) {
+  return list.filter(i => (i.currency || sym) === sym).reduce((s, i) => s + val(i), 0)
 }
 
 // Never round up to "100%" or down to "0%" while some money is the other way.
@@ -241,7 +248,7 @@ export default async function DashboardPage({
     return { key: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, name: MONTHS[d.getUTCMonth()] }
   })
 
-  const COLS = 'id, invoice_number, client_name, project, total, status, issue_date, due_date, currency'
+  const COLS = 'id, invoice_number, client_name, project, total, status, issue_date, due_date, currency, invoice_payments(amount)'
   const [{ data: openRaw }, { data: periodRaw }, { data: sixRaw }, profile] = await Promise.all([
     supabase.from('invoices').select(COLS).eq('user_id', account.accountId)
       .in('status', ['draft', 'sent', 'overdue'])
@@ -251,7 +258,7 @@ export default async function DashboardPage({
       if (since) q = q.gte('issue_date', since)
       return q.order('created_at', { ascending: false }).limit(500)
     })(),
-    supabase.from('invoices').select('total, status, issue_date, currency').eq('user_id', account.accountId)
+    supabase.from('invoices').select('total, status, issue_date, currency, invoice_payments(amount)').eq('user_id', account.accountId)
       .neq('status', 'cancelled').gte('issue_date', `${months[0].key}-01`).limit(2000),
     getCachedProfile(account.accountId),
   ])
@@ -299,16 +306,16 @@ export default async function DashboardPage({
     groups.set(key, g)
   }
   const dueGroups = [...groups.values()].sort((a, b) => a.x - b.x)
-  const maxGroup = Math.max(1, ...dueGroups.map(g => sumIn(g.list, sym)))
+  const maxGroup = Math.max(1, ...dueGroups.map(g => sumIn(g.list, sym, left)))
   const dueSoon = waiting.filter(i => i.due_date && (utc(i.due_date) - utc(today)) / DAY <= HORIZON && utc(i.due_date) >= utc(today))
   const endDate = new Date(utc(today) + HORIZON * DAY).toISOString().slice(0, 10)
 
   // ── Six months ──
-  const six = (sixRaw ?? []) as Pick<Inv, 'total' | 'status' | 'issue_date' | 'currency'>[]
+  const six = (sixRaw ?? []) as Pick<Inv, 'total' | 'status' | 'issue_date' | 'currency' | 'invoice_payments'>[]
   const series = months.map(m => {
     const rows = six.filter(i => (i.currency || sym) === sym && (i.issue_date || '').startsWith(m.key))
     const invoiced = rows.reduce((s, i) => s + Number(i.total || 0), 0)
-    const paid = rows.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total || 0), 0)
+    const paid = rows.reduce((s, i) => s + got(i), 0)
     return { ...m, invoiced, paid, count: rows.length }
   })
   const sixTotal = series.reduce((s, m) => s + m.invoiced, 0)
@@ -317,10 +324,10 @@ export default async function DashboardPage({
   const best = series.reduce((a, b) => (b.invoiced > a.invoiced ? b : a), series[0])
 
   const invoiced = sumIn(inPeriod, sym)
-  const paid = sumIn(inPeriod.filter(i => i.status === 'paid'), sym)
+  const paid = sumIn(inPeriod, sym, got)
   const recent = inPeriod.slice(0, 8)
 
-  const lateSum = sumIn(late, sym), waitSum = sumIn(waiting, sym)
+  const lateSum = sumIn(late, sym, left), waitSum = sumIn(waiting, sym, left)
   const figs = [
     { key: 'waiting', label: 'Waiting', n: waiting.length, total: waitSum, sub: waiting.length ? `${waiting.length} sent, not paid yet` : 'Nothing out right now' },
     { key: 'late', label: 'Late', n: late.length, total: lateSum, sub: late.length ? `${late.length} past the due date` : 'Nothing is late' },
@@ -365,7 +372,7 @@ export default async function DashboardPage({
             <div className="due-head">
               <span>Due in the next {HORIZON} days</span>
               <span>
-                {dueSoon.length ? <><b>{money(sumIn(dueSoon, sym), sym)}</b> expected</> : 'Nothing due'}
+                {dueSoon.length ? <><b>{money(sumIn(dueSoon, sym, left), sym)}</b> expected</> : 'Nothing due'}
                 {later > 0 && <> · {later} due later</>}
               </span>
             </div>
@@ -380,7 +387,7 @@ export default async function DashboardPage({
                 <span className="today-l" style={{ left: `${TODAY_X}%` }}>Today</span>
                 <span className="end-l">{dayLabel(endDate)}</span>
                 {dueGroups.map((g, i) => {
-                  const total = sumIn(g.list, sym)
+                  const total = sumIn(g.list, sym, left)
                   const size = Math.round(10 + 10 * Math.sqrt(total / maxGroup))
                   const who = g.list.length === 1 ? firstWord(g.list[0].client_name) : `${g.list.length} invoices`
                   const when = g.late ? 'Late' : g.days === 0 ? 'Today' : g.days === 1 ? 'Tomorrow' : dayLabel(g.list[0].due_date!)
@@ -422,7 +429,7 @@ export default async function DashboardPage({
                     <div className="item-sub"><InvoiceStatus {...info} /> · {inv.invoice_number}</div>
                   </div>
                   <div>
-                    <div className="item-amt"><span className="cur">{cur}</span>{num(Number(inv.total || 0))}</div>
+                    <div className="item-amt"><span className="cur">{cur}</span>{num(left(inv))}</div>
                     <span className="item-act">{act}</span>
                   </div>
                 </Link>
