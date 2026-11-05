@@ -9,7 +9,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient()
   const { data: invoices, count } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, project, issue_date, due_date, total, status, currency', { count: 'estimated' })
+    .select('id, invoice_number, client_name, project, issue_date, due_date, total, status, currency, invoice_payments(amount)', { count: 'estimated' })
     .eq('user_id', account.accountId)
     .order('created_at', { ascending: false })
     .range(0, 49)

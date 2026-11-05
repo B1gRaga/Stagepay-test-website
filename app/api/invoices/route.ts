@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('invoices')
-    .select('*, invoice_items(*)', { count: 'exact' })
+    .select('*, invoice_items(*), invoice_payments(amount)', { count: 'exact' })
     .eq('user_id', account.accountId)
     .order('created_at', { ascending: false })
     .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)

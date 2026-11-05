@@ -3,6 +3,7 @@ import { useState, useMemo, ViewTransition } from 'react'
 import Link, { useLinkStatus } from 'next/link'
 import { InvoiceStatus, StatusMark, describeStatus, STATUS_CSS } from './InvoiceStatus'
 import ReportsPanel from './ReportsPanel'
+import { balanceDue, paidSoFar } from '@/lib/payments'
 
 export type Invoice = {
   id: string
@@ -17,6 +18,7 @@ export type Invoice = {
   status: string
   currency: string
   reminders_sent?: number
+  invoice_payments?: { amount: number }[] | null
 }
 
 // Set when a row is opened, so the invoice page's back link can return through history
@@ -55,7 +57,7 @@ function finding(list: Invoice[]): { text: string; filter?: string } | null {
   const waiting = list.filter(i => i.status === 'sent')
   const sum = (xs: Invoice[]) => {
     const cur = new Set(xs.map(i => i.currency || 'P'))
-    return cur.size === 1 ? fmt(xs.reduce((s, i) => s + Number(i.total || 0), 0), [...cur][0]) : null
+    return cur.size === 1 ? fmt(xs.reduce((s, i) => s + balanceDue(i.total, i.invoice_payments), 0), [...cur][0]) : null
   }
   if (late.length) {
     const s = sum(late)
@@ -122,6 +124,7 @@ ${STATUS_CSS}
   .c-amt .cur{color:var(--t2);font-weight:600;margin-right:1px;}
   .c-label{min-width:0;overflow:hidden;}
   .c-label .st-mark{display:none;}
+  .c-label .owed{display:block;font-size:12px;color:var(--t2);margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;}
   .c-mark{display:flex;align-items:center;}
 
   .row-del{position:relative;z-index:1;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--t3);cursor:pointer;opacity:0;}
@@ -220,6 +223,7 @@ export default function InvoicesTable({ initialInvoices, totalCount, initialSear
           id: inv.id, invoice_number: inv.invoice_number, client_name: inv.client_name,
           client_email: inv.client_email, client_phone: inv.client_phone, project: inv.project,
           issue_date: inv.issue_date, due_date: inv.due_date, total: inv.total, status: inv.status, currency: inv.currency,
+          invoice_payments: inv.invoice_payments,
         }))
         setInvoices(prev => [...prev, ...mapped])
         setNextPage(p => p + 1)
@@ -352,7 +356,12 @@ export default function InvoicesTable({ initialInvoices, totalCount, initialSear
                   </div>
                   <span className="c-num">{inv.invoice_number || '—'}</span>
                   <span className="c-date">{fmtDate(inv.issue_date)}</span>
-                  <span className="c-label"><InvoiceStatus {...inv} /></span>
+                  <span className="c-label">
+                    <InvoiceStatus {...inv} />
+                    {(inv.status === 'sent' || inv.status === 'overdue') && paidSoFar(inv.invoice_payments) > 0 && (
+                      <span className="owed">{fmt(balanceDue(inv.total, inv.invoice_payments), sym)} left</span>
+                    )}
+                  </span>
                   <ViewTransition name={`inv-amt-${inv.id}`} share="inv-shared">
                     <span className="c-amt"><span className="cur">{sym}</span>{fmt(Number(inv.total || 0), '')}</span>
                   </ViewTransition>

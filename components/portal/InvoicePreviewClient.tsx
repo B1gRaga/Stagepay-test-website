@@ -91,7 +91,7 @@ ${STATUS_CSS}
   .panel-row{display:flex;gap:8px;flex-wrap:wrap;}
   .panel-input{flex:1;min-width:200px;max-width:340px;height:40px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 12px;font:600 14px var(--font-manrope),sans-serif;color:var(--t1);outline:none;transition:border-color var(--dur-1) var(--ease);}
   .panel-input:focus{border-color:var(--g);}
-  .claim{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:14px;color:var(--t2);line-height:1.5;}
+  .claim{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;background:color-mix(in srgb,var(--warn) 8%,var(--bg2));border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:14px;color:var(--t2);line-height:1.5;}
   .claim b{color:var(--t1);}
   .claim-btns{display:flex;gap:8px;flex-wrap:wrap;}
   .panel-note{font-size:14px;color:var(--t2);margin:0 0 10px;}
