@@ -13,7 +13,7 @@ export type PlanId = 'free' | 'pro' | 'business'
 export const PLANS: { id: PlanId; name: string; price: number; includes: string }[] = [
   { id: 'free',     name: 'Free',     price: 0,   includes: `Up to ${FREE_MONTHLY_LIMIT} invoices a month` },
   { id: 'pro',      name: 'Pro',      price: 100, includes: 'Unlimited invoices' },
-  { id: 'business', name: 'Business', price: 400, includes: `Unlimited invoices. Shared team accounts for up to ${TEAM_SEATS} people coming soon` },
+  { id: 'business', name: 'Business', price: 400, includes: `Unlimited invoices. A shared team account for up to ${TEAM_SEATS} people` },
 ]
 
 // How long one payment covers. Paying for longer up front costs less per month.

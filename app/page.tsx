@@ -6,7 +6,7 @@ import { DotGridBackground } from '@/components/landing/DotGridBackground'
 import { LogoFull } from '@/components/Logo'
 import { WaitlistForm } from '@/components/landing/WaitlistForm'
 import { SIGNUPS_OPEN } from '@/lib/launch'
-import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
+import { FREE_MONTHLY_LIMIT, TEAM_SEATS } from '@/lib/plans'
 
 const CSS = `
 :root{
@@ -916,7 +916,7 @@ export default function Home() {
             <div className="plans">
               <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to {FREE_MONTHLY_LIMIT} invoices a month.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
               <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
-              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">For teams with multiple users.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">Unlimited invoices, and up to {TEAM_SEATS} people work in one shared account, each with their own sign-in.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
