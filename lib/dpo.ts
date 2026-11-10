@@ -66,7 +66,7 @@ export async function createPaymentToken(
     <PaymentCurrency>BWP</PaymentCurrency>
     <CompanyRef>${companyRef}</CompanyRef>
     <RedirectURL>${appUrl()}/api/billing/verify</RedirectURL>
-    <BackURL>${appUrl()}/api/billing/callback</BackURL>
+    <BackURL>${appUrl()}/settings?billing=cancelled</BackURL>
     <CompanyRefUnique>0</CompanyRefUnique>
     <PTL>30</PTL>
   </Transaction>
@@ -107,8 +107,9 @@ export async function verifyPaymentToken(
   return { success: result === '000', ref, result }
 }
 
-// Shared by /api/billing/verify, /api/billing/callback, and the
-// billing-reconcile cron — all three confirm a DPO payment the same way.
+// Shared by /api/billing/verify and the billing-reconcile cron, which
+// confirm a DPO payment the same way. (BackURL is DPO's "cancel" link for
+// the customer's browser, so it goes to Settings, not to an API route.)
 // Each payment buys the period chosen at checkout (pending_months): 30 days,
 // 183 days or 365 days. Paying again for the same plan before it ends adds
 // the days to the current end date, so renewing early loses nothing.

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     const { token, paymentUrl } = await createPaymentToken(account.userId, plan as DpoPlan, months)
 
-    // Store the pending token AND plan server-side so verify/callback
+    // Store the pending token AND plan server-side so verify and the reconcile cron
     // can read the plan from the DB rather than trusting CompanyRef.
     // Uses service client because plan/pending_plan are sensitive columns
     // not writable by the authenticated role after migration 009.

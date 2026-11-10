@@ -169,7 +169,7 @@ const CSS = `
   .in-suffix .in{padding-right:32px;}
   .in-suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--t2);font-weight:600;pointer-events:none;}
   .def-note{font-size:13px;line-height:1.5;color:var(--t1);padding:12px 14px;border-radius:8px;background:color-mix(in srgb,var(--g) 12%,transparent);}
-  .pl-banner{font-size:14px;font-weight:600;padding:12px 14px;border-radius:10px;margin-bottom:20px;}
+  .pl-banner{font-size:14px;font-weight:600;padding:12px 14px;border-radius:10px;margin-bottom:20px;background:color-mix(in srgb,var(--t1) 6%,transparent);color:var(--t1);}
   .pl-banner.ok{background:color-mix(in srgb,var(--g) 16%,transparent);color:var(--t1);}
   .pl-banner.err{background:color-mix(in srgb,#DC4B3E 12%,transparent);color:#DC4B3E;}
   .pl-now{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center;padding:20px 22px;margin-bottom:28px;border-radius:12px;background:var(--bg);border:1px solid var(--line);}
@@ -1356,6 +1356,9 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
             )}
             {billingStatus === 'failed' && (
               <p className="pl-banner err" role="alert">The payment didn’t go through, so nothing was charged. You can try again below.</p>
+            )}
+            {billingStatus === 'cancelled' && (
+              <p className="pl-banner" role="status">Payment cancelled. Nothing was charged, and your plan hasn’t changed.</p>
             )}
 
             <section className="pl-now" aria-labelledby="pl-now">

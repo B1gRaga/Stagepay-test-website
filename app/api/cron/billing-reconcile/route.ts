@@ -9,13 +9,13 @@ export const maxDuration = 60
 // DPO tokens are valid for 30 minutes (PTL=30 in lib/dpo.ts createPaymentToken).
 // Past that, a pending checkout is abandoned, not just slow.
 const ABANDONED_AFTER_MS = 35 * 60 * 1000
-// Give the redirect (/api/billing/verify) and webhook (/api/billing/callback)
-// a head start before we step in — most payments are confirmed by one of those.
+// Give the redirect (/api/billing/verify) a head start before we step in;
+// most payments are confirmed there.
 const MIN_AGE_MS = 5 * 60 * 1000
 
 // Called by Vercel Cron daily — protected by CRON_SECRET.
 // Safety net for users who complete a DPO payment but never hit /verify
-// (closed the tab) and whose /callback webhook also never fires.
+// (closed the tab before DPO sent them back).
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
