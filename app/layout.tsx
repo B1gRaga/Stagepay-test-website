@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import localFont from 'next/font/local'
 import "./globals.css"
+import splashScreens from "@/lib/splash-screens.json"
 
 // Manrope (Latin, variable 400–800) is kept in the repo so builds never
 // depend on downloading it from Google Fonts.
@@ -32,6 +33,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
         <link rel="manifest" href="/manifest.json"/>
+        {/* iPhone launch screens (scripts/gen-splash.mjs); other browsers ignore these */}
+        {splashScreens.map(({ w, h, r }) => (
+          <link key={`${w}x${h}@${r}`} rel="apple-touch-startup-image" href={`/splash/iphone-${w}x${h}@${r}x.png`}
+            media={`(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)`}/>
+        ))}
         <meta name="theme-color" content="#1F2A44"/>
       </head>
       <body>
