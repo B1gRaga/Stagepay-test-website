@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { reminderEmail } from '@/lib/emails/reminder'
 import { sendWhatsApp as sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib/whatsapp'
 import { balanceDue } from '@/lib/payments'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // POST /api/reminders/send-now
 // Sends a reminder immediately (bypasses cron) and logs it as status='sent'.
@@ -12,6 +13,11 @@ import { balanceDue } from '@/lib/payments'
 export async function POST(req: NextRequest) {
   const account = await getAccount()
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Same limit as the other send routes: this reaches a phone or inbox the
+  // person types in, so it must not be a free bulk sender.
+  if (!(await checkRateLimit(account.userId, 10, 60_000))) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
   const supabase = await createClient()
 
   let body: Record<string, unknown>
