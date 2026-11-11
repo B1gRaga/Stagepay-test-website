@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedUser, createServiceClient } from '@/lib/supabase/server'
-import { verifyPaymentToken, confirmPlanUpgrade, type DpoPlan } from '@/lib/dpo'
+import { providerById, returnedRef, confirmPlanUpgrade } from '@/lib/billing'
+import type { PaidPlan } from '@/lib/billing/pricing'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-// DPO Pay redirects the user's browser here after payment.
-// We verify the token, upgrade the plan, then redirect to settings.
+// The payment provider sends the customer's browser here after payment.
+// We look up the pending payment, confirm it with the provider that started
+// it, upgrade the plan, then redirect to settings.
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const transactionToken = searchParams.get('TransactionToken')
-
-  if (!transactionToken) {
+  const ref = returnedRef(req.nextUrl.searchParams)
+  if (!ref) {
     return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=no_token`)
   }
 
@@ -19,27 +19,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/auth/login`)
   }
 
-  const { success } = await verifyPaymentToken(transactionToken)
-  if (!success) {
-    return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=verification_failed`)
-  }
-
-  // Read the plan from the server-side pending_plan column set during checkout.
-  // Never parse plan from CompanyRef — that URL param is attacker-controlled.
+  // The plan and provider come from the pending_* columns checkout wrote, never
+  // from the URL: it's the customer's browser that brings us here.
   const serviceClient = createServiceClient()
   const { data: profile } = await serviceClient
     .from('profiles')
-    .select('pending_plan')
+    .select('pending_plan, pending_provider')
     .eq('id', user.id)
-    .eq('dpo_transaction_ref', transactionToken)
+    .eq('dpo_transaction_ref', ref)
     .single()
 
   if (!profile?.pending_plan) {
     return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=no_pending_plan`)
   }
 
-  const plan = profile.pending_plan as DpoPlan
-  await confirmPlanUpgrade(serviceClient, user.id, plan, transactionToken)
+  const { success } = await providerById(profile.pending_provider).verify(ref)
+  if (!success) {
+    return NextResponse.redirect(`${APP_URL}/settings?billing=failed&reason=verification_failed`)
+  }
+
+  const plan = profile.pending_plan as PaidPlan
+  await confirmPlanUpgrade(serviceClient, user.id, plan, ref)
 
   return NextResponse.redirect(`${APP_URL}/settings?billing=success&plan=${plan}`)
 }

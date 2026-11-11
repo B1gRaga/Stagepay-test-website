@@ -1,5 +1,5 @@
-// What each plan costs and includes, as the app actually enforces it.
-// Prices must match what DPO charges in lib/dpo.ts.
+// What each plan includes and how long a payment lasts, as the app enforces it.
+// Prices, per currency, are in lib/billing/pricing.ts.
 export const FREE_MONTHLY_LIMIT = 3
 export const TEAM_SEATS = 5
 
@@ -10,10 +10,10 @@ export function startOfMonthUtc(now = new Date()) {
 
 export type PlanId = 'free' | 'pro' | 'business'
 
-export const PLANS: { id: PlanId; name: string; price: number; includes: string }[] = [
-  { id: 'free',     name: 'Free',     price: 0,   includes: `Up to ${FREE_MONTHLY_LIMIT} invoices a month` },
-  { id: 'pro',      name: 'Pro',      price: 100, includes: 'Unlimited invoices' },
-  { id: 'business', name: 'Business', price: 400, includes: `Unlimited invoices. A shared team account for up to ${TEAM_SEATS} people` },
+export const PLANS: { id: PlanId; name: string; includes: string }[] = [
+  { id: 'free',     name: 'Free',     includes: `Up to ${FREE_MONTHLY_LIMIT} invoices a month` },
+  { id: 'pro',      name: 'Pro',      includes: 'Unlimited invoices' },
+  { id: 'business', name: 'Business', includes: `Unlimited invoices. A shared team account for up to ${TEAM_SEATS} people` },
 ]
 
 // How long one payment covers. Paying for longer up front costs less per month.
@@ -29,7 +29,7 @@ export function period(months: number | null | undefined) {
   return PERIODS.find(p => p.months === months) ?? PERIODS[0]
 }
 
-// What one payment costs, in whole Pula: the monthly price times the months, less the discount.
+// What one payment costs, in whole units of the currency: the monthly price times the months, less the discount.
 export function periodPrice(monthly: number, months: Months) {
   return Math.round(monthly * months * (100 - period(months).off) / 100)
 }

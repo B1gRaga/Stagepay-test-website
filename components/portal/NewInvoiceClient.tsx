@@ -10,23 +10,11 @@ import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 import { BILLED_FOR_MAX, billedForLabel, billedForPlaceholder, billedForWaLine } from '@/lib/billed-for'
 import { dayMonthYear } from '@/lib/format-date'
 import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
+import { CURRENCIES } from '@/lib/currencies'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Client  = { id: string; name: string; email: string | null; phone: string | null }
 type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null; business_type?: string | null }
-
-const CURRENCIES = [
-  { v: 'P',   l: 'BWP — Pula (P)' },
-  { v: 'R',   l: 'ZAR — Rand (R)' },
-  { v: '$',   l: 'USD — Dollar ($)' },
-  { v: '€',   l: 'EUR — Euro (€)' },
-  { v: '£',   l: 'GBP — Pound (£)' },
-  { v: 'KSh', l: 'KES — Kenyan Shilling' },
-  { v: '₦',   l: 'NGN — Naira (₦)' },
-  { v: 'GH₵', l: 'GHS — Cedi (GH₵)' },
-  { v: 'A$',  l: 'AUD — Dollar (A$)' },
-  { v: 'AED', l: 'AED — Dirham' },
-]
 
 const TERMS = [
   { days: 0,  label: 'On receipt' },
@@ -935,7 +923,7 @@ export default function NewInvoiceClient({
               <div className="opt">
                 <span className="opt-l">Currency</span>
                 <select id="ni-currency" name="currency" className="in" style={{ width: 220 }} value={currency} onChange={e => setCurrency(e.target.value)} aria-label="Currency">
-                  {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                  {CURRENCIES.map(c => <option key={c.symbol} value={c.symbol}>{c.label}</option>)}
                 </select>
               </div>
               <div className="opt">

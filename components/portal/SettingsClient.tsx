@@ -6,6 +6,8 @@ import { THEME_PRESETS, THEME_ORDER, resolveTheme, tint, type InvoiceTheme } fro
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { firmLines } from '@/lib/firm-details'
 import { PLANS, PERIODS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName, period, periodPrice, type Months } from '@/lib/plans'
+import { monthlyPrice, type BillingCurrency } from '@/lib/billing/pricing'
+import { CURRENCIES } from '@/lib/currencies'
 import { TEAMS_ENABLED, ROLE_LABEL, ROLE_HELP, type TeamRole } from '@/lib/teams'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from '@/lib/password-check'
@@ -40,6 +42,11 @@ type Profile = {
   team_id?: string | null
 }
 
+// How this business pays for a plan: the currency it's charged in and who takes
+// the payment. Worked out on the server (lib/billing) and passed in.
+export type BillingView = { currency: BillingCurrency; symbol: string; currencyName: string; provider: string }
+const DEFAULT_BILLING: BillingView = { currency: 'BWP', symbol: 'P', currencyName: 'Pula', provider: 'DPO Pay' }
+
 type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'plan' | 'team' | 'security'
 
 const PANELS: { id: Panel; label: string; businessOnly?: boolean }[] = [
@@ -68,20 +75,6 @@ function PanelHead({ title, sub }: { title: React.ReactNode; sub: React.ReactNod
     </header>
   )
 }
-
-
-const CURRENCIES = [
-  { v: 'P',    l: 'BWP — Pula (P)' },
-  { v: 'R',    l: 'ZAR — Rand (R)' },
-  { v: '$',    l: 'USD — Dollar ($)' },
-  { v: '€',    l: 'EUR — Euro (€)' },
-  { v: '£',    l: 'GBP — Pound (£)' },
-  { v: 'KSh',  l: 'KES — Kenyan Shilling (KSh)' },
-  { v: '₦',    l: 'NGN — Naira (₦)' },
-  { v: 'GH₵',  l: 'GHS — Cedi (GH₵)' },
-  { v: 'A$',   l: 'AUD — Australian Dollar (A$)' },
-  { v: 'AED',  l: 'AED — Dirham' },
-]
 
 
 const CSS = `
@@ -478,7 +471,7 @@ function BrandingPdfPreview({ theme, paper, accent, header, logo }: { theme: str
   )
 }
 
-export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, role = 'owner' }: { initialProfile?: Profile | null; invoicesThisMonth?: number; role?: 'owner' | 'admin' | 'staff' }) {
+export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, role = 'owner', billing = DEFAULT_BILLING }: { initialProfile?: Profile | null; invoicesThisMonth?: number; role?: 'owner' | 'admin' | 'staff'; billing?: BillingView }) {
   const [profile, setProfile]   = useState<Profile | null>(initialProfile)
   const [loading, setLoading]   = useState(initialProfile === null)
   // Admin sees everything but billing; Staff sees the team (read-only) and their own security.
@@ -1218,8 +1211,8 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                     <div className="fld">
                       <label htmlFor="s-currency">Bill in</label>
                       <select id="s-currency" name="default_currency" className="in" value={inv.default_currency} onChange={e => setInv(p => ({ ...p, default_currency: e.target.value }))}>
-                        {!CURRENCIES.some(c => c.v === inv.default_currency) && <option value={inv.default_currency}>{inv.default_currency}</option>}
-                        {CURRENCIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                        {!CURRENCIES.some(c => c.symbol === inv.default_currency) && <option value={inv.default_currency}>{inv.default_currency}</option>}
+                        {CURRENCIES.map(c => <option key={c.symbol} value={c.symbol}>{c.label}</option>)}
                       </select>
                       <span className="help">Also the currency your dashboard totals are shown in.</span>
                     </div>
@@ -1397,8 +1390,9 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                   const isCurrent = p.id === currentPlan
                   const paid = p.id !== 'free'
                   const per = period(months)
-                  const total = periodPrice(p.price, months)
-                  const full = p.price * months
+                  const monthly = monthlyPrice(p.id, billing.currency)
+                  const total = periodPrice(monthly, months)
+                  const full = monthly * months
                   const label = isCurrent ? `Renew for ${per.months === 1 ? 'a month' : per.months === 12 ? 'a year' : '6 months'}` : `Switch to ${p.name}`
                   return (
                     <div key={p.id} className={`pl-card${p.id === 'pro' ? ' feature' : ''}`} aria-current={isCurrent ? 'true' : undefined}>
@@ -1406,11 +1400,11 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                       <div className="pl-top">
                         <div className="pl-head"><b>{p.name}</b></div>
                         <div className="pl-price">
-                          P{total.toLocaleString('en')}
+                          {billing.symbol}{total.toLocaleString('en')}
                           <small>{!paid ? 'Free for good' : months === 1 ? 'a month' : months === 12 ? 'for a year' : 'for 6 months'}</small>
                         </div>
                         {paid && per.off > 0 && (
-                          <div className="pl-was"><s>P{full.toLocaleString('en')}</s> · <b>You save P{(full - total).toLocaleString('en')}</b></div>
+                          <div className="pl-was"><s>{billing.symbol}{full.toLocaleString('en')}</s> · <b>You save {billing.symbol}{(full - total).toLocaleString('en')}</b></div>
                         )}
                       </div>
                       <div className="pl-stub">
@@ -1430,7 +1424,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                 })}
               </div>
               {upgradeError && <p className="save-note err" role="alert" style={{ marginTop: 12 }}>{upgradeError}</p>}
-              <p className="help" style={{ marginTop: 14 }}>You pay in Pula on DPO’s secure payment page, then come straight back here. A month covers 30 days, 6 months covers 183 days and a year covers 365 days.</p>
+              <p className="help" style={{ marginTop: 14 }}>You pay in {billing.currencyName} on {billing.provider}’s secure payment page, then come straight back here. A month covers 30 days, 6 months covers 183 days and a year covers 365 days.</p>
             </section>
           </div>
 

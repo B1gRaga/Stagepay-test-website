@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { LogoFull } from '@/components/Logo'
+import { activeProvider } from '@/lib/billing'
 
 export const metadata: Metadata = {
   title: 'Privacy notice — StagePay',
@@ -51,6 +52,12 @@ const CSS = `
 `
 
 export default function PrivacyPage() {
+  // Whoever takes plan payments (lib/billing/provider.ts) is named here too.
+  const pay = activeProvider()
+  const services = [
+    ...SERVICES,
+    { name: pay.name, what: 'Takes your plan payment on its own secure page. It handles your card or bank details; we never see them.', where: pay.where },
+  ]
   return (
     <div className="pv">
       <style>{CSS}</style>
@@ -88,9 +95,8 @@ export default function PrivacyPage() {
           You decide what to enter. We use it only to make, send and follow up your invoices for you.</p>
         <p><b>When a client opens an invoice link:</b> if they press &ldquo;I&apos;ve paid&rdquo;, the payment reference
           they type in. Clients don&apos;t need an account.</p>
-        <p><b>Plans and payments:</b> your plan, when it ends, and the payment provider&apos;s reference for each payment.
-          When paid plans open, you pay on the payment provider&apos;s own page. We never see or store card numbers or
-          mobile money PINs.</p>
+        <p><b>Plans and payments:</b> your plan, when it ends, and {pay.name}&apos;s reference for each payment.
+          You pay on {pay.name}&apos;s own page. We never see or store card numbers or mobile money PINs.</p>
         <p><b>Technical details:</b> your internet address, browser and device type, the pages you use, and error reports.</p>
 
         <h2>Why we use it</h2>
@@ -105,15 +111,14 @@ export default function PrivacyPage() {
         <h2>Who else receives it</h2>
         <p>We use these services to run StagePay. Each one receives only what it needs for its job.</p>
         <div className="card">
-          {SERVICES.map(s => (
+          {services.map(s => (
             <div className="svc" key={s.name}>
               <b>{s.name}</b>
               <span>{s.what}<small>Where: {s.where}</small></span>
             </div>
           ))}
         </div>
-        <p>When paid plans open, the payment provider that takes your payment will be named here.
-          We may also share information if the law requires it.</p>
+        <p>We may also share information if the law requires it.</p>
 
         <h2>Information stored outside Botswana</h2>
         <p>Some of these services store or handle information outside Botswana, as listed above. We choose services that

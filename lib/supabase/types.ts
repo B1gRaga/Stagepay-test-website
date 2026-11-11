@@ -42,6 +42,8 @@ export interface Database {
           default_due_days: number
           pending_plan: string | null
           pending_months: number | null
+          pending_provider: string | null
+          pending_currency: string | null
           business_type: BusinessType | null
           team_id: string | null
           current_account_id: string | null
@@ -78,6 +80,8 @@ export interface Database {
           default_due_days?: number
           pending_plan?: string | null
           pending_months?: number | null
+          pending_provider?: string | null
+          pending_currency?: string | null
           business_type?: BusinessType | null
           team_id?: string | null
           current_account_id?: string | null
@@ -111,6 +115,8 @@ export interface Database {
           default_due_days?: number
           pending_plan?: string | null
           pending_months?: number | null
+          pending_provider?: string | null
+          pending_currency?: string | null
           business_type?: BusinessType | null
           team_id?: string | null
           current_account_id?: string | null

@@ -7,6 +7,11 @@ import { LogoFull } from '@/components/Logo'
 import { WaitlistForm } from '@/components/landing/WaitlistForm'
 import { SIGNUPS_OPEN } from '@/lib/launch'
 import { FREE_MONTHLY_LIMIT, TEAM_SEATS } from '@/lib/plans'
+import { PRICES, BILLING_CURRENCIES } from '@/lib/billing/pricing'
+
+// The landing page speaks to Botswana, so it prices in Pula.
+const P = BILLING_CURRENCIES.BWP.symbol
+const PRICE = PRICES.BWP
 
 const CSS = `
 :root{
@@ -915,8 +920,8 @@ export default function Home() {
               <h2 className="h2">Simple plans</h2></div>
             <div className="plans">
               <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to {FREE_MONTHLY_LIMIT} invoices a month.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
-              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={100} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
-              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={400} /> <small>/ month</small></div><p className="desc">Unlimited invoices, and up to {TEAM_SEATS} people work in one shared account, each with their own sign-in.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={PRICE.pro} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={PRICE.business} /> <small>/ month</small></div><p className="desc">Unlimited invoices, and up to {TEAM_SEATS} people work in one shared account, each with their own sign-in.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
@@ -953,7 +958,7 @@ export default function Home() {
               <details className="reveal" style={{ transitionDelay: '270ms' }}><summary>How do the follow-ups work?</summary><p>Reminders go out automatically on WhatsApp, so you never have to chase anyone yourself. You choose the schedule. By default a friendly nudge goes 3 days after the due date, a polite follow-up at 7 days and a firm final notice at 14 days, and you can add one at 30 days. Reminders stop by themselves the moment the invoice is marked paid. If the client taps &ldquo;I&apos;ve paid&rdquo;, reminders pause until you check it, so nobody gets chased for money they&apos;ve already sent. StagePay keeps the reminders polite and consistent, but it can&apos;t force anyone to pay. What it does is take the awkward chasing off your hands.</p></details>
               <details className="reveal" style={{ transitionDelay: '0ms' }}><summary>Do my clients need an app?</summary><p>No. Invoices arrive in their normal WhatsApp.</p></details>
               <details className="reveal" style={{ transitionDelay: '90ms' }}><summary>Is StagePay VAT-ready?</summary><p>VAT is calculated on every invoice. We&apos;re still confirming our invoices meet every BURS requirement, so please check with your accountant for now.</p></details>
-              <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>No card is needed for the free month, and nothing is charged when it ends: your account moves to the Free plan ({FREE_MONTHLY_LIMIT} invoices a month). To keep Pro, choose a plan: Pro at P100 a month for tutors and small businesses, or Business at P400 a month for teams.</p></details>
+              <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>No card is needed for the free month, and nothing is charged when it ends: your account moves to the Free plan ({FREE_MONTHLY_LIMIT} invoices a month). To keep Pro, choose a plan: Pro at {P}{PRICE.pro} a month for tutors and small businesses, or Business at {P}{PRICE.business} a month for teams.</p></details>
             </div>
           </div>
         </section>

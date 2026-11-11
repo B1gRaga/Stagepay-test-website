@@ -4,10 +4,14 @@ import { NextRequest } from 'next/server'
 // ── Mocks ──────────────────────────────────────────────────────────────────
 const mockGetCachedUser = vi.fn()
 const mockCheckRateLimit = vi.fn()
-const mockCreatePaymentToken = vi.fn()
+const mockCreateCheckout = vi.fn()
+const mockSingle = vi.fn()
 const mockEq = vi.fn()
 const mockUpdate = vi.fn(() => ({ eq: mockEq }))
-const mockFrom = vi.fn(() => ({ update: mockUpdate }))
+const mockFrom = vi.fn(() => ({
+  update: mockUpdate,
+  select: vi.fn(() => ({ eq: vi.fn(() => ({ single: mockSingle })) })),
+}))
 
 vi.mock('@/lib/supabase/server', () => ({
   getCachedUser: (...args: unknown[]) => mockGetCachedUser(...args),
@@ -27,8 +31,10 @@ vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
 }))
 
-vi.mock('@/lib/dpo', () => ({
-  createPaymentToken: (...args: unknown[]) => mockCreatePaymentToken(...args),
+// Whoever takes payments; the route must not care which provider it is.
+const provider = { id: 'dpo', name: 'DPO Pay', currencies: ['BWP'], createCheckout: (...args: unknown[]) => mockCreateCheckout(...args) }
+vi.mock('@/lib/billing', () => ({
+  activeProvider: () => provider,
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -45,8 +51,11 @@ describe('POST /api/billing/checkout', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockAccountId = null
+    provider.id = 'dpo'
+    provider.currencies = ['BWP']
     mockCheckRateLimit.mockResolvedValue(true)
     mockEq.mockResolvedValue({ error: null })
+    mockSingle.mockResolvedValue({ data: { default_currency: 'P' } })
   })
 
   it('returns 403 when working in another person’s business, even as an admin', async () => {
@@ -55,7 +64,7 @@ describe('POST /api/billing/checkout', () => {
     const { POST } = await import('@/app/api/billing/checkout/route')
     const res = await POST(makeRequest({ plan: 'pro' }))
     expect(res.status).toBe(403)
-    expect(mockCreatePaymentToken).not.toHaveBeenCalled()
+    expect(mockCreateCheckout).not.toHaveBeenCalled()
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -93,30 +102,56 @@ describe('POST /api/billing/checkout', () => {
     expect(await res.json()).toMatchObject({ error: 'Invalid plan' })
   })
 
-  it('creates a payment token, stores pending_plan, and returns the payment URL', async () => {
+  it('starts a payment, stores what was started (plan, period, provider, currency), and returns the payment URL', async () => {
     mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
-    mockCreatePaymentToken.mockResolvedValue({ token: 'tok-1', paymentUrl: 'https://pay.example/tok-1' })
+    mockCreateCheckout.mockResolvedValue({ ref: 'tok-1', paymentUrl: 'https://pay.example/tok-1' })
     const { POST } = await import('@/app/api/billing/checkout/route')
     const res = await POST(makeRequest({ plan: 'business' }))
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ paymentUrl: 'https://pay.example/tok-1' })
-    expect(mockCreatePaymentToken).toHaveBeenCalledWith('user-1', 'business', 1)
+    expect(mockCreateCheckout).toHaveBeenCalledWith({
+      userId: 'user-1', plan: 'business', months: 1, currency: 'BWP', amount: '400.00', description: 'Stagepay Business Plan — Monthly',
+    })
     expect(mockFrom).toHaveBeenCalledWith('profiles')
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
       dpo_transaction_ref: 'tok-1',
       pending_plan: 'business',
       pending_months: 1,
+      pending_provider: 'dpo',
+      pending_currency: 'BWP',
     }))
   })
 
   it('charges for the months chosen and stores them for when the payment is confirmed', async () => {
     mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
-    mockCreatePaymentToken.mockResolvedValue({ token: 'tok-2', paymentUrl: 'https://pay.example/tok-2' })
+    mockCreateCheckout.mockResolvedValue({ ref: 'tok-2', paymentUrl: 'https://pay.example/tok-2' })
     const { POST } = await import('@/app/api/billing/checkout/route')
     const res = await POST(makeRequest({ plan: 'pro', months: 12 }))
     expect(res.status).toBe(200)
-    expect(mockCreatePaymentToken).toHaveBeenCalledWith('user-1', 'pro', 12)
+    expect(mockCreateCheckout).toHaveBeenCalledWith(expect.objectContaining({ plan: 'pro', months: 12, amount: '1080.00' }))
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ pending_plan: 'pro', pending_months: 12 }))
+  })
+
+  it('records which provider took the payment, so it can be confirmed with the same one', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
+    provider.id = 'realpay'
+    provider.currencies = ['BWP', 'ZAR']
+    mockCreateCheckout.mockResolvedValue({ ref: 'rp-1', paymentUrl: 'https://realpay.example/rp-1' })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    const res = await POST(makeRequest({ plan: 'pro' }))
+    expect(res.status).toBe(200)
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ dpo_transaction_ref: 'rp-1', pending_provider: 'realpay' }))
+  })
+
+  it('bills a Rand business in Pula while there is no Rand price list', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
+    mockSingle.mockResolvedValue({ data: { default_currency: 'R' } })
+    provider.currencies = ['BWP', 'ZAR']
+    mockCreateCheckout.mockResolvedValue({ ref: 'tok-3', paymentUrl: 'https://pay.example/tok-3' })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    await POST(makeRequest({ plan: 'pro' }))
+    expect(mockCreateCheckout).toHaveBeenCalledWith(expect.objectContaining({ currency: 'BWP', amount: '100.00' }))
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ pending_currency: 'BWP' }))
   })
 
   it('returns 400 for a billing period that isn’t 1, 6 or 12 months', async () => {
@@ -124,15 +159,25 @@ describe('POST /api/billing/checkout', () => {
     const { POST } = await import('@/app/api/billing/checkout/route')
     const res = await POST(makeRequest({ plan: 'pro', months: 3 }))
     expect(res.status).toBe(400)
-    expect(mockCreatePaymentToken).not.toHaveBeenCalled()
+    expect(mockCreateCheckout).not.toHaveBeenCalled()
   })
 
-  it('returns 500 with the underlying error message when DPO token creation fails', async () => {
+  it('returns 500 with the underlying error message when the provider can’t start the payment', async () => {
     mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
-    mockCreatePaymentToken.mockRejectedValue(new Error('DPO_COMPANY_TOKEN is not set'))
+    mockCreateCheckout.mockRejectedValue(new Error('DPO_COMPANY_TOKEN is not set'))
     const { POST } = await import('@/app/api/billing/checkout/route')
     const res = await POST(makeRequest({ plan: 'pro' }))
     expect(res.status).toBe(500)
     expect(await res.json()).toMatchObject({ error: 'DPO_COMPANY_TOKEN is not set' })
+  })
+
+  it('doesn’t send the customer to pay when the reference couldn’t be stored', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
+    mockCreateCheckout.mockResolvedValue({ ref: 'tok-4', paymentUrl: 'https://pay.example/tok-4' })
+    mockEq.mockResolvedValue({ error: { message: 'column does not exist' } })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    const res = await POST(makeRequest({ plan: 'pro' }))
+    expect(res.status).toBe(500)
+    expect((await res.json()).error).toMatch(/save the payment reference/)
   })
 })

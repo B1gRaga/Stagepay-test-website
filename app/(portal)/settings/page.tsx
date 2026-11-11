@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
-import { SettingsClient } from '@/components/portal/SettingsClient'
+import { SettingsClient, type BillingView } from '@/components/portal/SettingsClient'
 import { startOfMonthUtc } from '@/lib/plans'
+import { activeProvider } from '@/lib/billing'
+import { billingCurrencyFor, BILLING_CURRENCIES } from '@/lib/billing/pricing'
 
 export default async function SettingsPage() {
   const account = await getAccount()
@@ -26,9 +28,14 @@ export default async function SettingsPage() {
       .single(),
   ])
 
+  // What Plan & billing shows: the same currency and provider checkout will use.
+  const provider = activeProvider()
+  const currency = billingCurrencyFor(profile?.default_currency, provider.currencies)
+  const billing: BillingView = { currency, symbol: BILLING_CURRENCIES[currency].symbol, currencyName: BILLING_CURRENCIES[currency].name, provider: provider.name }
+
   return (
     <Suspense>
-      <SettingsClient initialProfile={profile ?? null} invoicesThisMonth={invoicesThisMonth ?? 0} role={account.role} />
+      <SettingsClient initialProfile={profile ?? null} invoicesThisMonth={invoicesThisMonth ?? 0} role={account.role} billing={billing} />
     </Suspense>
   )
 }
