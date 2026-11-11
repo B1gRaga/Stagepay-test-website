@@ -139,6 +139,8 @@ export default function PrivacyPage() {
             sent keep the client&apos;s name and contact details, as your record of what you billed.</li>
           <li>Waitlist details, until launch and for as long as you stay on our list. Ask and we&apos;ll remove you.</li>
           <li>Error reports and visit counts are kept for a limited time by Sentry and Vercel, then deleted.</li>
+          <li>A record of changes to your account (what was changed, and when) is kept for 180 days, so we can
+            look into misuse and put things back. It is then deleted.</li>
         </ul>
 
         <h2>Your choices</h2>

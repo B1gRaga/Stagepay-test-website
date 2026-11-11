@@ -7,6 +7,7 @@ import { withRetry } from '@/lib/retry'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { balanceDue } from '@/lib/payments'
+import { maintenanceOn } from '@/lib/maintenance'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -16,6 +17,10 @@ export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  // Emergency off switch: no sends and no changes while it is on.
+  if (maintenanceOn()) {
+    return NextResponse.json({ skipped: 'maintenance' }, { status: 503 })
   }
 
   try {

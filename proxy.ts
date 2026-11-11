@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SIGNUPS_OPEN } from '@/lib/launch'
+import { maintenanceOn, MAINTENANCE_HTML, MAINTENANCE_MESSAGE } from '@/lib/maintenance'
 
 // '/api/auth/check-password' is called by sign-up before an account exists;
 // it's rate-limited by IP and only ever sends a 5-character hash prefix out.
@@ -27,6 +28,15 @@ function tokenAal(token: string | undefined): string | null {
 }
 
 export async function proxy(request: NextRequest) {
+  // Emergency off switch (MAINTENANCE_MODE=1): nothing below runs, so no
+  // session is read and no route is reached.
+  if (maintenanceOn()) {
+    const headers = { 'Retry-After': '3600', 'Cache-Control': 'no-store' }
+    return request.nextUrl.pathname.startsWith('/api/')
+      ? NextResponse.json({ error: MAINTENANCE_MESSAGE }, { status: 503, headers })
+      : new NextResponse(MAINTENANCE_HTML, { status: 503, headers: { ...headers, 'Content-Type': 'text/html; charset=utf-8' } })
+  }
+
   // Collect cookies that Supabase wants to set (token refresh),
   // apply them to the final response at the end.
   const cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
@@ -137,8 +147,12 @@ export async function proxy(request: NextRequest) {
 // `.+` rather than `.*` leaves out the bare `/`: the landing page is static and
 // needs no session, so it's served straight from the CDN without a proxy hop.
 // `/start` (the installed app's launch screen) skips it for the same reason.
+// Only image files at the root, in /icons and in /splash skip it: getCachedUser()
+// trusts the x-user-id header this proxy sets, so a dynamic route such as
+// /api/invoices/<anything>.png must still pass through here, or a request
+// could bring its own header.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon|icons|manifest|start$|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).+)',
+    '/((?!_next/static|_next/image|favicon|icons/|splash/|manifest|start$|api/cron|[^/]+\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).+)',
   ],
 }
