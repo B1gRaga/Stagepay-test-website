@@ -21,7 +21,11 @@ const DEMO = {
   firm: 'Thuto Tuition Centre', owner: 'Naledi Kgosi',
   client: process.env.DEMO_CLIENT || 'Kabo Motswana', phone: '+267 71 234 567', email: 'delivered@resend.dev',
   billedFor: process.env.DEMO_BILLED_FOR || 'Lesego (Form 3)', project: 'November tuition fees',
-  items: [['Mathematics — 8 lessons', '8', '60'], ['Physical Science — 8 lessons', '8', '60']],
+  // Monthly subject fees, one line each: P1,100 + 14% VAT = P1,254.00.
+  items: [['Mathematics', '1', '300'], ['Sciences', '1', '500'], ['English', '1', '300']],
+  partPayment: '500',
+  // The tutorial's client, so it types a new name rather than picking a chip.
+  tutorialClient: process.env.TUTORIAL_CLIENT || 'Lesedi Phiri', tutorialBilledFor: process.env.TUTORIAL_BILLED_FOR || 'Amo (Form 2)',
 }
 
 function loadEnv() {
@@ -170,6 +174,62 @@ async function signIn(page) {
   await page.waitForLoadState('networkidle').catch(() => {})
 }
 
+// Invoice numbers this run created, so their reminders are switched off at the end.
+const created = []
+
+// On /new-invoice: a new client, three monthly subject lines, 7-day terms, sent
+// by email. Resolves with the invoice page URL once the app has moved there.
+async function fillAndSendInvoice(page, isPhone, client, billedFor) {
+  await page.getByLabel('Name', { exact: true }).waitFor()
+  await sleep(1200)
+  await type(page.getByLabel('Name', { exact: true }), client)
+  await type(page.getByLabel('WhatsApp number'), DEMO.phone, 40)
+  await type(page.getByLabel(/^Email/), DEMO.email, 35)
+  const bf = page.locator('#ni-billed-for')
+  if (await bf.count()) await type(bf, billedFor)
+  await type(page.getByLabel('Description'), DEMO.project)
+  for (let i = 0; i < DEMO.items.length; i++) {
+    if (i > 0) { await page.getByRole('button', { name: 'Add an item' }).click(); await sleep(400) }
+    const [desc, qty, rate] = DEMO.items[i]
+    await type(page.getByLabel(`Item ${i + 1}`, { exact: true }), desc)
+    const qtyBox = page.getByLabel(`Quantity for item ${i + 1}`)
+    if ((await qtyBox.inputValue()) !== qty) await qtyBox.fill(qty)
+    // A known item name pre-fills last time's rate, so replace rather than type into it.
+    const rateBox = page.getByLabel(`Rate for item ${i + 1}`)
+    await rateBox.click(); await rateBox.fill(''); await rateBox.pressSequentially(rate, { delay: 80 })
+    await sleep(600)
+  }
+  await sleep(800)
+  await page.getByRole('button', { name: '7 days' }).click()
+  await sleep(1500)
+  if (isPhone) {
+    await page.getByRole('button', { name: 'Preview' }).click()
+    await sleep(3000)
+  }
+  await page.getByRole('button', { name: 'Send by email' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.waitFor({ timeout: 20_000 })
+  await sleep(1200)
+  const to = dialog.getByLabel('Their email')
+  if (!(await to.inputValue())) await type(to, DEMO.email, 35)
+  await sleep(800)
+  await dialog.getByRole('button', { name: 'Send email' }).click()
+  await page.getByText('Invoice sent!').waitFor({ timeout: 30_000 })
+  await page.waitForURL(/\/invoices\/[0-9a-f-]+/, { timeout: 30_000 })
+  await page.waitForLoadState('networkidle').catch(() => {})
+  const num = (await page.locator('.top-num').first().textContent().catch(() => ''))?.trim()
+  if (num) created.push(num)
+  // The public link's token, for the "what the client sees" scene.
+  const id = page.url().match(/\/invoices\/([0-9a-f-]+)/)?.[1]
+  if (id) {
+    const res = await page.request.get(`${BASE}/api/invoices/${id}`).catch(() => null)
+    const token = res?.ok() ? (await res.json())?.invoice?.public_token : null
+    if (token) createdToken = token
+  }
+  return page.url()
+}
+let createdToken = null
+
 // One recorded scene = one page = one video file.
 async function scene(context, device, name, fn) {
   const page = await context.newPage()
@@ -234,6 +294,26 @@ async function deleteInvoices(context, numbers) {
   } finally { await page.close() }
 }
 
+// Remove demo clients from an earlier take (--delete-clients=Name,Name), through the Clients page.
+async function deleteClients(context, names) {
+  const page = await context.newPage()
+  try {
+    await signIn(page)
+    for (const name of names) {
+      await page.goto(BASE + '/clients')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      const btn = page.getByRole('button', { name: `Delete ${name}` })
+      if (!(await btn.count())) { note('setup', `delete client ${name}`, 'skipped', 'not listed'); continue }
+      await btn.first().click()
+      await page.getByRole('button', { name: 'Delete client' }).click()
+      await sleep(1500)
+      note('setup', `delete client ${name}`, 'ok')
+    }
+  } catch (e) {
+    note('setup', 'delete clients', 'FAILED', String(e.message || e).split('\n')[0])
+  } finally { await page.close() }
+}
+
 // Sending books automatic reminders, and the demo client has a WhatsApp number,
 // so switch them off for the demo invoices (--reminders-off=INV-...,INV-...).
 async function switchOffReminders(context, numbers) {
@@ -277,6 +357,42 @@ async function run(deviceName) {
   let createdInvoiceUrl = null
 
   if (args.delete) await deleteInvoices(context, args.delete.split(','))
+  if (args['delete-clients']) await deleteClients(context, args['delete-clients'].split(','))
+
+  // One continuous take: sign in, look at the dashboard, make and send an
+  // invoice, then switch its automatic reminders off and on again.
+  // Each device gets its own client names, so no client is typed in twice.
+  const names = deviceName === 'phone'
+    ? { client: 'Boitumelo Sebina', billedFor: 'Tumi (Form 1)', tutorialClient: 'Tshepo Dube', tutorialBilledFor: 'Naledi (Form 4)' }
+    : { client: DEMO.client, billedFor: DEMO.billedFor, tutorialClient: DEMO.tutorialClient, tutorialBilledFor: DEMO.tutorialBilledFor }
+
+  if (PHASE === 'all' || PHASE === 'tutorial') {
+    await setupBusiness(context)
+    await context.clearCookies() // the tutorial starts at the sign-in screen
+    await scene(context, deviceName, '00-tutorial-first-invoice', async page => {
+      await signIn(page)
+      await sleep(3500)
+      await scrollThrough(page, { step: 400, pause: 700, settle: 1200 })
+      await sleep(800)
+      await page.getByRole('link', { name: 'New invoice' }).first().click()
+      await page.waitForURL(/\/new-invoice/)
+      await fillAndSendInvoice(page, isPhone, names.tutorialClient, names.tutorialBilledFor)
+      await sleep(3500)
+      await scrollThrough(page, { step: 400, pause: 700, settle: 1500 })
+      const num = created[created.length - 1]
+      await page.getByRole('link', { name: 'Reminders' }).first().click()
+      await page.waitForURL(/\/reminders/)
+      await page.waitForLoadState('networkidle').catch(() => {})
+      await sleep(2500)
+      const sw = page.getByRole('switch', { name: `Automatic reminders for ${num}` })
+      await sw.scrollIntoViewIfNeeded()
+      await sleep(1500)
+      // Sending books reminders automatically, so show the switch going off and back on.
+      await sw.click(); await sleep(2500)
+      await sw.click(); await sleep(3000)
+      await scrollThrough(page, { step: 380, pause: 650 })
+    })
+  }
 
   if (PHASE === 'all' || PHASE === 'create') {
     await setupBusiness(context)
@@ -295,44 +411,7 @@ async function run(deviceName) {
 
     await scene(context, deviceName, '03-new-invoice', async page => {
       await page.goto(BASE + '/new-invoice')
-      await page.getByLabel('Name', { exact: true }).waitFor()
-      await sleep(1200)
-      await type(page.getByLabel('Name', { exact: true }), DEMO.client)
-      await type(page.getByLabel('WhatsApp number'), DEMO.phone, 40)
-      await type(page.getByLabel(/^Email/), DEMO.email, 35)
-      const bf = page.locator('#ni-billed-for')
-      if (await bf.count()) await type(bf, DEMO.billedFor)
-      await type(page.getByLabel('Description'), DEMO.project)
-      for (let i = 0; i < DEMO.items.length; i++) {
-        if (i > 0) { await page.getByRole('button', { name: 'Add an item' }).click(); await sleep(400) }
-        const [desc, qty, rate] = DEMO.items[i]
-        await type(page.getByLabel(`Item ${i + 1}`, { exact: true }), desc)
-        await page.getByLabel(`Quantity for item ${i + 1}`).fill(qty)
-        // A known item name pre-fills last time's rate, so replace rather than type into it.
-        const rateBox = page.getByLabel(`Rate for item ${i + 1}`)
-        await rateBox.click(); await rateBox.fill(''); await rateBox.pressSequentially(rate, { delay: 80 })
-        await sleep(500)
-      }
-      await page.getByRole('button', { name: '7 days' }).click()
-      await sleep(1200)
-      if (isPhone) {
-        await page.getByRole('button', { name: 'Preview' }).click()
-        await sleep(2500)
-        await page.getByRole('button', { name: 'Send by email' }).click()
-      } else {
-        await page.getByRole('button', { name: 'Send by email' }).click()
-      }
-      const dialog = page.getByRole('dialog')
-      await dialog.waitFor({ timeout: 20_000 })
-      await sleep(1000)
-      const to = dialog.getByLabel('Their email')
-      if (!(await to.inputValue())) await type(to, DEMO.email, 35)
-      await sleep(600)
-      await dialog.getByRole('button', { name: 'Send email' }).click()
-      await page.getByText('Invoice sent!').waitFor({ timeout: 30_000 })
-      await page.waitForURL(/\/invoices\/[0-9a-f-]+/, { timeout: 30_000 })
-      createdInvoiceUrl = page.url()
-      await page.waitForLoadState('networkidle').catch(() => {})
+      createdInvoiceUrl = await fillAndSendInvoice(page, isPhone, names.client, names.billedFor)
       await sleep(3000)
       await scrollThrough(page, { step: 400, pause: 600 })
     })
@@ -346,7 +425,7 @@ async function run(deviceName) {
       await sleep(800)
       // The amount box opens pre-filled with what's owed; a part payment replaces it.
       const amt = page.getByLabel(/^Amount/)
-      await amt.click(); await amt.fill(''); await amt.pressSequentially('480', { delay: 90 })
+      await amt.click(); await amt.fill(''); await amt.pressSequentially(DEMO.partPayment, { delay: 90 })
       await type(page.getByLabel('Note (optional)'), 'Orange Money', 50)
       await sleep(500)
       await page.getByRole('button', { name: 'Save payment' }).click()
@@ -366,8 +445,8 @@ async function run(deviceName) {
     })
   }
 
-  if (PHASE === 'all' || PHASE === 'view') {
-    await scene(context, deviceName, '06-dashboard', async page => {
+  if (PHASE === 'all' || PHASE === 'view' || PHASE === 'client') {
+    if (PHASE !== 'client') await scene(context, deviceName, '06-dashboard', async page => {
       await signIn(page)
       await page.goto(BASE + '/dashboard')
       await page.waitForLoadState('networkidle').catch(() => {})
@@ -375,7 +454,7 @@ async function run(deviceName) {
       await scrollThrough(page)
     })
 
-    await scene(context, deviceName, '07-reminders', async page => {
+    if (PHASE !== 'client') await scene(context, deviceName, '07-reminders', async page => {
       await page.goto(BASE + '/reminders')
       await page.getByRole('heading', { level: 1 }).waitFor()
       await page.waitForLoadState('networkidle').catch(() => {})
@@ -383,28 +462,28 @@ async function run(deviceName) {
       await scrollThrough(page)
     })
 
-    await scene(context, deviceName, '08-clients', async page => {
+    if (PHASE !== 'client') await scene(context, deviceName, '08-clients', async page => {
       await page.goto(BASE + '/clients')
       await page.getByRole('heading', { level: 1 }).waitFor()
       await sleep(2500)
       await scrollThrough(page)
     })
 
-    await scene(context, deviceName, '09-settings-plan', async page => {
+    if (PHASE !== 'client') await scene(context, deviceName, '09-settings-plan', async page => {
       await page.goto(BASE + '/settings?panel=plan')
       await page.waitForLoadState('networkidle').catch(() => {})
       await sleep(2500)
       await scrollThrough(page)
     })
 
-    await scene(context, deviceName, '10-branding', async page => {
+    if (PHASE !== 'client') await scene(context, deviceName, '10-branding', async page => {
       await page.goto(BASE + '/settings?panel=brand')
       await page.locator('.brand-pdf-box canvas').waitFor({ timeout: 25_000 })
       await sleep(2500)
       await scrollThrough(page)
     })
 
-    const token = process.env.DEMO_INVOICE_TOKEN
+    const token = process.env.DEMO_INVOICE_TOKEN || createdToken
     if (token) {
       await scene(context, deviceName, '11-what-the-client-sees', async page => {
         await page.goto(BASE + '/invoice/' + token)
@@ -416,7 +495,8 @@ async function run(deviceName) {
     } else note(deviceName, '11-what-the-client-sees', 'skipped', 'set DEMO_INVOICE_TOKEN')
   }
 
-  if (args['reminders-off']) await switchOffReminders(context, args['reminders-off'].split(','))
+  const off = [...new Set([...(args['reminders-off'] ? args['reminders-off'].split(',') : []), ...created])]
+  if (off.length) await switchOffReminders(context, off)
 
   await context.close()
   await browser.close()
