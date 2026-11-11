@@ -43,7 +43,36 @@ describe('GET /api/reports', () => {
   it('sums invoiced, VAT and received per currency, leaving out cancelled invoices', async () => {
     const { GET } = await import('@/app/api/reports/route')
     const body = await (await GET(get('from=2026-10-01&to=2026-10-31'))).json()
-    expect(body.totals).toEqual([{ currency: 'P', count: 1, net: 900, vat: 126, gross: 1026, received: 500, owed: 526 }])
+    expect(body.totals).toEqual([expect.objectContaining({ currency: 'P', count: 1, net: 900, vat: 126, gross: 1026, received: 500, owed: 526 })])
+  })
+
+  it('breaks the period down by month and by client, received on the month it was paid', async () => {
+    rows.invoices.push({ invoice_number: 'INV-003', client_name: 'Kgosi', client_vat: null, project: null, issue_date: '2026-11-03', due_date: null, status: 'sent', currency: 'P', subtotal: 200, discount_amount: 0, vat_rate: 14, vat_amount: 28, deposit_amount: 0, total: 228, invoice_payments: [] })
+    rows.invoice_payments.push({ amount: 100, paid_on: '2026-11-05', note: null, invoices: { invoice_number: 'INV-003', client_name: 'Kgosi', currency: 'P' } })
+    const { GET } = await import('@/app/api/reports/route')
+    const [p] = (await (await GET(get('from=2026-10-01&to=2026-11-30'))).json()).totals
+    expect(p.months).toEqual([
+      { month: '2026-10', count: 1, net: 900, vat: 126, gross: 1026, received: 500 },
+      { month: '2026-11', count: 1, net: 200, vat: 28, gross: 228, received: 100 },
+    ])
+    // Most invoiced first; the cancelled invoice counts for nothing, and a payment's
+    // client comes from its invoice.
+    expect(p.clients).toEqual([
+      { client: '=HYPERLINK("x")', count: 1, net: 900, vat: 126, gross: 1026, received: 0 },
+      { client: 'Kgosi', count: 1, net: 200, vat: 28, gross: 228, received: 100 },
+      { client: 'Neo', count: 0, net: 0, vat: 0, gross: 0, received: 500 },
+    ])
+  })
+
+  it('exports the month-and-client summary as one CSV', async () => {
+    const { GET } = await import('@/app/api/reports/route')
+    const res = await GET(get('from=2026-10-01&to=2026-10-31&format=csv&type=summary'))
+    expect(res.headers.get('content-disposition')).toBe('attachment; filename="stagepay-summary-2026-10-01-to-2026-10-31.csv"')
+    const lines = (await res.text()).replace(/^﻿/, '').trim().split('\r\n')
+    expect(lines[0]).toBe('Section,Month or client,Currency,Invoices,Net (excl. VAT),VAT,Gross (incl. VAT),Received')
+    expect(lines[1]).toBe('Month,Oct 2026,P,1.00,900.00,126.00,1026.00,500.00')
+    expect(lines[2]).toBe(`Client,"'=HYPERLINK(""x"")",P,1.00,900.00,126.00,1026.00,0.00`)
+    expect(lines[lines.length - 1]).toBe('Total,2026-10-01 to 2026-10-31,P,1.00,900.00,126.00,1026.00,500.00')
   })
 
   it('exports invoices as a spreadsheet-safe CSV', async () => {

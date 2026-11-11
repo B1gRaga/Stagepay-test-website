@@ -68,10 +68,75 @@ function csv(header: string[], rows: unknown[][], filename: string) {
   })
 }
 
+type Sums = { count: number; net: number; vat: number; gross: number; received: number }
+type Totals = Sums & {
+  currency: string
+  owed: number
+  months: (Sums & { month: string })[]   // 'YYYY-MM', in order
+  clients: (Sums & { client: string })[] // most invoiced first
+}
+
+const blank = (): Sums => ({ count: 0, net: 0, vat: 0, gross: 0, received: 0 })
+const round = <T extends Sums>(s: T): T => ({ ...s, net: cents(s.net), vat: cents(s.vat), gross: cents(s.gross), received: cents(s.received) })
+
+type Issued = { client_name: string | null; issue_date: string; status: string; currency: string | null; subtotal: unknown; discount_amount: unknown; vat_amount: unknown }
+type Received = { amount: unknown; paid_on: string; invoices: { client_name: string | null; currency: string | null } | null }
+type Open = { currency: string | null; total: string | number; invoice_payments: { amount: string | number }[] | null }
+
+// Accrual basis by issue date (what was invoiced in the period), with what
+// actually came in by paid date alongside; cancelled invoices count for nothing.
+function summarise(invs: Issued[], pays: Received[], open: Open[]): Totals[] {
+  const by = new Map<string, Totals & { m: Map<string, Sums & { month: string }>; c: Map<string, Sums & { client: string }> }>()
+  const cur = (c: string | null) => {
+    const k = c || 'P'
+    if (!by.has(k)) by.set(k, { currency: k, ...blank(), owed: 0, months: [], clients: [], m: new Map(), c: new Map() })
+    return by.get(k)!
+  }
+  const monthOf = (d: string) => d.slice(0, 7)
+  const nameOf = (n: string | null) => n?.trim() || 'No name'
+  const bucket = <K extends string, T extends Sums>(map: Map<string, T>, key: string, make: () => T) => {
+    if (!map.has(key)) map.set(key, make())
+    return map.get(key)!
+  }
+  for (const i of invs) {
+    if (i.status === 'cancelled') continue
+    const t   = cur(i.currency)
+    const net = Number(i.subtotal) - Number(i.discount_amount || 0)
+    const vat = Number(i.vat_amount)
+    const m   = bucket(t.m, monthOf(i.issue_date), () => ({ month: monthOf(i.issue_date), ...blank() }))
+    const c   = bucket(t.c, nameOf(i.client_name), () => ({ client: nameOf(i.client_name), ...blank() }))
+    for (const s of [t, m, c]) { s.count += 1; s.net += net; s.vat += vat; s.gross += net + vat }
+  }
+  for (const p of pays) {
+    const t = cur(p.invoices?.currency ?? null)
+    const amount = Number(p.amount)
+    t.received += amount
+    bucket(t.m, monthOf(p.paid_on), () => ({ month: monthOf(p.paid_on), ...blank() })).received += amount
+    bucket(t.c, nameOf(p.invoices?.client_name ?? null), () => ({ client: nameOf(p.invoices?.client_name ?? null), ...blank() })).received += amount
+  }
+  for (const i of open) cur(i.currency).owed += balanceDue(i.total, i.invoice_payments)
+
+  return [...by.values()]
+    .map(({ m, c, ...t }) => ({
+      ...round(t), owed: cents(t.owed),
+      months: [...m.values()].sort((a, b) => a.month.localeCompare(b.month)).map(round),
+      clients: [...c.values()].sort((a, b) => b.gross - a.gross || a.client.localeCompare(b.client)).map(round),
+    }))
+    .sort((a, b) => b.gross + b.received - (a.gross + a.received))
+}
+
+// 'YYYY-MM' → 'Oct 2026', for the summary spreadsheet.
+function monthLabel(ym: string) {
+  const [y, m] = ym.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+}
+
 // GET /api/reports?from=YYYY-MM-DD&to=YYYY-MM-DD
-//   JSON: per currency, what was invoiced (net, VAT, gross), what came in, and what's owed today.
-// GET /api/reports?...&format=csv&type=invoices|payments
-//   The invoices issued, or the payments received, in the period as a CSV for an accountant.
+//   JSON: per currency, what was invoiced (net, VAT, gross), what came in, and
+//   what's owed today, each also broken down by month and by client.
+// GET /api/reports?...&format=csv&type=invoices|payments|summary
+//   The invoices issued, the payments received, or the month-and-client
+//   summary for the period, as a CSV for an accountant or a VAT return.
 export async function GET(req: NextRequest) {
   const account = await getAccount()
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -86,7 +151,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient()
 
   try {
-    if (sp.get('format') === 'csv') {
+    if (sp.get('format') === 'csv' && sp.get('type') !== 'summary') {
       if (sp.get('type') === 'payments') {
         const pays = await paymentsIn(supabase, account.accountId, from, to)
         return csv(
@@ -125,29 +190,22 @@ export async function GET(req: NextRequest) {
         .in('status', ['sent', 'overdue'])
         .range(a, b)),
     ])
+    const totals = summarise(invs, pays, open)
 
-    type Totals = { currency: string; count: number; net: number; vat: number; gross: number; received: number; owed: number }
-    const by = new Map<string, Totals>()
-    const row = (c: string | null) => {
-      const k = c || 'P'
-      if (!by.has(k)) by.set(k, { currency: k, count: 0, net: 0, vat: 0, gross: 0, received: 0, owed: 0 })
-      return by.get(k)!
+    if (sp.get('format') === 'csv' && sp.get('type') === 'summary') {
+      const line = (section: string, label: string, currency: string, s: Sums) =>
+        [section, label, currency, s.count, s.net, s.vat, s.gross, s.received]
+      return csv(
+        ['Section', 'Month or client', 'Currency', 'Invoices', 'Net (excl. VAT)', 'VAT', 'Gross (incl. VAT)', 'Received'],
+        totals.flatMap(t => [
+          ...t.months.map(m => line('Month', monthLabel(m.month), t.currency, m)),
+          ...t.clients.map(c => line('Client', c.client, t.currency, c)),
+          line('Total', `${from} to ${to}`, t.currency, t),
+        ]),
+        `stagepay-summary-${from}-to-${to}.csv`,
+      )
     }
-    for (const i of invs) {
-      if (i.status === 'cancelled') continue
-      const t   = row(i.currency)
-      const net = Number(i.subtotal) - Number(i.discount_amount || 0)
-      t.count += 1
-      t.net   += net
-      t.vat   += Number(i.vat_amount)
-      t.gross += net + Number(i.vat_amount)
-    }
-    for (const p of pays) row(p.invoices?.currency ?? null).received += Number(p.amount)
-    for (const i of open) row(i.currency).owed += balanceDue(i.total, i.invoice_payments)
 
-    const totals = [...by.values()]
-      .map(t => ({ ...t, net: cents(t.net), vat: cents(t.vat), gross: cents(t.gross), received: cents(t.received), owed: cents(t.owed) }))
-      .sort((a, b) => b.gross + b.received - (a.gross + a.received))
     return NextResponse.json({ from, to, totals })
   } catch {
     return NextResponse.json({ error: 'Couldn’t build the report' }, { status: 500 })
