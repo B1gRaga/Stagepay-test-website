@@ -24,6 +24,17 @@ function appUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 }
 
+// Currencies DPO will take for this merchant account. DPO enables them per
+// account on request, so this follows the account: DPO_CURRENCIES="BWP,ZAR,USD".
+// Pula is always in, being the fallback. Until the env is set, Pula only.
+function chargeableCurrencies(): string[] {
+  const listed = (process.env.DPO_CURRENCIES ?? '')
+    .split(',')
+    .map(c => c.trim().toUpperCase())
+    .filter(c => /^[A-Z]{3}$/.test(c))
+  return [...new Set(['BWP', ...listed])]
+}
+
 async function callDpo(xml: string): Promise<string> {
   const res = await fetch(DPO_API, {
     method: 'POST',
@@ -95,8 +106,9 @@ async function verify(ref: string) {
 export const dpo: PaymentProvider = {
   id: 'dpo',
   name: 'DPO Pay',
-  where: 'Kenya and Botswana',
-  currencies: ['BWP'],
+  // DPO Group is headquartered in Nairobi and owned by Network International (Dubai).
+  where: 'Kenya (part of Network International, UAE)',
+  get currencies() { return chargeableCurrencies() },
   returnParam: 'TransactionToken',
   ttlMs: TTL_MINUTES * 60_000,
   createCheckout,

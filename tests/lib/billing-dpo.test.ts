@@ -38,6 +38,17 @@ describe('dpo provider', () => {
     expect(dpo.returnParam).toBe('TransactionToken')
   })
 
+  it('charges only Pula until DPO_CURRENCIES says the account takes more', () => {
+    delete process.env.DPO_CURRENCIES
+    expect(dpo.currencies).toEqual(['BWP'])
+    process.env.DPO_CURRENCIES = 'bwp, zar,USD'
+    expect(dpo.currencies).toEqual(['BWP', 'ZAR', 'USD'])
+    // Pula stays in as the fallback even when left off; junk is ignored.
+    process.env.DPO_CURRENCIES = 'ZAR,rand,,12'
+    expect(dpo.currencies).toEqual(['BWP', 'ZAR'])
+    delete process.env.DPO_CURRENCIES
+  })
+
   it('confirms a payment only on result 000', async () => {
     fetchMock.mockResolvedValueOnce(new Response('<API3G><Result>000</Result><TransactionRef>R1</TransactionRef></API3G>'))
     expect((await dpo.verify('TOK1')).success).toBe(true)

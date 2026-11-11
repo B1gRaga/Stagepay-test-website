@@ -143,11 +143,22 @@ describe('POST /api/billing/checkout', () => {
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ dpo_transaction_ref: 'rp-1', pending_provider: 'realpay' }))
   })
 
-  it('bills a Rand business in Pula while there is no Rand price list', async () => {
+  it('bills a Rand business in Rand, at the Rand price, when the provider can charge Rand', async () => {
     mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
     mockSingle.mockResolvedValue({ data: { default_currency: 'R' } })
     provider.currencies = ['BWP', 'ZAR']
     mockCreateCheckout.mockResolvedValue({ ref: 'tok-3', paymentUrl: 'https://pay.example/tok-3' })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    await POST(makeRequest({ plan: 'pro' }))
+    expect(mockCreateCheckout).toHaveBeenCalledWith(expect.objectContaining({ currency: 'ZAR', amount: '120.00' }))
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ pending_currency: 'ZAR' }))
+  })
+
+  it('bills a Rand business in Pula while the provider only takes Pula', async () => {
+    mockGetCachedUser.mockResolvedValue({ id: 'user-1' })
+    mockSingle.mockResolvedValue({ data: { default_currency: 'R' } })
+    provider.currencies = ['BWP']
+    mockCreateCheckout.mockResolvedValue({ ref: 'tok-4', paymentUrl: 'https://pay.example/tok-4' })
     const { POST } = await import('@/app/api/billing/checkout/route')
     await POST(makeRequest({ plan: 'pro' }))
     expect(mockCreateCheckout).toHaveBeenCalledWith(expect.objectContaining({ currency: 'BWP', amount: '100.00' }))
