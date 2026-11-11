@@ -568,6 +568,7 @@ export default function NewInvoiceClient({
     if (!check(false)) return
     try {
       const saved = await saveInvoice('draft')
+      router.refresh() // the sidebar's "This month" figures come from the layout, which the router otherwise keeps
       router.push(`/invoices/${saved.id}`)
     } catch { /* shown in saveError */ }
   }
@@ -603,6 +604,7 @@ export default function NewInvoiceClient({
       const finish = async () => {
         setSendDone(true)
         await markInvoiceSent(savedInvoiceId)
+        router.refresh()
         setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
       }
 
@@ -658,6 +660,7 @@ export default function NewInvoiceClient({
       const d = await res.json()
       if (!res.ok) throw new Error(d.error || 'Send failed')
       setSendDone(true)
+      router.refresh()
       setTimeout(() => { setSendOpen(false); router.push(`/invoices/${savedInvoiceId}`) }, 1800)
     } catch (e: any) {
       setSendError(e.message)

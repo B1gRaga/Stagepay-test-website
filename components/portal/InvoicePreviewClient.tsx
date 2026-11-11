@@ -259,6 +259,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
       setInvoice(i => ({ ...i, status: d.status }))
       setPanel(null)
       setToast({ msg: d.status === 'paid' ? `${invoice.invoice_number} is paid in full.` : `${fmt(Number(payAmount), sym)} recorded.`, undo: false })
+      router.refresh() // so the sidebar's "collected" figure moves with the payment
     } catch (e: any) {
       setSendErr(e.message)
     } finally {
@@ -383,6 +384,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
         const rest = balanceDue(invoice.total, list)
         return rest > 0 ? [...list, { id: `paid-${Date.now()}`, amount: rest, paid_on: todayIso(), note: null, created_at: new Date().toISOString() }] : list
       })
+      router.refresh()
     }).catch(() => {
       setInvoice(prev => ({ ...prev, status: p.prev }))
       setToast({ msg: 'Couldn’t mark it as paid. Try again.', undo: false })
