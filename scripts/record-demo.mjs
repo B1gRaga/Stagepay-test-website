@@ -46,7 +46,10 @@ if (!EMAIL || !PASSWORD) { console.error('E2E_EMAIL / E2E_PASSWORD not set'); pr
 // frames (1080 wide), which ffmpeg stitches into the video.
 const PHONE_DSF = 2.625
 const DEVICES = {
-  desktop: { viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1, video: { width: 1920, height: 1080 } },
+  // Desktop is screencast too: a 1440×810 window drawn at 4/3 fills 1920×1080
+  // with every glyph rendered at full resolution, and the UI a third larger so
+  // it stays readable when the video is watched on a phone.
+  desktop: { viewport: { width: 1440, height: 810 }, deviceScaleFactor: 4 / 3, hidpi: true, video: { width: 1920, height: 1080 } },
   phone:   { ...devices['Pixel 7'], deviceScaleFactor: PHONE_DSF, hidpi: true, video: { width: 1080, height: 2400 } },
 }
 const FFMPEG = path.join(process.env.LOCALAPPDATA || '', 'ms-playwright', 'ffmpeg-1013', 'ffmpeg-win64.exe')
@@ -63,7 +66,7 @@ async function startScreencast(page, target, size) {
     frames.push({ file, t: metadata.timestamp })
     cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
   })
-  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92, maxWidth: size.width, maxHeight: size.height, everyNthFrame: 1 })
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 97, maxWidth: size.width, maxHeight: size.height, everyNthFrame: 1 })
   return async function stop() {
     const ended = Date.now() / 1000
     await cdp.send('Page.stopScreencast').catch(() => {})
@@ -102,7 +105,9 @@ async function stitch(dir, target) {
     '-y', '-loglevel', 'error', '-f', 'image2pipe', '-avioflags', 'direct', '-fpsprobesize', '0', '-probesize', '32', '-analyzeduration', '0',
     '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', 'pipe:0',
     '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-pix_fmt', 'yuv420p',
-    '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '28', '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1',
+    // A near-lossless master: the shareable MP4 is made from this, so any
+    // softness here would carry into every final video.
+    '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '15', '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1',
     target,
   ])
   let err = ''
@@ -440,7 +445,7 @@ async function run(deviceName) {
   })
   // Nothing leaves for WhatsApp, and no popup windows.
   await context.route(/wa\.me|whatsapp\.com/, r => r.abort())
-  await context.addInitScript(POINTER_SCRIPT(!!hidpi))
+  await context.addInitScript(POINTER_SCRIPT(!!ctxOpts.isMobile))
   context.on('page', p => { if (p !== context.pages()[0]) p.on('load', () => {}) })
 
   const isPhone = deviceName === 'phone'
