@@ -147,6 +147,63 @@ function note(device, scene, status, detail = '') {
   console.log(`[${device}] ${scene}: ${status}${detail ? ' — ' + detail : ''}`)
 }
 
+// The send step: WhatsApp is the selling point; SEND_VIA=email for the other take.
+const SEND_VIA = process.env.SEND_VIA === 'email' ? 'email' : 'whatsapp'
+
+// A visible pointer, so viewers see what was pressed: a soft cursor that moves
+// to each control (desktop) and a ripple where it was pressed (both). Added to
+// the page after it has loaded, so it never gets in the way of hydration.
+// (Chromium reports touch points on the desktop profile too, so the device is passed in.)
+const POINTER_SCRIPT = touch => `(() => {
+  const touch = ${touch ? 'true' : 'false'}
+  if (window !== window.top) return // not inside the embedded PDF viewer
+  if (touch) {
+    // A recording can't show the phone's share sheet, so take the "Open in
+    // WhatsApp" route (message + invoice link) instead of "Share PDF".
+    try { Object.defineProperty(navigator, 'canShare', { value: undefined, configurable: true }) } catch {}
+    try { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }) } catch {}
+  }
+  function mount() {
+    if (document.getElementById('__rec-cursor') || !document.body) return
+    const style = document.createElement('style')
+    style.textContent = \`
+      #__rec-cursor{position:fixed;left:0;top:0;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;
+        background:rgba(31,42,68,.55);border:3px solid #fff;box-shadow:0 0 0 1.5px rgba(31,42,68,.6),0 2px 8px rgba(0,0,0,.35);
+        pointer-events:none;z-index:2147483647;transition:transform .09s ease, background .09s;opacity:\${touch ? 0 : 1};will-change:left,top}
+      #__rec-cursor.down{transform:scale(.7);background:rgba(31,42,68,.95)}
+      .__rec-ripple{position:fixed;width:\${touch ? 84 : 60}px;height:\${touch ? 84 : 60}px;margin:-\${touch ? 42 : 30}px 0 0 -\${touch ? 42 : 30}px;border-radius:50%;
+        border:4px solid #fff;box-shadow:0 0 0 3px rgba(31,42,68,.9),inset 0 0 0 2px rgba(31,42,68,.9);background:rgba(31,42,68,.18);
+        pointer-events:none;z-index:2147483646;animation:__rec-rip .6s ease-out forwards}
+      @keyframes __rec-rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.5);opacity:0}}\`
+    const cur = document.createElement('div'); cur.id = '__rec-cursor'
+    cur.style.opacity = '0' // hidden until the pointer first moves
+    document.body.appendChild(style); document.body.appendChild(cur)
+    const place = (x, y) => { cur.style.left = x + 'px'; cur.style.top = y + 'px'; if (!touch) cur.style.opacity = '1' }
+    document.addEventListener('mousemove', e => place(e.clientX, e.clientY), true)
+    document.addEventListener('mousedown', e => {
+      place(e.clientX, e.clientY); cur.classList.add('down')
+      const r = document.createElement('div'); r.className = '__rec-ripple'
+      r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px'
+      document.body.appendChild(r); setTimeout(() => r.remove(), 600)
+    }, true)
+    document.addEventListener('mouseup', () => cur.classList.remove('down'), true)
+  }
+  if (document.readyState === 'complete') setTimeout(mount, 400)
+  else window.addEventListener('load', () => setTimeout(mount, 400))
+})()`
+
+// Move to a control first, pause as a person would, then press it.
+async function press(page, locator) {
+  const el = locator.first()
+  await el.scrollIntoViewIfNeeded().catch(() => {})
+  const box = await el.boundingBox().catch(() => null)
+  if (box) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 22 })
+    await sleep(380)
+  }
+  await el.click()
+}
+
 async function type(loc, text, delay = 55) { await loc.click(); await loc.pressSequentially(text, { delay }) }
 
 async function scrollThrough(page, { step = 420, pause = 550, settle = 1500 } = {}) {
@@ -169,7 +226,7 @@ async function signIn(page) {
   await type(page.getByLabel('Email address'), EMAIL, 45)
   await type(page.getByLabel('Password', { exact: true }), PASSWORD, 30)
   await sleep(400)
-  await page.getByRole('button', { name: 'Sign in' }).click()
+  await press(page, page.getByRole('button', { name: 'Sign in' }))
   await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 30_000 })
   await page.waitForLoadState('networkidle').catch(() => {})
 }
@@ -181,15 +238,18 @@ const created = []
 // by email. Resolves with the invoice page URL once the app has moved there.
 async function fillAndSendInvoice(page, isPhone, client, billedFor) {
   await page.getByLabel('Name', { exact: true }).waitFor()
+  mark('form')
   await sleep(1200)
+  mark('client')
   await type(page.getByLabel('Name', { exact: true }), client)
   await type(page.getByLabel('WhatsApp number'), DEMO.phone, 40)
   await type(page.getByLabel(/^Email/), DEMO.email, 35)
   const bf = page.locator('#ni-billed-for')
   if (await bf.count()) await type(bf, billedFor)
+  mark('items')
   await type(page.getByLabel('Description'), DEMO.project)
   for (let i = 0; i < DEMO.items.length; i++) {
-    if (i > 0) { await page.getByRole('button', { name: 'Add an item' }).click(); await sleep(400) }
+    if (i > 0) { await press(page, page.getByRole('button', { name: 'Add an item' })); await sleep(400) }
     const [desc, qty, rate] = DEMO.items[i]
     await type(page.getByLabel(`Item ${i + 1}`, { exact: true }), desc)
     const qtyBox = page.getByLabel(`Quantity for item ${i + 1}`)
@@ -200,23 +260,43 @@ async function fillAndSendInvoice(page, isPhone, client, billedFor) {
     await sleep(600)
   }
   await sleep(800)
-  await page.getByRole('button', { name: '7 days' }).click()
+  mark('terms')
+  await press(page, page.getByRole('button', { name: '7 days' }))
   await sleep(1500)
   if (isPhone) {
-    await page.getByRole('button', { name: 'Preview' }).click()
+    mark('preview')
+    await press(page, page.getByRole('button', { name: 'Preview' }))
     await sleep(3000)
   }
-  await page.getByRole('button', { name: 'Send by email' }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.waitFor({ timeout: 20_000 })
-  await sleep(1200)
-  const to = dialog.getByLabel('Their email')
-  if (!(await to.inputValue())) await type(to, DEMO.email, 35)
-  await sleep(800)
-  await dialog.getByRole('button', { name: 'Send email' }).click()
-  await page.getByText('Invoice sent!').waitFor({ timeout: 30_000 })
+  mark('send')
+  // The phone preview sheet and the desktop side panel both carry the send buttons.
+  const sendScope = isPhone ? page.getByRole('dialog') : page.getByRole('complementary', { name: 'Preview and send' })
+  if (SEND_VIA === 'email') {
+    await press(page, sendScope.getByRole('button', { name: 'Send by email' }))
+    const dialog = page.getByRole('dialog').filter({ hasText: /^Send/ }).last()
+    await dialog.waitFor({ timeout: 20_000 })
+    await sleep(1200)
+    const to = dialog.getByLabel('Their email')
+    if (!(await to.inputValue())) await type(to, DEMO.email, 35)
+    await sleep(800)
+    await press(page, dialog.getByRole('button', { name: 'Send email' }))
+    await page.getByText('Invoice sent!').waitFor({ timeout: 30_000 })
+  } else {
+    await press(page, sendScope.getByRole('button', { name: /Send on WhatsApp/ }))
+    const dialog = page.getByRole('dialog').filter({ hasText: /^Send/ }).last()
+    await dialog.waitFor({ timeout: 20_000 })
+    await sleep(1200)
+    const to = dialog.getByLabel('Their WhatsApp number')
+    if (await to.count() && !(await to.inputValue())) await type(to, DEMO.phone, 40)
+    await sleep(800)
+    // wa.me is blocked for the recording, so the app's "WhatsApp opened" step shows and nothing is sent.
+    await press(page, dialog.getByRole('button', { name: /Open in WhatsApp|Share PDF/ }))
+    await page.getByText(/WhatsApp opened/).waitFor({ timeout: 30_000 })
+    mark('whatsapp-opened')
+  }
   await page.waitForURL(/\/invoices\/[0-9a-f-]+/, { timeout: 30_000 })
   await page.waitForLoadState('networkidle').catch(() => {})
+  mark('invoice-page')
   const num = (await page.locator('.top-num').first().textContent().catch(() => ''))?.trim()
   if (num) created.push(num)
   // The public link's token, for the "what the client sees" scene.
@@ -230,14 +310,23 @@ async function fillAndSendInvoice(page, isPhone, client, billedFor) {
 }
 let createdToken = null
 
+// Timestamps of what happens in a scene (seconds from its start), saved next to
+// the video as <scene>.marks.json so a voice-over can be timed to it.
+let marks = {}
+let sceneStart = 0
+const mark = name => { marks[name] = Math.round((Date.now() - sceneStart) / 100) / 10 }
+
 // One recorded scene = one page = one video file.
 async function scene(context, device, name, fn) {
   const page = await context.newPage()
   const started = Date.now()
+  sceneStart = started; marks = {}
   const target = path.join(OUT, device, `${name}.webm`)
   const stop = DEVICES[device].hidpi ? await startScreencast(page, target, DEVICES[device].video) : null
   try {
     await fn(page)
+    mark('end')
+    if (Object.keys(marks).length > 1) fs.writeFileSync(target.replace(/\.webm$/, '.marks.json'), JSON.stringify(marks, null, 2))
     note(device, name, 'ok', `${Math.round((Date.now() - started) / 1000)}s`)
   } catch (e) {
     const shot = path.join(OUT, device, `${name}-FAILED.png`)
@@ -351,6 +440,7 @@ async function run(deviceName) {
   })
   // Nothing leaves for WhatsApp, and no popup windows.
   await context.route(/wa\.me|whatsapp\.com/, r => r.abort())
+  await context.addInitScript(POINTER_SCRIPT(!!hidpi))
   context.on('page', p => { if (p !== context.pages()[0]) p.on('load', () => {}) })
 
   const isPhone = deviceName === 'phone'
@@ -370,27 +460,34 @@ async function run(deviceName) {
     await setupBusiness(context)
     await context.clearCookies() // the tutorial starts at the sign-in screen
     await scene(context, deviceName, '00-tutorial-first-invoice', async page => {
+      mark('sign-in')
       await signIn(page)
-      await sleep(3500)
+      mark('dashboard')
+      await sleep(4000)
       await scrollThrough(page, { step: 400, pause: 700, settle: 1200 })
       await sleep(800)
-      await page.getByRole('link', { name: 'New invoice' }).first().click()
+      mark('new-invoice')
+      await press(page, page.getByRole('link', { name: 'New invoice' }))
       await page.waitForURL(/\/new-invoice/)
       await fillAndSendInvoice(page, isPhone, names.tutorialClient, names.tutorialBilledFor)
-      await sleep(3500)
+      await sleep(4000)
       await scrollThrough(page, { step: 400, pause: 700, settle: 1500 })
       const num = created[created.length - 1]
-      await page.getByRole('link', { name: 'Reminders' }).first().click()
+      mark('reminders')
+      await press(page, page.getByRole('link', { name: 'Reminders' }))
       await page.waitForURL(/\/reminders/)
       await page.waitForLoadState('networkidle').catch(() => {})
-      await sleep(2500)
+      await sleep(3000)
       const sw = page.getByRole('switch', { name: `Automatic reminders for ${num}` })
       await sw.scrollIntoViewIfNeeded()
       await sleep(1500)
       // Sending books reminders automatically, so show the switch going off and back on.
-      await sw.click(); await sleep(2500)
-      await sw.click(); await sleep(3000)
+      mark('toggle-off')
+      await press(page, sw); await sleep(3000)
+      mark('toggle-on')
+      await press(page, sw); await sleep(3500)
       await scrollThrough(page, { step: 380, pause: 650 })
+      await sleep(1500)
     })
   }
 
@@ -421,14 +518,14 @@ async function run(deviceName) {
       await page.goto(createdInvoiceUrl)
       await page.getByRole('button', { name: 'Record payment' }).waitFor()
       await sleep(1500)
-      await page.getByRole('button', { name: 'Record payment' }).click()
+      await press(page, page.getByRole('button', { name: 'Record payment' }))
       await sleep(800)
       // The amount box opens pre-filled with what's owed; a part payment replaces it.
       const amt = page.getByLabel(/^Amount/)
       await amt.click(); await amt.fill(''); await amt.pressSequentially(DEMO.partPayment, { delay: 90 })
       await type(page.getByLabel('Note (optional)'), 'Orange Money', 50)
       await sleep(500)
-      await page.getByRole('button', { name: 'Save payment' }).click()
+      await press(page, page.getByRole('button', { name: 'Save payment' }))
       await page.getByText('still owed').first().waitFor({ timeout: 15_000 })
       await sleep(3500)
     })
@@ -439,7 +536,7 @@ async function run(deviceName) {
       await sleep(2000)
       for (const f of ['Paid', 'All']) {
         const chip = page.getByRole('group', { name: 'Filter by status' }).getByRole('button', { name: f, exact: true })
-        if (await chip.count()) { await chip.click(); await sleep(1800) }
+        if (await chip.count()) { await press(page, chip); await sleep(1800) }
       }
       await scrollThrough(page)
     })
