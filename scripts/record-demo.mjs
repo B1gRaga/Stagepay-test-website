@@ -9,6 +9,7 @@
 import { chromium, devices } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v = 'true'] = a.replace(/^--/, '').split('='); return [k, v] }))
 const BASE = process.env.E2E_BASE_URL || 'https://getstagepay.co'
@@ -63,7 +64,11 @@ async function startScreencast(page, target, size) {
   cdp.on('Page.screencastFrame', ({ data, sessionId, metadata }) => {
     const file = path.join(dir, `f${String(frames.length).padStart(5, '0')}.jpg`)
     fs.writeFileSync(file, Buffer.from(data, 'base64'))
-    frames.push({ file, t: metadata.timestamp })
+    // Arrival time on the same clock as the scene's marks (not the browser's
+    // own timestamp), so the video and the narration marks line up exactly.
+    const t = Date.now() / 1000
+    if (frames.length === 0) firstFrameAt = t * 1000
+    frames.push({ file, t })
     cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
   })
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 97, maxWidth: size.width, maxHeight: size.height, everyNthFrame: 1 })
@@ -75,9 +80,20 @@ async function startScreencast(page, target, size) {
     // Each frame lasts until the next one arrived; the last one until the scene ended.
     fs.writeFileSync(path.join(dir, 'frames.txt'), frames.map((f, i) => {
       const next = i + 1 < frames.length ? frames[i + 1].t : ended
-      return `${path.basename(f.file)} ${Math.max(0.02, next - f.t).toFixed(3)}`
+      // Exact on-screen time, even when tiny: frames arrive in bursts while
+      // typing, and rounding them up made those parts play slower than real
+      // time (the stitcher carries fractions forward, so nothing is lost).
+      return `${path.basename(f.file)} ${Math.max(0, next - f.t).toFixed(4)}`
     }).join('\n') + '\n')
-    if (await stitch(dir, target)) fs.rmSync(dir, { recursive: true, force: true })
+    if (await stitch(dir, target)) {
+      // The video must last as long as the scene really did, or narration
+      // timed to the marks drifts. Keep the frames if it doesn't.
+      const real = ended - frames[0].t
+      const got = videoSeconds(target)
+      if (Math.abs(got - real) > Math.max(0.5, real * 0.01)) {
+        console.error(`timing check failed for ${path.basename(target)}: video ${got.toFixed(1)}s vs real ${real.toFixed(1)}s (frames kept)`)
+      } else fs.rmSync(dir, { recursive: true, force: true })
+    }
   }
 }
 
@@ -85,6 +101,11 @@ async function startScreencast(page, target, size) {
 // 30 fps by repeating each frame for as long as it was on screen. Playwright's
 // ffmpeg is a small build (no concat demuxer), so the frames are piped in.
 const FPS = 30
+function videoSeconds(file) {
+  const r = spawnSync(FFMPEG, ['-i', file], { encoding: 'utf8' })
+  const m = (r.stderr || '').match(/Duration: (\d+):(\d+):([\d.]+)/)
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : 0
+}
 async function stitch(dir, target) {
   const { spawn } = await import('node:child_process')
   const lines = fs.readFileSync(path.join(dir, 'frames.txt'), 'utf8').trim().split('\n')
@@ -245,17 +266,25 @@ async function fillAndSendInvoice(page, isPhone, client, billedFor) {
   await page.getByLabel('Name', { exact: true }).waitFor()
   mark('form')
   await sleep(1200)
-  mark('client')
+  // One mark per field, so a narration can say each one as it's typed, and a
+  // short pause after each, the way a person moves between boxes.
+  const BETWEEN = 700
+  mark('client'); mark('name')
   await type(page.getByLabel('Name', { exact: true }), client)
+  await sleep(BETWEEN); mark('phone')
   await type(page.getByLabel('WhatsApp number'), DEMO.phone, 40)
+  await sleep(BETWEEN); mark('email')
   await type(page.getByLabel(/^Email/), DEMO.email, 35)
   const bf = page.locator('#ni-billed-for')
-  if (await bf.count()) await type(bf, billedFor)
-  mark('items')
+  if (await bf.count()) { await sleep(BETWEEN); mark('student'); await type(bf, billedFor) }
+  await sleep(BETWEEN)
+  mark('items'); mark('description')
   await type(page.getByLabel('Description'), DEMO.project)
+  await sleep(BETWEEN)
   for (let i = 0; i < DEMO.items.length; i++) {
     if (i > 0) { await press(page, page.getByRole('button', { name: 'Add an item' })); await sleep(400) }
     const [desc, qty, rate] = DEMO.items[i]
+    mark(`item-${i + 1}`)
     await type(page.getByLabel(`Item ${i + 1}`, { exact: true }), desc)
     const qtyBox = page.getByLabel(`Quantity for item ${i + 1}`)
     if ((await qtyBox.inputValue()) !== qty) await qtyBox.fill(qty)
@@ -319,19 +348,26 @@ let createdToken = null
 // the video as <scene>.marks.json so a voice-over can be timed to it.
 let marks = {}
 let sceneStart = 0
+let firstFrameAt = 0 // wall-clock ms of the current scene's first screencast frame
 const mark = name => { marks[name] = Math.round((Date.now() - sceneStart) / 100) / 10 }
 
 // One recorded scene = one page = one video file.
 async function scene(context, device, name, fn) {
   const page = await context.newPage()
   const started = Date.now()
-  sceneStart = started; marks = {}
+  sceneStart = started; marks = {}; firstFrameAt = 0
   const target = path.join(OUT, device, `${name}.webm`)
   const stop = DEVICES[device].hidpi ? await startScreencast(page, target, DEVICES[device].video) : null
   try {
     await fn(page)
     mark('end')
-    if (Object.keys(marks).length > 1) fs.writeFileSync(target.replace(/\.webm$/, '.marks.json'), JSON.stringify(marks, null, 2))
+    // The video starts at its first frame, which arrives only once the page has
+    // painted, so shift the marks to count from that moment.
+    if (Object.keys(marks).length > 1) {
+      const shift = firstFrameAt ? (firstFrameAt - sceneStart) / 1000 : 0
+      const onVideo = Object.fromEntries(Object.entries(marks).map(([k, v]) => [k, Math.max(0, Math.round((v - shift) * 10) / 10)]))
+      fs.writeFileSync(target.replace(/\.webm$/, '.marks.json'), JSON.stringify(onVideo, null, 2))
+    }
     note(device, name, 'ok', `${Math.round((Date.now() - started) / 1000)}s`)
   } catch (e) {
     const shot = path.join(OUT, device, `${name}-FAILED.png`)
