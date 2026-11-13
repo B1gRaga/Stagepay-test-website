@@ -238,7 +238,14 @@ const CSS = `
   .batch-list li{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;font-size:14px;border-bottom:1px solid var(--line);}
   .batch-list li:last-child{border-bottom:0;}
   .batch-list a{color:var(--t1);font-weight:700;text-decoration:none;}
-  .batch-list span{color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .batch-list span{color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:auto;}
+  .batch-list .st{flex-shrink:0;font-style:normal;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--t1) 7%,transparent);color:var(--t2);max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .batch-list .st.sent{background:color-mix(in srgb,var(--g) 16%,transparent);color:var(--t1);}
+  .batch-list .st.failed{background:color-mix(in srgb,#E5484D 14%,transparent);color:#B3261E;}
+  .sp-wrap{margin-top:14px;}
+  .sp{height:6px;border-radius:999px;background:var(--line);overflow:hidden;}
+  .sp i{display:block;height:100%;background:var(--g);transition:width var(--dur-2) var(--ease);}
+  .sp-wrap small{display:block;margin-top:6px;font-size:13px;color:var(--t2);}
 
   @keyframes ni-rise{from{opacity:0;transform:translateY(8px)}}
   @keyframes ni-fade{from{opacity:0}}
@@ -290,6 +297,7 @@ export default function NewInvoiceClient({
   lastByClient = {},
   knownItems = [],
   freeLeft = null,
+  bulkSend = false,
   draftKey = null,
 }: {
   initialProfile: Profile | null
@@ -305,6 +313,8 @@ export default function NewInvoiceClient({
   draftKey?: string | null
   // "Bill everyone in Form 3": one invoice per parent in this class, same items.
   initialClass?: string | null
+  // The plan lets the whole class be sent on WhatsApp in one tap (from StagePay's number).
+  bulkSend?: boolean
 }) {
   const router = useRouter()
   const profile = initialProfile
@@ -327,8 +337,12 @@ export default function NewInvoiceClient({
   const [className,   setClassName]   = useState<string>(preset?.class_name ?? '')
   // Batch billing: what was made, shown once it's done.
   const [batchBusy,   setBatchBusy]   = useState(false)
-  const [batchDone,   setBatchDone]   = useState<{ id: string; number: string; client: string }[] | null>(null)
+  const [batchDone,   setBatchDone]   = useState<{ id: string; number: string; client: string; phone: string | null }[] | null>(null)
   const [batchError,  setBatchError]  = useState('')
+  // Sending the batch on WhatsApp from StagePay's number: ask, send in chunks with progress, then report.
+  const [sendAll,     setSendAll]     = useState<{ phase: 'ask' | 'sending' | 'done'; done: number; total: number; capReached?: boolean } | null>(null)
+  const [sendAllRes,  setSendAllRes]  = useState<Record<string, { outcome: 'sent' | 'skipped' | 'failed'; reason?: string }>>({})
+  const [sendAllErr,  setSendAllErr]  = useState<{ msg: string; upgrade?: boolean } | null>(null)
   const bfLabel = billedForLabel(profile?.business_type)
   const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
   const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())
@@ -611,7 +625,7 @@ export default function NewInvoiceClient({
   async function createBatch() {
     if (!check(true)) return
     setBatchBusy(true); setBatchError('')
-    const made: { id: string; number: string; client: string }[] = []
+    const made: { id: string; number: string; client: string; phone: string | null }[] = []
     try {
       for (const c of batchClients) {
         const payload = {
@@ -626,7 +640,7 @@ export default function NewInvoiceClient({
         const res = await fetch('/api/invoices', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
         const d = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(`${c.name}: ${d.error || 'couldn’t save'}${made.length ? ` (${made.length} made before this)` : ''}`)
-        made.push({ id: d.invoice.id, number: d.invoice.invoice_number, client: c.name })
+        made.push({ id: d.invoice.id, number: d.invoice.invoice_number, client: c.name, phone: c.phone || null })
       }
       forgetDraft()
       router.refresh()
@@ -637,6 +651,31 @@ export default function NewInvoiceClient({
     } finally {
       setBatchBusy(false)
     }
+  }
+
+  // Sends the class's drafts on WhatsApp, 20 per request so a big class shows
+  // progress and stays under the server's time budget. Stops early when
+  // WhatsApp's daily limit for new numbers is reached; the rest wait for tomorrow.
+  async function sendAllOnWhatsApp(ids: string[]) {
+    setSendAll({ phase: 'sending', done: 0, total: ids.length }); setSendAllErr(null)
+    const res = { ...sendAllRes }
+    let capReached = false
+    try {
+      for (let i = 0; i < ids.length && !capReached; i += 20) {
+        const chunk = ids.slice(i, i + 20)
+        const r = await fetch('/api/invoices/bulk-send', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ invoice_ids: chunk }) })
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok) throw Object.assign(new Error(d.error || 'Couldn’t send them'), { upgrade: !!d.upgrade })
+        for (const x of d.results as { id: string; outcome: 'sent' | 'skipped' | 'failed'; reason?: string }[]) res[x.id] = { outcome: x.outcome, reason: x.reason }
+        capReached = !!d.capReached
+        setSendAllRes({ ...res }); setSendAll({ phase: 'sending', done: Math.min(ids.length, i + chunk.length), total: ids.length })
+      }
+      if (capReached) for (const id of ids) if (!res[id]) res[id] = { outcome: 'skipped', reason: 'Daily WhatsApp limit reached' }
+    } catch (e: any) {
+      setSendAllErr({ msg: e.message, upgrade: !!e.upgrade })
+    }
+    setSendAllRes({ ...res }); setSendAll({ phase: 'done', done: ids.length, total: ids.length, capReached })
+    router.refresh()
   }
 
   async function handleDraft() {
@@ -1140,22 +1179,78 @@ export default function NewInvoiceClient({
         </div>
       )}
 
-      {/* Batch result: what was made for the class */}
-      {batchDone && (
+      {/* Batch result: what was made for the class, and sending it all on WhatsApp */}
+      {batchDone && (() => {
+        const withPhone = batchDone.filter(b => (b.phone || '').replace(/\D/g, '').length >= 7)
+        const noPhone = batchDone.length - withPhone.length
+        const tally = { sent: 0, skipped: 0, failed: 0 }
+        for (const r of Object.values(sendAllRes)) tally[r.outcome]++
+        const retryIds = batchDone.filter(b => { const r = sendAllRes[b.id]; return r && (r.outcome === 'failed' || /try again/i.test(r.reason || '')) }).map(b => b.id)
+        const n = (k: number, w: string) => `${k} ${w}${k === 1 ? '' : 's'}`
+        return (
         <div className="sheet-bg">
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="batch-h">
-            <div className="sheet-head"><h2 id="batch-h">{batchDone.length} {batchDone.length === 1 ? 'invoice' : 'invoices'} ready</h2></div>
-            <p className="send-to">Each parent in <b>{initialClass}</b> has an invoice for <b>{fmtAmt(total, currency)}</b>, saved as a draft. Open one to send it on WhatsApp.</p>
+            <div className="sheet-head"><h2 id="batch-h">{sendAll?.phase === 'done' ? `${n(tally.sent, 'invoice')} sent` : `${n(batchDone.length, 'invoice')} ready`}</h2></div>
+            {sendAll?.phase === 'done'
+              ? <p className="send-to">
+                  {tally.sent > 0 && <>Each parent got a WhatsApp message from StagePay with a <b>View invoice</b> button. </>}
+                  {tally.skipped > 0 && <>{n(tally.skipped, 'invoice')} skipped. </>}
+                  {tally.failed > 0 && <>{n(tally.failed, 'invoice')} failed. </>}
+                  {sendAll.capReached && <>WhatsApp lets StagePay reach a set number of new people a day and today’s are used up; the rest can go tomorrow from <Link href="/invoices">Invoices</Link>.</>}
+                </p>
+              : <p className="send-to">Each parent in <b>{initialClass}</b> has an invoice for <b>{fmtAmt(total, currency)}</b>, saved as a draft.{!bulkSend && <> Open one to send it on WhatsApp.</>}</p>}
             <ul className="batch-list">
-              {batchDone.map(b => <li key={b.id}><Link href={`/invoices/${b.id}`}>{b.number}</Link> <span>{b.client}</span></li>)}
+              {batchDone.map(b => {
+                const r = sendAllRes[b.id]
+                return (
+                  <li key={b.id}>
+                    <Link href={`/invoices/${b.id}`}>{b.number}</Link> <span>{b.client}</span>
+                    {r && <em className={`st ${r.outcome}`}>{r.outcome === 'sent' ? 'Sent' : r.reason || r.outcome}</em>}
+                  </li>
+                )
+              })}
             </ul>
             {batchError && <p className="field-err" role="alert">{batchError}</p>}
+            {sendAllErr && <p className="field-err" role="alert">{sendAllErr.msg}{sendAllErr.upgrade && <> <Link href="/settings?panel=plan">See plans</Link></>}</p>}
+
+            {bulkSend && !sendAll && (
+              <p className="sec-sub" style={{ marginTop: 12, fontSize: 13 }}>
+                Send them all on WhatsApp in one go. They go out from StagePay’s WhatsApp number, each with a <b>View invoice</b> button.
+                {noPhone > 0 && <> <b>{n(noPhone, 'parent')}</b> {noPhone === 1 ? 'has' : 'have'} no WhatsApp number and will be skipped.</>}
+              </p>
+            )}
+            {!bulkSend && (
+              <p className="sec-sub" style={{ marginTop: 12, fontSize: 13 }}>On the Business plan, the whole class goes out on WhatsApp in one tap. <Link href="/settings?panel=plan">See plans</Link></p>
+            )}
+            {sendAll?.phase === 'ask' && (
+              <p className="send-to" style={{ marginTop: 12 }}>Send <b>{n(withPhone.length, 'invoice')}</b> on WhatsApp now? Each parent gets one message with their own invoice.</p>
+            )}
+            {sendAll?.phase === 'sending' && (
+              <div className="sp-wrap" role="status" aria-live="polite">
+                <div className="sp"><i style={{ width: `${Math.max(4, Math.round(100 * sendAll.done / Math.max(1, sendAll.total)))}%` }} /></div>
+                <small>Sending… {sendAll.done} of {sendAll.total}</small>
+              </div>
+            )}
+
             <div className="sheet-actions">
-              <button type="button" className="btn primary press" onClick={() => router.push('/invoices')}>Go to invoices</button>
+              {bulkSend && !sendAll && withPhone.length > 0 && <>
+                <button type="button" className="btn ghost press" onClick={() => router.push('/invoices')}>Not now</button>
+                <button type="button" className="btn primary press" onClick={() => setSendAll({ phase: 'ask', done: 0, total: withPhone.length })}>Send all on WhatsApp</button>
+              </>}
+              {sendAll?.phase === 'ask' && <>
+                <button type="button" className="btn ghost press" onClick={() => setSendAll(null)}>Back</button>
+                <button type="button" className="btn primary press" onClick={() => sendAllOnWhatsApp(withPhone.map(b => b.id))}>Send {withPhone.length}</button>
+              </>}
+              {sendAll?.phase === 'done' && <>
+                {retryIds.length > 0 && <button type="button" className="btn press" onClick={() => sendAllOnWhatsApp(retryIds)}>Try {n(retryIds.length, 'failed one')} again</button>}
+                <button type="button" className="btn primary press" onClick={() => router.push('/invoices')}>Go to invoices</button>
+              </>}
+              {(!bulkSend || withPhone.length === 0) && !sendAll && <button type="button" className="btn primary press" onClick={() => router.push('/invoices')}>Go to invoices</button>}
             </div>
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {/* Paid-now sheet: a walk-in payment, receipt next */}
       {paidOpen && (

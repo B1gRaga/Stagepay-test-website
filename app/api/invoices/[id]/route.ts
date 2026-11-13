@@ -161,6 +161,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }
 
+  // Going out for the first time: remember when and how (wa.me from the
+  // person's own phone unless the caller says otherwise). Paid with no sent_at
+  // is how a walk-in receipt is told apart on the timeline.
+  if (fields.status === 'sent' && currentInvoice.status === 'draft') {
+    fields.sent_at  = new Date().toISOString()
+    fields.sent_via = body.sent_via === 'email' || body.sent_via === 'whatsapp' ? body.sent_via : 'whatsapp_link'
+  }
+
   if (Object.keys(fields).length > 0) {
     const { data, error } = await supabase
       .from('invoices')

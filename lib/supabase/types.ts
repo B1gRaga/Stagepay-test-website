@@ -5,6 +5,9 @@ export type ReminderStatus     = 'scheduled' | 'sent' | 'failed' | 'cancelled'
 export type ReminderChannel    = 'whatsapp' | 'email'
 export type Plan               = 'free' | 'pro' | 'business'
 export type RecurrenceInterval = 'monthly' | 'quarterly' | 'yearly'
+// How an invoice first went out: StagePay's WhatsApp number (Cloud API), the business's own phone (wa.me), or email.
+export type SentVia            = 'whatsapp' | 'whatsapp_link' | 'email'
+export type SendStatus         = 'queued' | 'sent' | 'delivered' | 'read' | 'failed'
 export type BusinessType       = 'tuition_centre' | 'school' | 'contractor' | 'freelancer' | 'salon' | 'agency' | 'other'
 export type TeamMemberStatus   = 'pending' | 'active'
 
@@ -213,6 +216,8 @@ export interface Database {
           currency: string
           email_sent_at: string | null
           email_to: string | null
+          sent_at: string | null
+          sent_via: SentVia | null
           public_token: string | null
           created_at: string
           updated_at: string
@@ -247,6 +252,8 @@ export interface Database {
           next_recurring_date?: string | null
           email_sent_at?: string | null
           email_to?: string | null
+          sent_at?: string | null
+          sent_via?: SentVia | null
         }
         Update: {
           created_by?: string | null
@@ -276,6 +283,8 @@ export interface Database {
           currency?: string
           email_sent_at?: string | null
           email_to?: string | null
+          sent_at?: string | null
+          sent_via?: SentVia | null
         }
         Relationships: [
           {
@@ -355,6 +364,48 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: 'invoice_payments_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      invoice_sends: {
+        Row: {
+          id: string
+          invoice_id: string
+          user_id: string
+          channel: 'whatsapp' | 'email'
+          recipient: string
+          status: SendStatus
+          provider_message_id: string | null
+          error: string | null
+          batch_id: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          invoice_id: string
+          user_id: string
+          channel?: 'whatsapp' | 'email'
+          recipient: string
+          status?: SendStatus
+          provider_message_id?: string | null
+          error?: string | null
+          batch_id?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          status?: SendStatus
+          provider_message_id?: string | null
+          error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_sends_invoice_id_fkey'
             columns: ['invoice_id']
             isOneToOne: false
             referencedRelation: 'invoices'
@@ -562,6 +613,7 @@ export type ProfileRow      = Database['public']['Tables']['profiles']['Row']
 export type InvoiceRow      = Database['public']['Tables']['invoices']['Row']
 export type InvoiceItemRow  = Database['public']['Tables']['invoice_items']['Row']
 export type InvoicePaymentRow = Database['public']['Tables']['invoice_payments']['Row']
+export type InvoiceSendRow  = Database['public']['Tables']['invoice_sends']['Row']
 export type ClientRow       = Database['public']['Tables']['clients']['Row']
 export type ReminderRow     = Database['public']['Tables']['reminders']['Row']
 

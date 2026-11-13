@@ -6,6 +6,18 @@ const log = vi.fn()
 const logError = vi.fn()
 vi.mock('@/lib/logger', () => ({ log: (...a: unknown[]) => log(...a), logError: (...a: unknown[]) => logError(...a) }))
 
+// invoice_sends: one row StagePay sent itself, found by Meta's message id.
+let sendRow: { id: string; status: string } | null = null
+const sendUpdates: Record<string, unknown>[] = []
+vi.mock('@/lib/supabase/server', () => ({
+  createServiceClient: () => ({
+    from: () => ({
+      select: () => ({ eq: (_k: string, v: string) => ({ maybeSingle: async () => ({ data: sendRow && v === 'wamid.1' ? sendRow : null }) }) }),
+      update: (row: Record<string, unknown>) => ({ eq: async () => { sendUpdates.push(row); return { error: null } } }),
+    }),
+  }),
+}))
+
 import { GET, POST } from '@/app/api/whatsapp/webhook/route'
 import { signatureValid } from '@/lib/whatsapp-webhook'
 
@@ -24,8 +36,30 @@ const failed = JSON.stringify({ entry: [{ changes: [{ field: 'messages', value: 
 describe('WhatsApp webhook', () => {
   beforeEach(() => {
     log.mockReset(); logError.mockReset()
+    sendRow = null; sendUpdates.length = 0
     process.env.WHATSAPP_APP_SECRET = SECRET
     process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = 'verify-me'
+  })
+
+  const status = (s: string, extra: Record<string, unknown> = {}) => JSON.stringify({ entry: [{ changes: [{ field: 'messages', value: { statuses: [{ id: 'wamid.1', status: s, recipient_id: '26771234567', ...extra }] } }] }] })
+
+  it('moves an invoice send StagePay made to delivered, read or failed, never backwards', async () => {
+    sendRow = { id: 'send-1', status: 'sent' }
+    await POST(post(status('delivered'), sign(status('delivered'))))
+    expect(sendUpdates[0]).toMatchObject({ status: 'delivered', error: null })
+    sendRow = { id: 'send-1', status: 'read' }
+    await POST(post(status('delivered'), sign(status('delivered'))))
+    expect(sendUpdates).toHaveLength(1)
+    sendRow = { id: 'send-1', status: 'sent' }
+    const f = status('failed', { errors: [{ code: 131026, title: 'Message undeliverable' }] })
+    await POST(post(f, sign(f)))
+    expect(sendUpdates[1]).toMatchObject({ status: 'failed', error: '131026 Message undeliverable' })
+  })
+
+  it('ignores reports for messages it did not send (reminders, tests)', async () => {
+    const s = status('delivered').replace('wamid.1', 'wamid.other')
+    await POST(post(s, sign(s)))
+    expect(sendUpdates).toHaveLength(0)
   })
 
   it('answers Meta’s check only with the right verify token', async () => {

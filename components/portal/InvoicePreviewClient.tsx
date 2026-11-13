@@ -27,6 +27,16 @@ export type PreviewInvoice = {
   currency: string
   public_token?: string | null
   email_sent_at?: string | null
+  // When it first went out and how: StagePay's WhatsApp number, the person's own phone (wa.me), or email.
+  sent_at?: string | null
+  sent_via?: 'whatsapp' | 'whatsapp_link' | 'email' | null
+}
+
+// What WhatsApp reported back about a message StagePay sent itself.
+export type InvoiceDelivery = {
+  status: 'queued' | 'sent' | 'delivered' | 'read' | 'failed' | string
+  error: string | null
+  created_at: string
 }
 
 export type InvoiceReminder = {
@@ -181,21 +191,33 @@ function shortDate(d: string) {
 
 type Step = { key: string; title: string; when?: string; state: 'done' | 'todo' | 'late'; mark: 'draft' | 'sent' | 'reminded' | 'late' | 'paid' | 'cancelled' }
 
-// Only what StagePay records: created, sent (dated for email; WhatsApp sends go
-// through wa.me and can't be timed), reminders sent or booked, and paid / due.
-function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?: string | null, owed?: string | null): Step[] {
-  const sentAt = inv.email_sent_at ?? undefined
-  const via = sentAt ? ' by email' : ''
-  const isSent = !['draft', 'cancelled'].includes(inv.status) || !!sentAt
+// Only what StagePay records: created, sent (and, for a message StagePay sent
+// itself, what WhatsApp reported back), reminders sent or booked, and paid / due.
+// A paid invoice that never went out was paid at the counter: a walk-in receipt.
+function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?: string | null, owed?: string | null, delivery?: InvoiceDelivery | null): Step[] {
+  const sentAt = inv.sent_at ?? inv.email_sent_at ?? undefined
+  const via = inv.sent_via === 'email' || (!inv.sent_via && inv.email_sent_at) ? ' by email' : inv.sent_via ? ' on WhatsApp' : ''
+  const atCounter = inv.status === 'paid' && !sentAt
+  const isSent = !atCounter && (!['draft', 'cancelled'].includes(inv.status) || !!sentAt)
   const done = reminders.filter(r => r.status === 'sent')
   const next = reminders.find(r => r.status === 'scheduled')
   const times = done.length === 1 ? 'once' : done.length === 2 ? 'twice' : `${done.length} times`
 
+  // "Sent on WhatsApp · Delivered" when StagePay sent it and WhatsApp reported back.
+  const report = delivery && inv.sent_via === 'whatsapp'
+    ? delivery.status === 'failed' ? 'failed' : delivery.status === 'read' ? 'Read' : delivery.status === 'delivered' ? 'Delivered' : 'Sent to WhatsApp'
+    : null
+  const sentStep: Step = report === 'failed'
+    ? { key: 'sent', title: 'WhatsApp could not deliver it', when: delivery?.error?.replace(/^\d+\s*/, '') || 'Try sending it from your phone', state: 'late', mark: 'late' }
+    : { key: 'sent', title: `Sent${via}`, when: [sentAt ? fmtDate(sentAt) : '', report].filter(Boolean).join(' · ') || undefined, state: 'done', mark: 'sent' }
+
   const steps: Step[] = [
     { key: 'created', title: createdBy ? `Created by ${createdBy}` : 'Created', when: fmtDate(inv.issue_date), state: 'done', mark: 'sent' },
-    isSent
-      ? { key: 'sent', title: `Sent${via}`, when: sentAt ? fmtDate(sentAt) : undefined, state: 'done', mark: 'sent' }
-      : { key: 'sent', title: 'Not sent yet', when: 'Send it on WhatsApp', state: 'todo', mark: 'draft' },
+    atCounter
+      ? { key: 'sent', title: 'Paid at counter', when: 'No invoice needed to go out', state: 'done', mark: 'paid' }
+      : isSent
+        ? sentStep
+        : { key: 'sent', title: 'Not sent yet', when: 'Send it on WhatsApp', state: 'todo', mark: 'draft' },
     done.length
       ? { key: 'reminded', title: `Reminded ${times}`, when: next ? `Next ${shortDate(next.send_at)}` : `Last ${fmtDate(done[done.length - 1].sent_at ?? done[done.length - 1].send_at)}`, state: 'done', mark: 'reminded' }
       : { key: 'reminded', title: next ? 'Reminder booked' : 'No reminders', when: next ? fmtDate(next.send_at) : undefined, state: 'todo', mark: 'draft' },
@@ -208,7 +230,7 @@ function timeline(inv: PreviewInvoice, reminders: InvoiceReminder[], createdBy?:
   return steps
 }
 
-export default function InvoicePreviewClient({ invoice: initial, reminders = [], payments: initialPayments = [], createdBy = null, businessType = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; payments?: InvoicePayment[]; createdBy?: string | null; businessType?: string | null }) {
+export default function InvoicePreviewClient({ invoice: initial, reminders = [], payments: initialPayments = [], delivery = null, createdBy = null, businessType = null }: { invoice: PreviewInvoice; reminders?: InvoiceReminder[]; payments?: InvoicePayment[]; delivery?: InvoiceDelivery | null; createdBy?: string | null; businessType?: string | null }) {
   const router = useRouter()
   const [invoice, setInvoice] = useState(initial)
   const [panel, setPanel] = useState<'email' | 'whatsapp' | 'payment' | null>(null)
@@ -482,7 +504,7 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
 
   const canMarkPaid = invoice.status === 'sent' || invoice.status === 'overdue'
   const claimOpen = canMarkPaid && !!invoice.payment_claimed_at
-  const steps = timeline(invoice, reminders, createdBy, paid > 0 && invoice.status !== 'paid' ? fmt(owing, sym) : null)
+  const steps = timeline(invoice, reminders, createdBy, paid > 0 && invoice.status !== 'paid' ? fmt(owing, sym) : null, delivery)
   const reminderCount = reminders.filter(r => r.status === 'sent').length
 
   return (

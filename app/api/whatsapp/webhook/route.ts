@@ -1,11 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { log, logError } from '@/lib/logger'
 import { signatureValid } from '@/lib/whatsapp-webhook'
+import { createServiceClient } from '@/lib/supabase/server'
+import type { SendStatus } from '@/lib/supabase/types'
 
 // Meta calls this URL with delivery reports for the WhatsApp messages we send
 // (sent, delivered, read, failed) and with messages people send to our number.
-// We only record outcomes: a failed reminder goes to Sentry with Meta's reason.
-// Message text and full phone numbers are never logged.
+// We record outcomes: a failed reminder goes to Sentry with Meta's reason, and
+// an invoice StagePay sent itself (a class sent in one tap) gets its
+// invoice_sends row moved to delivered / read / failed, so the invoice's
+// timeline can say so. Message text and full phone numbers are never logged.
+
+// Reports can arrive out of order (read before delivered); never move backwards.
+const RANK: Record<string, number> = { queued: 0, sent: 1, delivered: 2, read: 3, failed: 4 }
+
+async function recordDelivery(s: Status) {
+  if (!s.id || !s.status || !(s.status in RANK) || s.status === 'sent') return
+  try {
+    const sb = createServiceClient()
+    const { data: row } = await sb.from('invoice_sends').select('id, status').eq('provider_message_id', s.id).maybeSingle()
+    if (!row || RANK[row.status] >= RANK[s.status]) return
+    const e = s.errors?.[0]
+    await sb.from('invoice_sends').update({
+      status: s.status as SendStatus,
+      error: s.status === 'failed' ? `${e?.code ?? ''} ${e?.title ?? e?.message ?? 'failed'}`.trim().slice(0, 500) : null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', row.id)
+  } catch (err) {
+    logError('whatsapp.delivery_record_failed', err, { messageId: s.id })
+  }
+}
 
 // Meta checks the URL once when it's saved in the app dashboard.
 export async function GET(req: NextRequest) {
@@ -48,6 +72,7 @@ export async function POST(req: NextRequest) {
         } else {
           log('whatsapp.status', { ...base, status: s.status })
         }
+        await recordDelivery(s)
       }
 
       for (const m of value.messages ?? []) {

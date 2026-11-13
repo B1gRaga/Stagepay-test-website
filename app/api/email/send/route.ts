@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
         email_sent_at: new Date().toISOString(),
         email_to:      to_email,
         status:        invoice.status === 'draft' ? 'sent' : invoice.status,
+        ...(invoice.status === 'draft' ? { sent_at: new Date().toISOString(), sent_via: 'email' as const } : {}),
       })
       .eq('id', invoice_id)
 

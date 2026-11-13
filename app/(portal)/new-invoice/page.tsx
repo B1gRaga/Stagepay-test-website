@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
 import NewInvoiceClient from '@/components/portal/NewInvoiceClient'
 import type { LastInvoice } from '@/components/portal/invoice-draft'
-import { FREE_MONTHLY_LIMIT, startOfMonthUtc } from '@/lib/plans'
+import { FREE_MONTHLY_LIMIT, startOfMonthUtc, canBulkSend } from '@/lib/plans'
 
 export default async function NewInvoicePage({
   searchParams,
@@ -96,6 +96,7 @@ export default async function NewInvoicePage({
       lastByClient={lastByClient}
       knownItems={[...known.values()].slice(0, 80)}
       freeLeft={freeLeft}
+      bulkSend={canBulkSend(profile?.plan)}
       draftKey={`stagepay-invoice-draft:${account.userId}:${account.accountId}`}
     />
   )

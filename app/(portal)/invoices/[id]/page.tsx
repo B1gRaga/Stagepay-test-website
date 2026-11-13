@@ -13,7 +13,7 @@ export default async function InvoicePreviewPage({ params }: Params) {
   const supabase = await createClient()
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('id, invoice_number, client_name, client_email, client_phone, project, billed_for, issue_date, due_date, total, status, currency, public_token, email_sent_at, created_by, payment_claimed_at, payment_claim_ref')
+    .select('id, invoice_number, client_name, client_email, client_phone, project, billed_for, issue_date, due_date, total, status, currency, public_token, email_sent_at, sent_at, sent_via, created_by, payment_claimed_at, payment_claim_ref')
     .eq('id', id)
     .eq('user_id', account.accountId)
     .single()
@@ -38,6 +38,16 @@ export default async function InvoicePreviewPage({ params }: Params) {
     .in('status', ['sent', 'scheduled'])
     .order('send_at', { ascending: true })
 
+  // The latest message StagePay itself sent for this invoice (a class sent in
+  // one tap), with what WhatsApp reported back: delivered, read or failed.
+  const { data: sends } = await supabase
+    .from('invoice_sends')
+    .select('status, error, created_at')
+    .eq('invoice_id', id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  const delivery = sends?.[0] ?? null
+
   // Who made it, when that wasn't the business owner (a team member). Their name
   // lives on their own profile, which the access rules don't let colleagues read.
   let createdBy: string | null = null
@@ -47,5 +57,5 @@ export default async function InvoicePreviewPage({ params }: Params) {
     createdBy = person?.name || person?.email || 'a team member'
   }
 
-  return <InvoicePreviewClient invoice={invoice} reminders={reminders ?? []} payments={payments ?? []} createdBy={createdBy} businessType={profile?.business_type ?? null} />
+  return <InvoicePreviewClient invoice={invoice} reminders={reminders ?? []} payments={payments ?? []} delivery={delivery} createdBy={createdBy} businessType={profile?.business_type ?? null} />
 }

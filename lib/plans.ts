@@ -13,8 +13,15 @@ export type PlanId = 'free' | 'pro' | 'business'
 export const PLANS: { id: PlanId; name: string; includes: string }[] = [
   { id: 'free',     name: 'Free',     includes: `Up to ${FREE_MONTHLY_LIMIT} invoices a month` },
   { id: 'pro',      name: 'Pro',      includes: 'Unlimited invoices' },
-  { id: 'business', name: 'Business', includes: `Unlimited invoices. A shared team account for up to ${TEAM_SEATS} people` },
+  { id: 'business', name: 'Business', includes: `Unlimited invoices. A shared team account for up to ${TEAM_SEATS} people, and a whole class sent on WhatsApp in one tap` },
 ]
+
+// Sending a whole class on WhatsApp goes out from StagePay's own number, and
+// each message costs StagePay money, so it comes with the Business plan.
+export const BULK_SEND_PLANS: readonly PlanId[] = ['business']
+export function canBulkSend(plan: string | null | undefined) {
+  return BULK_SEND_PLANS.includes((plan ?? 'free') as PlanId)
+}
 
 // How long one payment covers. Paying for longer up front costs less per month.
 export type Months = 1 | 6 | 12
