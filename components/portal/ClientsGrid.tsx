@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { waLink } from '@/lib/wa-link'
+import { billsLearners } from '@/lib/business-types'
 import { STATUS_CSS } from './InvoiceStatus'
 
 export type Client = {
@@ -12,6 +13,8 @@ export type Client = {
   address: string | null
   vat_number: string | null
   notes: string | null
+  class_name?: string | null // the class a parent's learner is in (schools, tuition centres)
+  billed_for?: string | null // the learner they usually pay for
   created_at: string
 }
 
@@ -75,6 +78,15 @@ ${STATUS_CSS}
   .seg button[aria-pressed="true"]{background:var(--surface2);color:var(--t1);}
   html[data-theme="light"] .seg button[aria-pressed="true"]{background:var(--surface);}
   .seg .n{color:var(--t3);font-weight:500;font-variant-numeric:tabular-nums;}
+  .classes{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-6px 0 14px;}
+  .cls{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--t2);font:600 13px var(--font-manrope),sans-serif;cursor:pointer;}
+  .cls:hover{color:var(--t1);border-color:var(--t3);}
+  .cls[aria-pressed="true"]{color:var(--t1);border-color:var(--g);background:color-mix(in srgb,var(--g) 14%,transparent);}
+  .cls .n{color:var(--t3);font-weight:500;margin-left:2px;}
+  .bill-class{height:30px;padding:0 12px;font-size:13px;margin-left:4px;}
+  .hint{font-size:13px;color:var(--t3);margin:-6px 0 14px;}
+  .tag{display:inline-block;padding:1px 7px;margin-right:6px;border-radius:999px;background:color-mix(in srgb,var(--g) 16%,transparent);color:var(--t1);font-size:11.5px;font-weight:700;letter-spacing:.01em;}
+  .tag.learner{background:var(--bg2);border:1px solid var(--line2);font-weight:600;color:var(--t2);}
 
   .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
   .grid{display:grid;grid-template-columns:36px minmax(0,1.6fr) 130px 150px 96px 216px;column-gap:16px;align-items:center;padding:0 20px;}
@@ -168,13 +180,18 @@ export default function ClientsGrid({
   stats,
   currency,
   role = 'owner',
+  businessType = null,
 }: {
   clients: Client[]
   stats: Record<string, ClientStats>
   currency: string
   role?: 'owner' | 'admin' | 'staff'
+  businessType?: string | null
 }) {
   const [search, setSearch] = useState('')
+  // Classes (Form 1, Grade 5…) group parents for schools and tuition centres.
+  const learners = billsLearners(businessType)
+  const [klass, setKlass] = useState<string | null>(null)
   const canDelete = role === 'owner' || role === 'admin'
 
   // Deleting: confirm in a dialog, remove the row at once, offer Undo for a
@@ -234,8 +251,17 @@ export default function ClientsGrid({
 
   const owing = sorted.filter(c => (stats[c.id]?.owes ?? 0) > 0)
 
+  // Every class in use, with how many parents are in it; "No class" last.
+  const classes = useMemo(() => {
+    const by = new Map<string, number>()
+    for (const c of sorted) { const k = c.class_name?.trim() || ''; by.set(k, (by.get(k) ?? 0) + 1) }
+    const named = [...by.entries()].filter(([k]) => k).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+    return by.get('') && named.length ? [...named, ['', by.get('')!] as [string, number]] : named
+  }, [sorted])
+
   const shown = useMemo(() => {
     let list = filter === 'owes' ? owing : sorted
+    if (klass !== null) list = list.filter(c => (c.class_name?.trim() || '') === klass)
     if (search.trim()) {
       const q = search.toLowerCase()
       const digits = q.replace(/\D/g, '')
@@ -246,7 +272,7 @@ export default function ClientsGrid({
       )
     }
     return list
-  }, [sorted, owing, filter, search])
+  }, [sorted, owing, filter, search, klass])
 
   // The summary only adds up money in the account's main currency.
   const owedHere = owing.filter(c => stats[c.id].currency === currency)
@@ -288,6 +314,25 @@ export default function ClientsGrid({
           </div>
         </div>
 
+        {classes.length > 0 && (
+          <div className="classes" role="group" aria-label="Class">
+            <button type="button" className="cls press" aria-pressed={klass === null} onClick={() => setKlass(null)}>Every class</button>
+            {classes.map(([k, n]) => (
+              <button key={k || '—'} type="button" className="cls press" aria-pressed={klass === k} onClick={() => setKlass(prev => prev === k ? null : k)}>
+                {k || 'No class'} <span className="n">{n}</span>
+              </button>
+            ))}
+            {klass && (
+              <Link href={`/new-invoice?class=${encodeURIComponent(klass)}`} className="btn-new press bill-class">
+                Bill everyone in {klass}
+              </Link>
+            )}
+          </div>
+        )}
+        {learners && classes.length === 0 && sorted.length > 0 && (
+          <p className="hint">Add a class to each parent on New Invoice (Form 1, Grade 5…) and you can bill a whole class at once.</p>
+        )}
+
         <div className="sheet">
           {shown.length > 0 && (
             <div className="grid head" aria-hidden="true">
@@ -314,7 +359,11 @@ export default function ClientsGrid({
                 <span className="av" style={{ ['--h' as string]: hue(c.name) }} aria-hidden="true">{initials(c.name)}</span>
                 <div className="c-who">
                   <Link href={`/invoices?q=${encodeURIComponent(c.name)}`} className="name">{c.name}</Link>
-                  <span className="contact">{contact || 'No contact details'}</span>
+                  <span className="contact">
+                    {c.class_name?.trim() && <span className="tag">{c.class_name.trim()}</span>}
+                    {c.billed_for?.trim() && <span className="tag learner">{c.billed_for.trim()}</span>}
+                    {contact || 'No contact details'}
+                  </span>
                 </div>
                 {s.owes > 0 ? (
                   <span className={`c-owes${s.late > 0 ? ' late' : ''}`}>

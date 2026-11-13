@@ -12,7 +12,7 @@ const ALLOWED = [
   'payment_methods', 'default_due_days', 'invoice_paper_size', 'reminder_days',
 ] as const
 
-const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
+const VALID_BUSINESS_TYPES = new Set(['tuition_centre', 'school', 'contractor', 'freelancer', 'salon', 'agency', 'other'])
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i
 const VALID_THEMES  = new Set(['dark-modern', 'clean-light', 'minimal', 'charcoal', 'bold-amber'])

@@ -5,7 +5,7 @@ import { stripTags } from '@/lib/sanitize'
 
 type Params = { params: Promise<{ id: string }> }
 
-const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes'] as const
+const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes', 'class_name', 'billed_for'] as const
 
 // PATCH /api/clients/[id]
 export async function PATCH(req: NextRequest, { params }: Params) {

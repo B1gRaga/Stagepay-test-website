@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAccount } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 
-const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes'] as const
+const ALLOWED_FIELDS = ['name', 'email', 'phone', 'address', 'vat_number', 'notes', 'class_name', 'billed_for'] as const
 type ClientField = typeof ALLOWED_FIELDS[number]
 
 // GET /api/clients — returns only non-deleted clients

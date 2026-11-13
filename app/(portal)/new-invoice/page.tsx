@@ -8,7 +8,7 @@ import { FREE_MONTHLY_LIMIT, startOfMonthUtc } from '@/lib/plans'
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; client?: string }>
+  searchParams: Promise<{ edit?: string; client?: string; class?: string }>
 }) {
   const account = await getAccount()
   if (!account) redirect('/auth/login')
@@ -16,7 +16,7 @@ export default async function NewInvoicePage({
   const supabase = await createClient()
   const profileDb = await accountProfileClient(account)
 
-  const { edit: editId, client: clientParam } = await searchParams
+  const { edit: editId, client: clientParam, class: classParam } = await searchParams
 
   const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }, { count: madeThisMonth }] = await Promise.all([
     profileDb
@@ -26,7 +26,7 @@ export default async function NewInvoicePage({
       .single(),
     supabase
       .from('clients')
-      .select('id, name, email, phone')
+      .select('id, name, email, phone, class_name, billed_for')
       .eq('user_id', account.accountId)
       .is('deleted_at', null)
       .order('name'),
@@ -92,6 +92,7 @@ export default async function NewInvoicePage({
       editId={editId ?? null}
       initialInvoice={initialInvoice ?? null}
       initialClientId={!editId && clientParam ? clientParam : null}
+      initialClass={!editId && classParam?.trim() ? classParam.trim().slice(0, 40) : null}
       lastByClient={lastByClient}
       knownItems={[...known.values()].slice(0, 80)}
       freeLeft={freeLeft}

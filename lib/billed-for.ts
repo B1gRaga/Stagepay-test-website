@@ -5,7 +5,8 @@ export const BILLED_FOR_MAX = 100
 
 export function billedForLabel(businessType?: string | null): string {
   switch (businessType) {
-    case 'tuition_centre': return 'Student'
+    case 'tuition_centre':
+    case 'school':         return 'Student'
     case 'contractor':
     case 'freelancer':
     case 'agency':         return 'Project'

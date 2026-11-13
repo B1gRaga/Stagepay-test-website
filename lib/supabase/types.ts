@@ -5,7 +5,7 @@ export type ReminderStatus     = 'scheduled' | 'sent' | 'failed' | 'cancelled'
 export type ReminderChannel    = 'whatsapp' | 'email'
 export type Plan               = 'free' | 'pro' | 'business'
 export type RecurrenceInterval = 'monthly' | 'quarterly' | 'yearly'
-export type BusinessType       = 'tuition_centre' | 'contractor' | 'freelancer' | 'salon' | 'agency' | 'other'
+export type BusinessType       = 'tuition_centre' | 'school' | 'contractor' | 'freelancer' | 'salon' | 'agency' | 'other'
 export type TeamMemberStatus   = 'pending' | 'active'
 
 export interface Database {
@@ -136,6 +136,8 @@ export interface Database {
           country: string | null
           vat_number: string | null
           notes: string | null
+          class_name: string | null
+          billed_for: string | null
           deleted_at: string | null
           created_at: string
           updated_at: string
@@ -151,6 +153,8 @@ export interface Database {
           country?: string | null
           vat_number?: string | null
           notes?: string | null
+          class_name?: string | null
+          billed_for?: string | null
           deleted_at?: string | null
         }
         Update: {
@@ -163,6 +167,8 @@ export interface Database {
           country?: string | null
           vat_number?: string | null
           notes?: string | null
+          class_name?: string | null
+          billed_for?: string | null
           deleted_at?: string | null
         }
         Relationships: [

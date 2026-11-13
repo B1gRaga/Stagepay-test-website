@@ -12,7 +12,7 @@ export default async function ClientsPage() {
   const [{ data: clients }, { data: invoices }, profile] = await Promise.all([
     supabase
       .from('clients')
-      .select('id, name, email, phone, address, vat_number, notes, created_at')
+      .select('id, name, email, phone, address, vat_number, notes, class_name, billed_for, created_at')
       .eq('user_id', account.accountId)
       .is('deleted_at', null)
       .order('name'),
@@ -46,5 +46,5 @@ export default async function ClientsPage() {
     if (inv.status === 'overdue') { s.late += total; s.lateCount++ }
   }
 
-  return <ClientsGrid clients={clients ?? []} stats={stats} currency={profile?.default_currency || 'P'} role={account.role} />
+  return <ClientsGrid clients={clients ?? []} stats={stats} currency={profile?.default_currency || 'P'} role={account.role} businessType={profile?.business_type ?? null} />
 }
