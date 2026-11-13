@@ -203,14 +203,27 @@ function Footer({ d, color = MUTED, left = 44, right = 44 }: { d: Doc; color?: s
 // be missed at a glance. Same gold on every layout, whatever the brand colours.
 // Drawn first on the page so the figures print over it and stay readable.
 const GOLD = '#B8860B'
+// "Cash · 13 Nov 2026": how and when the last payment came in, when the
+// payment rows carry it (walk-in receipts do).
+function paidHow(invoice: Record<string, any>): string | null {
+  const rows = (invoice.invoice_payments ?? []) as { paid_on?: string; note?: string | null }[]
+  const last = [...rows].filter(p => p.paid_on).sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on))).pop()
+  if (!last) return null
+  const [y, m, day] = String(last.paid_on).split('-').map(Number)
+  const when = `${day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1]} ${y}`
+  return last.note ? `${last.note} · ${when}` : when
+}
+
 function PaidStamp({ d }: { d: Doc }) {
   const { s, fz } = d
+  const how = paidHow(d.invoice)
   return (
     <View style={{ position: 'absolute', top: s(270), right: s(56), transform: 'rotate(-12deg)', opacity: 0.8 }}>
       <View style={{ borderWidth: s(3), borderColor: GOLD, borderRadius: s(10), padding: s(3.5) }}>
         <View style={{ borderWidth: s(1.2), borderColor: GOLD, borderRadius: s(7), paddingTop: s(8), paddingBottom: s(7), paddingHorizontal: s(20), alignItems: 'center' }}>
           <Text style={{ fontSize: fz(42), fontFamily: 'Helvetica-Bold', color: GOLD, letterSpacing: 6, lineHeight: 1 }}>PAID</Text>
           <Text style={{ fontSize: fz(8.5), fontFamily: 'Helvetica-Bold', color: GOLD, letterSpacing: 1.5, marginTop: s(4) }}>IN FULL · {money(d.invoice)(d.invoice.total)}</Text>
+          {how && <Text style={{ fontSize: fz(7.5), fontFamily: 'Helvetica', color: GOLD, letterSpacing: 0.5, marginTop: s(3) }}>{how.toUpperCase()}</Text>}
         </View>
       </View>
     </View>

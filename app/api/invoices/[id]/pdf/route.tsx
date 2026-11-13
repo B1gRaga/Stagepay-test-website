@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const supabaseAny = supabase
   const [{ data: invoice }, { data: profile }] = await Promise.all([
-    supabaseAny.from('invoices').select('*, invoice_items(*), invoice_payments(amount)').eq('id', id).eq('user_id', account.accountId).single(),
+    supabaseAny.from('invoices').select('*, invoice_items(*), invoice_payments(amount, paid_on, note)').eq('id', id).eq('user_id', account.accountId).single(),
     (await accountProfileClient(account)).from('profiles').select('*').eq('id', account.accountId).single(),
   ])
 

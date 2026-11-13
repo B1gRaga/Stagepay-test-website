@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const supabase = createServiceClient()
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('*, invoice_items(*), invoice_payments(amount)')
+    .select('*, invoice_items(*), invoice_payments(amount, paid_on, note)')
     .eq('public_token', token)
     .single()
 

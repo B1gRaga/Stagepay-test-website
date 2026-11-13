@@ -16,3 +16,7 @@ export function balanceDue(total: number | string, payments: { amount: number | 
 export function todayIso() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Gaborone' }).format(new Date())
 }
+
+// How a walk-in client paid at the counter. Kept as the payment's note, so it
+// shows on the receipt and in the payments list.
+export const PAYMENT_METHODS = ['Cash', 'Orange Money', 'MyZaka', 'Smega', 'Bank transfer', 'Card'] as const

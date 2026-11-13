@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   const [{ data: invoice }, { data: profile }] = await Promise.all([
-    supabase.from('invoices').select('*, invoice_items(*), invoice_payments(amount)').eq('id', invoice_id).eq('user_id', account.accountId).single(),
+    supabase.from('invoices').select('*, invoice_items(*), invoice_payments(amount, paid_on, note)').eq('id', invoice_id).eq('user_id', account.accountId).single(),
     (await accountProfileClient(account)).from('profiles').select('*').eq('id', account.accountId).single(),
   ])
 

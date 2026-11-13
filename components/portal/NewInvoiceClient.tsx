@@ -8,12 +8,14 @@ import { openWhatsApp, publicInvoiceUrl, markInvoiceSent } from '@/lib/wa-link'
 import { useSharablePdf, sharePdf } from '@/lib/wa-share'
 import type { KnownItem, LastInvoice, LineItem } from './invoice-draft'
 import { BILLED_FOR_MAX, billedForLabel, billedForPlaceholder, billedForWaLine } from '@/lib/billed-for'
+import { billsLearners } from '@/lib/business-types'
+import { PAYMENT_METHODS } from '@/lib/payments'
 import { dayMonthYear } from '@/lib/format-date'
 import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
 import { CURRENCIES } from '@/lib/currencies'
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type Client  = { id: string; name: string; email: string | null; phone: string | null }
+type Client  = { id: string; name: string; email: string | null; phone: string | null; class_name?: string | null; billed_for?: string | null }
 type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null; business_type?: string | null }
 
 const TERMS = [
@@ -232,6 +234,11 @@ const CSS = `
   .send-done{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;background:color-mix(in srgb,var(--g) 14%,transparent);font-size:14px;color:var(--t1);}
   .send-done small{display:block;color:var(--t2);margin-top:2px;}
   .sheet-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .batch-list{list-style:none;margin:0;padding:0;max-height:40vh;overflow:auto;border:1px solid var(--line);border-radius:10px;}
+  .batch-list li{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;font-size:14px;border-bottom:1px solid var(--line);}
+  .batch-list li:last-child{border-bottom:0;}
+  .batch-list a{color:var(--t1);font-weight:700;text-decoration:none;}
+  .batch-list span{color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   @keyframes ni-rise{from{opacity:0;transform:translateY(8px)}}
   @keyframes ni-fade{from{opacity:0}}
@@ -279,6 +286,7 @@ export default function NewInvoiceClient({
   editId,
   initialInvoice = null,
   initialClientId = null,
+  initialClass = null,
   lastByClient = {},
   knownItems = [],
   freeLeft = null,
@@ -295,12 +303,19 @@ export default function NewInvoiceClient({
   freeLeft?: number | null
   // Where an unsaved new invoice is kept in this browser, so leaving the page loses nothing.
   draftKey?: string | null
+  // "Bill everyone in Form 3": one invoice per parent in this class, same items.
+  initialClass?: string | null
 }) {
   const router = useRouter()
   const profile = initialProfile
   const inv = editId ? initialInvoice : null
   // Arriving from a client's "New invoice" link fills in who it is for.
   const preset = !inv && initialClientId ? initialClients.find(c => c.id === initialClientId) ?? null : null
+  // Schools and tuition centres put parents in classes.
+  const learners = billsLearners(profile?.business_type)
+  const knownClasses = useMemo(() => [...new Set(initialClients.map(c => c.class_name?.trim()).filter((k): k is string => !!k))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), [initialClients])
+  const batchClients = useMemo(() => initialClass ? initialClients.filter(c => (c.class_name?.trim() || '') === initialClass) : [], [initialClass, initialClients])
+  const batch = !inv && !!initialClass && batchClients.length > 0
 
   // Form state, filled from the invoice being edited or from the profile's defaults.
   const [selectedClientId, setSelectedClientId] = useState<string | null>(inv?.client_id ?? preset?.id ?? null)
@@ -308,7 +323,12 @@ export default function NewInvoiceClient({
   const [clientEmail, setClientEmail] = useState<string>(inv?.client_email ?? preset?.email ?? '')
   const [clientPhone, setClientPhone] = useState<string>(inv?.client_phone ?? preset?.phone ?? '')
   const [project,     setProject]     = useState<string>(inv?.project ?? '')
-  const [billedFor,   setBilledFor]   = useState<string>(inv?.billed_for ?? '')
+  const [billedFor,   setBilledFor]   = useState<string>(inv?.billed_for ?? preset?.billed_for ?? '')
+  const [className,   setClassName]   = useState<string>(preset?.class_name ?? '')
+  // Batch billing: what was made, shown once it's done.
+  const [batchBusy,   setBatchBusy]   = useState(false)
+  const [batchDone,   setBatchDone]   = useState<{ id: string; number: string; client: string }[] | null>(null)
+  const [batchError,  setBatchError]  = useState('')
   const bfLabel = billedForLabel(profile?.business_type)
   const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
   const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())
@@ -347,6 +367,13 @@ export default function NewInvoiceClient({
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(editId)
   const [savedInvNum,    setSavedInvNum]    = useState<string | null>(inv?.invoice_number ?? null)
   const [savedToken,     setSavedToken]     = useState<string | null>(inv?.public_token ?? null)
+
+  // Walk-in payment: the invoice is saved, paid in full today, and the receipt goes out.
+  const [paidOpen,  setPaidOpen]  = useState(false)
+  const [payMethod, setPayMethod] = useState<string>(PAYMENT_METHODS[0])
+  const [payRef,    setPayRef]    = useState('')
+  const [paying,    setPaying]    = useState(false)
+  const [payError,  setPayError]  = useState('')
 
   const [sendOpen,  setSendOpen]  = useState(false)
   const [channel,   setChannel]   = useState<'wa' | 'email'>('wa')
@@ -457,6 +484,8 @@ export default function NewInvoiceClient({
     setClientName(c.name)
     setClientEmail(c.email ?? '')
     setClientPhone(c.phone ?? '')
+    setClassName(c.class_name ?? '')
+    if (c.billed_for && !billedFor.trim()) setBilledFor(c.billed_for)
     setUsedAgain(null)
   }
 
@@ -528,14 +557,27 @@ export default function NewInvoiceClient({
       if (saved.invoice_number) setSavedInvNum(saved.invoice_number)
       if (saved.public_token) setSavedToken(saved.public_token)
 
-      // A new name becomes a client, linked to this invoice.
+      // A new name becomes a client, linked to this invoice. The class and the
+      // learner go on the client too, so the Clients page can group by class.
       const name = clientName.trim()
+      const klass = learners ? className.trim().slice(0, 40) : ''
+      const existing = selectedClientId ? initialClients.find(c => c.id === selectedClientId) : null
+      if (existing && learners && (klass !== (existing.class_name?.trim() || '') || (billedFor.trim() && !existing.billed_for))) {
+        fetch(`/api/clients/${existing.id}`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ class_name: klass || null, ...(billedFor.trim() && !existing.billed_for ? { billed_for: billedFor.trim() } : {}) }),
+        }).catch(() => {})
+      }
       if (name && !selectedClientId && !initialClients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
         try {
           const cr = await fetch('/api/clients', {
             method: 'POST', credentials: 'include',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ name, email: clientEmail || undefined, phone: clientPhone || undefined }),
+            body: JSON.stringify({
+              name, email: clientEmail || undefined, phone: clientPhone || undefined,
+              ...(klass ? { class_name: klass } : {}), ...(learners && billedFor.trim() ? { billed_for: billedFor.trim() } : {}),
+            }),
           })
           const cd = await cr.json().catch(() => ({}))
           if (cr.ok && cd.client?.id) {
@@ -559,9 +601,42 @@ export default function NewInvoiceClient({
 
   function check(forSend: boolean) {
     setTried(true)
-    if (problems.client) { nameRef.current?.focus(); return false }
+    if (!batch && problems.client) { nameRef.current?.focus(); return false }
     if (forSend && problems.items) { firstItemRef.current?.focus(); return false }
     return true
+  }
+
+  // One invoice per parent in the class, as drafts, each with the client's own
+  // learner on it; then each is sent from its page (or all from Invoices).
+  async function createBatch() {
+    if (!check(true)) return
+    setBatchBusy(true); setBatchError('')
+    const made: { id: string; number: string; client: string }[] = []
+    try {
+      for (const c of batchClients) {
+        const payload = {
+          client_id: c.id, client_name: c.name, client_email: c.email || null, client_phone: c.phone || null,
+          project: project.trim() || null, billed_for: (c.billed_for || '').trim() || null,
+          currency, issue_date: issueDate, due_date: dueDate || null, vat_rate: vatRate,
+          discount_amount: effectiveDiscount, deposit_amount: depositAmt,
+          is_recurring: isRecurring, recurrence_interval: isRecurring ? recurInterval : undefined,
+          notes: notes.trim() || null, status: 'draft',
+          items: lines.map(i => ({ description: i.desc.trim(), quantity: Number(i.qty) || 1, unit_price: Number(i.rate) || 0 })),
+        }
+        const res = await fetch('/api/invoices', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(`${c.name}: ${d.error || 'couldn’t save'}${made.length ? ` (${made.length} made before this)` : ''}`)
+        made.push({ id: d.invoice.id, number: d.invoice.invoice_number, client: c.name })
+      }
+      forgetDraft()
+      router.refresh()
+      setBatchDone(made)
+    } catch (e: any) {
+      setBatchError(e.message)
+      if (made.length) setBatchDone(made)
+    } finally {
+      setBatchBusy(false)
+    }
   }
 
   async function handleDraft() {
@@ -571,6 +646,32 @@ export default function NewInvoiceClient({
       router.refresh() // the sidebar's "This month" figures come from the layout, which the router otherwise keeps
       router.push(`/invoices/${saved.id}`)
     } catch { /* shown in saveError */ }
+  }
+
+  // "Paid now": someone paid at the counter. Save the invoice, record the whole
+  // amount as received today by the chosen method, and open the invoice with
+  // the receipt ready to send on WhatsApp.
+  function handlePaidNowClick() {
+    if (!check(true)) return
+    setPayError(''); setPaidOpen(true)
+  }
+  async function handlePaidNow() {
+    setPaying(true); setPayError('')
+    try {
+      const saved = await saveInvoice('draft')
+      const res = await fetch(`/api/invoices/${saved.id}/paid-now`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ method: payMethod, reference: payRef.trim() || undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(d.error || 'Couldn’t record the payment')
+      router.refresh()
+      router.push(`/invoices/${saved.id}?panel=whatsapp`)
+    } catch (e: any) {
+      setPayError(e.message)
+      setPaying(false)
+    }
   }
 
   async function handleSendClick(which: 'wa' | 'email') {
@@ -785,7 +886,15 @@ export default function NewInvoiceClient({
           <section className="sec" aria-labelledby="who-h">
             <h2 id="who-h">Who is it for?</h2>
             <div className="sec-body">
-              {initialClients.length > 0 && (
+              {batch ? (
+                <div className="again" role="status">
+                  <p>
+                    Everyone in <b>{initialClass}</b> · {batchClients.length} {batchClients.length === 1 ? 'parent' : 'parents'}
+                    <small>{batchClients.map(c => c.billed_for ? `${c.name} (${c.billed_for})` : c.name).join(', ')}</small>
+                  </p>
+                  <Link href="/new-invoice" className="again-btn">One invoice instead</Link>
+                </div>
+              ) : initialClients.length > 0 && (
                 <div className="people" role="group" aria-label="Your clients">
                   {people.map(c => (
                     <button key={c.id} type="button" className="person press" aria-pressed={selectedClientId === c.id} onClick={() => selectClient(c)}>
@@ -800,7 +909,7 @@ export default function NewInvoiceClient({
                   )}
                 </div>
               )}
-              <div className="grid3">
+              {!batch && <div className="grid3">
                 <div>
                   <label className="lbl" htmlFor="ni-client-name">Name</label>
                   <input ref={nameRef} id="ni-client-name" name="client_name" autoComplete="off" className={`in${tried && problems.client ? ' bad' : ''}`}
@@ -815,13 +924,25 @@ export default function NewInvoiceClient({
                   <label className="lbl" htmlFor="ni-client-email">Email <span style={{ fontWeight: 400 }}>(optional)</span></label>
                   <input id="ni-client-email" name="client_email" className="in" type="email" inputMode="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="e.g. kefilwe@gmail.com" />
                 </div>
-              </div>
-              {tried && problems.client && <p className="field-err">{problems.client}</p>}
+              </div>}
+              {!batch && tried && problems.client && <p className="field-err">{problems.client}</p>}
 
-              <div className="billed-for">
-                <label className="lbl" htmlFor="ni-billed-for">{bfLabel} <span style={{ fontWeight: 400 }}>(optional)</span></label>
-                <input id="ni-billed-for" name="billed_for" autoComplete="off" className="in" maxLength={BILLED_FOR_MAX} value={billedFor} onChange={e => setBilledFor(e.target.value)} placeholder={billedForPlaceholder(profile?.business_type)} />
-              </div>
+              {!batch && (
+                <div className={learners ? 'grid2' : undefined} style={learners ? { marginTop: 14 } : undefined}>
+                  <div className="billed-for" style={learners ? { marginTop: 0 } : undefined}>
+                    <label className="lbl" htmlFor="ni-billed-for">{bfLabel} <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                    <input id="ni-billed-for" name="billed_for" autoComplete="off" className="in" maxLength={BILLED_FOR_MAX} value={billedFor} onChange={e => setBilledFor(e.target.value)} placeholder={billedForPlaceholder(profile?.business_type)} />
+                  </div>
+                  {learners && (
+                    <div>
+                      <label className="lbl" htmlFor="ni-class">Class <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                      <input id="ni-class" name="class_name" autoComplete="off" className="in" list="ni-classes" maxLength={40} value={className} onChange={e => setClassName(e.target.value)} placeholder="e.g. Form 3" />
+                      <datalist id="ni-classes">{knownClasses.map(k => <option key={k} value={k} />)}</datalist>
+                      <span className="help">Saved on the parent, so you can bill the whole class at once from Clients.</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {last && (
                 <div className="again" aria-live="polite">
@@ -965,26 +1086,36 @@ export default function NewInvoiceClient({
 
           {/* Phone and tablet: total and Send stay in reach. */}
           <div className="bar">
-            <div className="bar-total"><small>Total</small><b>{fmtAmt(shownTotal, currency)}</b></div>
+            <div className="bar-total"><small>{batch ? 'Each' : 'Total'}</small><b>{fmtAmt(shownTotal, currency)}</b></div>
             <button type="button" className="btn press" onClick={() => setPreviewOpen(true)}>Preview</button>
-            <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>{saving ? 'Saving…' : 'Send'}</button>
+            {batch
+              ? <button type="button" className="btn primary press" onClick={createBatch} disabled={batchBusy}>{batchBusy ? 'Making…' : `Make ${batchClients.length} invoices`}</button>
+              : <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>{saving ? 'Saving…' : 'Send'}</button>}
           </div>
           {saveError && <div className="mob-err">{errorBox}</div>}
         </div>
 
         {/* Desktop: the live invoice and its actions. */}
         <aside className="ni-side" aria-label="Preview and send">
-          <div className="side-head"><span>What {clientName.trim() ? firstName(clientName) : 'your client'} will receive</span></div>
+          <div className="side-head"><span>{batch ? `What each parent in ${initialClass} will receive` : `What ${clientName.trim() ? firstName(clientName) : 'your client'} will receive`}</span></div>
           {paper}
-          {tryMsg && <p className="side-err" role="alert">{problems.client || problems.items}</p>}
+          {tryMsg && <p className="side-err" role="alert">{(!batch && problems.client) || problems.items}</p>}
           {errorBox}
+          {batchError && <p className="side-err" role="alert">{batchError}</p>}
           <div className="side-actions">
+            {batch ? (
+              <button type="button" className="btn primary press" onClick={createBatch} disabled={batchBusy}>
+                {batchBusy ? 'Making…' : `Make ${batchClients.length} invoices`}
+              </button>
+            ) : (<>
             <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M2 14l1.3-3.9A6 6 0 1 1 6.3 13L2 14z"/></svg>
               {saving ? 'Saving…' : sendLabel}
             </button>
             <button type="button" className="btn press" onClick={() => handleSendClick('email')} disabled={saving}>Send by email</button>
             <button type="button" className="btn press" onClick={handlePDF} disabled={saving}>View PDF</button>
+            {!editId && <button type="button" className="btn press" onClick={handlePaidNowClick} disabled={saving} title="They paid at the counter: record it and send the receipt">Paid now</button>}
+            </>)}
           </div>
         </aside>
       </div>
@@ -1002,7 +1133,52 @@ export default function NewInvoiceClient({
             <div className="side-actions" style={{ marginTop: 14 }}>
               <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>{saving ? 'Saving…' : sendLabel}</button>
               <button type="button" className="btn press" onClick={() => handleSendClick('email')} disabled={saving}>Send by email</button>
+              {!editId && <button type="button" className="btn press" onClick={handlePaidNowClick} disabled={saving}>Paid now</button>}
               <button type="button" className="btn press" onClick={handleDraft} disabled={saving}>Save draft</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch result: what was made for the class */}
+      {batchDone && (
+        <div className="sheet-bg">
+          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="batch-h">
+            <div className="sheet-head"><h2 id="batch-h">{batchDone.length} {batchDone.length === 1 ? 'invoice' : 'invoices'} ready</h2></div>
+            <p className="send-to">Each parent in <b>{initialClass}</b> has an invoice for <b>{fmtAmt(total, currency)}</b>, saved as a draft. Open one to send it on WhatsApp.</p>
+            <ul className="batch-list">
+              {batchDone.map(b => <li key={b.id}><Link href={`/invoices/${b.id}`}>{b.number}</Link> <span>{b.client}</span></li>)}
+            </ul>
+            {batchError && <p className="field-err" role="alert">{batchError}</p>}
+            <div className="sheet-actions">
+              <button type="button" className="btn primary press" onClick={() => router.push('/invoices')}>Go to invoices</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Paid-now sheet: a walk-in payment, receipt next */}
+      {paidOpen && (
+        <div className="sheet-bg" onClick={() => !paying && setPaidOpen(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="paid-h" onClick={e => e.stopPropagation()}>
+            <div className="sheet-head">
+              <h2 id="paid-h">Paid now</h2>
+              <button type="button" className="sheet-x" onClick={() => setPaidOpen(false)} aria-label="Close" disabled={paying}>×</button>
+            </div>
+            <p className="send-to"><b>{fmtAmt(shownTotal, currency)}</b> from <b>{clientName.trim() || 'your client'}</b>, received today.</p>
+            <span className="lbl" id="pay-how">Paid by</span>
+            <div className="chips" role="group" aria-labelledby="pay-how">
+              {PAYMENT_METHODS.map(m => (
+                <button key={m} type="button" className="chip press" aria-pressed={payMethod === m} onClick={() => setPayMethod(m)}>{m}</button>
+              ))}
+            </div>
+            <label className="lbl" htmlFor="ni-pay-ref" style={{ marginTop: 12 }}>Reference <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <input id="ni-pay-ref" name="pay_ref" className="in" value={payRef} onChange={e => setPayRef(e.target.value)} maxLength={40} placeholder="e.g. Orange Money transaction ID" />
+            <p className="sec-sub" style={{ marginTop: 8, fontSize: 13 }}>The invoice is saved as paid, no reminders are booked, and the receipt opens ready to send on WhatsApp.</p>
+            {payError && <p className="field-err" role="alert">{payError}</p>}
+            <div className="sheet-actions">
+              <button type="button" className="btn ghost press" onClick={() => setPaidOpen(false)} disabled={paying}>Not now</button>
+              <button type="button" className="btn primary press" onClick={handlePaidNow} disabled={paying || saving}>{paying ? 'Recording…' : 'Record payment and get receipt'}</button>
             </div>
           </div>
         </div>

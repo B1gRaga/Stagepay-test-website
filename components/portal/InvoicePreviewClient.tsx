@@ -231,6 +231,16 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
   const [pdfInline, setPdfInline] = useState<boolean | null>(null)
   useEffect(() => { setPdfInline(navigator.pdfViewerEnabled !== false) }, [])
 
+  // Arriving with ?panel=whatsapp|email (a walk-in receipt from New Invoice)
+  // opens that send panel straight away.
+  useEffect(() => {
+    const want = new URLSearchParams(window.location.search).get('panel')
+    if (want === 'whatsapp' || want === 'email') {
+      setPanel(want)
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [])
+
   // A "mark as paid" waits UNDO_MS before it is saved, because paid can't be reversed on the server.
   const pendingPaid = useRef<{ timer: ReturnType<typeof setTimeout>; prev: string } | null>(null)
 
@@ -316,7 +326,10 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     const amount = `${sym}${(paidMode ? Number(invoice.total) : owing).toLocaleString('en', { minimumFractionDigits: 2 })}`
     const link = publicInvoiceUrl(invoice.public_token)
     const bfLine = billedForWaLine(businessType, invoice.billed_for)
-    const paidText = `Hi ${invoice.client_name} 👋\n\nGreat news — your payment for invoice *${invoice.invoice_number}* of *${amount}* has been received and confirmed. ✅${bfLine ? `\n${bfLine}` : ''}\n\nThank you for your prompt payment. We appreciate your business!`
+    // "by Cash" when the last payment says how it came in (walk-in receipts do).
+    const lastNote = [...payments].sort((a, b) => a.paid_on.localeCompare(b.paid_on)).pop()?.note
+    const how = lastNote ? ` by ${lastNote}` : ''
+    const paidText = `Hi ${invoice.client_name} 👋\n\nThank you — your payment of *${amount}*${how} for invoice *${invoice.invoice_number}* has been received. ✅${bfLine ? `\n${bfLine}` : ''}\n\nYour receipt: ${link || 'attached'}\n\nWe appreciate your business!`
     const amountLine = `*${invoice.invoice_number}* for *${amount}*${invoice.due_date ? `, due ${dayMonthYear(invoice.due_date)}` : ''}.${bfLine ? `\n${bfLine}` : ''}`
     const intro = `Here is invoice ${amountLine}`
     const recordSend = () => {
