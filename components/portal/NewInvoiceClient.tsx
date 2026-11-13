@@ -1089,7 +1089,7 @@ export default function NewInvoiceClient({
             <div className="bar-total"><small>{batch ? 'Each' : 'Total'}</small><b>{fmtAmt(shownTotal, currency)}</b></div>
             <button type="button" className="btn press" onClick={() => setPreviewOpen(true)}>Preview</button>
             {batch
-              ? <button type="button" className="btn primary press" onClick={createBatch} disabled={batchBusy}>{batchBusy ? 'Making…' : `Make ${batchClients.length} invoices`}</button>
+              ? <button type="button" className="btn primary press" onClick={createBatch} disabled={batchBusy}>{batchBusy ? 'Making…' : `Make ${batchClients.length} ${batchClients.length === 1 ? 'invoice' : 'invoices'}`}</button>
               : <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>{saving ? 'Saving…' : 'Send'}</button>}
           </div>
           {saveError && <div className="mob-err">{errorBox}</div>}
@@ -1105,7 +1105,7 @@ export default function NewInvoiceClient({
           <div className="side-actions">
             {batch ? (
               <button type="button" className="btn primary press" onClick={createBatch} disabled={batchBusy}>
-                {batchBusy ? 'Making…' : `Make ${batchClients.length} invoices`}
+                {batchBusy ? 'Making…' : `Make ${batchClients.length} ${batchClients.length === 1 ? 'invoice' : 'invoices'}`}
               </button>
             ) : (<>
             <button type="button" className="btn primary press" onClick={() => handleSendClick('wa')} disabled={saving}>
