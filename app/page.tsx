@@ -206,7 +206,34 @@ const CSS = `
 .card:hover svg{transform:rotate(-6deg) scale(1.06)}
 .card h3{font-size:20px;margin-bottom:6px}
 .card p{color:var(--muted);font-size:16px}
+@media (min-width:1000px){.grid-4{grid-template-columns:repeat(3,1fr)}}
 .note-line{margin-top:22px;font-size:15px;color:var(--muted);display:flex;gap:10px;align-items:center}
+
+/* schools: classes, bill a class, send a class */
+.ticks{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:12px}
+.ticks li{display:flex;gap:12px;align-items:flex-start;font-weight:600}
+.ticks li::before{content:"";flex:none;width:22px;height:22px;margin-top:2px;border-radius:7px;background:var(--amber-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%236B4A00' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat}
+.ticks li small{display:block;font-weight:500;color:var(--muted);font-size:15px}
+.cls-demo{background:var(--white);border:1px solid var(--line);border-radius:28px;padding:22px;box-shadow:var(--sh-2);display:grid;gap:14px}
+.cls-demo .hd{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px}
+.cls-demo .hd span{font-weight:600;color:var(--muted);font-size:13px}
+.cls-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cls-chips span{font-size:13px;font-weight:700;padding:7px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.cls-chips span i{font-style:normal;font-weight:500;opacity:.8;margin-left:3px}
+.cls-chips span.on{border-color:var(--amber);background:var(--amber-soft);color:var(--note-fg)}
+.cls-chips span.go{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.cls-rows{display:grid;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.cls-rows > div{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.cls-rows > div:last-child{border-bottom:0}
+.cls-rows b{display:block;font-weight:700;line-height:1.25}
+.cls-rows small{color:var(--muted);font-size:12px}
+.cls-rows em{font-style:normal;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--amber-soft);color:var(--note-fg);white-space:nowrap}
+.cls-rows em.q{background:#E3E7EF;color:var(--muted)}
+.cls-bar{height:8px;border-radius:999px;background:var(--paper-2);overflow:hidden}
+.cls-bar i{display:block;height:100%;width:0;background:var(--amber);transition:width 1.6s .4s cubic-bezier(.2,.8,.2,1)}
+.reveal.in .cls-bar i{width:72%}
+.cls-demo .caption{display:flex;justify-content:space-between;gap:12px}
+@media (prefers-reduced-motion: reduce){.cls-bar i{transition:none;width:72%}}
 
 /* how: stepper + phone */
 .how-grid{display:grid;gap:48px;margin-top:40px;align-items:center}
@@ -413,6 +440,27 @@ function RecurringCardIcon() {
       <path d="M60 30 A30 30 0 1 1 31 52" fill="none" stroke="#FAF7F0" strokeWidth="9" strokeLinecap="round" />
       <path d="M20 46 L32 62 L44 46 Z" fill="#FAF7F0" />
       <circle cx="60" cy="60" r="9" fill="#F2A900" />
+    </svg>
+  )
+}
+function ReceiptCardIcon() {
+  return (
+    <svg aria-hidden focusable="false" viewBox="0 0 120 120">
+      <rect width="120" height="120" rx="28" fill="#1F2A44" />
+      <path d="M36 24 H84 V96 L76 90 L68 96 L60 90 L52 96 L44 90 L36 96 Z" fill="#FAF7F0" />
+      <rect x="46" y="40" width="28" height="6" rx="3" fill="#1F2A44" />
+      <rect x="46" y="52" width="20" height="6" rx="3" fill="#1F2A44" />
+      <rect x="46" y="68" width="28" height="8" rx="4" fill="#F2A900" />
+    </svg>
+  )
+}
+function PartPayCardIcon() {
+  return (
+    <svg aria-hidden focusable="false" viewBox="0 0 120 120">
+      <rect width="120" height="120" rx="28" fill="#1F2A44" />
+      <circle cx="60" cy="60" r="30" fill="none" stroke="#FAF7F0" strokeWidth="9" />
+      <path d="M60 30 A30 30 0 0 1 90 60 L60 60 Z" fill="#F2A900" />
+      <circle cx="60" cy="60" r="7" fill="#FAF7F0" />
     </svg>
   )
 }
@@ -712,7 +760,7 @@ export default function Home() {
           <div className="stairs" ref={heroStairsRef} aria-hidden="true"><i></i><i></i><i></i></div>
           <div className="wrap">
             <div>
-              <p className="eyebrow"><span className="dot"></span>For tutors and education businesses in Botswana</p>
+              <p className="eyebrow"><span className="dot"></span>For tutors, tuition centres and schools in Botswana</p>
               <h1>
                 {HERO_WORDS.map((w, i) => <span key={i}><span className="w" style={{ animationDelay: `${i * 55}ms` }}>{w}</span> </span>)}
                 <span className="w wa" style={{ animationDelay: `${HERO_WORDS.length * 55}ms` }}>WhatsApp.</span>
@@ -804,8 +852,10 @@ export default function Home() {
               <div className="card reveal" style={{ transitionDelay: '90ms' }}><WhatsAppCardIcon /><div><h3>WhatsApp delivery</h3><p>Invoices go straight to your client&apos;s WhatsApp.</p></div></div>
               <div className="card reveal" style={{ transitionDelay: '180ms' }}><ReminderCardIcon /><div><h3>Automatic reminders</h3><p>Follow-ups continue until the invoice is paid.</p></div></div>
               <div className="card reveal" style={{ transitionDelay: '270ms' }}><RecurringCardIcon /><div><h3>Recurring invoices</h3><p>Monthly fees go out for every student without retyping.</p></div></div>
+              <div className="card reveal" style={{ transitionDelay: '360ms' }}><ReceiptCardIcon /><div><h3>Receipts at the counter</h3><p>Someone pays cash at the desk? Tap <b>Paid now</b> and a stamped receipt is ready for their WhatsApp.</p></div></div>
+              <div className="card reveal" style={{ transitionDelay: '450ms' }}><PartPayCardIcon /><div><h3>Part payments</h3><p>Record what came in. Reminders chase only the balance, and every payment is on the record.</p></div></div>
             </div>
-            <p className="note-line reveal"><VatIcon /> VAT is worked out on every invoice, and a receipt goes out once it&apos;s marked paid.</p>
+            <p className="note-line reveal"><VatIcon /> VAT is worked out on every invoice, and month-by-month and per-client totals export to a spreadsheet for your accountant.</p>
           </div>
         </section>
 
@@ -852,6 +902,37 @@ export default function Home() {
                 </div>
                 <figcaption className="caption">Illustrative screens</figcaption>
               </figure>
+            </div>
+          </div>
+        </section>
+
+        <section className="band" id="schools">
+          <div className="wrap split">
+            <div className="reveal">
+              <div className="mark" aria-hidden="true"><i></i><i></i><i></i></div>
+              <p style={{ marginBottom: 16 }}><span className="chip">Schools and bigger tuition centres</span></p>
+              <h2 className="h2">Bill a whole class in one go</h2>
+              <p className="lead">Hundreds of parents, the same fees. Put each parent in a class once, and month-end stops being a week of typing.</p>
+              <ul className="ticks">
+                <li><span>Classes on your client list<small>Form 1, Form 2, Grade 5. Filter by class and see who still owes.</small></span></li>
+                <li><span>Enter the fees once, every parent gets their own invoice<small>Each one carries their child&apos;s name and goes to their number.</small></span></li>
+                <li><span>Send the whole class on WhatsApp in one tap<small>On the Business plan, from StagePay&apos;s number, with a view of who received it.</small></span></li>
+                <li><span>Up to {TEAM_SEATS} staff in one account<small>The bursar and the office each sign in with their own details.</small></span></li>
+              </ul>
+            </div>
+            <div className="reveal">
+              <div className="cls-demo" role="img" aria-label="Illustration: the Clients page filtered to Form 3 with 41 parents, a Bill everyone in Form 3 button, and invoices being sent on WhatsApp, 30 of 41 done">
+                <div className="hd">Clients <span>Thuto Tutoring Centre</span></div>
+                <div className="cls-chips"><span>Every class</span><span>Form 1 <i>34</i></span><span>Form 2 <i>29</i></span><span className="on">Form 3 <i>41</i></span><span className="go">Bill everyone in Form 3</span></div>
+                <div className="cls-rows">
+                  <div><div><b>Mma Kgosi</b><small>Form 3 · Lesedi · 7• ••• •••</small></div><em>Sent</em></div>
+                  <div><div><b>Rre Moeng</b><small>Form 3 · Kabo · 7• ••• •••</small></div><em>Sent</em></div>
+                  <div><div><b>Mma Phiri</b><small>Form 3 · Naledi · 7• ••• •••</small></div><em>Sent</em></div>
+                  <div><div><b>Rre Dube</b><small>Form 3 · Tshepo · 7• ••• •••</small></div><em className="q">Sending…</em></div>
+                </div>
+                <div className="cls-bar"><i></i></div>
+                <p className="caption"><span>Sending on WhatsApp… 30 of 41</span><span>Illustration</span></p>
+              </div>
             </div>
           </div>
         </section>
@@ -921,7 +1002,7 @@ export default function Home() {
             <div className="plans">
               <div className="plan reveal" style={{ transitionDelay: '0ms' }}><div className="name">Free</div><div className="price"><Counter to={0} /></div><p className="desc">Up to {FREE_MONTHLY_LIMIT} invoices a month.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
               <div className="plan hi reveal" style={{ transitionDelay: '90ms' }}><div className="name">Pro</div><span className="badge">First 100 users: 1 month free</span><div className="price"><Counter to={PRICE.pro} /> <small>/ month</small></div><p className="desc">Unlimited invoices. For tutors and small businesses.</p><a className="btn btn-amber" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
-              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={PRICE.business} /> <small>/ month</small></div><p className="desc">Unlimited invoices, and up to {TEAM_SEATS} people work in one shared account, each with their own sign-in.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
+              <div className="plan reveal" style={{ transitionDelay: '180ms' }}><div className="name">Business</div><div className="price"><Counter to={PRICE.business} /> <small>/ month</small></div><p className="desc">Unlimited invoices, a whole class sent on WhatsApp in one tap, and up to {TEAM_SEATS} people in one shared account, each with their own sign-in.</p><a className="btn btn-ghost" href={CTA.href}>{SIGNUPS_OPEN ? 'Get started' : CTA.label}</a></div>
             </div>
             <p className="swipe">Swipe to see all plans →</p>
           </div>
@@ -957,6 +1038,8 @@ export default function Home() {
               <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>Do clients have to send me proof of payment?</summary><p>No more screenshots in your chats. The payment reference they enter on the invoice is the proof, and it&apos;s saved against that invoice, so you can always see who paid what and when. Once you confirm it, a receipt with a PAID stamp is ready to share.</p></details>
               <details className="reveal" style={{ transitionDelay: '270ms' }}><summary>How do the follow-ups work?</summary><p>Reminders go out automatically on WhatsApp, so you never have to chase anyone yourself. You choose the schedule. By default a friendly nudge goes 3 days after the due date, a polite follow-up at 7 days and a firm final notice at 14 days, and you can add one at 30 days. Reminders stop by themselves the moment the invoice is marked paid. If the client taps &ldquo;I&apos;ve paid&rdquo;, reminders pause until you check it, so nobody gets chased for money they&apos;ve already sent. StagePay keeps the reminders polite and consistent, but it can&apos;t force anyone to pay. What it does is take the awkward chasing off your hands.</p></details>
               <details className="reveal" style={{ transitionDelay: '0ms' }}><summary>Do my clients need an app?</summary><p>No. Invoices arrive in their normal WhatsApp.</p></details>
+              <details className="reveal" style={{ transitionDelay: '90ms' }}><summary>What if a parent pays cash at the office?</summary><p>Fill in their details as usual and tap <b>Paid now</b> instead of Send. Pick how they paid (cash, Orange Money, MyZaka, Smega, bank, card), and in one step the invoice is saved as paid, no reminders are booked, and a receipt with a PAID stamp is ready to send to their WhatsApp. It still counts in your monthly totals and reports.</p></details>
+              <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>I run a school with hundreds of parents. Will it cope?</summary><p>Yes. Put each parent in a class, enter the fees once, and every parent in the class gets their own invoice with their child&apos;s name on it. On the Business plan the whole class goes out on WhatsApp in one tap, from StagePay&apos;s number, and you can see which messages were delivered. While a WhatsApp business number is new, WhatsApp limits how many new people it may message in a day, so a very large school is sent over a day or two; StagePay keeps track and finishes the rest for you.</p></details>
               <details className="reveal" style={{ transitionDelay: '90ms' }}><summary>Is StagePay VAT-ready?</summary><p>VAT is calculated on every invoice. We&apos;re still confirming our invoices meet every BURS requirement, so please check with your accountant for now.</p></details>
               <details className="reveal" style={{ transitionDelay: '180ms' }}><summary>What happens after the free month?</summary><p>No card is needed for the free month, and nothing is charged when it ends: your account moves to the Free plan ({FREE_MONTHLY_LIMIT} invoices a month). To keep Pro, choose a plan: Pro at {P}{PRICE.pro} a month for tutors and small businesses, or Business at {P}{PRICE.business} a month for teams.</p></details>
             </div>
