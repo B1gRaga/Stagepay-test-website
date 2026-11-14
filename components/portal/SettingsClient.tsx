@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { THEME_PRESETS, THEME_ORDER, resolveTheme, tint, type InvoiceTheme } from '@/lib/invoice-themes'
 import { COUNTRIES, countryCode } from '@/lib/countries'
+import { BUSINESS_TYPES } from '@/lib/business-types'
 import { firmLines } from '@/lib/firm-details'
 import { PLANS, PERIODS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName, period, periodPrice, type Months } from '@/lib/plans'
 import { monthlyPrice, type BillingCurrency } from '@/lib/billing/pricing'
@@ -20,6 +21,7 @@ const supabase = createBrowserClient(
 type Profile = {
   name: string | null
   firm_name: string | null
+  business_type?: string | null
   email: string | null
   phone: string | null
   address: string | null
@@ -562,6 +564,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
   const firmFrom = (p: Profile | null) => ({
     name:       p?.name       ?? '',
     firm_name:  p?.firm_name  ?? '',
+    business_type: p?.business_type ?? 'other',
     phone:      p?.phone      ?? '',
     address:    p?.address    ?? '',
     city:       p?.city       ?? '',
@@ -1094,6 +1097,14 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                       <label htmlFor="s-name">Your name</label>
                       <input id="s-name" name="name" className="in" autoComplete="name" value={firm.name} onChange={e => setFirm(p => ({ ...p, name: e.target.value }))} />
                       <span className="help">Shown instead when there’s no business name.</span>
+                    </div>
+                    <div className="fld full">
+                      <label htmlFor="s-business-type">Kind of business</label>
+                      <select id="s-business-type" name="business_type" className="in" value={firm.business_type} onChange={e => setFirm(p => ({ ...p, business_type: e.target.value }))}>
+                        {!BUSINESS_TYPES.some(t => t.value === firm.business_type) && <option value={firm.business_type}>{firm.business_type}</option>}
+                        {BUSINESS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                      <span className="help">Tuition centres and schools get a Student line on invoices, classes on the Clients page and “bill everyone in a class”.</span>
                     </div>
                   </div>
                 </section>
