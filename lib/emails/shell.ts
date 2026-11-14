@@ -82,7 +82,7 @@ export function emailShell(o: {
   </td></tr>` : ''}
   <tr><td style="padding:24px 32px 32px;font-size:14px;line-height:1.55;color:${MUTED};">${o.closing ? esc(o.closing) : ''}</td></tr>
 </table>
-<div style="font-family:${FONT};font-size:12px;color:#8A8F99;padding-top:16px;">Sent by ${esc(o.senderName)} with StagePay</div>
+<div style="font-family:${FONT};font-size:12px;color:#8A8F99;padding-top:16px;">${o.senderName === 'StagePay' ? 'Sent by StagePay' : `Sent by ${esc(o.senderName)} with StagePay`}</div>
 </td></tr>
 </table>
 </body></html>`
