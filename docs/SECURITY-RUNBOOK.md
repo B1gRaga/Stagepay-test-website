@@ -97,7 +97,11 @@ Write down what you find, with times. You will need it for step 6.
 ## 6. Tell people
 
 - **Affected customers.** Tell them plainly what happened, what information was involved, what you have done, and what they should do (for example, watch for fake invoices). Don't wait until you know everything.
-- **The regulator.** Botswana's Data Protection Act requires a breach of personal data to be reported to the Information and Data Protection Commission. Check the current deadline and form with a local adviser as soon as a breach is confirmed.
+- **The regulator: within 72 hours.** The Data Protection Act 2024 requires a breach of personal data to be reported to the Information and Data Protection Commission (IDPC) **within 72 hours of becoming aware of it**. The clock starts when you know, not when you've finished investigating, so report what you know and add to it later. Write down the time you found out.
+  - Include: what happened and when, what kinds of information and roughly how many people are affected (businesses, and their clients or parents), what you've done to contain it, what people should do, and who to contact (getstagepay@gmail.com, WhatsApp 73998627).
+  - If the breach is likely to put people at high risk (for example bank details, or enough to send convincing fake invoices), tell those people directly too, without waiting.
+  - Keep a record of every breach, even ones you decide not to report: what happened, the effect, and what you did. The IDPC can ask for it.
+  - Check the IDPC's current reporting form or address with a local adviser. The 72-hour deadline comes from secondary sources on the Act; confirm it against the Act itself.
 - **Providers.** If a key was abused, tell that provider (Meta, Resend, the payment provider). They can block misuse on their side.
 
 ## 7. Turn it back on

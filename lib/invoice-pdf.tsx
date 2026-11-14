@@ -217,7 +217,9 @@ function Authentic({ d, color = INK, sub = MUTED }: { d: Doc; color?: string; su
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: fz(7.5), fontFamily: 'Helvetica-Bold', color }}>Scan to verify</Text>
             <Text style={{ fontSize: fz(6.5), color: sub, marginTop: s(2) }}>Confirms this {d.paid ? 'receipt' : 'invoice'} is genuine</Text>
-            <Text style={{ fontSize: fz(6.5), color: sub, marginTop: s(1) }}>and whether it has been paid</Text>
+            <Text style={{ fontSize: fz(6.5), color: sub, marginTop: s(1) }}>and whether it is recorded as paid</Text>
+            {/* StagePay never handles the money: "paid" is the business's own record. */}
+            {d.paid && <Text style={{ fontSize: fz(6.5), color: sub, marginTop: s(1) }}>Payment recorded by {facts(d).firmName}</Text>}
           </View>
           <Svg width={s(46)} height={s(46)} viewBox={`0 0 ${d.verify.size} ${d.verify.size}`}>
             <Path d={d.verify.path} fill={color} />

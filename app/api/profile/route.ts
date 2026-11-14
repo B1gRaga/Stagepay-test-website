@@ -4,6 +4,9 @@ import { stripTags } from '@/lib/sanitize'
 import { cleanMethod, MAX_METHODS } from '@/lib/payment-methods'
 import { hasVatNumber, VAT_NEEDS_NUMBER } from '@/lib/vat'
 import { cleanReminderDays } from '@/lib/reminder-days'
+import { headers } from 'next/headers'
+import { sameMethods } from '@/lib/emails/payment-details-changed'
+import { notifyPaymentDetailsChanged } from '@/lib/notify-payment-change'
 
 const ALLOWED = [
   'name', 'firm_name', 'phone', 'address', 'city', 'country',
@@ -110,6 +113,13 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Payment details: remember what they were, to tell the owner if they change.
+  let before: { payment_methods: unknown } | null = null
+  if (updates.payment_methods !== undefined) {
+    const { data: cur } = await supabase.from('profiles').select('payment_methods').eq('id', account.accountId).single()
+    before = cur ?? { payment_methods: [] }
+  }
+
   const { data, error } = await supabase
     .from('profiles')
     .update(updates as import('@/lib/supabase/types').ProfileUpdate)
@@ -118,5 +128,14 @@ export async function PATCH(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+
+  if (before && !sameMethods(before.payment_methods, data.payment_methods)) {
+    await notifyPaymentDetailsChanged({
+      accountId: account.accountId,
+      businessName: data.firm_name || data.name || 'your business',
+      changedBy: (await headers()).get('x-user-email') || 'someone signed in to your account',
+      methods: data.payment_methods,
+    })
+  }
   return NextResponse.json({ profile: data })
 }

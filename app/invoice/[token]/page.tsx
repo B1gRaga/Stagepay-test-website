@@ -8,6 +8,7 @@ import { paidSoFar, balanceDue } from '@/lib/payments'
 import { resolveTheme, contrast, tint } from '@/lib/invoice-themes'
 import Link from 'next/link'
 import { LogoFull } from '@/components/Logo'
+import { verifyUrl } from '@/lib/verify'
 
 type Props = { params: Promise<{ token: string }>; searchParams?: Promise<{ v?: string }> }
 
@@ -95,7 +96,7 @@ export default async function PublicInvoicePage({ params, searchParams }: Props)
               <p className="pi-verify-p">
                 <b>{invoice.invoice_number}</b> was issued through StagePay by <b>{senderName}</b>
                 {invoice.issue_date ? <> on {fmtDate(invoice.issue_date)}</> : null} for <b>{fmt(Number(invoice.total), sym)}</b>.
-                {' '}{paid ? 'It has been paid in full.' : invoice.status === 'cancelled' ? 'It was cancelled.' : received > 0 ? `${fmt(received, sym)} has been received; ${fmt(due, sym)} is still owed.` : 'It has not been paid yet.'}
+                {' '}{paid ? <><b>{senderName}</b> has recorded it as paid in full.</> : invoice.status === 'cancelled' ? 'It was cancelled.' : received > 0 ? `${senderName} has recorded ${fmt(received, sym)} as received; ${fmt(due, sym)} is still owed.` : 'No payment has been recorded yet.'}
               </p>
             </div>
           </section>
@@ -224,6 +225,11 @@ export default async function PublicInvoicePage({ params, searchParams }: Props)
           <span>Sent with</span>
           <Link href="/" aria-label="StagePay"><LogoFull tone="default" /></Link>
         </footer>
+        <p className="pi-report">
+          StagePay makes the invoice; payments go straight to {senderName}, who records them.{' '}
+          Something wrong, or not from who it says?{' '}
+          <a href={`mailto:getstagepay@gmail.com?subject=${encodeURIComponent(`Report: invoice ${invoice.invoice_number}`)}&body=${encodeURIComponent(`Invoice link: ${verifyUrl(token).replace('?v=1', '')}\n\nWhat's wrong:\n`)}`}>Report this invoice</a>
+        </p>
       </main>
     </>
   )
@@ -310,6 +316,8 @@ const CSS = `
 
   .pi-foot{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#5B6475;padding-top:8px;}
   .pi-foot svg{height:18px;width:auto;display:block;}
+  .pi-report{font-size:12.5px;color:#5B6475;text-align:center;line-height:1.5;max-width:46ch;margin:10px auto 0;}
+  .pi-report a{color:inherit;font-weight:700;}
 
   @media(max-width:560px){
     .pi{padding:12px 12px 32px;gap:12px;}
@@ -325,7 +333,7 @@ const CSS = `
   @media print{
     body{background:#FFFFFF !important;}
     .pi{padding:0;max-width:none;}
-    .pi-actions,.pi-copy,.pi-foot,.pi-pay .pi-copy,.pi-claim-sec{display:none !important;}
+    .pi-actions,.pi-copy,.pi-foot,.pi-report,.pi-pay .pi-copy,.pi-claim-sec{display:none !important;}
     .pi-sum{border:1px solid #DDD;}
     .pi-sum,.pi-pay,.pi-doc{break-inside:avoid;}
   }
