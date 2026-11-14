@@ -346,7 +346,7 @@ export default function NewInvoiceClient({
   // Sending the batch on WhatsApp from StagePay's number: ask, send in chunks with progress, then report.
   const [sendAll,     setSendAll]     = useState<{ phase: 'ask' | 'sending' | 'done'; done: number; total: number; capReached?: boolean } | null>(null)
   const [sendAllRes,  setSendAllRes]  = useState<Record<string, { outcome: 'sent' | 'skipped' | 'failed'; reason?: string }>>({})
-  const [sendAllErr,  setSendAllErr]  = useState<{ msg: string; upgrade?: boolean } | null>(null)
+  const [sendAllErr,  setSendAllErr]  = useState<{ msg: string; upgrade?: boolean; verify?: boolean } | null>(null)
   const bfLabel = billedForLabel(profile?.business_type)
   const [currency,    setCurrency]    = useState<string>(inv?.currency || profile?.default_currency || 'P')
   const [issueDate,   setIssueDate]   = useState<string>(inv?.issue_date || today())
@@ -669,14 +669,14 @@ export default function NewInvoiceClient({
         const chunk = ids.slice(i, i + 20)
         const r = await fetch('/api/invoices/bulk-send', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ invoice_ids: chunk }) })
         const d = await r.json().catch(() => ({}))
-        if (!r.ok) throw Object.assign(new Error(d.error || 'Couldn’t send them'), { upgrade: !!d.upgrade })
+        if (!r.ok) throw Object.assign(new Error(d.error || 'Couldn’t send them'), { upgrade: !!d.upgrade, verify: !!d.verify })
         for (const x of d.results as { id: string; outcome: 'sent' | 'skipped' | 'failed'; reason?: string }[]) res[x.id] = { outcome: x.outcome, reason: x.reason }
         capReached = !!d.capReached
         setSendAllRes({ ...res }); setSendAll({ phase: 'sending', done: Math.min(ids.length, i + chunk.length), total: ids.length })
       }
       if (capReached) for (const id of ids) if (!res[id]) res[id] = { outcome: 'skipped', reason: 'Daily WhatsApp limit reached' }
     } catch (e: any) {
-      setSendAllErr({ msg: e.message, upgrade: !!e.upgrade })
+      setSendAllErr({ msg: e.message, upgrade: !!e.upgrade, verify: !!e.verify })
     }
     setSendAllRes({ ...res }); setSendAll({ phase: 'done', done: ids.length, total: ids.length, capReached })
     router.refresh()
@@ -1215,7 +1215,7 @@ export default function NewInvoiceClient({
               })}
             </ul>
             {batchError && <p className="field-err" role="alert">{batchError}</p>}
-            {sendAllErr && <p className="field-err" role="alert">{sendAllErr.msg}{sendAllErr.upgrade && <> <Link href="/settings?panel=plan">See plans</Link></>}</p>}
+            {sendAllErr && <p className="field-err" role="alert">{sendAllErr.msg}{sendAllErr.upgrade && <> <Link href="/settings?panel=plan">See plans</Link></>}{sendAllErr.verify && <> <Link href="/settings?panel=verify">Verify your business</Link></>}</p>}
 
             {bulkSend && !sendAll && (
               <p className="sec-sub" style={{ marginTop: 12, fontSize: 13 }}>

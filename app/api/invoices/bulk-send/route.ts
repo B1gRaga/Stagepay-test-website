@@ -10,6 +10,7 @@ import { balanceDue } from '@/lib/payments'
 import { dayMonthYear } from '@/lib/format-date'
 import { billedForLabel } from '@/lib/billed-for'
 import { log, logError } from '@/lib/logger'
+import { isBusinessVerified, VERIFY_NEEDED_MSG } from '@/lib/verification'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -78,6 +79,10 @@ export async function POST(req: NextRequest) {
     .from('profiles').select('plan, firm_name, name, business_type').eq('id', account.accountId).single()
   if (!canBulkSend(profile?.plan)) {
     return NextResponse.json({ error: 'Sending a whole class on WhatsApp comes with the Business plan.', upgrade: true }, { status: 403 })
+  }
+  // StagePay's number speaks for the business: only a verified one may use it (053).
+  if (!(await isBusinessVerified(account.accountId))) {
+    return NextResponse.json({ error: VERIFY_NEEDED_MSG, verify: true }, { status: 403 })
   }
 
   const templateName = process.env.WHATSAPP_INVOICE_TEMPLATE

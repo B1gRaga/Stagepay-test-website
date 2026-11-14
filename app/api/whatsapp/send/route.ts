@@ -4,6 +4,7 @@ import { resolveAccount, accountProfileClient } from '@/lib/account'
 import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 import { dayMonthYear } from '@/lib/format-date'
+import { isBusinessVerified, VERIFY_NEEDED_MSG } from '@/lib/verification'
 
 export const runtime = 'nodejs'
 
@@ -64,6 +65,11 @@ export async function POST(req: NextRequest) {
 
   if (!isWhatsAppConfigured()) {
     return NextResponse.json({ error: 'WhatsApp not configured' }, { status: 503 })
+  }
+
+  // StagePay's number speaks for the business: only a verified one may use it (053).
+  if (!(await isBusinessVerified(account.accountId))) {
+    return NextResponse.json({ error: VERIFY_NEEDED_MSG, verify: true }, { status: 403 })
   }
 
   const senderName = profile?.firm_name || profile?.name || 'Your service provider'

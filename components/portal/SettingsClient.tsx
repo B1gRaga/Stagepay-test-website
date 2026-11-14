@@ -12,6 +12,7 @@ import { CURRENCIES } from '@/lib/currencies'
 import { TEAMS_ENABLED, ROLE_LABEL, ROLE_HELP, type TeamRole } from '@/lib/teams'
 import { paymentBlocks, cleanMethod, KIND_LABEL, MAX_METHODS, type PaymentKind, type PaymentMethod } from '@/lib/payment-methods'
 import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from '@/lib/password-check'
+import VerifyBusiness from './VerifyBusiness'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,13 +52,14 @@ type Profile = {
 export type BillingView = { currency: BillingCurrency; symbol: string; currencyName: string; provider: string }
 const DEFAULT_BILLING: BillingView = { currency: 'BWP', symbol: 'P', currencyName: 'Pula', provider: 'DPO Pay' }
 
-type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'plan' | 'team' | 'security'
+type Panel = 'brand' | 'firm' | 'invoice' | 'payment' | 'verify' | 'plan' | 'team' | 'security'
 
 const PANELS: { id: Panel; label: string; businessOnly?: boolean }[] = [
   { id: 'brand',    label: 'Branding' },
   { id: 'firm',     label: 'Firm details' },
   { id: 'invoice',  label: 'Invoice defaults' },
   { id: 'payment',  label: 'Getting paid' },
+  { id: 'verify',   label: 'Verification' },
   { id: 'plan',     label: 'Plan & billing' },
   { id: 'team',     label: 'Team members', businessOnly: true },
   { id: 'security', label: 'Security' },
@@ -1654,6 +1656,12 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                 </section>
               </>
             )}
+          </div>
+
+          {/* ── VERIFICATION ── */}
+          <div className={`settings-panel${panel === 'verify' ? ' active' : ''}`}>
+            <PanelHead title="Verification" sub="Prove your business is real, to send invoices from StagePay’s WhatsApp number." />
+            {panel === 'verify' && <VerifyBusiness businessName={businessName} />}
           </div>
 
           {/* ── SECURITY ── */}

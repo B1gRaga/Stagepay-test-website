@@ -30,6 +30,11 @@ vi.mock('@/lib/whatsapp', async (orig) => ({
   sendWhatsApp: (...a: unknown[]) => mockSend(...a),
 }))
 vi.mock('@/lib/logger', () => ({ log: vi.fn(), logError: vi.fn() }))
+let verified = true
+vi.mock('@/lib/verification', async (orig) => ({
+  ...(await orig<typeof import('@/lib/verification')>()),
+  isBusinessVerified: async () => verified,
+}))
 
 // A tiny query recorder: enough of the builder for what the route does.
 function builder(table: string) {
@@ -85,6 +90,7 @@ describe('POST /api/invoices/bulk-send', () => {
     claimed.clear(); updates.length = 0; inserts.length = 0
     mockSend.mockReset().mockResolvedValue({ messages: [{ id: 'wamid.1' }] })
     mockSchedule.mockClear(); mockRate.mockClear().mockResolvedValue(true)
+    verified = true
     vi.stubEnv('WHATSAPP_INVOICE_TEMPLATE', 'invoice_ready')
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://getstagepay.co')
     vi.stubEnv('WHATSAPP_DAILY_RECIPIENTS', '250')
@@ -97,6 +103,15 @@ describe('POST /api/invoices/bulk-send', () => {
     const res = await POST(post(['a']))
     expect(res.status).toBe(403)
     expect(await res.json()).toMatchObject({ upgrade: true })
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('needs a verified business, and sends nothing until then', async () => {
+    verified = false
+    const { POST } = await import('@/app/api/invoices/bulk-send/route')
+    const res = await POST(post(['a']))
+    expect(res.status).toBe(403)
+    expect(await res.json()).toMatchObject({ verify: true })
     expect(mockSend).not.toHaveBeenCalled()
   })
 

@@ -377,6 +377,50 @@ export interface Database {
           }
         ]
       }
+      business_verifications: {
+        Row: {
+          account_id: string
+          status: 'pending' | 'approved' | 'declined'
+          registration_number: string
+          registered_name: string
+          submitter_name: string
+          submitter_role: string | null
+          certificate_path: string
+          submitted_by: string
+          submitted_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          decision_note: string | null
+        }
+        Insert: {
+          account_id: string
+          status?: 'pending' | 'approved' | 'declined'
+          registration_number: string
+          registered_name: string
+          submitter_name: string
+          submitter_role?: string | null
+          certificate_path: string
+          submitted_by: string
+          submitted_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          decision_note?: string | null
+        }
+        Update: {
+          status?: 'pending' | 'approved' | 'declined'
+          registration_number?: string
+          registered_name?: string
+          submitter_name?: string
+          submitter_role?: string | null
+          certificate_path?: string
+          submitted_by?: string
+          submitted_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          decision_note?: string | null
+        }
+        Relationships: []
+      }
       invoice_sends: {
         Row: {
           id: string
