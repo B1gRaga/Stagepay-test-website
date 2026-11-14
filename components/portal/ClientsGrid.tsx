@@ -119,6 +119,20 @@ ${STATUS_CSS}
 
   .act.del{width:34px;padding:0;color:var(--t2);}
   .act.del:hover{color:#DC2626;border-color:color-mix(in srgb,#DC2626 45%,transparent);}
+  .act.ed{width:34px;padding:0;color:var(--t2);}
+  .act.ed:hover{color:var(--t1);}
+
+  .dlg.wide{width:min(560px,calc(100vw - 32px));}
+  .ed-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin-top:16px;}
+  .ed-grid .full{grid-column:1 / -1;}
+  .fld label{display:block;font-size:13px;font-weight:600;color:var(--t2);margin-bottom:6px;}
+  .fld label small{font-weight:400;color:var(--t3);}
+  .in{width:100%;height:42px;background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:0 12px;font:500 15px var(--font-manrope),sans-serif;color:var(--t1);outline:none;transition:border-color var(--dur-1) var(--ease);}
+  .in:focus{border-color:var(--g);}
+  .fld .err{font-size:13px;color:#DC2626;margin-top:6px;}
+  .dlg-acts .primary{background:var(--g);border-color:var(--g);color:#1F2A44;}
+  .dlg-acts .primary:disabled{opacity:.6;cursor:default;}
+  @media(max-width:560px){.ed-grid{grid-template-columns:1fr;}}
 
   .dlg{margin:auto;border:0;padding:0;border-radius:16px;background:var(--bg2);color:var(--t1);width:min(420px,calc(100vw - 32px));box-shadow:0 24px 64px rgba(0,0,0,.35);}
   .dlg::backdrop{background:rgba(15,20,35,.55);}
@@ -243,11 +257,62 @@ export default function ClientsGrid({
   }
   const [filter, setFilter] = useState<'all' | 'owes'>('all')
 
+  // Editing a client: name, contact details and, for schools and tuition
+  // centres, the learner and their class. Saved changes are kept here so the
+  // list updates at once without a reload.
+  const [edits, setEdits] = useState<Record<string, Partial<Client>>>({})
+  const [editing, setEditing] = useState<Client | null>(null)
+  const [form, setForm] = useState({ name: '', phone: '', email: '', billed_for: '', class_name: '', address: '', vat_number: '' })
+  const [editSaving, setEditSaving] = useState(false)
+  const [editErr, setEditErr] = useState('')
+  const edRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const d = edRef.current
+    if (!d) return
+    if (editing && !d.open) d.showModal()
+    if (!editing && d.open) d.close()
+  }, [editing])
+
+  function openEdit(c: Client) {
+    setForm({ name: c.name, phone: c.phone ?? '', email: c.email ?? '', billed_for: c.billed_for ?? '', class_name: c.class_name ?? '', address: c.address ?? '', vat_number: c.vat_number ?? '' })
+    setEditErr(''); setEditing(c)
+  }
+
+  async function saveEdit() {
+    const c = editing
+    if (!c) return
+    const name = form.name.trim()
+    if (!name) { setEditErr('A name is needed.'); return }
+    const email = form.email.trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEditErr('That email doesn’t look right.'); return }
+    const phone = form.phone.trim()
+    if (phone && phone.replace(/\D/g, '').length < 7) { setEditErr('Enter the WhatsApp number with its country code, e.g. +267 71 234 567.'); return }
+    setEditSaving(true); setEditErr('')
+    const fields = {
+      name, phone: phone || null, email: email || null,
+      address: form.address.trim() || null, vat_number: form.vat_number.trim().toUpperCase() || null,
+      ...(learners ? { billed_for: form.billed_for.trim().slice(0, 100) || null, class_name: form.class_name.trim().slice(0, 40) || null } : {}),
+    }
+    try {
+      const res = await fetch(`/api/clients/${c.id}`, { method: 'PATCH', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(fields) })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(d.error || 'Couldn’t save')
+      setEdits(e => ({ ...e, [c.id]: { ...fields, ...(d.client ?? {}) } }))
+      setEditing(null)
+      showToast({ msg: `${name} saved` })
+    } catch (e) {
+      setEditErr(e instanceof Error ? e.message : 'Couldn’t save. Check your connection and try again.')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   // Who owes the most (late first) at the top, then whoever you billed most recently.
-  const sorted = useMemo(() => clients.filter(c => !gone.has(c.id)).sort((a, b) => {
+  const sorted = useMemo(() => clients.filter(c => !gone.has(c.id)).map(c => edits[c.id] ? { ...c, ...edits[c.id] } : c).sort((a, b) => {
     const sa = stats[a.id] ?? EMPTY, sb = stats[b.id] ?? EMPTY
     return (sb.late - sa.late) || (sb.owes - sa.owes) || (sb.lastIssued ?? '').localeCompare(sa.lastIssued ?? '') || a.name.localeCompare(b.name)
-  }), [clients, stats, gone])
+  }), [clients, stats, gone, edits])
 
   const owing = sorted.filter(c => (stats[c.id]?.owes ?? 0) > 0)
 
@@ -389,6 +454,9 @@ export default function ClientsGrid({
                     </span>
                   )}
                   <Link className="act new press" href={`/new-invoice?client=${c.id}`}>New invoice</Link>
+                  <button type="button" className="act ed press" onClick={() => openEdit(c)} aria-label={`Edit ${c.name}`} title={`Edit ${c.name}`}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11.3 2.7a1.6 1.6 0 0 1 2.3 2.3L5.5 13 2.5 13.5 3 10.5z"/><path d="M10 4l2 2"/></svg>
+                  </button>
                   {canDelete && (
                     <button type="button" className="act del press" onClick={() => setAsking(c)} aria-label={`Delete ${c.name}`} title={`Delete ${c.name}`}>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.6 6.5v4.5M9.4 6.5v4.5"/></svg>
@@ -418,6 +486,55 @@ export default function ClientsGrid({
             </>
           )
         })()}
+      </dialog>
+
+      <dialog ref={edRef} className="dlg wide" aria-labelledby="ed-h" onClose={() => setEditing(null)}>
+        {editing && (
+          <form onSubmit={e => { e.preventDefault(); saveEdit() }}>
+            <div className="dlg-body">
+              <h2 id="ed-h">Edit {editing.name}</h2>
+              <p>Changes apply to new invoices. Invoices already made keep the details they were sent with.</p>
+              <div className="ed-grid">
+                <div className="fld full">
+                  <label htmlFor="ed-name">Name</label>
+                  <input id="ed-name" className="in" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} autoFocus />
+                </div>
+                <div className="fld">
+                  <label htmlFor="ed-phone">WhatsApp number</label>
+                  <input id="ed-phone" className="in" type="tel" inputMode="tel" placeholder="+267 71 234 567" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                </div>
+                <div className="fld">
+                  <label htmlFor="ed-email">Email <small>(optional)</small></label>
+                  <input id="ed-email" className="in" type="email" inputMode="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                {learners && <>
+                  <div className="fld">
+                    <label htmlFor="ed-learner">Student <small>(optional)</small></label>
+                    <input id="ed-learner" className="in" maxLength={100} placeholder="e.g. Thato Mosweu" value={form.billed_for} onChange={e => setForm(f => ({ ...f, billed_for: e.target.value }))} />
+                  </div>
+                  <div className="fld">
+                    <label htmlFor="ed-class">Class <small>(optional)</small></label>
+                    <input id="ed-class" className="in" maxLength={40} list="ed-classes" placeholder="e.g. Form 3" value={form.class_name} onChange={e => setForm(f => ({ ...f, class_name: e.target.value }))} />
+                    <datalist id="ed-classes">{classes.filter(([k]) => k).map(([k]) => <option key={k} value={k} />)}</datalist>
+                  </div>
+                </>}
+                <div className="fld full">
+                  <label htmlFor="ed-address">Address <small>(optional)</small></label>
+                  <input id="ed-address" className="in" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+                </div>
+                <div className="fld full">
+                  <label htmlFor="ed-vat">VAT number <small>(optional)</small></label>
+                  <input id="ed-vat" className="in" value={form.vat_number} onChange={e => setForm(f => ({ ...f, vat_number: e.target.value }))} />
+                  {editErr && <p className="err" role="alert">{editErr}</p>}
+                </div>
+              </div>
+            </div>
+            <div className="dlg-acts">
+              <button type="button" onClick={() => setEditing(null)} disabled={editSaving}>Cancel</button>
+              <button type="submit" className="primary" disabled={editSaving}>{editSaving ? 'Saving…' : 'Save'}</button>
+            </div>
+          </form>
+        )}
       </dialog>
 
       {toast && (

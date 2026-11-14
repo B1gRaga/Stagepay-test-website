@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAccount, canManage } from '@/lib/account'
-import { stripTags } from '@/lib/sanitize'
+import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -21,9 +21,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
+  // A cleared optional field is stored as empty (null), not as ''.
   const safe = Object.fromEntries(
-    ALLOWED_FIELDS.filter(k => body[k] !== undefined).map(k => [k, stripTags(body[k])])
+    ALLOWED_FIELDS.filter(k => body[k] !== undefined).map(k => [k, k === 'name' ? stripTags(body[k]) : stripTagsOrNull(body[k])])
   )
+  if (safe.name === '') return NextResponse.json({ error: 'A name is needed' }, { status: 400 })
 
   if (Object.keys(safe).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
