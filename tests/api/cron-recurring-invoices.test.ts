@@ -7,6 +7,8 @@ const mockRpc                  = vi.fn()
 const mockInvoiceInsertSingle  = vi.fn()
 const mockItemsInsert          = vi.fn()
 const mockTemplateUpdateEq     = vi.fn()
+const mockInvoiceInsert        = vi.fn()
+const mockOwnerVat             = vi.fn()
 
 function buildServiceClient() {
   return {
@@ -17,11 +19,14 @@ function buildServiceClient() {
         eq:     vi.fn().mockReturnThis(),
         lte:    vi.fn().mockReturnThis(),
         limit:  vi.fn(() => mockTemplatesLimit()),
-        insert: vi.fn(() => ({ select: vi.fn(() => ({ single: mockInvoiceInsertSingle })) })),
+        insert: vi.fn((row: unknown) => { mockInvoiceInsert(row); return { select: vi.fn(() => ({ single: mockInvoiceInsertSingle })) } }),
         update: vi.fn(() => ({ eq: mockTemplateUpdateEq })),
       }
       if (table === 'invoice_items') return {
         insert: mockItemsInsert,
+      }
+      if (table === 'profiles') return {
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ single: mockOwnerVat })) })),
       }
       return {}
     },
@@ -94,6 +99,7 @@ describe('GET /api/cron/recurring-invoices', () => {
   })
 
   it('clones a due template into a new draft invoice and advances its schedule', async () => {
+    mockOwnerVat.mockResolvedValue({ data: { vat_number: 'P03012345678' }, error: null })
     mockTemplatesLimit.mockResolvedValue({ data: [TEMPLATE], error: null })
     mockRpc.mockResolvedValue({ data: 'INV-202606-002', error: null })
     mockInvoiceInsertSingle.mockResolvedValue({ data: { id: 'new-inv-1' }, error: null })
@@ -103,6 +109,19 @@ describe('GET /api/cron/recurring-invoices', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ generated: 1, failed: 0 })
     expect(mockTemplateUpdateEq).toHaveBeenCalledWith('id', 'tmpl-1')
+  })
+
+  it('leaves VAT off the new invoice when the business has no VAT number', async () => {
+    mockOwnerVat.mockResolvedValue({ data: { vat_number: null }, error: null })
+    mockTemplatesLimit.mockResolvedValue({ data: [TEMPLATE], error: null })
+    mockRpc.mockResolvedValue({ data: 'INV-202606-002', error: null })
+    mockInvoiceInsertSingle.mockResolvedValue({ data: { id: 'new-inv-1' }, error: null })
+    mockItemsInsert.mockResolvedValue({ error: null })
+    const { GET } = await import('@/app/api/cron/recurring-invoices/route')
+    await GET(makeRequest(CRON_SECRET))
+    expect(mockInvoiceInsert).toHaveBeenCalledWith(expect.objectContaining({
+      vat_rate: 0, vat_amount: 0, total: Number(TEMPLATE.total) - Number(TEMPLATE.vat_amount),
+    }))
   })
 
   it('counts a failure without crashing when invoice numbering fails', async () => {

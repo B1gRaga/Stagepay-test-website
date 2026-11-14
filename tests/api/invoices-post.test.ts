@@ -35,7 +35,11 @@ function buildAuthedClient() {
 vi.mock('@/lib/supabase/server', () => ({
   getCachedUser: (...args: unknown[]) => mockGetCachedUser(...args),
   createClient:  async () => buildAuthedClient(),
-  createServiceClient: () => ({ rpc: mockRpc }),
+  createServiceClient: () => ({
+    rpc: mockRpc,
+    // The rollback deletes with the service role (people can only delete drafts).
+    from: () => ({ delete: () => ({ eq: (k: string, v: string) => { mockDeleteEq(k, v); return { eq: vi.fn() } } }) }),
+  }),
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -60,7 +64,7 @@ describe('POST /api/invoices', () => {
       error: null,
     })
     mockInsertItems.mockResolvedValue({ error: null })
-    mockProfileSingle.mockResolvedValue({ data: { plan: 'pro' }, error: null })
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'pro', vat_number: 'P03012345678' }, error: null })
     mockInvoicesCount.mockResolvedValue({ count: 0 })
   })
 
@@ -128,6 +132,23 @@ describe('POST /api/invoices', () => {
     const res = await POST(makeRequest({ items: ONE_ITEM }))
     expect(res.status).toBe(500)
     expect(await res.json()).toMatchObject({ error: 'Failed to generate invoice number' })
+  })
+
+  it('refuses VAT when the business has no VAT number', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'pro', vat_number: null }, error: null })
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM, vat_rate: 14 }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toMatch(/VAT number/)
+    expect(mockInvoicesInsert).not.toHaveBeenCalled()
+  })
+
+  it('adds no VAT when none is asked for', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { plan: 'pro', vat_number: null }, error: null })
+    const { POST } = await import('@/app/api/invoices/route')
+    const res = await POST(makeRequest({ items: ONE_ITEM }))
+    expect(res.status).toBe(201)
+    expect(mockInvoicesInsert).toHaveBeenCalledWith(expect.objectContaining({ vat_rate: 0, vat_amount: 0, total: 200 }))
   })
 
   it('rolls back the invoice when saving line items fails', async () => {

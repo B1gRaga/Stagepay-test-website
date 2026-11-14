@@ -13,10 +13,11 @@ import { PAYMENT_METHODS } from '@/lib/payments'
 import { dayMonthYear } from '@/lib/format-date'
 import { FREE_MONTHLY_LIMIT } from '@/lib/plans'
 import { CURRENCIES } from '@/lib/currencies'
+import { hasVatNumber } from '@/lib/vat'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Client  = { id: string; name: string; email: string | null; phone: string | null; class_name?: string | null; billed_for?: string | null }
-type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null; business_type?: string | null }
+type Profile = { firm_name: string | null; name: string | null; address: string | null; email: string | null; vat_number?: string | null; default_currency: string; default_vat_rate: number; tax_label: string; default_due_days?: number | null; business_type?: string | null }
 
 const TERMS = [
   { days: 0,  label: 'On receipt' },
@@ -318,7 +319,10 @@ export default function NewInvoiceClient({
 }) {
   const router = useRouter()
   const profile = initialProfile
-  const inv = editId ? initialInvoice : null
+  // The invoice being edited, or the one a copy starts from (the page sends one or neither).
+  const inv = initialInvoice
+  // Only a VAT-registered business (VAT number in Settings) can add VAT.
+  const canVat = hasVatNumber(profile?.vat_number)
   // Arriving from a client's "New invoice" link fills in who it is for.
   const preset = !inv && initialClientId ? initialClients.find(c => c.id === initialClientId) ?? null : null
   // Schools and tuition centres put parents in classes.
@@ -350,7 +354,7 @@ export default function NewInvoiceClient({
   const initialTerm = daysBetween(inv?.issue_date || today(), initialDue)
   const [termDays,    setTermDays]    = useState<number | null>(TERMS.some(t => t.days === initialTerm) ? initialTerm : null)
   const [customDue,   setCustomDue]   = useState<string>(initialDue)
-  const [vatRate,     setVatRate]     = useState<number>(inv?.vat_rate ?? (Number.isFinite(Number(profile?.default_vat_rate)) && profile?.default_vat_rate != null ? Number(profile.default_vat_rate) : 14))
+  const [vatRate,     setVatRate]     = useState<number>(!canVat ? 0 : inv?.vat_rate ?? (Number.isFinite(Number(profile?.default_vat_rate)) && profile?.default_vat_rate != null ? Number(profile.default_vat_rate) : 0))
   const [items,       setItems]       = useState<(LineItem & { key: number })[]>(() => {
     const src = inv?.invoice_items?.length
       ? [...inv.invoice_items].sort((a: any, b: any) => a.sort_order - b.sort_order).map((it: any) => ({ desc: it.description, qty: Number(it.quantity), rate: Number(it.unit_price) }))
@@ -427,7 +431,7 @@ export default function NewInvoiceClient({
         if (d.currency) setCurrency(d.currency)
         if (d.issueDate) setIssueDate(d.issueDate)
         setTermDays(d.termDays ?? null); if (d.customDue) setCustomDue(d.customDue)
-        if (Number.isFinite(d.vatRate)) setVatRate(d.vatRate)
+        if (Number.isFinite(d.vatRate)) setVatRate(canVat ? d.vatRate : 0)
         if (Array.isArray(d.items) && d.items.length) {
           setItems(d.items.map((i: LineItem) => ({ desc: String(i.desc ?? ''), qty: Number(i.qty) || 0, rate: Number(i.rate) || 0, key: nextKey.current++ })))
         }
@@ -1080,8 +1084,8 @@ export default function NewInvoiceClient({
             </summary>
             <div className="sec-body">
               <div className="opt">
-                <span className="opt-l">VAT rate<small>Use 0 if you aren’t VAT registered.</small></span>
-                <span className="opt-in"><input id="ni-vat-rate" name="vat_rate" className="in num" type="number" inputMode="decimal" min={0} max={100} step="0.1" value={vatRate} onChange={e => setVatRate(parseFloat(e.target.value) || 0)} aria-label="VAT rate in percent" />%</span>
+                <span className="opt-l">VAT rate<small>{canVat ? 'Use 0 for work that doesn’t carry VAT.' : <>Only VAT-registered businesses can charge VAT. Add your VAT number in <Link href="/settings">Settings</Link> to turn it on.</>}</small></span>
+                <span className="opt-in"><input id="ni-vat-rate" name="vat_rate" className="in num" type="number" inputMode="decimal" min={0} max={100} step="0.1" value={vatRate} disabled={!canVat} onChange={e => setVatRate(parseFloat(e.target.value) || 0)} aria-label="VAT rate in percent" />%</span>
               </div>
               <div className="opt">
                 <span className="opt-l">Currency</span>

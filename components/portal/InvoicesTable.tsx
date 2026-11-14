@@ -365,9 +365,12 @@ export default function InvoicesTable({ initialInvoices, totalCount, initialSear
                   <ViewTransition name={`inv-amt-${inv.id}`} share="inv-shared">
                     <span className="c-amt"><span className="cur">{sym}</span>{fmt(Number(inv.total || 0), '')}</span>
                   </ViewTransition>
-                  <button type="button" className="row-del press" onClick={() => setDeleteId(inv.id)} aria-label={`Delete ${inv.invoice_number}`} title="Delete">
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M6.5 7v4.5M9.5 7v4.5M3.5 4l.8 9.5h7.4l.8-9.5"/></svg>
-                  </button>
+                  {/* Only drafts can be deleted; anything sent stays on record. */}
+                  {inv.status === 'draft' ? (
+                    <button type="button" className="row-del press" onClick={() => setDeleteId(inv.id)} aria-label={`Delete ${inv.invoice_number}`} title="Delete">
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M6.5 7v4.5M9.5 7v4.5M3.5 4l.8 9.5h7.4l.8-9.5"/></svg>
+                    </button>
+                  ) : <span className="row-del" aria-hidden="true" style={{ visibility: 'hidden' }} />}
                 </div>
               )
             })

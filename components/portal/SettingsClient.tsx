@@ -1187,7 +1187,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                 <section className="block" aria-labelledby="def-vat">
                   <h3 id="def-vat">VAT</h3>
                   <div className="chips" role="group" aria-label="Do you charge VAT?">
-                    <button type="button" className="chip press" aria-pressed={vatOn} onClick={() => setInv(p => ({ ...p, default_vat_rate: lastRate.current }))}>I charge VAT</button>
+                    <button type="button" className="chip press" aria-pressed={vatOn} disabled={!firm.vat_number.trim() && !vatOn} onClick={() => setInv(p => ({ ...p, default_vat_rate: lastRate.current }))}>I charge VAT</button>
                     <button type="button" className="chip press" aria-pressed={!vatOn} onClick={() => { if (vatOn) lastRate.current = inv.default_vat_rate; setInv(p => ({ ...p, default_vat_rate: '0' })) }}>I don’t charge VAT</button>
                   </div>
                   {vatOn ? (
@@ -1206,13 +1206,17 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                       </div>
                       {!firm.vat_number.trim() && (
                         <p className="def-note full">
-                          Only businesses registered for VAT may charge it. If you are, add your VAT number in{' '}
-                          <button type="button" className="pm-link" onClick={() => setPanel('firm')}>Firm details</button> so it prints on your invoices.
+                          Only businesses registered for VAT may charge it, so VAT stays off until you add your VAT number in{' '}
+                          <button type="button" className="pm-link" onClick={() => setPanel('firm')}>Firm details</button>. It then prints on your invoices.
                         </p>
                       )}
                     </div>
                   ) : (
-                    <p className="help" style={{ marginTop: 12 }}>New invoices won’t add VAT, and won’t show a VAT line.</p>
+                    <p className="help" style={{ marginTop: 12 }}>
+                      New invoices won’t add VAT, and won’t show a VAT line.
+                      {!firm.vat_number.trim() && <> Only VAT-registered businesses can charge VAT: add your VAT number in{' '}
+                        <button type="button" className="pm-link" onClick={() => setPanel('firm')}>Firm details</button> first.</>}
+                    </p>
                   )}
                 </section>
 

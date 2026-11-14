@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getAccount, canManage } from '@/lib/account'
+import { getAccount, canManage, accountProfileClient } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 import { scheduleRemindersOnSend } from '@/lib/reminder-schedule'
 import { balanceDue, todayIso } from '@/lib/payments'
+import { hasVatNumber, VAT_NEEDS_NUMBER, LOCKED_INVOICE_FIELDS, INVOICE_LOCKED_MSG, sameField, sameItems } from '@/lib/vat'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -53,7 +54,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // current status so we can validate transitions before writing anything.
   const { data: currentInvoice, error: fetchErr } = await supabase
     .from('invoices')
-    .select('id, status, total, payment_claim_ref, invoice_payments(amount)')
+    .select('id, status, total, payment_claim_ref, invoice_payments(amount), invoice_items(description, quantity, unit_price, sort_order), client_name, client_address, client_vat, project, billed_for, notes, issue_date, currency, vat_rate, discount_amount, deposit_amount')
     .eq('id', id)
     .eq('user_id', account.accountId)
     .single()
@@ -86,10 +87,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
+  // Gone out: what the invoice says is fixed. The editor resends every field,
+  // so only a real difference is refused; unchanged ones are simply dropped.
+  if (currentInvoice.status !== 'draft') {
+    const saved = currentInvoice as unknown as Record<string, unknown>
+    const changed = LOCKED_INVOICE_FIELDS.some(k => body[k] !== undefined && !sameField(k, body[k], saved[k]))
+      || (Array.isArray(body.items) && !sameItems(currentInvoice.invoice_items ?? [], body.items))
+    if (changed) return NextResponse.json({ error: INVOICE_LOCKED_MSG }, { status: 409 })
+    for (const k of LOCKED_INVOICE_FIELDS) delete body[k]
+    delete body.items
+  }
+
   if (body.vat_rate !== undefined) {
     const vat = Number(body.vat_rate)
     if (isNaN(vat) || vat < 0 || vat > 100) {
       return NextResponse.json({ error: 'vat_rate must be between 0 and 100' }, { status: 400 })
+    }
+    if (vat > 0) {
+      const { data: prof } = await (await accountProfileClient(account)).from('profiles').select('vat_number').eq('id', account.accountId).single()
+      if (!hasVatNumber(prof?.vat_number)) return NextResponse.json({ error: VAT_NEEDS_NUMBER }, { status: 400 })
     }
   }
 
@@ -124,7 +140,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const subtotal        = items.reduce((s: number, i: { quantity: number; unit_price: number }) => s + i.quantity * i.unit_price, 0)
-    const vat_rate        = typeof fields.vat_rate === 'number' ? fields.vat_rate : 14
+    const vat_rate        = typeof fields.vat_rate === 'number' ? fields.vat_rate : Number(currentInvoice.vat_rate ?? 0)
     const discount_amount = typeof fields.discount_amount === 'number' ? fields.discount_amount : 0
     const deposit_amount  = typeof fields.deposit_amount === 'number' ? fields.deposit_amount : 0
 
@@ -215,6 +231,14 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!canManage(account)) return NextResponse.json({ error: 'Only the owner or an admin can delete invoices' }, { status: 403 })
   const supabase = await createClient()
+
+  // Only a draft can be deleted. Anything that has gone out stays on record;
+  // it can be cancelled instead (the database enforces this too).
+  const { data: inv } = await supabase.from('invoices').select('status').eq('id', id).eq('user_id', account.accountId).single()
+  if (!inv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (inv.status !== 'draft') {
+    return NextResponse.json({ error: 'This invoice has already gone out, so it stays on record. Cancel it instead.' }, { status: 409 })
+  }
 
   const { error } = await supabase
     .from('invoices')

@@ -8,7 +8,7 @@ import { FREE_MONTHLY_LIMIT, startOfMonthUtc, canBulkSend } from '@/lib/plans'
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; client?: string; class?: string }>
+  searchParams: Promise<{ edit?: string; copy?: string; client?: string; class?: string }>
 }) {
   const account = await getAccount()
   if (!account) redirect('/auth/login')
@@ -16,12 +16,15 @@ export default async function NewInvoicePage({
   const supabase = await createClient()
   const profileDb = await accountProfileClient(account)
 
-  const { edit: editId, client: clientParam, class: classParam } = await searchParams
+  const { edit: editId, copy: copyId, client: clientParam, class: classParam } = await searchParams
+  // Copy: a new invoice that starts from an existing one (how a sent invoice
+  // with a mistake gets corrected: cancel it, then issue a fixed copy).
+  const sourceId = editId || copyId
 
   const [{ data: profile }, { data: clients }, { data: initialInvoice }, { data: recent }, { count: madeThisMonth }] = await Promise.all([
     profileDb
       .from('profiles')
-      .select('name, firm_name, email, address, default_currency, default_vat_rate, tax_label, default_due_days, business_type, plan')
+      .select('name, firm_name, email, address, vat_number, default_currency, default_vat_rate, tax_label, default_due_days, business_type, plan')
       .eq('id', account.accountId)
       .single(),
     supabase
@@ -30,11 +33,11 @@ export default async function NewInvoicePage({
       .eq('user_id', account.accountId)
       .is('deleted_at', null)
       .order('name'),
-    editId
+    sourceId
       ? supabase
           .from('invoices')
           .select('*, invoice_items(*)')
-          .eq('id', editId)
+          .eq('id', sourceId)
           .eq('user_id', account.accountId)
           .single()
       : Promise.resolve({ data: null, error: null }),
@@ -53,6 +56,18 @@ export default async function NewInvoicePage({
       .eq('user_id', account.accountId)
       .gte('created_at', startOfMonthUtc()),
   ])
+
+  // Only a draft can be edited; anything that has gone out is shown instead.
+  if (editId && initialInvoice && initialInvoice.status !== 'draft') redirect(`/invoices/${editId}`)
+
+  // A copy is a brand new invoice: new number, link and dates, nothing recurring,
+  // and no VAT unless this business can charge it.
+  const startFrom = editId ? initialInvoice : initialInvoice && {
+    ...initialInvoice,
+    id: undefined, invoice_number: undefined, public_token: undefined, status: 'draft',
+    issue_date: undefined, due_date: undefined, is_recurring: false, next_recurring_date: null,
+    vat_rate: profile?.vat_number?.trim() ? initialInvoice.vat_rate : 0,
+  }
 
   // Free accounts see how many invoices they have left before they start typing.
   const freeLeft = !editId && (profile?.plan ?? 'free') === 'free'
@@ -90,14 +105,14 @@ export default async function NewInvoicePage({
       initialProfile={profile ?? null}
       initialClients={clients ?? []}
       editId={editId ?? null}
-      initialInvoice={initialInvoice ?? null}
-      initialClientId={!editId && clientParam ? clientParam : null}
+      initialInvoice={startFrom ?? null}
+      initialClientId={!sourceId && clientParam ? clientParam : null}
       initialClass={!editId && classParam?.trim() ? classParam.trim().slice(0, 40) : null}
       lastByClient={lastByClient}
       knownItems={[...known.values()].slice(0, 80)}
       freeLeft={freeLeft}
       bulkSend={canBulkSend(profile?.plan)}
-      draftKey={`stagepay-invoice-draft:${account.userId}:${account.accountId}`}
+      draftKey={sourceId ? null : `stagepay-invoice-draft:${account.userId}:${account.accountId}`}
     />
   )
 }

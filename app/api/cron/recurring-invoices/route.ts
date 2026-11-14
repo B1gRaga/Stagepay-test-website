@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { hasVatNumber } from '@/lib/vat'
 import { createServiceClient } from '@/lib/supabase/server'
 import { log, logError, cronitorPing } from '@/lib/logger'
 import { maintenanceOn } from '@/lib/maintenance'
@@ -75,6 +76,15 @@ export async function GET(req: NextRequest) {
       else if (tmpl.recurrence_interval === 'quarterly') nextBase.setMonth(nextBase.getMonth() + 3)
       else                                               nextBase.setFullYear(nextBase.getFullYear() + 1)
 
+      // No VAT number, no VAT: a template made before that rule carries on without it.
+      let vat = { rate: Number(tmpl.vat_rate ?? 0), amount: Number(tmpl.vat_amount ?? 0), total: Number(tmpl.total) }
+      if (vat.rate > 0) {
+        const { data: owner } = await supabase.from('profiles').select('vat_number').eq('id', tmpl.user_id).single()
+        if (!hasVatNumber(owner?.vat_number)) {
+          vat = { rate: 0, amount: 0, total: Number(tmpl.total) - Number(tmpl.vat_amount ?? 0) }
+        }
+      }
+
       // Create the new draft invoice (not recurring — the template stays as the source)
       const { data: newInv, error: invErr } = await supabase
         .from('invoices')
@@ -94,11 +104,11 @@ export async function GET(req: NextRequest) {
           issue_date:     issueDate,
           due_date:       dueDate.toISOString().split('T')[0],
           subtotal:       tmpl.subtotal,
-          vat_rate:       tmpl.vat_rate,
-          vat_amount:     tmpl.vat_amount,
+          vat_rate:       vat.rate,
+          vat_amount:     vat.amount,
           discount_amount: tmpl.discount_amount ?? 0,
           deposit_amount: tmpl.deposit_amount,
-          total:          tmpl.total,
+          total:          vat.total,
           currency:       tmpl.currency,
           is_recurring:   false,
         })

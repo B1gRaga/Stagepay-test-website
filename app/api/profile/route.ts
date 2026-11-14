@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAccount, canManage, accountProfileClient } from '@/lib/account'
 import { stripTags } from '@/lib/sanitize'
 import { cleanMethod, MAX_METHODS } from '@/lib/payment-methods'
+import { hasVatNumber, VAT_NEEDS_NUMBER } from '@/lib/vat'
 import { cleanReminderDays } from '@/lib/reminder-days'
 
 const ALLOWED = [
@@ -94,6 +95,19 @@ export async function PATCH(req: NextRequest) {
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
+  }
+
+  // VAT needs a VAT number. Removing the number turns VAT off for new invoices.
+  if (updates.vat_number !== undefined || Number(updates.default_vat_rate) > 0) {
+    let vatNo = updates.vat_number as string | null | undefined
+    if (vatNo === undefined) {
+      const { data: cur } = await supabase.from('profiles').select('vat_number').eq('id', account.accountId).single()
+      vatNo = cur?.vat_number
+    }
+    if (!hasVatNumber(vatNo)) {
+      if (Number(updates.default_vat_rate) > 0) return NextResponse.json({ error: VAT_NEEDS_NUMBER }, { status: 400 })
+      updates.default_vat_rate = 0
+    }
   }
 
   const { data, error } = await supabase

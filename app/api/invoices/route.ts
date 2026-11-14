@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { getAccount, accountProfileClient } from '@/lib/account'
 import { stripTags, stripTagsOrNull } from '@/lib/sanitize'
 import { BILLED_FOR_MAX } from '@/lib/billed-for'
+import { hasVatNumber, VAT_NEEDS_NUMBER } from '@/lib/vat'
 
 const PAGE_SIZE = 50
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
   const profileDb = await accountProfileClient(account)
-  const { data: profile } = await profileDb.from('profiles').select('plan').eq('id', account.accountId).single()
+  const { data: profile } = await profileDb.from('profiles').select('plan, vat_number').eq('id', account.accountId).single()
   if ((profile?.plan ?? 'free') === 'free') {
     const { count } = await supabase
       .from('invoices')
@@ -87,9 +88,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate VAT rate
-  const vat_rate = Number(body.vat_rate ?? 14)
+  const vat_rate = Number(body.vat_rate ?? 0)
   if (isNaN(vat_rate) || vat_rate < 0 || vat_rate > 100) {
     return NextResponse.json({ error: 'vat_rate must be between 0 and 100' }, { status: 400 })
+  }
+  if (vat_rate > 0 && !hasVatNumber(profile?.vat_number)) {
+    return NextResponse.json({ error: VAT_NEEDS_NUMBER }, { status: 400 })
   }
 
   // Calculate totals
@@ -184,7 +188,9 @@ export async function POST(req: NextRequest) {
     )
     if (itemsErr) {
       // Roll back: delete the invoice we just created
-      await supabase.from('invoices').delete().eq('id', invoice.id)
+      // (service role: the database only lets people delete drafts, and this
+      // must succeed even if something has already moved it on)
+      await createServiceClient().from('invoices').delete().eq('id', invoice.id).eq('user_id', account.accountId)
       return NextResponse.json({ error: 'Failed to save line items: ' + itemsErr.message }, { status: 500 })
     }
   }

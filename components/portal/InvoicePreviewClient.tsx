@@ -247,6 +247,9 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
   const [toast, setToast] = useState<{ msg: string; undo: boolean } | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelErr, setCancelErr] = useState('')
 
   // Browsers without a built-in PDF viewer (Android Chrome, in-editor browsers) download a
   // framed PDF instead of showing it, so they get an "Open the PDF" card. Unknown until mounted.
@@ -502,6 +505,29 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
     }
   }
 
+  // Once it has gone out, an invoice stays on record: no editing or deleting.
+  // A mistake is put right by cancelling it and issuing a corrected copy.
+  async function confirmCancel() {
+    setCancelling(true); setCancelErr('')
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'PATCH', credentials: 'include', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(d.error || 'Couldn’t cancel it. Try again.')
+      setInvoice(prev => ({ ...prev, status: 'cancelled' }))
+      setCancelOpen(false)
+      setToast({ msg: `${invoice.invoice_number} is cancelled. It stays in your records.`, undo: false })
+    } catch (e) {
+      setCancelErr(e instanceof Error ? e.message : 'Couldn’t cancel it. Try again.')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  const isDraft = invoice.status === 'draft'
+  const canCancel = invoice.status === 'sent' || invoice.status === 'overdue'
   const canMarkPaid = invoice.status === 'sent' || invoice.status === 'overdue'
   const claimOpen = canMarkPaid && !!invoice.payment_claimed_at
   const steps = timeline(invoice, reminders, createdBy, paid > 0 && invoice.status !== 'paid' ? fmt(owing, sym) : null, delivery)
@@ -587,14 +613,31 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 6V2h8v4M4 12H2V7h12v5h-2M4 10h8v4H4z"/></svg>
               Print
             </a>
-            <Link className="icon-btn press" href={`/new-invoice?edit=${invoice.id}`}>
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
-              Edit
-            </Link>
-            <button type="button" className="icon-btn danger press" onClick={() => setDeleteOpen(true)}>
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M6.5 7v4.5M9.5 7v4.5M3.5 4l.8 9.5h7.4l.8-9.5"/></svg>
-              Delete
-            </button>
+            {isDraft ? (
+              <>
+                <Link className="icon-btn press" href={`/new-invoice?edit=${invoice.id}`}>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+                  Edit
+                </Link>
+                <button type="button" className="icon-btn danger press" onClick={() => setDeleteOpen(true)}>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M6.5 7v4.5M9.5 7v4.5M3.5 4l.8 9.5h7.4l.8-9.5"/></svg>
+                  Delete
+                </button>
+              </>
+            ) : (
+              <>
+                <Link className="icon-btn press" href={`/new-invoice?copy=${invoice.id}`} title="Start a new invoice from this one">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>
+                  Copy
+                </Link>
+                {canCancel && (
+                  <button type="button" className="icon-btn danger press" onClick={() => { setCancelErr(''); setCancelOpen(true) }}>
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/></svg>
+                    Cancel
+                  </button>
+                )}
+              </>
+            )}
           </span>
         </div>
 
@@ -713,6 +756,20 @@ export default function InvoicePreviewClient({ invoice: initial, reminders = [],
           <span className="msg">{toast.msg}</span>
           {toast.undo && <button type="button" onClick={undoPaid}>Undo</button>}
           {toast.undo && <span className="timer" aria-hidden="true" />}
+        </div>
+      )}
+
+      {cancelOpen && (
+        <div className="modal-backdrop" onClick={() => !cancelling && setCancelOpen(false)}>
+          <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="cancel-title" onClick={e => e.stopPropagation()}>
+            <h2 id="cancel-title">Cancel {invoice.invoice_number}?</h2>
+            <p>It stays in your records marked Cancelled, and no more reminders go out. Sent invoices can’t be edited or deleted, so to fix a mistake, cancel it and use Copy to issue a corrected one.</p>
+            {cancelErr && <p role="alert" style={{ color: 'var(--red, #C0392B)' }}>{cancelErr}</p>}
+            <div className="modal-actions">
+              <button type="button" className="btn press" onClick={() => setCancelOpen(false)} autoFocus>Keep it</button>
+              <button type="button" className="btn danger press" onClick={confirmCancel} disabled={cancelling}>{cancelling ? 'Cancelling' : 'Cancel invoice'}</button>
+            </div>
+          </div>
         </div>
       )}
 
