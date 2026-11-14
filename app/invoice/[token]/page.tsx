@@ -9,7 +9,7 @@ import { resolveTheme, contrast, tint } from '@/lib/invoice-themes'
 import Link from 'next/link'
 import { LogoFull } from '@/components/Logo'
 
-type Props = { params: Promise<{ token: string }> }
+type Props = { params: Promise<{ token: string }>; searchParams?: Promise<{ v?: string }> }
 
 function fmt(n: number, sym: string) {
   return `${sym}${Number(n ?? 0).toLocaleString('en', { minimumFractionDigits: 2 })}`
@@ -30,8 +30,10 @@ function daysUntil(d?: string | null) {
 
 // What the parent sees when they open the link from WhatsApp: what they owe
 // and by when first, then how to pay, then the invoice itself.
-export default async function PublicInvoicePage({ params }: Props) {
+export default async function PublicInvoicePage({ params, searchParams }: Props) {
   const { token } = await params
+  // Opened from the "Scan to verify" code on a PDF: lead with the verdict.
+  const verifying = !!(await searchParams)?.v
   const supabase = createServiceClient()
 
   const { data: invoice } = await supabase
@@ -84,6 +86,20 @@ export default async function PublicInvoicePage({ params }: Props) {
         ['--amount' as string]: amountFg, ['--btn-bg' as string]: t.grandRowBg, ['--btn-fg' as string]: t.grandRowText,
         ['--accent' as string]: t.accentColor, ['--accent-pale' as string]: /^#[0-9a-f]{6}$/i.test(t.accentColor) ? tint(t.accentColor, .88) : '#FCEFC7',
       }}>
+
+        {verifying && (
+          <section className="pi-verify" aria-label="Verification">
+            <span className="pi-verify-mark" aria-hidden="true">✓</span>
+            <div>
+              <p className="pi-verify-h">Verified: this {paid ? 'receipt' : 'invoice'} is genuine</p>
+              <p className="pi-verify-p">
+                <b>{invoice.invoice_number}</b> was issued through StagePay by <b>{senderName}</b>
+                {invoice.issue_date ? <> on {fmtDate(invoice.issue_date)}</> : null} for <b>{fmt(Number(invoice.total), sym)}</b>.
+                {' '}{paid ? 'It has been paid in full.' : invoice.status === 'cancelled' ? 'It was cancelled.' : received > 0 ? `${fmt(received, sym)} has been received; ${fmt(due, sym)} is still owed.` : 'It has not been paid yet.'}
+              </p>
+            </div>
+          </section>
+        )}
 
         <section className="pi-sum" aria-labelledby="pi-title">
           <p className="pi-from">{senderName}</p>
@@ -217,6 +233,10 @@ const CSS = `
   body{background:#F4F0E8 !important;}
   .pi{font-family:var(--font-manrope),-apple-system,'Segoe UI',sans-serif;color:#1F2A44;max-width:760px;margin:0 auto;padding:24px 16px 40px;display:grid;gap:16px;}
 
+  .pi-verify{display:flex;gap:14px;align-items:flex-start;background:#EAF6EE;border:1px solid #BFE3CB;border-radius:16px;padding:16px 18px;}
+  .pi-verify-mark{flex:none;width:32px;height:32px;border-radius:50%;background:#1E7F4C;color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;}
+  .pi-verify-h{font-size:16px;font-weight:800;color:#14532D;}
+  .pi-verify-p{font-size:14px;color:#1F2A44;margin-top:4px;line-height:1.5;}
   .pi-sum{background:var(--panel-bg);color:var(--panel-fg);border-radius:20px;padding:28px 32px 26px;}
   .pi-from{font-size:16px;font-weight:700;color:var(--panel-fg);}
   .pi-h1{font-size:15px;font-weight:600;color:var(--panel-sub);margin-top:2px;}

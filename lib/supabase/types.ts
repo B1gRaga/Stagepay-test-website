@@ -26,6 +26,8 @@ export interface Database {
           country: string
           vat_number: string | null
           logo_url: string | null
+          signature_url: string | null
+          signature_name: string | null
           plan: Plan
           invoice_theme: string | null
           invoice_paper_size: string
@@ -64,6 +66,8 @@ export interface Database {
           country?: string
           vat_number?: string | null
           logo_url?: string | null
+          signature_url?: string | null
+          signature_name?: string | null
           plan?: Plan
           invoice_theme?: string | null
           invoice_paper_size?: string
@@ -99,6 +103,8 @@ export interface Database {
           country?: string
           vat_number?: string | null
           logo_url?: string | null
+          signature_url?: string | null
+          signature_name?: string | null
           plan?: Plan
           invoice_theme?: string | null
           invoice_paper_size?: string

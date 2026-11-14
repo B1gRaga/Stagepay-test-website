@@ -1,10 +1,11 @@
 import type { ReactElement } from 'react'
-import { renderToBuffer, Document, Page, Text, View, Image, Font } from '@react-pdf/renderer'
+import { renderToBuffer, Document, Page, Text, View, Image, Font, Svg, Path } from '@react-pdf/renderer'
 import { resolveTheme, contrast, tint, type InvoiceTheme } from './invoice-themes'
 import { paymentBlocks } from './payment-methods'
 import { firmLines } from './firm-details'
 import { billedForLabel } from './billed-for'
 import { paidSoFar, balanceDue } from './payments'
+import { qrPath, verifyUrl, type QrPath } from './verify'
 
 // Five invoice templates, each its own layout. They share one reading order,
 // the same as the page a client opens from WhatsApp: who it's from, the big
@@ -32,6 +33,7 @@ type Doc = {
   paper:   Paper
   s:       (n?: number) => number   // spacing and sizes: shrink with the page
   fz:      (n: number) => number    // type: shrinks less, so A5 stays readable
+  verify?: QrPath | null            // the "scan to verify" code; none for samples
 }
 
 // Every layout is drawn for A4; A5 is the same layout on a page 0.71 the size.
@@ -189,6 +191,43 @@ function BilledFor({ d, size = 10 }: { d: Doc; size?: number }) {
   return <Text style={{ fontSize: d.fz(size), color: INK, marginTop: d.s(3) }}>{b.label}: <Text style={{ fontFamily: 'Helvetica-Bold' }}>{b.value}</Text></Text>
 }
 
+// The bottom of every layout: the business's signature or stamp over an
+// "Authorised by" line, and the "Scan to verify" code. The code opens the
+// invoice's own page on StagePay, so a forged invoice has nowhere to go and a
+// forged receipt opens a page that says it isn't paid.
+function Authentic({ d, color = INK, sub = MUTED }: { d: Doc; color?: string; sub?: string }) {
+  const { s, fz } = d
+  const sig = d.profile.signature_url as string | null | undefined
+  if (!sig && !d.verify) return null
+  return (
+    <View wrap={false} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: s(28) }}>
+      {sig ? (
+        <View style={{ width: s(170) }}>
+          <View style={{ width: s(120), height: s(44), justifyContent: 'flex-end' }}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image draws into the PDF; it has no alt prop */}
+            <Image src={sig} style={{ width: s(120), height: s(44), objectFit: 'contain' }} />
+          </View>
+          <View style={{ borderTopWidth: s(0.8), borderTopColor: color, borderTopStyle: 'solid', marginTop: s(4), paddingTop: s(3) }}>
+            <Text style={{ fontSize: fz(8), color: sub }}>{(d.profile.signature_name as string | null) || 'Authorised signature'}</Text>
+          </View>
+        </View>
+      ) : <View />}
+      {d.verify && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(8) }}>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: fz(7.5), fontFamily: 'Helvetica-Bold', color }}>Scan to verify</Text>
+            <Text style={{ fontSize: fz(6.5), color: sub, marginTop: s(2) }}>Confirms this {d.paid ? 'receipt' : 'invoice'} is genuine</Text>
+            <Text style={{ fontSize: fz(6.5), color: sub, marginTop: s(1) }}>and whether it has been paid</Text>
+          </View>
+          <Svg width={s(46)} height={s(46)} viewBox={`0 0 ${d.verify.size} ${d.verify.size}`}>
+            <Path d={d.verify.path} fill={color} />
+          </Svg>
+        </View>
+      )}
+    </View>
+  )
+}
+
 function Footer({ d, color = MUTED, left = 44, right = 44 }: { d: Doc; color?: string; left?: number; right?: number }) {
   const { s, fz } = d
   return (
@@ -304,6 +343,7 @@ function Classic(d: Doc) {
         </View>
       )}
       <View style={{ marginTop: s(20) }}><Notes d={d} color={INK} /></View>
+      <Authentic d={d} />
       <Footer d={d} />
     </Page>
   )
@@ -366,6 +406,7 @@ function Ledger(d: Doc) {
         <View style={{ flex: 1 }}><PayDetails d={d} color={INK} compact /></View>
         <View style={{ flex: 1 }}><Notes d={d} color={INK} /></View>
       </View>
+      <Authentic d={d} />
       <Footer d={d} left={48} right={48} />
     </Page>
   )
@@ -427,6 +468,7 @@ function Letter(d: Doc) {
 
       <View style={{ marginTop: s(30) }}><PayDetails d={d} color={INK} /></View>
       <View style={{ marginTop: s(20) }}><Notes d={d} color={INK} /></View>
+      <Authentic d={d} />
       <Footer d={d} left={64} right={64} />
     </Page>
   )
@@ -479,6 +521,7 @@ function Sidebar(d: Doc) {
       </View>
 
       <View style={{ marginTop: s(26) }}><Notes d={d} color={INK} /></View>
+      <Authentic d={d} />
       <Footer d={d} left={190 + 32} right={40} />
     </Page>
   )
@@ -532,6 +575,7 @@ function Statement(d: Doc) {
         <Text style={{ fontSize: fz(13), fontFamily: 'Helvetica-Bold', color: INK }}>{f.fmt(d.invoice.total)}</Text>
       </View>
       <View style={{ marginTop: s(18) }}><Notes d={d} color={INK} /></View>
+      <Authentic d={d} />
 
       {/* The slip */}
       <View wrap={false} style={{ marginTop: s(28) }}>
@@ -584,6 +628,8 @@ export async function generateInvoicePDF(
     primaryColor?:   string | null
     headerColor?:    string | null
     paperSize?:      string | null
+    // Off for samples and previews that have no real invoice behind them.
+    verify?:         boolean
   }
 ): Promise<Buffer> {
   const key = options?.theme ?? profile.invoice_theme ?? 'dark-modern'
@@ -594,5 +640,6 @@ export async function generateInvoicePDF(
   // Part paid: every "amount due" is the balance, and "Paid so far" sits under the tax line.
   const paidSoFarAmt = paid ? 0 : paidSoFar(invoice.invoice_payments)
   const doc = paidSoFarAmt > 0 ? { ...invoice, total: balanceDue(invoice.total, invoice.invoice_payments), paid_so_far: paidSoFarAmt } : invoice
-  return renderToBuffer(<Document><Layout invoice={doc} items={items} profile={profile} paid={paid} t={t} paper={paper} {...scalers(paper)} /></Document>)
+  const verify = options?.verify !== false && typeof invoice.public_token === 'string' && invoice.public_token ? qrPath(verifyUrl(invoice.public_token)) : null
+  return renderToBuffer(<Document><Layout invoice={doc} items={items} profile={profile} paid={paid} t={t} paper={paper} verify={verify} {...scalers(paper)} /></Document>)
 }
