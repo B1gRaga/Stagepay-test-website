@@ -29,6 +29,8 @@ type Profile = {
   country: string | null
   vat_number: string | null
   logo_url: string | null
+  signature_url?: string | null
+  signature_name?: string | null
   plan: string
   default_currency: string
   tax_label: string
@@ -334,6 +336,11 @@ const CSS = `
   .logo-tile img{width:100%;height:100%;object-fit:contain;}
   .logo-tile .ph{font-size:12px;font-weight:600;}
   .logo-actions{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .sig-tile{flex:none;width:168px;height:72px;border-radius:10px;border:1px solid var(--line2);background:#FFFFFF;display:grid;place-items:center;overflow:hidden;padding:6px;}
+  .sig-tile img{max-width:100%;max-height:100%;object-fit:contain;}
+  .sig-tile .ph{font-size:12px;font-weight:600;color:#6B7280;}
+  .sig-name{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+  .sig-name .in{flex:1;min-width:200px;max-width:320px;}
   .logo-actions .btns{display:flex;gap:14px;align-items:center;}
   .btn-line{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--t1);font:600 14px var(--font-manrope),sans-serif;cursor:pointer;}
   .btn-line:hover{border-color:var(--t3);}
@@ -559,6 +566,47 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoError,     setLogoError]     = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  // Signature or stamp: printed on every invoice and receipt over an
+  // "Authorised by" line, with the name and title under it.
+  const [sigBusy,  setSigBusy]  = useState(false)
+  const [sigError, setSigError] = useState('')
+  const [sigName,  setSigName]  = useState(initialProfile?.signature_name ?? '')
+  const sigInputRef = useRef<HTMLInputElement>(null)
+  const sigNameDirty = sigName.trim() !== (profile?.signature_name ?? '').trim()
+
+  async function sendSignature(fd: FormData) {
+    setSigError(''); setSigBusy(true)
+    try {
+      const res  = await fetch('/api/profile/signature', { method: 'POST', credentials: 'include', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setSigError(data.error ?? 'Couldn’t save'); return }
+      setProfile(prev => prev ? { ...prev, ...data } : prev)
+    } catch {
+      setSigError('Network error')
+    } finally {
+      setSigBusy(false)
+    }
+  }
+  function uploadSignature(file: File) {
+    const fd = new FormData(); fd.append('signature', file); fd.append('name', sigName.trim())
+    return sendSignature(fd)
+  }
+  function saveSignatureName() {
+    const fd = new FormData(); fd.append('name', sigName.trim())
+    return sendSignature(fd)
+  }
+  async function removeSignature() {
+    setSigError(''); setSigBusy(true)
+    try {
+      const res = await fetch('/api/profile/signature', { method: 'DELETE', credentials: 'include' })
+      if (res.ok) { setProfile(prev => prev ? { ...prev, signature_url: null, signature_name: null } : prev); setSigName('') }
+    } catch {
+      setSigError('Network error')
+    } finally {
+      setSigBusy(false)
+    }
+  }
 
   // Firm details form state. Older profiles store the country's name, so it's read as a code.
   const firmFrom = (p: Profile | null) => ({
@@ -998,6 +1046,43 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
                       <span className="help">PNG, JPG or WebP, up to 2 MB. It sits in a circle on the header, so a square logo works best. Saved as soon as it uploads.</span>
                       {logoError && <span className="save-note err" role="alert">{logoError}</span>}
                     </div>
+                  </div>
+                </section>
+
+                <section className="block" aria-labelledby="br-sig">
+                  <h3 id="br-sig">Signature or stamp</h3>
+                  <input
+                    ref={sigInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    hidden
+                    aria-label="Choose a signature or stamp image"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadSignature(f); e.target.value = '' }}
+                  />
+                  <div className="logo-row">
+                    <div className="sig-tile" title="At the foot of your invoices and receipts">
+                      {profile?.signature_url
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={profile.signature_url} alt="Your signature" />
+                        : <span className="ph">No signature</span>}
+                    </div>
+                    <div className="logo-actions">
+                      <div className="btns">
+                        <button type="button" className="btn-line press" disabled={sigBusy} onClick={() => sigInputRef.current?.click()}>
+                          {sigBusy ? 'Saving…' : profile?.signature_url ? 'Replace' : 'Upload a signature'}
+                        </button>
+                        {profile?.signature_url && !sigBusy && (
+                          <button type="button" className="pm-link" onClick={removeSignature}>Remove</button>
+                        )}
+                      </div>
+                      <span className="help">A photo of your signature or the school stamp on white paper, PNG, JPG or WebP up to 1 MB. It prints over an “Authorised by” line on every invoice and receipt, next to the scan-to-verify code.</span>
+                      {sigError && <span className="save-note err" role="alert">{sigError}</span>}
+                    </div>
+                  </div>
+                  <div className="sig-name">
+                    <label htmlFor="s-sig-name" className="help">Printed under it</label>
+                    <input id="s-sig-name" name="signature_name" className="in" maxLength={60} placeholder="e.g. Neo Kgosi · Director" value={sigName} onChange={e => setSigName(e.target.value)} />
+                    {sigNameDirty && <button type="button" className="btn-line press" disabled={sigBusy} onClick={saveSignatureName}>Save</button>}
                   </div>
                 </section>
 

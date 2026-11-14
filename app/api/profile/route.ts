@@ -25,7 +25,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type, payment_methods, default_due_days, invoice_paper_size')
+    .select('name, firm_name, email, phone, address, city, country, vat_number, logo_url, signature_url, signature_name, plan, default_currency, tax_label, default_vat_rate, two_fa_enabled, invoice_theme, brand_color_primary, brand_color_header, whatsapp_reminders_enabled, business_type, payment_methods, default_due_days, invoice_paper_size')
     .eq('id', account.accountId)
     .single()
 
