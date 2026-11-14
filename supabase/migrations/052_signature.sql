@@ -15,3 +15,7 @@ ALTER TABLE public.profiles
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_signature_name_len;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_signature_name_len
   CHECK (signature_name IS NULL OR char_length(signature_name) <= 60);
+
+-- profiles is updated column by column (009/014/033): a new column is
+-- read-only for the app until it is granted, like invoice_paper_size in 036.
+GRANT UPDATE (signature_url, signature_name) ON public.profiles TO authenticated;
