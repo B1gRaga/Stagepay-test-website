@@ -14,7 +14,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('clients')
-    .select('id, name, email, phone, address, vat_number, notes, created_at')
+    .select('id, name, email, phone, address, vat_number, notes, class_name, billed_for, created_at')
     .eq('user_id', account.accountId)
     .is('deleted_at', null)
     .order('name')
