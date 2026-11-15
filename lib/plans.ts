@@ -23,6 +23,12 @@ export function canBulkSend(plan: string | null | undefined) {
   return BULK_SEND_PLANS.includes((plan ?? 'free') as PlanId)
 }
 
+// A single invoice sent from StagePay's number also costs StagePay money: paid plans only.
+export const STAGEPAY_SEND_PLANS: readonly PlanId[] = ['pro', 'business']
+export function canSendFromStagePay(plan: string | null | undefined) {
+  return STAGEPAY_SEND_PLANS.includes((plan ?? 'free') as PlanId)
+}
+
 // How long one payment covers. Paying for longer up front costs less per month.
 export type Months = 1 | 6 | 12
 

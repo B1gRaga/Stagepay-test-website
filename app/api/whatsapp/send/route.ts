@@ -5,6 +5,7 @@ import { checkRateLimit as rateLimit } from '@/lib/rate-limit'
 import { sendWhatsApp, isWhatsAppConfigured } from '@/lib/whatsapp'
 import { dayMonthYear } from '@/lib/format-date'
 import { isBusinessVerified, VERIFY_NEEDED_MSG } from '@/lib/verification'
+import { canSendFromStagePay } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -59,12 +60,16 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await (await accountProfileClient(account))
     .from('profiles')
-    .select('firm_name, name')
+    .select('firm_name, name, plan')
     .eq('id', account.accountId)
     .single()
 
   if (!isWhatsAppConfigured()) {
     return NextResponse.json({ error: 'WhatsApp not configured' }, { status: 503 })
+  }
+
+  if (!canSendFromStagePay(profile?.plan)) {
+    return NextResponse.json({ error: 'Sending from StagePay’s WhatsApp number comes with the Pro and Business plans. You can still send from your own WhatsApp.', upgrade: true }, { status: 403 })
   }
 
   // StagePay's number speaks for the business: only a verified one may use it (053).
