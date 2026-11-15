@@ -6,7 +6,7 @@ import { THEME_PRESETS, THEME_ORDER, resolveTheme, tint, type InvoiceTheme } fro
 import { COUNTRIES, countryCode } from '@/lib/countries'
 import { BUSINESS_TYPES } from '@/lib/business-types'
 import { firmLines } from '@/lib/firm-details'
-import { PLANS, PERIODS, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName, period, periodPrice, type Months } from '@/lib/plans'
+import { PLANS, PERIODS, canBulkSend, FREE_MONTHLY_LIMIT, TEAM_SEATS, planName, period, periodPrice, type Months } from '@/lib/plans'
 import { monthlyPrice, type BillingCurrency } from '@/lib/billing/pricing'
 import { CURRENCIES } from '@/lib/currencies'
 import { TEAMS_ENABLED, ROLE_LABEL, ROLE_HELP, type TeamRole } from '@/lib/teams'
@@ -1661,7 +1661,7 @@ export function SettingsClient({ initialProfile = null, invoicesThisMonth = 0, r
           {/* ── VERIFICATION ── */}
           <div className={`settings-panel${panel === 'verify' ? ' active' : ''}`}>
             <PanelHead title="Verification" sub="Prove your business is real, to send invoices from StagePay’s WhatsApp number." />
-            {panel === 'verify' && <VerifyBusiness businessName={businessName} />}
+            {panel === 'verify' && <VerifyBusiness businessName={businessName} bulkSend={canBulkSend(currentPlan)} />}
           </div>
 
           {/* ── SECURITY ── */}

@@ -381,6 +381,7 @@ export interface Database {
         Row: {
           account_id: string
           status: 'pending' | 'approved' | 'declined'
+          kind: 'company' | 'individual'
           registration_number: string
           registered_name: string
           submitter_name: string
@@ -395,6 +396,7 @@ export interface Database {
         Insert: {
           account_id: string
           status?: 'pending' | 'approved' | 'declined'
+          kind?: 'company' | 'individual'
           registration_number: string
           registered_name: string
           submitter_name: string
@@ -408,6 +410,7 @@ export interface Database {
         }
         Update: {
           status?: 'pending' | 'approved' | 'declined'
+          kind?: 'company' | 'individual'
           registration_number?: string
           registered_name?: string
           submitter_name?: string

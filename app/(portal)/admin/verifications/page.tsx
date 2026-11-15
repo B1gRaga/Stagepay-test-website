@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
-import { isStagePayAdmin, VERIFICATION_BUCKET } from '@/lib/verification'
+import { isStagePayAdmin, VERIFICATION_BUCKET, REMOVED } from '@/lib/verification'
 import { methodList, describeMethod } from '@/lib/emails/payment-details-changed'
 import VerificationReview from '@/components/portal/VerificationReview'
 
 // StagePay staff only (STAGEPAY_ADMIN_EMAILS): businesses waiting to be
-// verified, with their certificate and the payment details on their invoices.
+// verified, with their certificate or Omang and the payment details on their
+// invoices. An Omang photo is gone once decided (only the last 4 digits stay).
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export default async function VerificationsAdmin() {
   const svc = createServiceClient()
 
   const { data: rows } = await svc.from('business_verifications')
-    .select('account_id, status, registration_number, registered_name, submitter_name, submitter_role, certificate_path, submitted_at, reviewed_at, reviewed_by, decision_note')
+    .select('account_id, status, kind, registration_number, registered_name, submitter_name, submitter_role, certificate_path, submitted_at, reviewed_at, reviewed_by, decision_note')
     .order('status', { ascending: false }) // pending first (p > d > a)
     .order('submitted_at', { ascending: false })
     .limit(60)
@@ -28,10 +29,13 @@ export default async function VerificationsAdmin() {
 
   const items = await Promise.all((rows ?? []).map(async r => {
     const p = byId.get(r.account_id)
-    const { data: signed } = await svc.storage.from(VERIFICATION_BUCKET).createSignedUrl(r.certificate_path, 60 * 60)
+    const { data: signed } = r.certificate_path && r.certificate_path !== REMOVED
+      ? await svc.storage.from(VERIFICATION_BUCKET).createSignedUrl(r.certificate_path, 60 * 60)
+      : { data: null }
     return {
       accountId: r.account_id,
       status: r.status as 'pending' | 'approved' | 'declined',
+      kind: (r.kind === 'individual' ? 'individual' : 'company') as 'company' | 'individual',
       businessName: p?.firm_name || p?.name || '(no business name)',
       phone: p?.phone ?? null,
       registrationNumber: r.registration_number,

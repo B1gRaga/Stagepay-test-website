@@ -1,14 +1,19 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-// Business verification (migration 053). A business must be approved before
-// it can send from StagePay's own WhatsApp number: one-off sends and bulk
-// sends. Automatic reminders don't need it (they follow invoices the business
+// Business verification (migrations 053, 054). A business must be approved
+// before it can send from StagePay's own WhatsApp number: one-off sends and
+// bulk sends. It verifies as a company (CIPA certificate) or, for a tutor
+// who isn't registered, as an individual (Omang, checked against the payment
+// account on their invoices). Automatic reminders don't need it (they follow invoices the business
 // already delivered itself). Sending from the person's own WhatsApp never does.
 
 export type VerificationStatus = 'none' | 'pending' | 'approved' | 'declined'
 
+export type VerificationKind = 'company' | 'individual'
+
 export type Verification = {
   status: VerificationStatus
+  kind?: VerificationKind
   registration_number?: string
   registered_name?: string
   submitter_name?: string
@@ -23,10 +28,13 @@ export const VERIFY_NEEDED_MSG =
 
 export const VERIFICATION_BUCKET = 'verification-docs'
 
+/** certificate_path once an Omang photo has been deleted after review. */
+export const REMOVED = 'removed'
+
 export async function getVerification(accountId: string): Promise<Verification> {
   const { data } = await createServiceClient()
     .from('business_verifications')
-    .select('status, registration_number, registered_name, submitter_name, submitter_role, submitted_at, reviewed_at, decision_note')
+    .select('status, kind, registration_number, registered_name, submitter_name, submitter_role, submitted_at, reviewed_at, decision_note')
     .eq('account_id', accountId)
     .maybeSingle()
   return data ? (data as Verification) : { status: 'none' }
@@ -42,6 +50,16 @@ export function isStagePayAdmin(email?: string | null): boolean {
   const list = (process.env.STAGEPAY_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   return list.includes(email.trim().toLowerCase())
 }
+
+// An Omang number is 9 digits.
+export function cleanOmang(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const s = v.replace(/[\s-]+/g, '')
+  return /^\d{9}$/.test(s) ? s : null
+}
+
+/** What is kept of an Omang number once it has been checked: the last 4 digits. */
+export const maskOmang = (n: string) => `****${n.slice(-4)}`
 
 // CIPA registration numbers: letters, digits and a few separators, e.g. BW00001234567.
 export function cleanRegistrationNumber(v: unknown): string | null {

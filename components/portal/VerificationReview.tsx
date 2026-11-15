@@ -5,6 +5,7 @@ import { useState } from 'react'
 type Item = {
   accountId: string
   status: 'pending' | 'approved' | 'declined'
+  kind: 'company' | 'individual'
   businessName: string
   phone: string | null
   registrationNumber: string
@@ -73,21 +74,22 @@ export default function VerificationReview({ items: initial }: { items: Item[] }
       <div className="vr-top"><h1>Verifications</h1></div>
       <div className="vr">
         <div className="vr-lead">
-          {waiting ? `${waiting} waiting.` : 'Nothing waiting.'} For each business:
+          {waiting ? `${waiting} waiting.` : 'Nothing waiting.'} For each one:
           <ol>
-            <li>Open the certificate. Search the registration number on <a href="https://www.cipa.co.bw/home" target="_blank" rel="noreferrer">CIPA’s company search</a>: the name must match and the status must be Registered.</li>
-            <li>Check the payment details below are in that business’s name (or a director’s, for a small business).</li>
-            <li>Approve, or decline with a reason the business can act on.</li>
+            <li><b>Company:</b> open the certificate and search the registration number on <a href="https://www.cipa.co.bw/home" target="_blank" rel="noreferrer">CIPA’s company search</a>. The name must match and the status must be Registered.</li>
+            <li><b>Individual</b> (a tutor not registered with CIPA): open the Omang photo. The name and number must match what they typed, and the card must look genuine and current.</li>
+            <li>Check the payment details below are in that name: the business’s (or a director’s), or for an individual, that person’s own.</li>
+            <li>Approve, or decline with a reason they can act on. An Omang photo is deleted as soon as you decide.</li>
           </ol>
         </div>
 
         {items.map(i => (
           <section key={i.accountId} className="vr-card" aria-label={i.businessName}>
-            <h2>{i.businessName} <span className={`vr-pill ${i.status}`}>{i.status === 'pending' ? 'Waiting' : i.status === 'approved' ? 'Approved' : 'Declined'}</span></h2>
+            <h2>{i.businessName} <span className="vr-pill">{i.kind === 'individual' ? 'Individual' : 'Company'}</span> <span className={`vr-pill ${i.status}`}>{i.status === 'pending' ? 'Waiting' : i.status === 'approved' ? 'Approved' : 'Declined'}</span></h2>
             <dl className="vr-grid">
-              <dt>Name on certificate</dt><dd>{i.registeredName}</dd>
-              <dt>CIPA number</dt><dd>{i.registrationNumber}</dd>
-              <dt>Certificate</dt><dd>{i.certificateUrl ? <a href={i.certificateUrl} target="_blank" rel="noreferrer">Open (link lasts 1 hour)</a> : 'Missing'}</dd>
+              <dt>{i.kind === 'individual' ? 'Name on Omang' : 'Name on certificate'}</dt><dd>{i.registeredName}</dd>
+              <dt>{i.kind === 'individual' ? 'Omang number' : 'CIPA number'}</dt><dd>{i.registrationNumber}</dd>
+              <dt>{i.kind === 'individual' ? 'Omang photo' : 'Certificate'}</dt><dd>{i.certificateUrl ? <a href={i.certificateUrl} target="_blank" rel="noreferrer">Open (link lasts 1 hour)</a> : i.kind === 'individual' && i.status !== 'pending' ? 'Deleted after review' : 'Missing'}</dd>
               <dt>Payment details on invoices</dt><dd>{i.payTo.length ? i.payTo.map(p => <div key={p}>{p}</div>) : 'None added yet'}</dd>
               <dt>Sent by</dt><dd>{i.submitter} · {new Date(i.submittedAt).toLocaleDateString('en-GB')}</dd>
               {i.phone && <><dt>Business phone</dt><dd>{i.phone}</dd></>}

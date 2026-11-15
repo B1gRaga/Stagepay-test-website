@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 const CONTACT = { whatsapp: '73998627', email: 'getstagepay@gmail.com' }
-const UPDATED = '5 November 2026'
+const UPDATED = '15 November 2026'
 
 // Every outside service that receives personal data. Keep this list in step
 // with the code: adding a service means adding a row here.
@@ -91,6 +91,11 @@ export default function PrivacyPage() {
         <p><b>When you have an account:</b> your name, email and password (stored scrambled, never readable by us), and the
           business details you add: business name, phone, address, VAT number, logo, and the bank or mobile money
           details you want printed on your invoices.</p>
+        <p><b>If you verify your business:</b> to send from StagePay&apos;s WhatsApp number, a business sends its CIPA
+          certificate and registration number, with the name and role of the person sending it. A tutor who isn&apos;t
+          registered sends their full name, Omang number and a photo of their Omang instead. We use these only to check
+          who you are and to protect your clients from fake invoices. We delete an Omang photo as soon as we have
+          checked it and keep only the last 4 digits of the number.</p>
         <p><b>Your clients&apos; details:</b> the names, phone numbers, email addresses and invoice details you enter.
           You decide what to enter. We use it only to make, send and follow up your invoices for you.</p>
         <p><b>When a client opens an invoice link:</b> if they press &ldquo;I&apos;ve paid&rdquo;, the payment reference

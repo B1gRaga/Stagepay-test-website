@@ -128,6 +128,50 @@ describe('reviewing', () => {
   })
 })
 
+describe('a tutor without CIPA registration', () => {
+  const OMANG = { kind: 'individual', registered_name: 'Neo Kgosi', omang_number: '123 456 789' }
+  const photo = () => new File([new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0, 0, 0, 0, 0])], 'omang.jpg', { type: 'image/jpeg' })
+
+  it('verifies with their Omang, and the number never goes into the email', async () => {
+    const { POST } = await import('@/app/api/verification/route')
+    const res = await POST(submit(OMANG, photo()))
+    expect(res.status).toBe(201)
+    expect(row).toMatchObject({ kind: 'individual', registration_number: '123456789', registered_name: 'Neo Kgosi', submitter_name: 'Neo Kgosi', submitter_role: 'Owner' })
+    expect(uploads[0]).toMatch(/^acct-1\/omang-\d+\.jpg$/)
+    expect(newSubmission).toHaveBeenCalledWith(expect.objectContaining({ kind: 'individual', registrationNumber: '****6789' }))
+  })
+
+  it('needs a 9-digit Omang number', async () => {
+    const { POST } = await import('@/app/api/verification/route')
+    const res = await POST(submit({ ...OMANG, omang_number: '12345' }, photo()))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toMatch(/9-digit Omang/)
+  })
+
+  it('deletes the Omang photo and keeps only the last 4 digits once decided', async () => {
+    row = { status: 'pending', kind: 'individual', registration_number: '123456789', certificate_path: 'acct-1/omang-1.jpg' }
+    userEmail = 'getstagepay@gmail.com'
+    const { POST } = await import('@/app/api/admin/verifications/[accountId]/route')
+    const res = await POST(new NextRequest('http://localhost/api/admin/verifications/acct-1', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision: 'approve' }),
+    }), { params: Promise.resolve({ accountId: 'acct-1' }) })
+    expect(res.status).toBe(200)
+    expect(row).toMatchObject({ status: 'approved', registration_number: '****6789', certificate_path: 'removed' })
+    expect(removed).toEqual(['acct-1/omang-1.jpg'])
+  })
+
+  it('keeps a company certificate after review', async () => {
+    row = { status: 'pending', kind: 'company', registration_number: 'BW00001234567', certificate_path: 'acct-1/certificate-1.pdf' }
+    userEmail = 'getstagepay@gmail.com'
+    const { POST } = await import('@/app/api/admin/verifications/[accountId]/route')
+    await POST(new NextRequest('http://localhost/api/admin/verifications/acct-1', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision: 'approve' }),
+    }), { params: Promise.resolve({ accountId: 'acct-1' }) })
+    expect(row).toMatchObject({ status: 'approved', registration_number: 'BW00001234567', certificate_path: 'acct-1/certificate-1.pdf' })
+    expect(removed).toEqual([])
+  })
+})
+
 describe('once approved', () => {
   it('cannot be sent again', async () => {
     row = { status: 'approved', registration_number: 'BW00001234567' }

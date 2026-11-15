@@ -21,11 +21,14 @@ async function send(to: string, subject: string, html: string, text: string) {
   }
 }
 
-export async function emailNewSubmission(o: { businessName: string; registeredName: string; registrationNumber: string; submitter: string }) {
+export async function emailNewSubmission(o: { businessName: string; kind?: 'company' | 'individual'; registeredName: string; registrationNumber: string; submitter: string }) {
   const to = process.env.VERIFICATION_NOTIFY_EMAIL || SUPPORT
   const link = appUrl() ? `${appUrl()}/admin/verifications` : ''
-  const lead = `${o.businessName} asked to be verified.`
-  const facts = `Registered name: ${o.registeredName}\nCIPA number: ${o.registrationNumber}\nSent by: ${o.submitter}`
+  const individual = o.kind === 'individual'
+  const lead = `${o.businessName} asked to be verified${individual ? ' as an individual (not registered with CIPA)' : ''}.`
+  const facts = individual
+    ? `Name on Omang: ${o.registeredName}\nOmang: ${o.registrationNumber}\nSent by: ${o.submitter}`
+    : `Registered name: ${o.registeredName}\nCIPA number: ${o.registrationNumber}\nSent by: ${o.submitter}`
   const html = emailShell({
     title: 'Business to verify',
     preheader: `${o.registeredName} · ${o.registrationNumber}`,

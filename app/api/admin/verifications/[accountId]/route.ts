@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { stripTags } from '@/lib/sanitize'
-import { isStagePayAdmin } from '@/lib/verification'
+import { isStagePayAdmin, maskOmang, REMOVED, VERIFICATION_BUCKET } from '@/lib/verification'
 import { emailDecision } from '@/lib/emails/verification'
 
 // POST /api/admin/verifications/<accountId> { decision: 'approve' | 'decline', note? }
@@ -23,13 +23,28 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!approve && !note) return NextResponse.json({ error: 'Say why, so the business can fix it' }, { status: 400 })
 
   const svc = createServiceClient()
+  const { data: current } = await svc.from('business_verifications')
+    .select('kind, registration_number, certificate_path')
+    .eq('account_id', accountId)
+    .maybeSingle()
+  if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // An Omang is sensitive: once it has been checked, delete the photo and
+  // keep only the last 4 digits of the number.
+  const individual = current.kind === 'individual'
   const { data: row, error } = await svc.from('business_verifications')
-    .update({ status: approve ? 'approved' : 'declined', reviewed_at: new Date().toISOString(), reviewed_by: email, decision_note: note })
+    .update({
+      status: approve ? 'approved' : 'declined', reviewed_at: new Date().toISOString(), reviewed_by: email, decision_note: note,
+      ...(individual ? { registration_number: maskOmang(current.registration_number), certificate_path: REMOVED } : {}),
+    })
     .eq('account_id', accountId)
     .select('status')
     .maybeSingle()
   if (error) return NextResponse.json({ error: 'Couldn’t save the decision' }, { status: 500 })
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (individual && current.certificate_path && current.certificate_path !== REMOVED) {
+    await svc.storage.from(VERIFICATION_BUCKET).remove([current.certificate_path])
+  }
 
   const { data: profile } = await svc.from('profiles').select('firm_name, name').eq('id', accountId).single()
   await emailDecision({ accountId, businessName: profile?.firm_name || profile?.name || 'Your business', approved: approve, note })
