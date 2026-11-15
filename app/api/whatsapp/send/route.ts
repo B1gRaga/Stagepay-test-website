@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     // messages) can't fit a template, so they go as free-form text.
     const templateName = process.env.WHATSAPP_INVOICE_TEMPLATE
     const template = templateName && !custom_body
-      ? { name: templateName, params: [senderName, dbInvoiceNumber, amountFormatted, dbDueDate || 'upon receipt', invoiceLink || appUrl] }
+      ? { name: templateName, params: [senderName, dbInvoiceNumber, amountFormatted, 'see the invoice for details', dbDueDate || 'on receipt'], buttonParams: invoice.public_token ? [invoice.public_token] : undefined }
       : null
 
     await sendWhatsApp(barePhone, { text: body, template, documentUrl: pdfUrl })

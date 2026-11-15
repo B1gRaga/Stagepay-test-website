@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { CopyButton, PaidClaim, PrintButton } from './InvoiceActions'
 import { paymentBlocks } from '@/lib/payment-methods'
 import { firmLines } from '@/lib/firm-details'
@@ -33,6 +33,10 @@ function daysUntil(d?: string | null) {
 // and by when first, then how to pay, then the invoice itself.
 export default async function PublicInvoicePage({ params, searchParams }: Props) {
   const { token } = await params
+  // The first approved invoice_ready template has a stray {{1}} in its button
+  // link (getstagepay.co/invoice/%7B%7B1%7D%7D<token>): send those to the real page.
+  const clean = token.replace(/^(\{\{1\}\}|%7B%7B1%7D%7D)+/i, '')
+  if (clean !== token) redirect(`/invoice/${clean}`)
   // Opened from the "Scan to verify" code on a PDF: lead with the verdict.
   const verifying = !!(await searchParams)?.v
   const supabase = createServiceClient()
