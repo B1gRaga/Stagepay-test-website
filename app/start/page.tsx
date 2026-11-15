@@ -19,7 +19,7 @@ export default function Start() {
 
   return (
     <>
-      <BootScreen />
+      <BootScreen fadeIn />
       <noscript><meta httpEquiv="refresh" content="0;url=/dashboard" /></noscript>
     </>
   )

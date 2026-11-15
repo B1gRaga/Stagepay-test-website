@@ -24,6 +24,11 @@ const CSS = `
   .sp-steps rect:nth-child(3){animation-delay:calc(var(--d,0ms) + 280ms)}
   @keyframes spStep{0%,60%,100%{transform:scaleY(1)}30%{transform:scaleY(.35)}}
   .sp-boot{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;background:${INK};}
+  /* The phone's still launch logo gives way to this one; a short fade makes
+     that a hand-over rather than a snap, so a small size difference between
+     the two doesn't read as a jump. */
+  .sp-boot.in .sp-steps{animation:spIn 260ms ease-out both;}
+  @keyframes spIn{from{opacity:0}to{opacity:1}}
   .sp-inline{display:flex;align-items:center;justify-content:center;height:100%;min-height:40vh;}
   @media (prefers-reduced-motion:reduce){
     .sp-steps rect,.sp-steps rect:nth-child(2),.sp-steps rect:nth-child(3){animation:spFade 1.6s ease-in-out infinite;}
@@ -49,14 +54,21 @@ function Steps({ size, low, delay }: { size: number; low: string; delay?: number
   )
 }
 
-/** Full-screen ink launch screen, identical to the phone's own. */
-export function BootScreen({ label = 'Opening StagePay' }: { label?: string }) {
+// How big the glyph is on the phone's own launch screen, in CSS px, so ours
+// sits exactly on top of it. Android 12+ shows the WebAPK's adaptive icon on a
+// 240dp canvas; the maskable icon's glyph is 44% of it → 106. (The plain icon's
+// glyph is 56%; if a phone shows that one instead, the match is 135.)
+export const BOOT_GLYPH = 106
+
+/** Full-screen ink launch screen, identical to the phone's own. `fadeIn` is for
+ *  the very first paint after the phone's still logo; later remounts stay put. */
+export function BootScreen({ label = 'Opening StagePay', fadeIn = false }: { label?: string; fadeIn?: boolean }) {
   // Negative delay = continue the cycle from wherever the page clock is.
   const [delay] = useState(() => (typeof performance === 'undefined' ? 0 : -(performance.now() % PERIOD)))
   return (
-    <div className="sp-boot" role="status" aria-label={label}>
+    <div className={`sp-boot${fadeIn ? ' in' : ''}`} role="status" aria-label={label}>
       <style>{CSS}</style>
-      <Steps size={106} low={PAPER} delay={delay} />
+      <Steps size={BOOT_GLYPH} low={PAPER} delay={delay} />
     </div>
   )
 }
